@@ -165,12 +165,16 @@ naming-contract:
 gui-surface-contract:
     node scripts/check-gui-surface-contract.mjs
 
+# Verify the single supported WSL2/WSLg configuration and negative matrix
+wsl-support-contract:
+    node scripts/check-wsl-support-contract.mjs
+
 # Verify path ownership and the absence of a Mobile product lane
 ci-lanes-contract:
     node scripts/test-ci-lanes.mjs
 
 # Run repo lint, formatting, and repository policy checks
-check: fmt-check clippy chirps-contract naming-contract gui-surface-contract ci-lanes-contract desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check file-size-check
+check: fmt-check clippy chirps-contract naming-contract gui-surface-contract wsl-support-contract ci-lanes-contract desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check file-size-check
 
 # Run the active-product differential file-size ratchet and its policy tests.
 # The ratchet inspects only files changed from the merge base, so this stays
