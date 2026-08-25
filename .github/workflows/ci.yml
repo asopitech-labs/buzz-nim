@@ -109,6 +109,8 @@ jobs:
           scripts/test-oss-desktop-promotion-behavior.sh
       - name: CI lane contract
         run: just ci-lanes-contract
+      - name: Nimino naming contract
+        run: just naming-contract
       - name: File size policy
         run: just file-size-check
 
