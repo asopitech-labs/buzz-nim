@@ -83,6 +83,8 @@ crates/
   buzz-test-client    # Integration test client and E2E test suite
   sprig               # All-in-one harness bundling ACP, agent, and dev MCP
 
+nim/
+  nimino_core         # Nimino product/domain core package (bootstrap skeleton)
 desktop/              # Tauri 2 + React 19 desktop app
 web/                  # Browser web client (repo browser, served by the relay)
 mobile/               # Flutter mobile app
@@ -96,10 +98,11 @@ scripts/              # Dev tooling
 ## Getting Started
 
 ```bash
-. ./bin/activate-hermit   # activate hermit toolchain (Rust, Node, etc.)
+. ./bin/activate-hermit   # activate hermit toolchain (Rust, Nim, Node, etc.)
 cp .env.example .env      # configure local environment
 just setup                # install deps, run migrations
 just relay                # start relay at ws://localhost:3000
+just nim-ci               # Rust-independent Nim core build/check/test lane
 just ci                   # run before any PR
 ```
 
@@ -110,8 +113,10 @@ See CONTRIBUTING.md for full setup details and dependency requirements.
 ## Quality Gates
 
 Run `just ci` before every PR — it runs repository-wide formatting, lint,
-and static checks; Rust, Tauri, desktop, and mobile tests; and desktop and web
-builds. Clippy passing does not mean fmt passes; run both.
+and static checks; Nim, Rust, Tauri, desktop, and mobile tests; and desktop and
+web builds. Clippy passing does not mean fmt passes; run both. For Nim-only
+changes, `just nim-ci` is the fast lane and must not invoke a Rust build; see
+`docs/development/nim-core.md`.
 
 Run `just test` for integration tests if you touched `buzz-relay`,
 `buzz-db`, or `buzz-auth` — these require a running Postgres and Redis.

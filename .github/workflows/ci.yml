@@ -23,6 +23,7 @@ jobs:
       pull-requests: read
     outputs:
       rust: ${{ steps.filter.outputs.rust }}
+      nim: ${{ steps.filter.outputs.nim }}
       desktop: ${{ steps.filter.outputs.desktop }}
       desktop-rust: ${{ steps.filter.outputs.desktop-rust }}
       web: ${{ steps.filter.outputs.web }}
@@ -37,6 +38,19 @@ jobs:
         with:
           token: ''
           filters: |
+            nim:
+              - 'nim/**'
+              - 'hermit-packages/nim.hcl'
+              - 'bin/hermit.hcl'
+              - 'bin/.nim-*.pkg'
+              - 'bin/nim*'
+              - 'bin/atlas'
+              - 'bin/testament'
+              - 'Justfile'
+              - 'scripts/measure-nim-feedback.sh'
+              - 'scripts/test-nim-bootstrap-contract.sh'
+              - 'docs/development/nim-core.md'
+              - '.github/workflows/ci.yml'
             rust:
               - 'crates/**'
               - 'migrations/**'
@@ -89,6 +103,31 @@ jobs:
         run: scripts/test-mobile-worktree-overrides.sh
       - name: File size policy
         run: just file-size-check
+
+  nim:
+    name: Nim Core
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [changes]
+    if: github.event_name == 'push' || needs.changes.outputs.nim == 'true'
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: cashapp/activate-hermit@cea9af7913204a965fd488637a8d1811bba2e616 # v1
+      - name: Verify pinned Nim toolchain
+        run: |
+          nim --version
+          nimble --version
+      - name: Verify Nim bootstrap contract
+        run: scripts/test-nim-bootstrap-contract.sh
+      - name: Record Nim feedback baseline
+        run: scripts/measure-nim-feedback.sh "$RUNNER_TEMP/nim-feedback-baseline.json"
+      - name: Upload Nim feedback baseline
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: nim-feedback-baseline
+          path: ${{ runner.temp }}/nim-feedback-baseline.json
 
   rust-lint:
     name: Rust Lint

@@ -5,6 +5,7 @@ set dotenv-load := true
 desktop_dir := "desktop"
 desktop_tauri_manifest := "desktop/src-tauri/Cargo.toml"
 web_dir := "web"
+nim_core_dir := "nim/nimino_core"
 
 # Opt-in mesh-llm. Off by default so `just dev`/`just staging`/`just production`
 # skip ~420 extra crates + the llama.cpp native runtime build and stay fast to
@@ -30,10 +31,20 @@ bootstrap:
     # Hermit's bin/ symlinks auto-download pinned tool versions on first use.
     # Running each tool once triggers the download if not already cached.
     echo "Ensuring toolchain via Hermit..."
-    cargo --version &
-    node --version &
-    pnpm --version &
-    wait
+    tools=(cargo nim nimble node pnpm)
+    pids=()
+    for tool in "${tools[@]}"; do
+        "$tool" --version &
+        pids+=("$!")
+    done
+    toolchain_failed=0
+    for i in "${!pids[@]}"; do
+        if ! wait "${pids[$i]}"; then
+            echo "Error: failed to provision ${tools[$i]} via Hermit." >&2
+            toolchain_failed=1
+        fi
+    done
+    [[ "$toolchain_failed" -eq 0 ]] || exit 1
     if ! command -v docker &>/dev/null; then
         echo "Error: Docker is required but not installed."
         echo "Install it from https://docs.docker.com/get-docker/"
@@ -90,6 +101,26 @@ build:
 # Build the Rust workspace in release mode
 build-release:
     cargo build --workspace --release
+
+# Compile the Nimino core package without linking a product binary
+nim-build:
+    cd "{{nim_core_dir}}" && nim c --compileOnly:on --hints:off src/nimino_core.nim
+
+# Validate the Nimble manifest and type-check the Nimino core package
+nim-check:
+    cd "{{nim_core_dir}}" && nimble check
+    cd "{{nim_core_dir}}" && nim check --hints:off src/nimino_core.nim
+
+# Run the Nimino core unit tests without building Rust
+nim-test:
+    cd "{{nim_core_dir}}" && nim c -r --hints:off tests/test_nimino_core.nim
+
+# Run the complete Rust-independent Nim lane
+nim-ci: nim-check nim-build nim-test
+
+# Record the warm edit-to-test loop and complete Nim lane timing
+nim-baseline output="target/nim/feedback-baseline.json":
+    ./scripts/measure-nim-feedback.sh "{{output}}"
 
 # Run repo lint, formatting, and repository policy checks
 check: fmt-check clippy desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check mobile-check file-size-check
@@ -295,7 +326,7 @@ desktop-e2e-pre-push: _ensure-migrations
     cd {{desktop_dir}} && pnpm build:e2e && pnpm exec playwright test --only-changed=origin/main
 
 # Run all checks suitable for CI / pre-push (no infra needed)
-ci: check test-unit desktop-test desktop-build desktop-tauri-check desktop-tauri-test web-build mobile-test
+ci: check test-unit nim-ci desktop-test desktop-build desktop-tauri-check desktop-tauri-test web-build mobile-test
 
 # ─── Test ─────────────────────────────────────────────────────────────────────
 

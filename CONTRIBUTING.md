@@ -77,6 +77,7 @@ We review as capacity allows — focused PRs that follow this guide move fastest
 | Tool | Version | Notes |
 |------|---------|-------|
 | Rust | 1.88+ | Install via [rustup](https://rustup.rs/) |
+| Nim | 2.2.10 | Hermit-pinned; required only for the Nim core lane |
 | Node.js | 24+ | Required for desktop app commands and `just ci` |
 | pnpm | 10+ | Required for desktop app commands and `just ci` |
 | Flutter | 3.41+ | Required for mobile app — install via [flutter.dev](https://docs.flutter.dev/get-started/install) |
@@ -92,7 +93,7 @@ pinning. Activate it once per shell session:
 . ./bin/activate-hermit
 ```
 
-Hermit pins Rust, `just`, Node, pnpm, and other tools to the versions in
+Hermit pins Rust, Nim, `just`, Node, pnpm, and other tools to the versions in
 `bin/`. Each tool is downloaded on first use. You can also run `just bootstrap`
 (which `just setup` calls automatically) to pre-download all required tools
 upfront. If you don't use Hermit, ensure your toolchain meets the minimum
@@ -147,15 +148,19 @@ just hooks
 ```
 
 `just setup` runs `just bootstrap` first — it copies `.env.example` to `.env`
-if it doesn't already exist, and invokes `cargo`, `node`, and `pnpm` to trigger
-Hermit's lazy tool download (each tool is fetched once on first invocation and
-cached thereafter). You can also run `just bootstrap` independently at any time;
-it is safe to re-run.
+if it doesn't already exist, and invokes `cargo`, `nim`, `nimble`, `node`, and
+`pnpm` to trigger Hermit's lazy tool download (each tool is fetched once on
+first invocation and cached thereafter). You can also run `just bootstrap`
+independently at any time; it is safe to re-run.
 
 `just setup` then starts Docker services (Postgres on `:5432`, Redis on `:6379`,
 Adminer on `:8082`, Keycloak on `:8180` for local OAuth/OIDC testing, MinIO on
 `:9000` for media storage, and Prometheus on `:9090` for metrics) and runs all
 pending database migrations.
+
+For the standalone Nim core workflow and its current feedback baseline, see
+[`docs/development/nim-core.md`](docs/development/nim-core.md). It does not
+require Docker or a Rust build.
 
 ### Running the Relay and Desktop App
 
