@@ -161,12 +161,16 @@ chirps-contract:
 naming-contract:
     node scripts/check-nimino-naming-contract.mjs
 
+# Verify GUI surface/route dispositions and feature-root ownership
+gui-surface-contract:
+    node scripts/check-gui-surface-contract.mjs
+
 # Verify path ownership and the absence of a Mobile product lane
 ci-lanes-contract:
     node scripts/test-ci-lanes.mjs
 
 # Run repo lint, formatting, and repository policy checks
-check: fmt-check clippy chirps-contract naming-contract ci-lanes-contract desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check file-size-check
+check: fmt-check clippy chirps-contract naming-contract gui-surface-contract ci-lanes-contract desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check file-size-check
 
 # Run the active-product differential file-size ratchet and its policy tests.
 # The ratchet inspects only files changed from the merge base, so this stays

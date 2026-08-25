@@ -1,0 +1,732 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.gui-surfaces",
+  "scope": ["desktop", "web", "admin-web"],
+  "actions": {
+    "keep": "Retain as an independently reachable product surface.",
+    "shrink": "Retain the use case while reducing navigation, controls, or presentation state.",
+    "merge": "Move the use case into the named replacement surface without duplicating its data owner.",
+    "delete": "Remove the route or surface after the named replacement is reachable and verified."
+  },
+  "crossCuttingOwners": [
+    {
+      "concern": "community-scoped state",
+      "issue": 21,
+      "responsibility": "Own reset lifecycle and eliminate duplicate client caches."
+    },
+    {
+      "concern": "motion and animation",
+      "issue": 23,
+      "responsibility": "Apply one reduced-motion budget to every surviving surface."
+    },
+    {
+      "concern": "desktop navigation and overlays",
+      "issue": 34,
+      "responsibility": "Implement Desktop keep/shrink/merge/delete decisions without new feature policy."
+    },
+    {
+      "concern": "web and admin integration",
+      "issue": 39,
+      "responsibility": "Implement Web/Admin route dispositions and remove superseded UI."
+    },
+    {
+      "concern": "native desktop adapters",
+      "issue": 44,
+      "responsibility": "Keep Tauri commands limited to platform, network, storage, and performance adapters."
+    }
+  ],
+  "clients": [
+    {
+      "id": "desktop",
+      "root": "desktop/src",
+      "routeSource": "desktop/src/app/routes.ts",
+      "routes": [
+        {
+          "path": "/",
+          "action": "keep",
+          "surface": "desktop.home",
+          "replacement": null,
+          "evidence": {
+            "path": "desktop/src/app/routes/index.tsx",
+            "symbol": "createFileRoute(\"/\")",
+            "signal": "The index route renders HomeScreen."
+          }
+        },
+        {
+          "path": "/agents",
+          "action": "keep",
+          "surface": "desktop.agent-workspace",
+          "replacement": null,
+          "evidence": {
+            "path": "desktop/src/app/routes/agents.tsx",
+            "symbol": "createFileRoute(\"/agents\")",
+            "signal": "Registered route renders AgentsScreen."
+          }
+        },
+        {
+          "path": "/pulse",
+          "action": "merge",
+          "surface": "desktop.pulse",
+          "replacement": {
+            "targetSurface": "desktop.home",
+            "dataContract": "Home receives human/agent note timelines, publishing, reactions, replies, and share actions; DM actions continue to Conversations and Pulse-only search is removed in favor of global Search."
+          },
+          "evidence": {
+            "path": "desktop/src/app/routes/pulse.tsx",
+            "symbol": "createFileRoute(\"/pulse\")",
+            "signal": "Registered route renders the multi-capability PulseScreen as a second top-level destination."
+          }
+        },
+        {
+          "path": "/reminders",
+          "action": "delete",
+          "surface": "desktop.home",
+          "replacement": {
+            "targetSurface": "desktop.home",
+            "dataContract": "Reminder due state remains available in Home; after alias removal the user selects the Reminders filter because the route does not encode filter state."
+          },
+          "evidence": {
+            "path": "desktop/src/app/routes/reminders.tsx",
+            "symbol": "throw redirect({ to: \"/\" })",
+            "signal": "The route redirects to Home without selecting the reminders filter."
+          }
+        },
+        {
+          "path": "/settings",
+          "action": "keep",
+          "surface": "desktop.settings",
+          "replacement": null,
+          "evidence": {
+            "path": "desktop/src/app/routes/settings.tsx",
+            "symbol": "createFileRoute(\"/settings\")",
+            "signal": "Registered route owns settings section selection."
+          }
+        },
+        {
+          "path": "/workflows",
+          "action": "keep",
+          "surface": "desktop.workflows",
+          "replacement": null,
+          "evidence": {
+            "path": "desktop/src/app/routes/workflows.tsx",
+            "symbol": "createFileRoute(\"/workflows\")",
+            "signal": "Registered list route renders the workflow surface."
+          }
+        },
+        {
+          "path": "/workflows/$workflowId",
+          "action": "keep",
+          "surface": "desktop.workflows",
+          "replacement": null,
+          "evidence": {
+            "path": "desktop/src/app/routes/workflows.$workflowId.tsx",
+            "symbol": "createFileRoute(\"/workflows/$workflowId\")",
+            "signal": "Registered detail route selects one workflow."
+          }
+        },
+        {
+          "path": "/projects",
+          "action": "keep",
+          "surface": "desktop.projects",
+          "replacement": null,
+          "evidence": {
+            "path": "desktop/src/app/routes/projects.tsx",
+            "symbol": "createFileRoute(\"/projects\")",
+            "signal": "Registered route renders the project overview."
+          }
+        },
+        {
+          "path": "/projects/$projectId",
+          "action": "keep",
+          "surface": "desktop.projects",
+          "replacement": null,
+          "evidence": {
+            "path": "desktop/src/app/routes/projects.$projectId.tsx",
+            "symbol": "createFileRoute(\"/projects/$projectId\")",
+            "signal": "Registered route renders project and repository detail."
+          }
+        },
+        {
+          "path": "/messages/new",
+          "action": "merge",
+          "surface": "desktop.conversations",
+          "replacement": {
+            "targetSurface": "desktop.conversations",
+            "dataContract": "DM creation remains a conversation action backed by participant-scoped channel state."
+          },
+          "evidence": {
+            "path": "desktop/src/app/routes/messages.new.tsx",
+            "symbol": "createFileRoute(\"/messages/new\")",
+            "signal": "A dedicated route currently renders NewMessageScreen."
+          }
+        },
+        {
+          "path": "/channels/$channelId",
+          "action": "keep",
+          "surface": "desktop.conversations",
+          "replacement": null,
+          "evidence": {
+            "path": "desktop/src/app/routes/channels.$channelId.tsx",
+            "symbol": "createFileRoute(\"/channels/$channelId\")",
+            "signal": "Registered route selects stream, forum, or DM channel content."
+          }
+        },
+        {
+          "path": "/channels/$channelId/posts/$postId",
+          "action": "keep",
+          "surface": "desktop.conversations",
+          "replacement": null,
+          "evidence": {
+            "path": "desktop/src/app/routes/channels.$channelId.posts.$postId.tsx",
+            "symbol": "createFileRoute(\"/channels/$channelId/posts/$postId\")",
+            "signal": "Registered route selects a forum post inside its channel."
+          }
+        }
+      ],
+      "surfaces": [
+        {
+          "id": "desktop.shell",
+          "action": "shrink",
+          "owner": "desktop/src/app",
+          "implementationIssue": 34,
+          "featureRoots": ["communities", "sidebar"],
+          "dataContract": "Community URL selects the tenant; navigation stores destinations, not domain state.",
+          "replacement": null,
+          "usageEvidence": [
+            {
+              "path": "desktop/src/app/AppShell.tsx",
+              "symbol": "export function AppShell()",
+              "signal": "AppShell composes community rail, sidebar, route outlet, and overlays."
+            }
+          ]
+        },
+        {
+          "id": "desktop.onboarding",
+          "action": "shrink",
+          "owner": "desktop/src/features/onboarding",
+          "implementationIssue": 34,
+          "featureRoots": ["onboarding"],
+          "dataContract": "Onboarding writes one identity and community configuration before entering the shell.",
+          "replacement": null,
+          "usageEvidence": [
+            {
+              "path": "desktop/src/features/onboarding/ui/MachineOnboardingFlow.tsx",
+              "symbol": "export function MachineOnboardingFlow(",
+              "signal": "Machine onboarding is the pre-shell setup flow."
+            }
+          ]
+        },
+        {
+          "id": "desktop.home",
+          "action": "keep",
+          "owner": "desktop/src/features/home",
+          "implementationIssue": 34,
+          "featureRoots": ["home", "notifications", "reminders"],
+          "dataContract": "Personal feed items, unread state, due reminders, and notification preferences remain one Home projection.",
+          "replacement": null,
+          "usageEvidence": [
+            {
+              "path": "desktop/src/features/home/ui/HomeScreen.tsx",
+              "symbol": "export function HomeScreen(",
+              "signal": "HomeScreen renders the personalized inbox and feed."
+            },
+            {
+              "path": "VISION.md",
+              "symbol": "**Home** | Personalized feed.",
+              "signal": "Home is one of the seven product surfaces."
+            }
+          ]
+        },
+        {
+          "id": "desktop.conversations",
+          "action": "keep",
+          "owner": "desktop/src/features/channels",
+          "implementationIssue": 34,
+          "featureRoots": ["channel-templates", "channels", "chat", "forum", "messages"],
+          "dataContract": "NIP-29 channel membership scopes Stream, Forum, and DM events; NIP-22/NIP-10 scopes replies.",
+          "replacement": null,
+          "usageEvidence": [
+            {
+              "path": "desktop/src/app/routes/ChannelRouteScreen.tsx",
+              "symbol": "export function ChannelRouteScreen(",
+              "signal": "One channel route chooses conversation presentation by channel type."
+            },
+            {
+              "path": "VISION.md",
+              "symbol": "**Stream** — Slack-like, fast.",
+              "signal": "Stream, Forum, and DMs are core product surfaces."
+            }
+          ]
+        },
+        {
+          "id": "desktop.agent-workspace",
+          "action": "shrink",
+          "owner": "desktop/src/features/agents",
+          "implementationIssue": 34,
+          "featureRoots": ["agent-memory", "agents", "terminal"],
+          "dataContract": "Agent definitions, sessions, activity, memory, and terminal transport remain agent-scoped views of relay events.",
+          "replacement": null,
+          "usageEvidence": [
+            {
+              "path": "desktop/src/features/agents/ui/AgentsScreen.tsx",
+              "symbol": "export function AgentsScreen()",
+              "signal": "AgentsScreen is the registered agent directory and session entry point."
+            },
+            {
+              "path": "VISION_ACTIVITY.md",
+              "symbol": "## The Governing Frame: Verb, Object, Outcome",
+              "signal": "Agent activity must be outcome-first with raw detail on demand."
+            }
+          ]
+        },
+        {
+          "id": "desktop.projects",
+          "action": "shrink",
+          "owner": "desktop/src/features/projects",
+          "implementationIssue": 34,
+          "featureRoots": ["projects"],
+          "dataContract": "NIP-34 repository events and the project grouping event remain the forge source of truth.",
+          "replacement": null,
+          "usageEvidence": [
+            {
+              "path": "desktop/src/features/projects/ui/ProjectsOverviewPanel.tsx",
+              "symbol": "export function ProjectsOverviewPanel(",
+              "signal": "The overview is reachable from the project route and sidebar."
+            },
+            {
+              "path": "VISION_PROJECTS.md",
+              "symbol": "## The Project Model",
+              "signal": "Projects connect repositories, branch channels, reviews, and workflow results."
+            }
+          ]
+        },
+        {
+          "id": "desktop.workflows",
+          "action": "shrink",
+          "owner": "desktop/src/features/workflows",
+          "implementationIssue": 34,
+          "featureRoots": ["workflows"],
+          "dataContract": "Workflow definitions and run traces remain signed channel-scoped events.",
+          "replacement": null,
+          "usageEvidence": [
+            {
+              "path": "desktop/src/features/workflows/ui/WorkflowsScreen.tsx",
+              "symbol": "export function WorkflowsScreen(",
+              "signal": "WorkflowsScreen is the registered workflow list and editor entry."
+            }
+          ]
+        },
+        {
+          "id": "desktop.pulse",
+          "action": "merge",
+          "owner": "desktop/src/features/pulse",
+          "implementationIssue": 34,
+          "featureRoots": ["pulse"],
+          "dataContract": "Human and agent timelines, note publishing, reactions, replies, sharing, DM entry, and search follow the capability dispositions below.",
+          "replacement": {
+            "targetSurface": "desktop.home",
+            "dataContract": "Preserve each capability disposition below; no social-note event, reaction, reply, share, or DM behavior is silently dropped."
+          },
+          "capabilityDispositions": [
+            {
+              "id": "human-timelines",
+              "action": "merge",
+              "targetSurface": "desktop.home",
+              "dataOwner": "Nim event/query policy (#31/#30); desktop Home presentation",
+              "dataContract": "Everyone, followed-people, liked, and mine timelines retain kind-1 notes, contact filtering, liked state, and per-author profiles.",
+              "evidence": {
+                "path": "desktop/src/features/pulse/ui/PulseView.tsx",
+                "symbol": "useLikedNotesQuery(",
+                "signal": "Pulse queries everyone, followed-people, liked, and current-user timelines."
+              }
+            },
+            {
+              "id": "agent-activity",
+              "action": "merge",
+              "targetSurface": "desktop.home",
+              "dataOwner": "Nim agent/event policy (#40/#31); desktop Home activity renderer",
+              "dataContract": "Agent-authored notes retain grouping, profile resolution, and online/away/offline presentation under Home activity.",
+              "evidence": {
+                "path": "desktop/src/features/pulse/ui/PulseView.tsx",
+                "symbol": "groupAgentNotes(visibleNotes)",
+                "signal": "Pulse groups agent notes into AgentActivityCard rows."
+              }
+            },
+            {
+              "id": "note-publishing",
+              "action": "merge",
+              "targetSurface": "desktop.home",
+              "dataOwner": "Nim event acceptance policy (#31); shared social API adapter",
+              "dataContract": "Home retains note composition with mentions, media tags, reply linkage, publish errors, and timeline invalidation.",
+              "evidence": {
+                "path": "desktop/src/features/pulse/hooks.ts",
+                "symbol": "export function usePublishNoteMutation(",
+                "signal": "The mutation publishes notes/replies and invalidates all affected timelines."
+              }
+            },
+            {
+              "id": "note-actions",
+              "action": "merge",
+              "targetSurface": "desktop.home",
+              "dataOwner": "Nim event policy (#31), Conversations DM owner, and OS clipboard adapter",
+              "dataContract": "Home note cards retain upvote, reply, and share; start-DM continues to navigate to the participant-scoped Conversations surface.",
+              "evidence": {
+                "path": "desktop/src/features/pulse/lib/useNoteActions.ts",
+                "symbol": "export function usePulseNoteActions(",
+                "signal": "The action boundary owns reaction, reply, share-link, and start-DM behavior."
+              }
+            },
+            {
+              "id": "search",
+              "action": "delete",
+              "targetSurface": "desktop.search",
+              "dataOwner": "Permission-aware global Search query contract",
+              "dataContract": "Delete the Pulse-only input, which has no query/result execution, after global Search includes public notes and its negative route test passes.",
+              "evidence": {
+                "path": "desktop/src/features/pulse/ui/PulseView.tsx",
+                "symbol": "aria-label=\"Search Pulse\"",
+                "signal": "The Pulse search tab renders only local input state and a button without a search handler."
+              }
+            }
+          ],
+          "usageEvidence": [
+            {
+              "path": "desktop/src/features/pulse/ui/PulseScreen.tsx",
+              "symbol": "export function PulseScreen()",
+              "signal": "PulseScreen is a top-level destination outside the seven-surface vision."
+            }
+          ]
+        },
+        {
+          "id": "desktop.search",
+          "action": "keep",
+          "owner": "desktop/src/features/search",
+          "implementationIssue": 34,
+          "featureRoots": ["search"],
+          "dataContract": "Permission-aware full-text results resolve to their owning conversation, member, or project surface.",
+          "replacement": null,
+          "usageEvidence": [
+            {
+              "path": "desktop/src/features/search/ui/TopbarSearch.tsx",
+              "symbol": "export function TopbarSearch(",
+              "signal": "TopbarSearch provides the global keyboard-first search entry."
+            },
+            {
+              "path": "VISION.md",
+              "symbol": "**Search** | Cmd+K.",
+              "signal": "Search is one of the seven product surfaces."
+            }
+          ]
+        },
+        {
+          "id": "desktop.huddle",
+          "action": "shrink",
+          "owner": "desktop/src/features/huddle",
+          "implementationIssue": 34,
+          "featureRoots": ["huddle"],
+          "dataContract": "Huddle room lifecycle stays channel-scoped; audio transport remains a platform adapter.",
+          "replacement": null,
+          "usageEvidence": [
+            {
+              "path": "desktop/src/app/AppHuddleShell.tsx",
+              "symbol": "export function AppHuddleShell(",
+              "signal": "Huddle presentation is contextual to the active channel shell."
+            }
+          ]
+        },
+        {
+          "id": "desktop.community-governance",
+          "action": "merge",
+          "owner": "desktop/src/features/moderation",
+          "implementationIssue": 34,
+          "featureRoots": ["community-members", "moderation"],
+          "dataContract": "Member roles, report queue, and moderation actions remain community-scoped relay authority.",
+          "replacement": {
+            "targetSurface": "desktop.settings",
+            "dataContract": "Expose governance as one role-gated Community section, not separate overlays."
+          },
+          "usageEvidence": [
+            {
+              "path": "desktop/src/features/settings/ui/ModerationQueueCard.tsx",
+              "symbol": "export function ModerationQueueCard()",
+              "signal": "The moderation queue is already presented inside settings."
+            },
+            {
+              "path": "VISION_MODERATION.md",
+              "symbol": "## What You See",
+              "signal": "Owners and admins require one private report/decision/enforcement loop."
+            }
+          ]
+        },
+        {
+          "id": "desktop.identity-profile",
+          "action": "shrink",
+          "owner": "desktop/src/features/profile",
+          "implementationIssue": 34,
+          "featureRoots": ["presence", "profile", "user-status"],
+          "dataContract": "Identity is a keypair; profile, presence, and status are community-local signed state.",
+          "replacement": null,
+          "usageEvidence": [
+            {
+              "path": "desktop/src/features/settings/ui/ProfileSettingsCard.tsx",
+              "symbol": "export function ProfileSettingsCard(",
+              "signal": "Profile editing is reachable from the user/settings entry."
+            }
+          ]
+        },
+        {
+          "id": "desktop.archive-controls",
+          "action": "merge",
+          "owner": "desktop/src/features/local-archive",
+          "implementationIssue": 34,
+          "featureRoots": ["identity-archive", "local-archive"],
+          "dataContract": "Archive preferences and identity backup remain local storage/OS adapter settings.",
+          "replacement": {
+            "targetSurface": "desktop.settings",
+            "dataContract": "Expose backup and local archive lifecycle in one advanced Settings section."
+          },
+          "usageEvidence": [
+            {
+              "path": "desktop/src/features/local-archive/ui/LocalArchiveSettingsCard.tsx",
+              "symbol": "export function LocalArchiveSettingsCard()",
+              "signal": "Local archive controls are already a settings card."
+            }
+          ]
+        },
+        {
+          "id": "desktop.settings",
+          "action": "shrink",
+          "owner": "desktop/src/features/settings",
+          "implementationIssue": 34,
+          "featureRoots": ["custom-emoji", "mesh-compute", "settings"],
+          "dataContract": "Settings edits presentation preferences or invokes explicit platform adapters; it does not own product policy.",
+          "replacement": null,
+          "usageEvidence": [
+            {
+              "path": "desktop/src/features/settings/ui/SettingsScreen.tsx",
+              "symbol": "export function SettingsScreen(",
+              "signal": "SettingsScreen is the registered owner of settings navigation."
+            },
+            {
+              "path": "desktop/src/features/mesh-compute/ui/MeshComputeSettingsCard.tsx",
+              "symbol": "export function MeshComputeSettingsCard()",
+              "signal": "Compute sharing is already subordinate to Settings."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "web",
+      "root": "web/src",
+      "routeSource": "web/src/app/routes.ts",
+      "routes": [
+        {
+          "path": "/",
+          "action": "keep",
+          "surface": "web.repositories",
+          "replacement": null,
+          "evidence": {
+            "path": "web/src/app/routes/index.tsx",
+            "symbol": "createFileRoute(\"/\")",
+            "signal": "The index route renders the repository list."
+          }
+        },
+        {
+          "path": "/repos",
+          "action": "delete",
+          "surface": "web.repositories",
+          "replacement": {
+            "targetSurface": "web.repositories",
+            "dataContract": "The repository list remains canonical at the workspace root."
+          },
+          "evidence": {
+            "path": "web/src/app/routes/repos.tsx",
+            "symbol": "createFileRoute(\"/repos\")",
+            "signal": "The route is only a redirect to the index."
+          }
+        },
+        {
+          "path": "/repos/$repoId",
+          "action": "keep",
+          "surface": "web.repositories",
+          "replacement": null,
+          "evidence": {
+            "path": "web/src/app/routes/repos.$repoId.tsx",
+            "symbol": "createFileRoute(\"/repos/$repoId\")",
+            "signal": "The route renders repository detail."
+          }
+        },
+        {
+          "path": "/repos/$repoId/blob/$",
+          "action": "keep",
+          "surface": "web.repositories",
+          "replacement": null,
+          "evidence": {
+            "path": "web/src/app/routes/repos.$repoId.blob.$.tsx",
+            "symbol": "createFileRoute(\"/repos/$repoId/blob/$\")",
+            "signal": "The route renders a repository blob."
+          }
+        },
+        {
+          "path": "/invite/$code",
+          "action": "keep",
+          "surface": "web.invite",
+          "replacement": null,
+          "evidence": {
+            "path": "web/src/app/routes/invite.$code.tsx",
+            "symbol": "createFileRoute(\"/invite/$code\")",
+            "signal": "The route renders the community invite landing page."
+          }
+        }
+      ],
+      "surfaces": [
+        {
+          "id": "web.repositories",
+          "action": "shrink",
+          "owner": "web/src/features/repos",
+          "implementationIssue": 39,
+          "featureRoots": ["repos"],
+          "dataContract": "The relay-served NIP-34 repository list, metadata, tree, and blob responses remain authoritative.",
+          "replacement": null,
+          "usageEvidence": [
+            {
+              "path": "web/src/features/repos/ui/ReposPage.tsx",
+              "symbol": "export function ReposPage()",
+              "signal": "ReposPage is the workspace root in the browser client."
+            },
+            {
+              "path": "VISION_SOVEREIGN.md",
+              "symbol": "## What You See",
+              "signal": "The project domain must render repositories and standard git access."
+            }
+          ]
+        },
+        {
+          "id": "web.invite",
+          "action": "keep",
+          "owner": "web/src/features/invite",
+          "implementationIssue": 39,
+          "featureRoots": ["invite"],
+          "dataContract": "An invite code resolves through the host-selected community without exposing other application state.",
+          "replacement": null,
+          "usageEvidence": [
+            {
+              "path": "web/src/features/invite/ui/InvitePage.tsx",
+              "symbol": "export function InvitePage(",
+              "signal": "InvitePage is the only browser onboarding surface."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "admin-web",
+      "root": "admin-web/src",
+      "routeSource": "admin-web/src/App.tsx",
+      "routes": [
+        {
+          "path": "/",
+          "action": "delete",
+          "surface": "admin-web.moderation-inbox",
+          "replacement": {
+            "targetSurface": "admin-web.moderation-inbox",
+            "dataContract": "The canonical moderation inbox URL is /reports."
+          },
+          "evidence": {
+            "path": "admin-web/src/App.tsx",
+            "symbol": ") : (\n    <Reports />\n  );",
+            "signal": "Unknown and root paths currently fall through to Reports without canonical navigation."
+          }
+        },
+        {
+          "path": "/reports",
+          "action": "keep",
+          "surface": "admin-web.moderation-inbox",
+          "replacement": null,
+          "evidence": {
+            "path": "admin-web/src/App.tsx",
+            "symbol": "href=\"/reports\"",
+            "signal": "Primary navigation links to the report queue."
+          }
+        },
+        {
+          "path": "/reports/$reportId",
+          "action": "keep",
+          "surface": "admin-web.moderation-inbox",
+          "replacement": null,
+          "evidence": {
+            "path": "admin-web/src/App.tsx",
+            "symbol": "path.match(/^\\/reports\\/([^/]+)$/)",
+            "signal": "The path matcher renders one report detail."
+          }
+        },
+        {
+          "path": "/feedback",
+          "action": "merge",
+          "surface": "admin-web.feedback-inbox",
+          "replacement": {
+            "targetSurface": "admin-web.moderation-inbox",
+            "dataContract": "Feedback remains a typed item with its existing API payload; acted-on booleans migrate by feedback ID before buzz-admin-feedback-status is deleted."
+          },
+          "evidence": {
+            "path": "admin-web/src/App.tsx",
+            "symbol": "path === \"/feedback\"",
+            "signal": "Feedback is a second top-level queue in the same monolithic application."
+          }
+        },
+        {
+          "path": "/feedback/$feedbackId",
+          "action": "merge",
+          "surface": "admin-web.feedback-inbox",
+          "replacement": {
+            "targetSurface": "admin-web.moderation-inbox",
+            "dataContract": "Feedback detail remains a typed detail view within the unified operator inbox."
+          },
+          "evidence": {
+            "path": "admin-web/src/App.tsx",
+            "symbol": "path.match(/^\\/feedback\\/([^/]+)$/)",
+            "signal": "The path matcher renders one feedback detail."
+          }
+        }
+      ],
+      "surfaces": [
+        {
+          "id": "admin-web.moderation-inbox",
+          "action": "keep",
+          "owner": "admin-web/src/App.tsx",
+          "implementationIssue": 39,
+          "featureRoots": [],
+          "dataContract": "Operator report list/detail API responses remain private, role-gated moderation state.",
+          "replacement": null,
+          "usageEvidence": [
+            {
+              "path": "admin-web/src/App.tsx",
+              "symbol": "function Reports()",
+              "signal": "Reports and ReportDetail implement the operator moderation loop."
+            }
+          ]
+        },
+        {
+          "id": "admin-web.feedback-inbox",
+          "action": "merge",
+          "owner": "admin-web/src/App.tsx",
+          "implementationIssue": 39,
+          "featureRoots": [],
+          "dataContract": "Feedback list/detail API payloads remain typed separately from moderation reports.",
+          "replacement": {
+            "targetSurface": "admin-web.moderation-inbox",
+            "dataContract": "Render feedback as a typed operator-inbox category without merging its API storage model. Migrate acted-on booleans from buzz-admin-feedback-status to the unified inbox owner by feedback ID, then delete the legacy key after parity and stale-key tests pass."
+          },
+          "usageEvidence": [
+            {
+              "path": "admin-web/src/App.tsx",
+              "symbol": "const FEEDBACK_STATUS_KEY = \"buzz-admin-feedback-status\"",
+              "signal": "FeedbackList owns a persisted per-feedback acted-on status and duplicates the report list/detail shell."
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
