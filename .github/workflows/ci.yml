@@ -66,11 +66,13 @@ jobs:
               - 'Cargo.lock'
               - 'rust-toolchain.toml'
               - 'deny.toml'
+              - 'contracts/chirps-v0.6.3.json'
               - '.github/workflows/ci.yml'
+              - 'scripts/check-chirps-api-contract.mjs'
               - 'scripts/run-tests.sh'
               - 'scripts/model-capabilities.json'
               - 'scripts/normative-corpus.json'
-              - 'justfile'
+              - 'Justfile'
             desktop:
               - 'scripts/model-capabilities.json'
               - 'scripts/normative-corpus.json'
@@ -162,6 +164,8 @@ jobs:
         run: just fmt-check
       - name: Desktop Tauri format check
         run: just desktop-tauri-fmt-check
+      - name: Chirps dependency and API contract
+        run: just chirps-contract
       - name: Clippy
         run: just clippy
 

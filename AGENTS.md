@@ -82,12 +82,14 @@ crates/
   buzz-ws-client      # Shared NIP-42 WebSocket client (connect, auth, publish)
   buzz-test-client    # Integration test client and E2E test suite
   nimino-boundary     # Rust supervisor for the versioned Nim core worker IPC
+  nimino-chirps       # Sole direct Alopex Chirps dependency boundary
   sprig               # All-in-one harness bundling ACP, agent, and dev MCP
 
 nim/
   nimino_core         # Nimino product/domain core and supervised worker
 contracts/
   nim-rust-boundary   # Versioned schema/error/lifecycle source of truth
+  chirps-v0.6.3.json  # Exact dependency, feature, and API allowlist snapshot
 desktop/              # Tauri 2 + React 19 desktop app
 web/                  # Browser web client (repo browser, served by the relay)
 mobile/               # Flutter mobile app
