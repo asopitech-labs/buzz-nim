@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://asopitech.com/nimino/contracts/nim-rust-boundary/v1/response.schema.json",
+  "title": "NiminoBoundaryResponseV1",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "status", "result"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "system.hello" },
+        "status": { "const": "ok" },
+        "result": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["workerVersion", "protocolVersion", "schemaHash", "workerRole", "maxFrameBytes", "maxInflight", "capabilities"],
+          "properties": {
+            "workerVersion": { "type": "string", "minLength": 1 },
+            "protocolVersion": { "const": 1 },
+            "schemaHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+            "workerRole": { "const": "nimino-core" },
+            "maxFrameBytes": { "const": 1048576 },
+            "maxInflight": { "const": 1 },
+            "capabilities": {
+              "type": "array",
+              "contains": { "const": "boundary.echo" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "status", "result"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "boundary.echo" },
+        "status": { "const": "ok" },
+        "result": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["data"],
+          "properties": { "data": {} }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "status", "error"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "status": { "const": "error" },
+        "error": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["code", "message", "retry"],
+          "properties": {
+            "code": {
+              "enum": ["INVALID_REQUEST", "UNSUPPORTED_VERSION", "CONTRACT_MISMATCH", "HANDSHAKE_REQUIRED", "UNKNOWN_OPERATION", "FRAME_TOO_LARGE", "INTERNAL_ERROR"]
+            },
+            "message": { "type": "string", "maxLength": 1024 },
+            "retry": {
+              "enum": ["never", "idempotent_only", "after_refresh"]
+            }
+          },
+          "oneOf": [
+            { "properties": { "code": { "const": "INVALID_REQUEST" }, "retry": { "const": "never" } } },
+            { "properties": { "code": { "const": "UNSUPPORTED_VERSION" }, "retry": { "const": "never" } } },
+            { "properties": { "code": { "const": "CONTRACT_MISMATCH" }, "retry": { "const": "never" } } },
+            { "properties": { "code": { "const": "HANDSHAKE_REQUIRED" }, "retry": { "const": "after_refresh" } } },
+            { "properties": { "code": { "const": "UNKNOWN_OPERATION" }, "retry": { "const": "never" } } },
+            { "properties": { "code": { "const": "FRAME_TOO_LARGE" }, "retry": { "const": "never" } } },
+            { "properties": { "code": { "const": "INTERNAL_ERROR" }, "retry": { "const": "idempotent_only" } } }
+          ]
+        }
+      }
+    }
+  ]
+}

@@ -1,22 +1,25 @@
 # Nim core development lane
 
-Status: active. Nim 2.2.10 is pinned and the Rust-independent build, check,
-test, and timing lanes are available.
+Status: active. Nim 2.2.10 is pinned, the Rust-independent development lane is
+available, and the versioned Nim/Rust worker boundary is accepted and tested.
 
 This lane is the development foundation for moving high-change product and
 domain policy into Nim. It deliberately contains no migrated domain behavior
-and no Nim/Rust or Chirps boundary; those are owned by later focused issues.
+or Chirps integration. The process boundary contains transport and lifecycle
+mechanics only; later focused issues own each typed domain operation.
 
 ## Quick start
 
 ```bash
 . ./bin/activate-hermit
 just nim-ci
+just nim-boundary-ci
 ```
 
 `just nim-ci` validates the Nimble package, type-checks and compiles the root
 module, and runs its unit tests. It does not invoke `cargo`, `rustc`, or any
-Rust build.
+Rust build. `just nim-boundary-ci` is the explicit cross-language contract,
+failure-lifecycle, and performance gate and therefore invokes Rust.
 
 | Command | Purpose |
 |---|---|
@@ -25,9 +28,14 @@ Rust build.
 | `just nim-test` | Compile and run the core unit tests |
 | `just nim-ci` | Run the complete Rust-independent lane |
 | `just nim-baseline` | Measure the warm edit-to-test loop and full Nim lane |
+| `just nim-boundary-build` | Build the production worker without test hooks |
+| `just nim-boundary-test` | Run unit and real Rust↔Nim process scenarios |
+| `just nim-boundary-benchmark` | Reproduce fixed payload and recovery budgets |
+| `just nim-boundary-ci` | Run the complete versioned boundary gate |
 
-Nim still emits C and therefore needs a C compiler on the host. No Rust
-toolchain or Buzz service is required for these commands.
+Nim still emits C and therefore needs a C compiler on the host. The Nim-only
+commands need no Rust toolchain or Buzz service; boundary commands also use the
+pinned Rust toolchain but still need no database, relay, Redis, or container.
 
 ## Toolchain and package layout
 
@@ -45,7 +53,11 @@ nim/nimino_core/
   nimino_core.nimble          package metadata and compiler constraint
   nim.cfg                     source, cache, and output paths
   src/nimino_core.nim         package root; no domain policy yet
-  tests/test_nimino_core.nim  import and unit-test smoke
+  src/nimino_core_worker.nim  long-lived worker composition root
+  src/nimino_core/boundary/   strict v1 protocol and length framing
+  tests/                      package and boundary unit tests
+contracts/nim-rust-boundary/  machine-readable versioned source of truth
+crates/nimino-boundary/       Rust process/framing lifecycle adapter only
 ```
 
 Compiler output is written below ignored `target/nim/`; it does not dirty the
@@ -79,12 +91,17 @@ budget only after representative domain modules exist.
 |---|---|---|---|---|---|
 | `hermit-packages/nim.hcl` | Pins the bootstrap compiler distributions | Canonical Nim toolchain definition | keep | Replaced by an explicitly approved toolchain owner | Hermit manifest validation and clean-clone install |
 | `nim/nimino_core/` | Importable package skeleton | Owner of high-change product and domain policy | keep | Never as part of the current cutover | `just nim-ci` |
+| `contracts/nim-rust-boundary/v1/` | Exact schema/error/lifecycle bundle | Canonical cross-language contract | keep | Explicit new-version cutover | checksum and fixture gates |
+| `crates/nimino-boundary/` | Supervised process adapter | Spawn/frame/queue/timeout/cancel/kill/reap only | keep narrow | Explicit replacement boundary | dependency deny and cross-language tests |
 | `.github/workflows/ci.yml` (`Nim Core`) | Path-scoped Nim verification and timing | Independent Nim CI lane | keep | Superseded by the independent release pipeline | bootstrap contract test and CI artifact |
 | Rust workspace | Existing product and adapter implementation | Stable host and adapter boundary | shrink | Per later responsibility-manifest issues | Not changed by this bootstrap |
 
 The package root may expose build and diagnostic metadata, but domain behavior
-must enter through its owning migration issue. Do not add compatibility modes,
-dual-runtime product paths, database replication, or Chirps integration here.
+must enter through its owning migration issue as a typed operation. Do not add
+generic operation/value entrypoints, compatibility modes, dual-runtime product
+paths, database replication, or Chirps policy here. See
+[`../adr/nim-rust-boundary-v1.md`](../adr/nim-rust-boundary-v1.md) for ownership,
+failure semantics, and benchmark evidence.
 
 ## Clean-checkout verification
 
@@ -94,9 +111,11 @@ From a fresh Linux x86_64 clone:
 . ./bin/activate-hermit
 nim --version
 just nim-ci
+just nim-boundary-ci
 just nim-baseline
 ```
 
 The first command invocation downloads and verifies the pinned archive. A clean
 run is successful when the compiler reports 2.2.10, `nim-ci` passes without a
-Rust build, and the timing JSON is produced under `target/nim/`.
+Rust build, the cross-language contract and performance gate passes, and the
+timing JSON is produced under `target/nim/`.

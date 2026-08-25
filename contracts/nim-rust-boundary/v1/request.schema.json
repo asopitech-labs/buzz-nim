@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://asopitech.com/nimino/contracts/nim-rust-boundary/v1/request.schema.json",
+  "title": "NiminoBoundaryRequestV1",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "system.hello" },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schemaHash", "workerRole", "maxFrameBytes", "maxInflight"],
+          "properties": {
+            "schemaHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+            "workerRole": { "const": "nimino-core" },
+            "maxFrameBytes": { "const": 1048576 },
+            "maxInflight": { "const": 1 }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "boundary.echo" },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["data"],
+          "properties": { "data": {} }
+        }
+      }
+    }
+  ]
+}

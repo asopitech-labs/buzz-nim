@@ -49,7 +49,14 @@ jobs:
               - 'Justfile'
               - 'scripts/measure-nim-feedback.sh'
               - 'scripts/test-nim-bootstrap-contract.sh'
+              - 'scripts/test-nim-boundary-contract.sh'
+              - 'contracts/nim-rust-boundary/**'
+              - 'crates/nimino-boundary/**'
               - 'docs/development/nim-core.md'
+              - 'docs/adr/nim-rust-boundary-v1.md'
+              - 'docs/benchmarks/nim-rust-boundary-linux-x86_64.json'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
               - '.github/workflows/ci.yml'
             rust:
               - 'crates/**'
@@ -107,7 +114,7 @@ jobs:
   nim:
     name: Nim Core
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     needs: [changes]
     if: github.event_name == 'push' || needs.changes.outputs.nim == 'true'
     permissions:
@@ -123,11 +130,19 @@ jobs:
         run: scripts/test-nim-bootstrap-contract.sh
       - name: Record Nim feedback baseline
         run: scripts/measure-nim-feedback.sh "$RUNNER_TEMP/nim-feedback-baseline.json"
+      - name: Verify Nim/Rust boundary lifecycle and performance
+        run: just nim-boundary-ci
       - name: Upload Nim feedback baseline
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: nim-feedback-baseline
           path: ${{ runner.temp }}/nim-feedback-baseline.json
+      - name: Upload Nim/Rust boundary benchmark
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: nim-rust-boundary-benchmark
+          path: target/nim/nimino-boundary-benchmark.json
 
   rust-lint:
     name: Rust Lint
