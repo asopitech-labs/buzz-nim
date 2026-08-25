@@ -14,7 +14,11 @@ EVENT, REQ, REST, media, git, search, workflow, or pub/sub handling. Unknown
 hosts fail closed, and NIP-98/API-token stamps must agree with the host-derived
 community rather than overriding it.
 
-Buzz is a Rust monorepo, licensed Apache 2.0 under Block, Inc.
+This independent fork currently retains the upstream Buzz runtime while the
+Nimino single-cutover work is in progress. High-change product and domain logic
+will move to Nim; Rust remains for narrow process, transport, crypto, storage,
+OS, and performance adapters. No dual-runtime public compatibility mode is
+planned.
 
 ---
 
@@ -92,9 +96,20 @@ buzz-media          (Blossom/S3 media storage)
 buzz-cli            (agent-first CLI)
 buzz-admin          (operator CLI: relay membership + key generation)
 buzz-test-client    (integration test harness + manual CLI)
+
+nimino_core         (Nim product/domain core; typed operations grow by owning issue)
+    │ u32be length + strict JSON, exact v1 handshake
+    └── nimino-boundary (Rust spawn/frame/queue/timeout/cancel/kill/reap adapter)
 ```
 
 **Key architectural principle:** The relay is the single source of truth. `buzz-relay` orchestrates all subsystems by calling them directly — it imports `buzz-db`, `buzz-auth`, `buzz-pubsub`, `buzz-search`, `buzz-audit`, and `buzz-workflow`. However, those subsystems are isolated from each other: `buzz-workflow` never calls `buzz-pubsub`, `buzz-search` never calls `buzz-db`, etc. Cross-subsystem coordination happens only through the relay. In multi-community mode, the relay also owns propagation of `TenantContext`; service crates should receive community-scoped inputs rather than independently deriving tenancy from client-controlled event tags.
+
+For the cutover target, the Nim/Rust process contract is already fixed even
+though domain behavior has not yet migrated. `nimino-boundary` owns no product,
+DB, replication, sync, or cluster-authority rule. Timeout, cancellation, crash,
+or corrupt stdout recycles the stateless worker before another request. See
+[`docs/adr/nim-rust-boundary-v1.md`](docs/adr/nim-rust-boundary-v1.md) for the
+contract source, responsibility map, failure semantics, and benchmark evidence.
 
 ---
 

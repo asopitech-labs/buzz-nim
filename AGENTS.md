@@ -81,10 +81,13 @@ crates/
   buzz-admin          # Operator CLI for relay administration
   buzz-ws-client      # Shared NIP-42 WebSocket client (connect, auth, publish)
   buzz-test-client    # Integration test client and E2E test suite
+  nimino-boundary     # Rust supervisor for the versioned Nim core worker IPC
   sprig               # All-in-one harness bundling ACP, agent, and dev MCP
 
 nim/
-  nimino_core         # Nimino product/domain core package (bootstrap skeleton)
+  nimino_core         # Nimino product/domain core and supervised worker
+contracts/
+  nim-rust-boundary   # Versioned schema/error/lifecycle source of truth
 desktop/              # Tauri 2 + React 19 desktop app
 web/                  # Browser web client (repo browser, served by the relay)
 mobile/               # Flutter mobile app
@@ -103,6 +106,7 @@ cp .env.example .env      # configure local environment
 just setup                # install deps, run migrations
 just relay                # start relay at ws://localhost:3000
 just nim-ci               # Rust-independent Nim core build/check/test lane
+just nim-boundary-ci      # real Rust↔Nim contract/lifecycle/performance gate
 just ci                   # run before any PR
 ```
 

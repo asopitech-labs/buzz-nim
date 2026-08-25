@@ -6,6 +6,8 @@ desktop_dir := "desktop"
 desktop_tauri_manifest := "desktop/src-tauri/Cargo.toml"
 web_dir := "web"
 nim_core_dir := "nim/nimino_core"
+nim_boundary_bin_dir := "target/nim/nimino_boundary/bin"
+nim_boundary_cache_dir := "target/nim/nimino_boundary/cache"
 
 # Opt-in mesh-llm. Off by default so `just dev`/`just staging`/`just production`
 # skip ~420 extra crates + the llama.cpp native runtime build and stay fast to
@@ -105,15 +107,17 @@ build-release:
 # Compile the Nimino core package without linking a product binary
 nim-build:
     cd "{{nim_core_dir}}" && nim c --compileOnly:on --hints:off src/nimino_core.nim
+    cd "{{nim_core_dir}}" && nim c --compileOnly:on --hints:off src/nimino_core_worker.nim
 
 # Validate the Nimble manifest and type-check the Nimino core package
 nim-check:
     cd "{{nim_core_dir}}" && nimble check
     cd "{{nim_core_dir}}" && nim check --hints:off src/nimino_core.nim
+    cd "{{nim_core_dir}}" && nim check --hints:off src/nimino_core_worker.nim
 
 # Run the Nimino core unit tests without building Rust
 nim-test:
-    cd "{{nim_core_dir}}" && nim c -r --hints:off tests/test_nimino_core.nim
+    cd "{{nim_core_dir}}" && for test_file in tests/test_*.nim; do nim c -r --hints:off "$test_file"; done
 
 # Run the complete Rust-independent Nim lane
 nim-ci: nim-check nim-build nim-test
@@ -121,6 +125,33 @@ nim-ci: nim-check nim-build nim-test
 # Record the warm edit-to-test loop and complete Nim lane timing
 nim-baseline output="target/nim/feedback-baseline.json":
     ./scripts/measure-nim-feedback.sh "{{output}}"
+
+# Build the production Nimino core worker without test-only operations
+nim-boundary-build:
+    mkdir -p "{{nim_boundary_bin_dir}}" "{{nim_boundary_cache_dir}}/production"
+    cd "{{nim_core_dir}}" && nim c -d:release --hints:off --nimcache:"{{justfile_directory()}}/{{nim_boundary_cache_dir}}/production" --out:"{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker" src/nimino_core_worker.nim
+
+# Build deterministic failure workers used only by cross-language tests
+nim-boundary-test-workers:
+    mkdir -p "{{nim_boundary_bin_dir}}" "{{nim_boundary_cache_dir}}/test-hooks" "{{nim_boundary_cache_dir}}/mismatch"
+    cd "{{nim_core_dir}}" && nim c -d:release -d:niminoBoundaryTestHooks --hints:off --nimcache:"{{justfile_directory()}}/{{nim_boundary_cache_dir}}/test-hooks" --out:"{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker-test" src/nimino_core_worker.nim
+    cd "{{nim_core_dir}}" && nim c -d:release -d:niminoBoundaryWrongSchema --hints:off --nimcache:"{{justfile_directory()}}/{{nim_boundary_cache_dir}}/mismatch" --out:"{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker-mismatch" src/nimino_core_worker.nim
+
+# Verify checksums, ownership, and the absence of a compatibility fallback
+nim-boundary-contract:
+    ./scripts/test-nim-boundary-contract.sh
+
+# Run Rust unit contracts and real Rust↔Nim process lifecycle scenarios
+nim-boundary-test: nim-boundary-contract nim-boundary-build nim-boundary-test-workers
+    cargo test -p nimino-boundary --lib --test contract
+    NIMINO_BOUNDARY_WORKER="{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker-test" NIMINO_BOUNDARY_MISMATCH_WORKER="{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker-mismatch" NIMINO_BOUNDARY_PRODUCTION_WORKER="{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker" cargo test -p nimino-boundary --features test-hooks --test cross_language -- --ignored
+
+# Measure fixed payload and recovery scenarios against pre-declared budgets
+nim-boundary-benchmark output="target/nim/nimino-boundary-benchmark.json": nim-boundary-contract nim-boundary-build nim-boundary-test-workers
+    cargo run --release -p nimino-boundary --features test-hooks --bin boundary-bench -- "{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker" "{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker-test" "{{output}}"
+
+# Complete cross-language gate; the separate nim-ci lane remains Rust-free
+nim-boundary-ci: nim-ci nim-boundary-test nim-boundary-benchmark
 
 # Run repo lint, formatting, and repository policy checks
 check: fmt-check clippy desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check mobile-check file-size-check
@@ -326,7 +357,7 @@ desktop-e2e-pre-push: _ensure-migrations
     cd {{desktop_dir}} && pnpm build:e2e && pnpm exec playwright test --only-changed=origin/main
 
 # Run all checks suitable for CI / pre-push (no infra needed)
-ci: check test-unit nim-ci desktop-test desktop-build desktop-tauri-check desktop-tauri-test web-build mobile-test
+ci: check test-unit nim-ci nim-boundary-ci desktop-test desktop-build desktop-tauri-check desktop-tauri-test web-build mobile-test
 
 # ─── Test ─────────────────────────────────────────────────────────────────────
 

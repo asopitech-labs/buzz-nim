@@ -160,7 +160,9 @@ pending database migrations.
 
 For the standalone Nim core workflow and its current feedback baseline, see
 [`docs/development/nim-core.md`](docs/development/nim-core.md). It does not
-require Docker or a Rust build.
+require Docker or a Rust build. Changes to the versioned worker contract must
+also run `just nim-boundary-ci`; that explicit cross-language lane starts real
+Nim workers from the Rust supervisor and records its performance artifact.
 
 ### Running the Relay and Desktop App
 

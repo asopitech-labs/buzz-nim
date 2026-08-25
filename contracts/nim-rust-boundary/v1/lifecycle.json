@@ -1,0 +1,35 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "initialState": "stopped",
+  "states": ["stopped", "starting", "handshaking", "ready", "busy", "recycling", "failed"],
+  "transitions": [
+    { "from": "stopped", "on": "start", "to": "starting" },
+    { "from": "starting", "on": "processSpawned", "to": "handshaking" },
+    { "from": "handshaking", "on": "helloAccepted", "to": "ready" },
+    { "from": "handshaking", "on": "contractMismatch", "to": "recycling" },
+    { "from": "starting", "on": "startupFailure", "to": "stopped" },
+    { "from": "ready", "on": "requestAccepted", "to": "busy" },
+    { "from": "busy", "on": "responseAccepted", "to": "ready" },
+    { "from": "busy", "on": "timeout", "to": "recycling" },
+    { "from": "busy", "on": "cancel", "to": "recycling" },
+    { "from": "busy", "on": "callerDropped", "to": "recycling" },
+    { "from": "busy", "on": "shutdown", "to": "recycling" },
+    { "from": "busy", "on": "crash", "to": "recycling" },
+    { "from": "busy", "on": "protocolViolation", "to": "recycling" },
+    { "from": "recycling", "on": "workerReaped", "to": "stopped" },
+    { "from": "recycling", "on": "reapFailure", "to": "failed" },
+    { "from": "ready", "on": "shutdown", "to": "recycling" },
+    { "from": "stopped", "on": "shutdown", "to": "stopped" },
+    { "from": "failed", "on": "call", "to": "failed" }
+  ],
+  "invariants": [
+    "at most one request is active per worker",
+    "timeout or cancellation kills and reaps the worker before another request is sent",
+    "a restarted worker must exactly match version, schema hash, role, frame limit, and max-inflight during system.hello",
+    "queue overflow is rejected without mutating worker state",
+    "request and response identifiers must match",
+    "an in-flight request is never retried automatically",
+    "a replacement worker is never started unless the previous worker was reaped"
+  ]
+}

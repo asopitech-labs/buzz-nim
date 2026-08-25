@@ -1,0 +1,130 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+contract_dir="$repo_root/contracts/nim-rust-boundary/v1"
+rust_contract="$repo_root/crates/nimino-boundary/src/contract.rs"
+nim_contract="$repo_root/nim/nimino_core/src/nimino_core/boundary/protocol.nim"
+
+expected_bundle="$(sed -n 's/^# bundle-sha256: //p' "$contract_dir/schema.sha256")"
+node - "$contract_dir" <<'NODE'
+const crypto = require("node:crypto");
+const fs = require("node:fs");
+const path = require("node:path");
+const root = process.argv[2];
+const repoRoot = path.resolve(root, "../../..");
+const names = [
+  "errors.json",
+  "lifecycle.json",
+  "request.schema.json",
+  "response.schema.json",
+];
+const lines = [];
+for (const name of names) {
+  const bytes = fs.readFileSync(path.join(root, name));
+  JSON.parse(bytes.toString("utf8"));
+  const digest = crypto.createHash("sha256").update(bytes).digest("hex");
+  lines.push(`${digest}  ${name}`);
+  process.stdout.write(`${name}: OK\n`);
+}
+const manifest = fs.readFileSync(path.join(root, "schema.sha256"), "utf8");
+const expectedLines = manifest
+  .split(/\r?\n/)
+  .filter((line) => line && !line.startsWith("#"));
+if (expectedLines.join("\n") !== lines.join("\n")) {
+  throw new Error("boundary schema file checksum mismatch");
+}
+const expectedBundle = manifest.match(/^# bundle-sha256: ([0-9a-f]{64})$/m)?.[1];
+const actualBundle = crypto
+  .createHash("sha256")
+  .update(`${lines.join("\n")}\n`)
+  .digest("hex");
+if (expectedBundle !== actualBundle) {
+  throw new Error("boundary schema bundle hash mismatch");
+}
+
+function valid(schema, value) {
+  if (schema.oneOf) {
+    if (schema.oneOf.filter((branch) => valid(branch, value)).length !== 1) return false;
+  }
+  if (Object.hasOwn(schema, "const") && JSON.stringify(value) !== JSON.stringify(schema.const)) {
+    return false;
+  }
+  if (schema.enum && !schema.enum.some((item) => JSON.stringify(item) === JSON.stringify(value))) {
+    return false;
+  }
+  if (schema.type === "object" || schema.properties) {
+    if (value === null || Array.isArray(value) || typeof value !== "object") return false;
+    if (schema.required?.some((key) => !Object.hasOwn(value, key))) return false;
+    if (schema.additionalProperties === false && Object.keys(value).some((key) => !Object.hasOwn(schema.properties ?? {}, key))) return false;
+    return Object.entries(schema.properties ?? {}).every(([key, child]) => !Object.hasOwn(value, key) || valid(child, value[key]));
+  }
+  if (schema.type === "array") {
+    if (!Array.isArray(value)) return false;
+    return !schema.contains || value.some((item) => valid(schema.contains, item));
+  }
+  if (schema.type === "string" && typeof value !== "string") return false;
+  if (schema.type === "integer" && !Number.isInteger(value)) return false;
+  if (typeof value === "string") {
+    if (schema.minLength !== undefined && value.length < schema.minLength) return false;
+    if (schema.maxLength !== undefined && value.length > schema.maxLength) return false;
+    if (schema.pattern && !(new RegExp(schema.pattern)).test(value)) return false;
+  }
+  return true;
+}
+
+for (const [schemaName, fixtureName] of [
+  ["request.schema.json", "echo.request.json"],
+  ["response.schema.json", "echo.response.json"],
+  ["response.schema.json", "unknown-operation.response.json"],
+]) {
+  const schema = JSON.parse(fs.readFileSync(path.join(root, schemaName), "utf8"));
+  const fixture = JSON.parse(fs.readFileSync(path.join(root, "fixtures", fixtureName), "utf8"));
+  if (!valid(schema, fixture)) throw new Error(`${fixtureName} does not match ${schemaName}`);
+  process.stdout.write(`${fixtureName}: schema OK\n`);
+}
+
+const manifestText = fs.readFileSync(path.join(repoRoot, "crates/nimino-boundary/Cargo.toml"), "utf8");
+const dependencyBlock = manifestText.match(/^\[dependencies\]\n([\s\S]*?)(?=^\[|\z)/m)?.[1] ?? "";
+const allowedDependencies = new Set(["serde", "serde_json", "thiserror", "tokio", "tokio-util", "uuid"]);
+for (const line of dependencyBlock.split(/\r?\n/)) {
+  const dependency = line.match(/^([A-Za-z0-9_-]+)\s*=/)?.[1];
+  if (dependency && !allowedDependencies.has(dependency)) {
+    throw new Error(`boundary adapter dependency is not allowed: ${dependency}`);
+  }
+}
+NODE
+
+grep -Fq "$expected_bundle" "$rust_contract"
+grep -Fq "$expected_bundle" "$nim_contract"
+grep -Fq 'nimino.core.boundary' "$rust_contract"
+grep -Fq 'nimino.core.boundary' "$nim_contract"
+
+if rg -n '^\s*(use|extern crate)\s+(buzz_|sqlx|redis|nostr|iroh|chirps)' \
+  "$repo_root/crates/nimino-boundary/src" --glob '*.rs'; then
+  echo "boundary adapter imports a forbidden domain/storage/cluster owner" >&2
+  exit 1
+fi
+
+if rg -ni 'fallback|legacy|dual.?runtime' \
+  "$repo_root/crates/nimino-boundary/src" --glob '*.rs'; then
+  echo "boundary adapter contains a compatibility path" >&2
+  exit 1
+fi
+
+if rg -n 'pub fn new\(' "$rust_contract"; then
+  echo "BoundaryRequest must expose typed constructors, not a generic operation/value constructor" >&2
+  exit 1
+fi
+
+if rg -n 'println!|print!' \
+  "$repo_root/crates/nimino-boundary/src/lib.rs" \
+  "$repo_root/crates/nimino-boundary/src/codec.rs" \
+  "$repo_root/crates/nimino-boundary/src/contract.rs" \
+  "$repo_root/crates/nimino-boundary/src/error.rs" \
+  "$repo_root/crates/nimino-boundary/src/runtime.rs"; then
+  echo "library code must not write to the worker protocol stream" >&2
+  exit 1
+fi
+
+echo "Nim/Rust boundary contract verified"
