@@ -1,14 +1,14 @@
 {
   "schemaHash": "3b799b4bf7bf4fb3720de2103cf37642c781ea3746de5a98ddd9f04a5293e233",
-  "measuredAtUnixSeconds": 1787634488,
+  "measuredAtUnixSeconds": 1787638670,
   "os": "linux",
   "arch": "x86_64",
   "coldStart": {
     "samples": 10,
-    "p50Ms": 21.560907,
-    "p95Ms": 49.404717,
-    "p99Ms": 49.404717,
-    "throughputPerSecond": 46.37139563024903
+    "p50Ms": 0.62192,
+    "p95Ms": 0.959995,
+    "p99Ms": 0.959995,
+    "throughputPerSecond": 1532.217164203117
   },
   "coldStartP95BudgetMs": 100.0,
   "payloads": [
@@ -16,17 +16,17 @@
       "payloadBytes": 1024,
       "ipc": {
         "samples": 200,
-        "p50Ms": 0.5443619999999999,
-        "p95Ms": 2.28676,
-        "p99Ms": 4.345937999999999,
-        "throughputPerSecond": 1211.028563434745
+        "p50Ms": 0.086282,
+        "p95Ms": 0.113513,
+        "p99Ms": 0.13874,
+        "throughputPerSecond": 11234.447241884222
       },
       "serdeOnly": {
         "samples": 200,
-        "p50Ms": 0.004621,
-        "p95Ms": 0.007987,
-        "p99Ms": 0.086837,
-        "throughputPerSecond": 101533.4598440243
+        "p50Ms": 0.001092,
+        "p95Ms": 0.001093,
+        "p99Ms": 0.001412,
+        "throughputPerSecond": 910034.0352729192
       },
       "p99BudgetMs": 25.0,
       "passed": true
@@ -35,17 +35,17 @@
       "payloadBytes": 16384,
       "ipc": {
         "samples": 100,
-        "p50Ms": 2.639714,
-        "p95Ms": 8.015597,
-        "p99Ms": 13.993062,
-        "throughputPerSecond": 290.0526546506515
+        "p50Ms": 0.357319,
+        "p95Ms": 0.387906,
+        "p99Ms": 0.477192,
+        "throughputPerSecond": 2748.121198850285
       },
       "serdeOnly": {
         "samples": 100,
-        "p50Ms": 0.048985,
-        "p95Ms": 0.185508,
-        "p99Ms": 1.2694150000000002,
-        "throughputPerSecond": 12010.057221917634
+        "p50Ms": 0.025638,
+        "p95Ms": 0.02663,
+        "p99Ms": 0.047368,
+        "throughputPerSecond": 38524.89709999984
       },
       "p99BudgetMs": 75.0,
       "passed": true
@@ -54,17 +54,17 @@
       "payloadBytes": 262144,
       "ipc": {
         "samples": 30,
-        "p50Ms": 39.646465,
-        "p95Ms": 60.969153,
-        "p99Ms": 67.376433,
-        "throughputPerSecond": 23.375849119927334
+        "p50Ms": 4.913035,
+        "p95Ms": 5.103168,
+        "p99Ms": 6.492689,
+        "throughputPerSecond": 200.7560701123979
       },
       "serdeOnly": {
         "samples": 30,
-        "p50Ms": 0.841437,
-        "p95Ms": 2.1557880000000003,
-        "p99Ms": 6.18315,
-        "throughputPerSecond": 832.9612310411777
+        "p50Ms": 0.301233,
+        "p95Ms": 0.35161699999999996,
+        "p99Ms": 0.515254,
+        "throughputPerSecond": 3156.6792491901538
       },
       "p99BudgetMs": 250.0,
       "passed": true
@@ -72,17 +72,17 @@
   ],
   "crashToReady": {
     "samples": 10,
-    "p50Ms": 14.668322,
-    "p95Ms": 29.95509,
-    "p99Ms": 29.95509,
-    "throughputPerSecond": 62.90602892953912
+    "p50Ms": 0.90981,
+    "p95Ms": 0.945976,
+    "p99Ms": 0.945976,
+    "throughputPerSecond": 1102.0013556820677
   },
   "cancelToReady": {
     "samples": 10,
-    "p50Ms": 28.385762,
-    "p95Ms": 44.083408999999996,
-    "p99Ms": 44.083408999999996,
-    "throughputPerSecond": 35.745014554351194
+    "p50Ms": 12.047626,
+    "p95Ms": 12.183766,
+    "p99Ms": 12.183766,
+    "throughputPerSecond": 82.90214889416617
   },
   "recoveryP99BudgetMs": 250.0,
   "passed": true

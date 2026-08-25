@@ -112,16 +112,17 @@ Budgets were encoded in `boundary-bench` before the first accepted run:
 | 256 KiB warm round-trip p99 | ≤ 250 ms |
 | crash or cancel through next ready response p99 | ≤ 250 ms |
 
-The Linux x86_64 reference run passed every gate:
+GitHub Actions run `32816181597` produced the Linux x86_64 reference and passed
+every gate:
 
 | Scenario | Samples | Result |
 |---|---:|---:|
-| cold spawn + handshake p95 | 10 | 49.405 ms |
-| 1 KiB warm p50 / p99 | 200 | 0.544 / 4.346 ms |
-| 16 KiB warm p50 / p99 | 100 | 2.640 / 13.993 ms |
-| 256 KiB warm p50 / p99 | 30 | 39.646 / 67.376 ms |
-| crash through next ready p50 / p99 | 10 | 14.668 / 29.955 ms |
-| cancel through next ready p50 / p99 | 10 | 28.386 / 44.083 ms |
+| cold spawn + handshake p95 | 10 | 0.960 ms |
+| 1 KiB warm p50 / p99 | 200 | 0.086 / 0.139 ms |
+| 16 KiB warm p50 / p99 | 100 | 0.357 / 0.477 ms |
+| 256 KiB warm p50 / p99 | 30 | 4.913 / 6.493 ms |
+| crash through next ready p50 / p99 | 10 | 0.910 / 0.946 ms |
+| cancel through next ready p50 / p99 | 10 | 12.048 / 12.184 ms |
 
 Cold-start and payload measurements use the production worker. Failure recovery
 uses the test-hook worker and records ten samples per scenario. The benchmark
