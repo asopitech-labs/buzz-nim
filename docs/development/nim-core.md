@@ -33,10 +33,28 @@ failure-lifecycle, and performance gate and therefore invokes Rust.
 | `just nim-boundary-test` | Run unit and real Rust↔Nim process scenarios |
 | `just nim-boundary-benchmark` | Reproduce fixed payload and recovery budgets |
 | `just nim-boundary-ci` | Run the complete versioned boundary gate |
+| `just ci-lanes-contract` | Verify path ownership and the absent Mobile lane |
 
 Nim still emits C and therefore needs a C compiler on the host. The Nim-only
 commands need no Rust toolchain or Buzz service; boundary commands also use the
 pinned Rust toolchain but still need no database, relay, Redis, or container.
+
+## CI lane ownership
+
+Pull requests use separate path filters for fast Nim feedback and integrated
+boundary proof. The filters and default git hooks are executable policy, checked
+by `just ci-lanes-contract`.
+
+| Change | Required lane | Cargo work |
+|---|---|---|
+| Nim domain module or unit test | `Nim Core` (`just nim-ci`) | none |
+| Boundary Nim protocol/worker or `nimino-boundary` adapter | `Nim Core` when Nim changed, plus `Nim/Rust Boundary` | focused boundary crate only |
+| Other Rust workspace code | Rust lint/test/integration lanes | normal Rust gates |
+| Mobile path | no product CI lane | none |
+
+The `Nim/Rust Boundary` job owns the cross-language lifecycle tests and uploads
+the performance artifact. The `Nim Core` job never invokes Cargo. Mobile source
+removal remains a separate physical-deletion issue; it is not kept alive by CI.
 
 ## Toolchain and package layout
 

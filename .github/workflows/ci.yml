@@ -24,10 +24,10 @@ jobs:
     outputs:
       rust: ${{ steps.filter.outputs.rust }}
       nim: ${{ steps.filter.outputs.nim }}
+      boundary: ${{ steps.filter.outputs.boundary }}
       desktop: ${{ steps.filter.outputs.desktop }}
       desktop-rust: ${{ steps.filter.outputs.desktop-rust }}
       web: ${{ steps.filter.outputs.web }}
-      mobile: ${{ steps.filter.outputs.mobile }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -37,6 +37,7 @@ jobs:
         id: filter
         with:
           token: ''
+          predicate-quantifier: 'some-with-excludes'
           filters: |
             nim:
               - 'nim/**'
@@ -49,17 +50,31 @@ jobs:
               - 'Justfile'
               - 'scripts/measure-nim-feedback.sh'
               - 'scripts/test-nim-bootstrap-contract.sh'
+              - '.github/workflows/ci.yml'
+            boundary:
+              - 'nim/nimino_core/nimino_core.nimble'
+              - 'nim/nimino_core/nim.cfg'
+              - 'nim/nimino_core/src/nimino_core.nim'
+              - 'nim/nimino_core/src/nimino_core_worker.nim'
+              - 'nim/nimino_core/src/nimino_core/boundary/**'
+              - 'nim/nimino_core/tests/test_boundary_protocol.nim'
+              - 'hermit-packages/nim.hcl'
+              - 'bin/hermit.hcl'
+              - 'bin/.nim-*.pkg'
+              - 'bin/nim*'
+              - 'bin/atlas'
+              - 'bin/testament'
+              - 'Justfile'
               - 'scripts/test-nim-boundary-contract.sh'
               - 'contracts/nim-rust-boundary/**'
               - 'crates/nimino-boundary/**'
-              - 'docs/development/nim-core.md'
-              - 'docs/adr/nim-rust-boundary-v1.md'
-              - 'docs/benchmarks/nim-rust-boundary-linux-x86_64.json'
               - 'Cargo.toml'
               - 'Cargo.lock'
+              - 'rust-toolchain.toml'
               - '.github/workflows/ci.yml'
             rust:
               - 'crates/**'
+              - '!crates/nimino-boundary/**'
               - 'migrations/**'
               - 'schema/**'
               - 'Cargo.toml'
@@ -84,18 +99,6 @@ jobs:
             web:
               - 'web/**'
               - 'pnpm-lock.yaml'
-            mobile:
-              - 'mobile/**'
-              - 'scripts/mobile-release.sh'
-              - 'scripts/mobile-worktree-overrides.sh'
-              - 'scripts/mobile-worktree-clean.sh'
-              - 'scripts/publish-mobile-release-candidate.sh'
-              - 'scripts/release-rulesets.sh'
-              - 'scripts/test-mobile-release-contract.sh'
-              - 'scripts/test-mobile-release-candidate-publisher.sh'
-              - 'scripts/test-mobile-worktree-overrides.sh'
-              - '.github/workflows/mobile-release-candidate.yml'
-              - '.github/workflows/ci.yml'
       - name: Release workflow source contract
         run: scripts/test-release-ref-contract.sh
       - name: Desktop release candidate contract
@@ -104,12 +107,8 @@ jobs:
         run: |
           scripts/test-oss-desktop-promotion.sh
           scripts/test-oss-desktop-promotion-behavior.sh
-      - name: Mobile release contract
-        run: |
-          scripts/test-mobile-release-contract.sh
-          scripts/test-mobile-release-candidate-publisher.sh
-      - name: Mobile worktree identity contract
-        run: scripts/test-mobile-worktree-overrides.sh
+      - name: CI lane contract
+        run: just ci-lanes-contract
       - name: File size policy
         run: just file-size-check
 
@@ -130,15 +129,35 @@ jobs:
           nimble --version
       - name: Verify Nim bootstrap contract
         run: scripts/test-nim-bootstrap-contract.sh
-      - name: Record Nim feedback baseline
+      - name: Verify Nim core and record feedback baseline
         run: scripts/measure-nim-feedback.sh "$RUNNER_TEMP/nim-feedback-baseline.json"
-      - name: Verify Nim/Rust boundary lifecycle and performance
-        run: just nim-boundary-ci
       - name: Upload Nim feedback baseline
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: nim-feedback-baseline
           path: ${{ runner.temp }}/nim-feedback-baseline.json
+
+  boundary:
+    name: Nim/Rust Boundary
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [changes]
+    if: github.event_name == 'push' || needs.changes.outputs.boundary == 'true'
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: cashapp/activate-hermit@cea9af7913204a965fd488637a8d1811bba2e616 # v1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          key: nim-boundary
+          save-if: ${{ github.event_name != 'pull_request' }}
+      - name: Boundary Rust format
+        run: cargo fmt -p nimino-boundary -- --check
+      - name: Boundary Rust clippy
+        run: cargo clippy -p nimino-boundary --all-targets --all-features -- -D warnings
+      - name: Verify cross-language lifecycle and performance
+        run: just nim-boundary-ci
       - name: Upload Nim/Rust boundary benchmark
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -899,71 +918,12 @@ jobs:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
           key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
 
-  mobile:
-    name: Mobile
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    needs: [changes]
-    if: github.event_name == 'push' || needs.changes.outputs.mobile == 'true'
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          fetch-depth: 2
-      - uses: cashapp/activate-hermit@cea9af7913204a965fd488637a8d1811bba2e616 # v1
-      - name: Compute Hermit cache key
-        id: hermit-bin-hash
-        run: |
-          hash="$(find ./bin ! -type d | sort | xargs openssl sha256 | openssl sha256 -r | cut -d' ' -f1)"
-          echo "hash=$hash" >> "$GITHUB_OUTPUT"
-      - name: Restore Hermit package cache
-        id: hermit-cache
-        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
-        with:
-          path: ~/.cache/hermit/pkg
-          key: ${{ runner.os }}-hermit-cache-${{ steps.hermit-bin-hash.outputs.hash }}
-          restore-keys: ${{ runner.os }}-hermit-cache-
-      - name: Prime Flutter SDK
-        run: flutter --version
-      - name: Save Hermit package cache
-        if: always() && steps.hermit-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
-        continue-on-error: true
-        with:
-          path: ~/.cache/hermit/pkg
-          key: ${{ runner.os }}-hermit-cache-${{ steps.hermit-bin-hash.outputs.hash }}
-      - name: Restore pub cache
-        id: pub-cache
-        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
-        with:
-          path: ~/.pub-cache
-          key: pub-${{ runner.os }}-${{ hashFiles('mobile/pubspec.lock') }}
-          restore-keys: pub-${{ runner.os }}-
-      - name: Install dependencies
-        run: cd mobile && flutter pub get
-      - name: Save pub cache
-        if: always() && steps.pub-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
-        continue-on-error: true
-        with:
-          path: ~/.pub-cache
-          key: pub-${{ runner.os }}-${{ hashFiles('mobile/pubspec.lock') }}
-      - name: Format check
-        run: cd mobile && dart format --output=none --set-exit-if-changed .
-      - name: Analyze
-        run: cd mobile && flutter analyze
-      - name: Test
-        run: cd mobile && flutter test
-      - name: Build Android debug APK
-        run: just mobile-build-android
-
   security:
     name: Security
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [changes]
-    if: github.event_name == 'push' || needs.changes.outputs.rust == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.rust == 'true' || needs.changes.outputs.boundary == 'true'
     permissions:
       contents: read
     steps:
@@ -982,11 +942,11 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Check for dead API token references in client code
         run: |
-          # Fail if dead API token patterns reappear in desktop, mobile, docs, or config.
+          # Fail if dead API token patterns reappear in active client code or config.
           # Relay crates are excluded — they still use token auth internally.
           PATTERNS='TokenScope|MintTokenResponse|hasApiToken|spr_tok_'
-          PATHS='desktop/src/ desktop/tests/ mobile/test/ mobile/lib/ .env.example'
-          EXCLUDES='--exclude-dir=node_modules --exclude-dir=.dart_tool'
+          PATHS='desktop/src/ desktop/tests/ .env.example'
+          EXCLUDES='--exclude-dir=node_modules'
           if grep -rn $EXCLUDES -E "$PATTERNS" $PATHS 2>/dev/null; then
             echo "::error::Dead API token references found in client code. See above."
             exit 1

@@ -151,23 +151,26 @@ nim-boundary-benchmark output="target/nim/nimino-boundary-benchmark.json": nim-b
     cargo run --release -p nimino-boundary --features test-hooks --bin boundary-bench -- "{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker" "{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker-test" "{{output}}"
 
 # Complete cross-language gate; the separate nim-ci lane remains Rust-free
-nim-boundary-ci: nim-ci nim-boundary-test nim-boundary-benchmark
+nim-boundary-ci: nim-boundary-test nim-boundary-benchmark
 
 # Verify the pinned Chirps dependency and its narrow Rust API boundary
 chirps-contract:
     node scripts/check-chirps-api-contract.mjs
 
-# Run repo lint, formatting, and repository policy checks
-check: fmt-check clippy chirps-contract desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check mobile-check file-size-check
+# Verify path ownership and the absence of a Mobile product lane
+ci-lanes-contract:
+    node scripts/test-ci-lanes.mjs
 
-# Run the repository-wide differential file-size ratchet and its policy tests.
+# Run repo lint, formatting, and repository policy checks
+check: fmt-check clippy chirps-contract ci-lanes-contract desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check file-size-check
+
+# Run the active-product differential file-size ratchet and its policy tests.
 # The ratchet inspects only files changed from the merge base, so this stays
 # cheap enough to run unconditionally without duplicating path filters.
 file-size-check:
     node --test scripts/check-file-sizes-core.test.mjs
     node desktop/scripts/check-file-sizes.mjs
     node web/scripts/check-file-sizes.mjs
-    node mobile/scripts/check-file-sizes.mjs
 
 # Format all Rust code
 fmt:
@@ -218,10 +221,10 @@ desktop-tauri-fmt-check:
     cargo fmt --manifest-path {{desktop_tauri_manifest}} --all -- --check
 
 # Format all code (Rust + Tauri Rust + Dart)
-fmt-all: fmt desktop-tauri-fmt mobile-fmt
+fmt-all: fmt desktop-tauri-fmt
 
 # Fix all formatting and lint issues
-fix-all: fmt desktop-tauri-fmt desktop-fix web-fix mobile-fix
+fix-all: fmt desktop-tauri-fmt desktop-fix web-fix
 
 # Ensure sidecar placeholder binaries exist (Tauri validates externalBin at compile time)
 # Sidecar binary list must stay in sync with desktop-release-build below.
@@ -361,7 +364,7 @@ desktop-e2e-pre-push: _ensure-migrations
     cd {{desktop_dir}} && pnpm build:e2e && pnpm exec playwright test --only-changed=origin/main
 
 # Run all checks suitable for CI / pre-push (no infra needed)
-ci: check test-unit nim-ci nim-boundary-ci desktop-test desktop-build desktop-tauri-check desktop-tauri-test web-build mobile-test
+ci: check test-unit nim-ci nim-boundary-ci desktop-test desktop-build desktop-tauri-check desktop-tauri-test web-build
 
 # ─── Test ─────────────────────────────────────────────────────────────────────
 

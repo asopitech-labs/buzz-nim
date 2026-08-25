@@ -119,21 +119,22 @@ See CONTRIBUTING.md for full setup details and dependency requirements.
 ## Quality Gates
 
 Run `just ci` before every PR — it runs repository-wide formatting, lint,
-and static checks; Nim, Rust, Tauri, desktop, and mobile tests; and desktop and
-web builds. Clippy passing does not mean fmt passes; run both. For Nim-only
+and static checks; Nim, Rust, Tauri, and desktop tests; and desktop and web
+builds. Clippy passing does not mean fmt passes; run both. For Nim-only
 changes, `just nim-ci` is the fast lane and must not invoke a Rust build; see
-`docs/development/nim-core.md`.
+`docs/development/nim-core.md`. Boundary changes run the separate focused
+`just nim-boundary-ci` lane. Mobile is not a product CI or git-hook lane.
 
 Run `just test` for integration tests if you touched `buzz-relay`,
 `buzz-db`, or `buzz-auth` — these require a running Postgres and Redis.
 
 **Pre-commit hooks** are installed automatically by `just setup` and auto-fix
 formatting via `stage_fixed`. Pre-commit runs fix variants in parallel (Rust
-fmt, Tauri Rust fmt, desktop biome fix, web biome fix, mobile dart format).
+fmt, Tauri Rust fmt, desktop biome fix, web biome fix).
 Auto-fixable issues are fixed and re-staged; unfixable lint issues block the
-commit. **Pre-push hooks** run the repository-wide differential file-size gate,
-clippy (workspace + Tauri), desktop TypeScript typechecking (`tsc --noEmit`),
-and fast unit tests in parallel (Rust, desktop JS, Tauri Rust, mobile Flutter)
+commit. **Pre-push hooks** run the active-product differential file-size gate,
+focused Nim and Nim/Rust boundary gates, desktop TypeScript typechecking
+(`tsc --noEmit`), and fast unit tests in parallel (Rust, desktop JS, Tauri Rust)
 — no overlap with pre-commit. Builds are CI-only. Run `just fix-all` to auto-fix
 all formatting in one shot. Run `just ci` for the full local gate. Run `just
 hooks` to re-install hooks after env changes. Each globbed pre-push lane is
