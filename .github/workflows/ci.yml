@@ -113,6 +113,8 @@ jobs:
         run: just naming-contract
       - name: GUI surface contract
         run: just gui-surface-contract
+      - name: WSL support contract
+        run: just wsl-support-contract
       - name: File size policy
         run: just file-size-check
 
