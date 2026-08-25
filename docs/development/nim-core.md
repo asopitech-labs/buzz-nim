@@ -5,8 +5,9 @@ available, and the versioned Nim/Rust worker boundary is accepted and tested.
 
 This lane is the development foundation for moving high-change product and
 domain policy into Nim. It deliberately contains no migrated domain behavior
-or Chirps integration. The process boundary contains transport and lifecycle
-mechanics only; later focused issues own each typed domain operation.
+or Chirps runtime integration. A separate `nimino-chirps` package pins and
+guards the Rust dependency; the process boundary contains transport and
+lifecycle mechanics only. Later focused issues own each typed operation.
 
 ## Quick start
 
@@ -58,6 +59,7 @@ nim/nimino_core/
   tests/                      package and boundary unit tests
 contracts/nim-rust-boundary/  machine-readable versioned source of truth
 crates/nimino-boundary/       Rust process/framing lifecycle adapter only
+crates/nimino-chirps/         sole direct Alopex Chirps dependency boundary
 ```
 
 Compiler output is written below ignored `target/nim/`; it does not dirty the

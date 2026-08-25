@@ -100,6 +100,8 @@ buzz-test-client    (integration test harness + manual CLI)
 nimino_core         (Nim product/domain core; typed operations grow by owning issue)
     │ u32be length + strict JSON, exact v1 handshake
     └── nimino-boundary (Rust spawn/frame/queue/timeout/cancel/kill/reap adapter)
+
+nimino-chirps       (sole direct Alopex Chirps dependency; no product policy)
 ```
 
 **Key architectural principle:** The relay is the single source of truth. `buzz-relay` orchestrates all subsystems by calling them directly — it imports `buzz-db`, `buzz-auth`, `buzz-pubsub`, `buzz-search`, `buzz-audit`, and `buzz-workflow`. However, those subsystems are isolated from each other: `buzz-workflow` never calls `buzz-pubsub`, `buzz-search` never calls `buzz-db`, etc. Cross-subsystem coordination happens only through the relay. In multi-community mode, the relay also owns propagation of `TenantContext`; service crates should receive community-scoped inputs rather than independently deriving tenancy from client-controlled event tags.
@@ -110,6 +112,16 @@ DB, replication, sync, or cluster-authority rule. Timeout, cancellation, crash,
 or corrupt stdout recycles the stateless worker before another request. See
 [`docs/adr/nim-rust-boundary-v1.md`](docs/adr/nim-rust-boundary-v1.md) for the
 contract source, responsibility map, failure semantics, and benchmark evidence.
+
+`nimino-chirps` is the only workspace package permitted to depend directly on
+Alopex Chirps. The registry release is pinned to `=0.6.3`, default and optional
+features are disabled, and the lock checksum is part of the versioned contract.
+The wrapper may use only node identity, configuration, membership, and secure
+user-message primitives; Raft, file transfer, snapshots, TSO, durable profiles,
+and memory policy are rejected by `just chirps-contract`. Runtime composition is
+owned by the focused node-lifecycle and messaging-adapter work, not this pin.
+Chirps v0.6.3 still resolves its own unconditional Raft/file-transfer packages;
+their presence in `Cargo.lock` is not an authorized Nimino API or responsibility.
 
 ---
 

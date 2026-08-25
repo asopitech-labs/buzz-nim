@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "wrapperCrate": "nimino-chirps",
+  "upstream": {
+    "package": "alopex-chirps",
+    "version": "0.6.3",
+    "requirement": "=0.6.3",
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "checksum": "a1e1ccd0b15c3c42cdca9cbdc8d6ce781195fabf5c7552d938ee7876fd2eda48",
+    "defaultFeatures": false,
+    "features": []
+  },
+  "allowedTopLevelApi": [
+    "Frame",
+    "MeshHandle",
+    "NodeConfig",
+    "NodeId",
+    "UserMessage",
+    "start"
+  ],
+  "forbiddenDirectPackages": [
+    "alopex-chirps-core",
+    "alopex-chirps-file-transfer",
+    "alopex-chirps-gossip-swim",
+    "alopex-chirps-raft-storage",
+    "alopex-chirps-transport-quic",
+    "alopex-chirps-wire",
+    "openraft"
+  ],
+  "forbiddenMethods": [
+    "attach_raft_manager",
+    "attach_tso_service",
+    "broadcast_enveloped",
+    "broadcast_with_profile",
+    "config",
+    "file_transfer",
+    "get_memory_stats",
+    "incarnation",
+    "metrics",
+    "raft_transport",
+    "resize_memory_budget",
+    "send_enveloped",
+    "send_to_with_profile",
+    "snapshot",
+    "trigger_gc"
+  ],
+  "forbiddenVariants": ["Durable", "FileTransfer", "Raft", "RaftSnapshot"]
+}

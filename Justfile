@@ -153,8 +153,12 @@ nim-boundary-benchmark output="target/nim/nimino-boundary-benchmark.json": nim-b
 # Complete cross-language gate; the separate nim-ci lane remains Rust-free
 nim-boundary-ci: nim-ci nim-boundary-test nim-boundary-benchmark
 
+# Verify the pinned Chirps dependency and its narrow Rust API boundary
+chirps-contract:
+    node scripts/check-chirps-api-contract.mjs
+
 # Run repo lint, formatting, and repository policy checks
-check: fmt-check clippy desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check mobile-check file-size-check
+check: fmt-check clippy chirps-contract desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check mobile-check file-size-check
 
 # Run the repository-wide differential file-size ratchet and its policy tests.
 # The ratchet inspects only files changed from the merge base, so this stays
