@@ -169,12 +169,16 @@ gui-surface-contract:
 wsl-support-contract:
     node scripts/check-wsl-support-contract.mjs
 
+# Verify complete Mobile-tree/reference classification and NIP-AB ownership
+removed-client-contract:
+    node scripts/check-mobile-removal-contract.mjs
+
 # Verify path ownership and the absence of a Mobile product lane
 ci-lanes-contract:
     node scripts/test-ci-lanes.mjs
 
 # Run repo lint, formatting, and repository policy checks
-check: fmt-check clippy chirps-contract naming-contract gui-surface-contract wsl-support-contract ci-lanes-contract desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check file-size-check
+check: fmt-check clippy chirps-contract naming-contract gui-surface-contract wsl-support-contract removed-client-contract ci-lanes-contract desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check file-size-check
 
 # Run the active-product differential file-size ratchet and its policy tests.
 # The ratchet inspects only files changed from the merge base, so this stays
