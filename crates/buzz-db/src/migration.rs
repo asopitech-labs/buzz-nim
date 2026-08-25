@@ -640,7 +640,7 @@ mod tests {
         let mut migrations: Vec<_> = MIGRATOR.iter().collect();
         migrations.sort_by_key(|migration| migration.version);
 
-        assert_eq!(migrations.len(), 32);
+        assert_eq!(migrations.len(), 33);
         assert_eq!(migrations[0].version, 1);
         assert_eq!(&*migrations[0].description, "initial schema");
         assert!(migrations[0]
@@ -808,8 +808,8 @@ mod tests {
         assert!(migrations[10].sql.as_str().contains("tag->>0 = 'd'"));
         assert!(migrations[10].sql.as_str().contains(") = 1"));
 
-        // Push leases and their durable outbox are relay-owned and structurally
-        // community-scoped; the public gateway remains stateless.
+        // Applied migration history is immutable even after the Mobile push
+        // product is retired by migration 0033.
         assert_eq!(migrations[11].version, 12);
         assert!(migrations[11]
             .sql
@@ -819,42 +819,18 @@ mod tests {
             .sql
             .as_str()
             .contains("CREATE TABLE push_wake_outbox"));
-        assert!(migrations[11]
-            .sql
-            .as_str()
-            .contains("PRIMARY KEY (community_id, author, installation_id)"));
-        assert!(!migrations[0].sql.as_str().contains("push_leases"));
-
         assert_eq!(migrations[12].version, 13);
         assert!(migrations[12]
             .sql
             .as_str()
             .contains("ADD COLUMN endpoint_enabled"));
-
-        // Kind 30350 is author-only encrypted data, so its ciphertext is never
-        // indexed for NIP-50 search. Preserve the 0001 checksum and extend the
-        // generated expression additively.
         assert_eq!(migrations[13].version, 14);
-        assert!(migrations[13].sql.as_str().contains("30350"));
-        assert!(migrations[13].sql.as_str().contains("search_tsv"));
-        assert!(!migrations[0].sql.as_str().contains("30350"));
-
-        // Public push-gateway authority is intentionally deployment-global and
-        // durable: immediate revocation and hostile-relay admission cannot be
-        // honestly provided by a stateless gateway.
+        assert!(migrations[13].sql.as_str().contains("kind = 30350"));
         assert_eq!(migrations[14].version, 15);
         assert!(migrations[14]
             .sql
             .as_str()
             .contains("CREATE TABLE push_gateway_installations"));
-        assert!(migrations[14]
-            .sql
-            .as_str()
-            .contains("push_gateway_delegations"));
-        assert!(migrations[14]
-            .sql
-            .as_str()
-            .contains("_operator_global_tables"));
 
         // Community archival and product feedback landed concurrently. Keep
         // both additive migrations in a single, unambiguous sequence.
@@ -881,14 +857,15 @@ mod tests {
             .contains("('product_feedback', 'deployment product inbox"));
         assert!(!migrations[0].sql.as_str().contains("product_feedback"));
 
-        // Matching is driven from a parent-table trigger so all partition and
-        // internal insertion paths share the same crash-safe allowlist seam.
         assert_eq!(migrations[17].version, 18);
-        let matcher = migrations[17].sql.as_str();
-        assert!(matcher.contains("CREATE TABLE push_match_queue"));
-        assert!(matcher.contains("AFTER INSERT ON events"));
-        assert!(matcher.contains("NEW.kind IN (7, 9, 1059, 40007, 46010)"));
-        assert!(!migrations[0].sql.as_str().contains("push_match_queue"));
+        assert!(migrations[17]
+            .sql
+            .as_str()
+            .contains("CREATE TABLE push_match_queue"));
+        assert!(migrations[17]
+            .sql
+            .as_str()
+            .contains("CREATE TRIGGER events_enqueue_push_match"));
 
         // Mesh status is a heartbeat, not an audit stream. The additive
         // migration removes accumulated soft-deleted payloads and covers old
@@ -933,15 +910,11 @@ mod tests {
         assert!(ttl_refresh.contains("clock_timestamp()"));
         assert!(ttl_refresh.contains("NEW.kind <> 9007"));
 
-        // T1b push gate: the match-queue trigger only enqueues when the
-        // community has an eligible lease, ordered against lease activations
-        // through the shared/exclusive per-community advisory lock.
         assert_eq!(migrations[22].version, 23);
-        let push_gate = migrations[22].sql.as_str();
-        assert!(push_gate.contains("CREATE OR REPLACE FUNCTION enqueue_push_match_job"));
-        assert!(push_gate.contains("pg_advisory_xact_lock_shared"));
-        assert!(push_gate.contains("'buzz_push_gate:' || NEW.community_id::text"));
-        assert!(push_gate.contains("endpoint_enabled"));
+        assert!(migrations[22]
+            .sql
+            .as_str()
+            .contains("CREATE OR REPLACE FUNCTION enqueue_push_match_job"));
 
         // T1a repair: the TTL refresh trigger synchronizes on a shared
         // per-channel advisory lock instead of FOR UPDATE on the channel row,
@@ -1081,6 +1054,32 @@ mod tests {
             extract_roster_fence(roster_fence),
             extract_roster_fence(desired_schema)
         );
+
+        assert_eq!(migrations[32].version, 33);
+        let mobile_push_removal = migrations[32].sql.as_str();
+        assert!(mobile_push_removal.contains("DROP TRIGGER IF EXISTS events_enqueue_push_match"));
+        assert!(mobile_push_removal.contains("DROP FUNCTION IF EXISTS enqueue_push_match_job"));
+        for retired in [
+            "push_leases",
+            "push_wake_outbox",
+            "push_match_queue",
+            "push_gateway_challenges",
+            "push_gateway_installations",
+            "push_gateway_delegations",
+            "push_gateway_endpoint_quotas",
+            "push_gateway_delivery_auth_replays",
+            "push_gateway_delivery_request_replays",
+        ] {
+            assert!(
+                mobile_push_removal.contains(&format!("DROP TABLE IF EXISTS {retired}")),
+                "migration 0033 must drop {retired}"
+            );
+        }
+        assert!(mobile_push_removal.contains("DELETE FROM _operator_global_tables"));
+        assert!(mobile_push_removal
+            .contains("DROP TRIGGER IF EXISTS community_write_fence_events ON events"));
+        assert!(mobile_push_removal.contains("DELETE FROM events WHERE kind = 30350"));
+        assert!(mobile_push_removal.contains("attach_community_write_fence('events')"));
     }
 
     #[test]
@@ -1274,24 +1273,6 @@ mod tests {
         let manifest_dir = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
         let this_file = manifest_dir.join("src/migration.rs");
         let crates_dir = manifest_dir.parent().expect("workspace crates dir");
-        // The push gateway migrates its own dedicated authority database; it
-        // never holds relay tenant tables, so it is exempt from the relay
-        // schema/destruction lock. The community_id check below keeps that
-        // exemption honest.
-        let push_gateway_exception = crates_dir.join("buzz-push-gateway/src/postgres.rs");
-        let push_gateway_migrations = crates_dir.join("buzz-push-gateway/migrations");
-        for entry in
-            std::fs::read_dir(&push_gateway_migrations).expect("read push gateway migrations")
-        {
-            let path = entry.expect("read push gateway migration entry").path();
-            let sql = std::fs::read_to_string(&path).expect("read push gateway migration");
-            assert!(
-                !sql.to_ascii_lowercase().contains("community_id"),
-                "{} defines community-scoped data; its migrator would bypass the \
-                 schema/destruction lock and must move under buzz-db migrations",
-                path.display()
-            );
-        }
         let mut files = Vec::new();
         rust_sources(crates_dir, &mut files);
         for path in &files {
@@ -1308,8 +1289,6 @@ mod tests {
                     "migration.rs must embed the migrator once, run it once in production, \
                      and expose exactly one test-only bounded run"
                 );
-            } else if *path == push_gateway_exception {
-                continue;
             } else {
                 assert_eq!(
                     (macro_hits, run_hits, run_to_hits),
@@ -1542,6 +1521,9 @@ mod tests {
         let mut expected_fences = migration.fence_attachments.clone();
         expected_fences.remove("product_feedback");
         expected_fences.remove("rate_limit_violations");
+        for retired in ["push_leases", "push_match_queue", "push_wake_outbox"] {
+            expected_fences.remove(retired);
+        }
         assert_eq!(
             expected_fences, schema.fence_attachments,
             "write-fence attachment targets differ after recovery policy"
@@ -1910,62 +1892,129 @@ mod tests {
 
     #[tokio::test]
     #[ignore = "requires Postgres"]
-    async fn populated_upgrade_preserves_search_policy_except_for_push_leases() {
+    async fn mobile_push_upgrade_drops_state_without_rewriting_history() {
         let pool = connect_test_pool().await;
         reset_public_schema(&pool).await;
         MIGRATOR
-            .run_to(7, &pool)
+            .run_to(32, &pool)
             .await
-            .expect("apply migrations 1-7");
+            .expect("apply immutable history through 0032");
 
         let community_id = uuid::Uuid::new_v4();
         sqlx::query("INSERT INTO communities (id, host) VALUES ($1, $2)")
             .bind(community_id)
-            .bind(format!("pre-0008-{}.example", community_id.simple()))
+            .bind(format!(
+                "mobile-push-retirement-{}.example",
+                community_id.simple()
+            ))
             .execute(&pool)
             .await
             .expect("insert community");
-
-        for (marker, kind) in [(1_u8, 1_i32), (2_u8, 30_350_i32)] {
-            sqlx::query(
-                "INSERT INTO events \
-                 (community_id, id, pubkey, created_at, kind, tags, content, sig, received_at) \
-                 VALUES ($1, $2, $3, NOW(), $4, '[]'::jsonb, 'brownfield needle', $5, NOW())",
-            )
-            .bind(community_id)
-            .bind(vec![marker; 32])
-            .bind(vec![marker + 10; 32])
-            .bind(kind)
-            .bind(vec![marker + 20; 64])
-            .execute(&pool)
+        sqlx::query(
+            "INSERT INTO push_leases \
+             (community_id, author, installation_id, source_event_id, source_created_at, \
+              generation, active, expires_at) \
+             VALUES ($1, $2, 'retired', $3, 1, 1, false, 1)",
+        )
+        .bind(community_id)
+        .bind(vec![1_u8; 32])
+        .bind(vec![2_u8; 32])
+        .execute(&pool)
+        .await
+        .expect("insert retired lease state");
+        sqlx::query(
+            "INSERT INTO events \
+             (community_id, id, pubkey, created_at, kind, tags, content, sig, received_at) \
+             VALUES ($1, $2, $3, NOW(), 30350, '[]'::jsonb, 'retired', $4, NOW())",
+        )
+        .bind(community_id)
+        .bind(vec![3_u8; 32])
+        .bind(vec![4_u8; 32])
+        .bind(vec![5_u8; 64])
+        .execute(&pool)
+        .await
+        .expect("insert nonstandard retired event");
+        let mut fence_tx = pool
+            .begin()
             .await
-            .expect("insert brownfield event");
+            .expect("begin community fence transition");
+        sqlx::query("SELECT set_config('buzz.deletion_executor_community', $1, true)")
+            .bind(community_id.to_string())
+            .execute(&mut *fence_tx)
+            .await
+            .expect("set deletion executor community");
+        sqlx::query("SELECT set_config('buzz.deletion_fence_generation', '1', true)")
+            .execute(&mut *fence_tx)
+            .await
+            .expect("set deletion fence generation");
+        sqlx::query(
+            "UPDATE communities \
+             SET deletion_state = 'fenced', deletion_fence_generation = 1 \
+             WHERE id = $1",
+        )
+        .bind(community_id)
+        .execute(&mut *fence_tx)
+        .await
+        .expect("fence community with retired state");
+        fence_tx.commit().await.expect("commit community fence");
+
+        run_migrations(&pool).await.expect("apply migration 0033");
+
+        for retired in [
+            "push_leases",
+            "push_wake_outbox",
+            "push_match_queue",
+            "push_gateway_challenges",
+            "push_gateway_installations",
+            "push_gateway_delegations",
+            "push_gateway_endpoint_quotas",
+            "push_gateway_delivery_auth_replays",
+            "push_gateway_delivery_request_replays",
+        ] {
+            let removed: bool = sqlx::query_scalar("SELECT to_regclass($1) IS NULL")
+                .bind(format!("public.{retired}"))
+                .fetch_one(&pool)
+                .await
+                .unwrap_or_else(|err| panic!("check retired table {retired}: {err}"));
+            assert!(removed, "migration 0033 must drop {retired}");
         }
-
-        MIGRATOR
-            .run_to(11, &pool)
-            .await
-            .expect("apply main migrations through 11");
-        let before: Vec<(i32, bool)> = sqlx::query_as(
-            "SELECT kind, search_tsv @@ plainto_tsquery('simple', 'needle') \
-             FROM events ORDER BY kind",
+        let matcher_removed: bool =
+            sqlx::query_scalar("SELECT to_regprocedure('enqueue_push_match_job()') IS NULL")
+                .fetch_one(&pool)
+                .await
+                .expect("check retired matcher function");
+        assert!(matcher_removed);
+        let matcher_trigger_removed: bool = sqlx::query_scalar(
+            "SELECT NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'events_enqueue_push_match')",
         )
-        .fetch_all(&pool)
+        .fetch_one(&pool)
         .await
-        .expect("read pre-push search behavior");
-        assert_eq!(before, vec![(1, true), (30_350, true)]);
-
-        run_migrations(&pool)
-            .await
-            .expect("apply push migrations to populated database");
-        let after: Vec<(i32, Option<bool>)> = sqlx::query_as(
-            "SELECT kind, search_tsv @@ plainto_tsquery('simple', 'needle') \
-             FROM events ORDER BY kind",
+        .expect("check retired matcher trigger");
+        assert!(matcher_trigger_removed);
+        let community_fence_restored: bool = sqlx::query_scalar(
+            "SELECT EXISTS (SELECT 1 FROM pg_trigger \
+             WHERE tgrelid = 'events'::regclass \
+               AND tgname = 'community_write_fence_events' \
+               AND NOT tgisinternal)",
         )
-        .fetch_all(&pool)
+        .fetch_one(&pool)
         .await
-        .expect("read post-push search behavior");
-        assert_eq!(after, vec![(1, Some(true)), (30_350, None)]);
+        .expect("check restored events community fence");
+        assert!(community_fence_restored);
+        let retired_registry_rows: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM _operator_global_tables WHERE table_name LIKE 'push_gateway_%'",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("count retired registry rows");
+        assert_eq!(retired_registry_rows, 0);
+        let retired_events: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM events WHERE kind = 30350")
+                .fetch_one(&pool)
+                .await
+                .expect("count retired events");
+        assert_eq!(retired_events, 0);
+        assert_eq!(applied_versions(&pool).await.last().copied(), Some(33));
     }
 
     #[tokio::test]
@@ -2007,6 +2056,34 @@ mod tests {
             );
             assert!(exists, "migration should create {table}");
         }
+
+        for retired in [
+            "push_leases",
+            "push_wake_outbox",
+            "push_match_queue",
+            "push_gateway_challenges",
+            "push_gateway_installations",
+            "push_gateway_delegations",
+            "push_gateway_endpoint_quotas",
+            "push_gateway_delivery_auth_replays",
+            "push_gateway_delivery_request_replays",
+        ] {
+            let exists = sqlx::query_scalar::<_, bool>(
+                "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = $1)",
+            )
+            .bind(retired)
+            .fetch_one(&pool)
+            .await
+            .unwrap_or_else(|err| panic!("check retired table {retired}: {err}"));
+            assert!(!exists, "migration 0033 must drop {retired}");
+        }
+        let retired_registry_rows: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM _operator_global_tables WHERE table_name LIKE 'push_gateway_%'",
+        )
+        .fetch_one(&pool)
+        .await
+        .expect("count retired push gateway registry rows");
+        assert_eq!(retired_registry_rows, 0);
 
         let search_expression: String = sqlx::query_scalar(
             "SELECT pg_get_expr(adbin, adrelid) \

@@ -203,22 +203,6 @@
       ]
     },
     {
-      "id": "release.container-repository.push-gateway",
-      "match": "oci-repository",
-      "canonical": "ghcr.io/asopitech-labs/nimino-push-gateway",
-      "legacy": ["ghcr.io/block/buzz-push-gateway"],
-      "fixtures": [
-        {
-          "input": "ghcr.io/block/buzz-push-gateway",
-          "output": "ghcr.io/asopitech-labs/nimino-push-gateway"
-        },
-        {
-          "input": "ghcr.io/block/buzz-push-gateway@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-          "output": "ghcr.io/asopitech-labs/nimino-push-gateway@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
-        }
-      ]
-    },
-    {
       "id": "release.desktop-artifact-prefix",
       "match": "prefix",
       "canonical": "Nimino",
@@ -242,15 +226,6 @@
       "canonical": "nimino",
       "legacy": ["buzz"],
       "fixtures": [{ "input": "buzz", "output": "nimino" }]
-    },
-    {
-      "id": "release.helm-chart.push-gateway",
-      "match": "exact",
-      "canonical": "nimino-push-gateway",
-      "legacy": ["buzz-push-gateway"],
-      "fixtures": [
-        { "input": "buzz-push-gateway", "output": "nimino-push-gateway" }
-      ]
     },
     {
       "id": "release.helm-chart-repository",

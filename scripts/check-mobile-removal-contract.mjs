@@ -18,7 +18,8 @@ const mandatoryReferences = new Set([
   "bin/flutter",
   "crates/buzz-media/src/validation.rs",
 ]);
-const mobileReference = /mobile\/|mobile-v|mobilepairing|mobile-pairing|mobile app|mobile device|flutter|nip-ab|kind_pairing|pairing_relay|pairingrelay|start_pairing|start_identity_recovery_pairing|identityrecoverypairing|nostrpair|buzz-push-gateway|buzz_push_|\bapns\b|nip-pl|push_gateway/iu;
+const mobileReference = /mobile\/|mobile-v|mobilepairing|mobile-pairing|mobile app|mobile device|flutter|nip-ab|kind_pairing|pairing_relay|pairingrelay|start_pairing|start_identity_recovery_pairing|identityrecoverypairing|nostrpair|buzz-push-gateway|buzz_push_|\bapns\b|nip-pl|push_gateway|kind_push_lease|push_leases|push_wake_outbox|push_match_queue|events_enqueue_push_match|enqueue_push_match_job|\b30350\b/iu;
+const retiredPushToken = /\bKIND_PUSH_LEASE\b|\bpush_leases\b|\bpush_wake_outbox\b|\bpush_match_queue\b|\bevents_enqueue_push_match\b|\benqueue_push_match_job\b|\b30350\b|\bBUZZ_PUSH_[A-Z0-9_]+\b|\bbuzz-push-gateway\b|\bNIP-PL\b|\bAPNs\b/giu;
 const requiredSurfaceIds = new Set([
   "mobile.root-metadata",
   "mobile.dart-product",
@@ -31,6 +32,7 @@ const requiredSurfaceIds = new Set([
   "external.mobile-toolchain-shims",
   "external.shared-doc-build-references",
   "external.mobile-push-dedicated",
+  "external.mobile-push-migration-ledger",
   "external.mobile-push-shared-integration",
   "external.desktop-identity-pairing",
   "external.nip-ab-interop",
@@ -51,8 +53,9 @@ const inventorySurfaceCounts = {
   "external.mobile-dedicated-release": 8,
   "external.mobile-toolchain-shims": 3,
   "external.shared-doc-build-references": 14,
-  "external.mobile-push-dedicated": 52,
-  "external.mobile-push-shared-integration": 18,
+  "external.mobile-push-dedicated": 46,
+  "external.mobile-push-migration-ledger": 9,
+  "external.mobile-push-shared-integration": 17,
   "external.desktop-identity-pairing": 18,
   "external.nip-ab-interop": 16,
   "external.pairing-relay-runtime": 9,
@@ -125,6 +128,7 @@ check(contract.pairingDecision.mobileClient === "delete", "Mobile pairing client
 check(contract.pairingDecision.mobileWording === "delete", "Mobile pairing wording must be deleted");
 check(contract.pairingDecision.ownerIssue === 28, "Desktop pairing surface must remain owned by issue #28");
 check(contract.physicalDeletionOwner === 33, "Mobile physical deletion must remain owned by issue #33");
+check(Array.isArray(contract.retiredPushAllowlist), "retiredPushAllowlist must be an array");
 for (const unsupported of ["automated or repeated secret transfer", "Chirps cluster negotiation", "database replication", "automatic sync"]) {
   check(contract.pairingDecision.unsupported.includes(unsupported), `NIP-AB must not own ${unsupported}`);
 }
@@ -138,16 +142,25 @@ for (const surface of surfaces) {
   check(actions.has(surface.action), `${surface.id}: invalid action`);
   check([surface.owner, surface.deleteWhen, surface.proof].every((value) => typeof value === "string" && value), `${surface.id}: incomplete lifecycle`);
   check(surface.dependencies === undefined || (Array.isArray(surface.dependencies) && surface.dependencies.every((value) => typeof value === "string" && value)), `${surface.id}: invalid dependencies`);
+  check(
+    surface.action !== "shrink" || (Number.isInteger(surface.completionIssue) && ["pending", "completed"].includes(surface.state)),
+    `${surface.id}: shrink surface needs a completionIssue and state`,
+  );
   check(Array.isArray(surface.selectors) && surface.selectors.length > 0, `${surface.id}: missing selectors`);
   for (const selector of surface.selectors) {
     check(selectorTypes.has(selector.type), `${surface.id}: invalid selector type`);
     check(typeof selector.value === "string" && selector.value.length > 0, `${surface.id}: empty selector`);
     check(resolvesInsideRoot(selector.value), `${surface.id}: selector escapes repository root`);
   }
-  if (contract.phase === "inventory") validateEvidence(surface.evidence, surface.id);
-  else if (surface.action !== "delete") validateEvidence(surface.postRemovalEvidence ?? surface.evidence, surface.id);
-  if (surface.action === "shrink") validateEvidence(surface.postRemovalEvidence, `${surface.id} post-removal`);
-  if (contract.phase === "removed" && surface.action === "shrink") validateEvidenceAbsent(surface.evidence, surface.id);
+  if (contract.phase === "inventory" || surface.action === "keep") validateEvidence(surface.evidence, surface.id);
+  if (surface.action === "shrink") {
+    validateEvidence(surface.postRemovalEvidence, `${surface.id} post-removal`);
+    if (contract.phase === "removed" && surface.state === "completed") {
+      validateEvidenceAbsent(surface.evidence, surface.id);
+    } else {
+      validateEvidence(surface.evidence, surface.id);
+    }
+  }
 }
 
 if (contract.phase === "inventory") {
@@ -174,7 +187,7 @@ const externalReferences = files.filter((path) => {
 });
 check(
   externalReferences.length === contract.expectedCounts.externalReferences,
-  `external reference count changed without inventory review: expected ${contract.expectedCounts.externalReferences}, found ${externalReferences.length}`,
+  `external reference count changed without inventory review: expected ${contract.expectedCounts.externalReferences}, found ${externalReferences.length}\n${externalReferences.join("\n")}`,
 );
 for (const path of externalReferences) {
   const owners = contract.externalSurfaces.filter((surface) => surface.selectors.some((selector) => matches(path, selector)));
@@ -185,6 +198,31 @@ for (const path of files) {
   if (owners.length > 1) classificationErrors.push(`${path}: overlapping owners=${owners.map(({ id }) => id).join(",")}`);
 }
 check(classificationErrors.length === 0, `classification errors:\n${classificationErrors.join("\n")}`);
+
+const retiredPushReferences = new Map();
+for (const path of files) {
+  if (policyArtifacts.has(path) || !isText(path)) continue;
+  const occurrences = [...readFileSync(join(root, path), "utf8").matchAll(retiredPushToken)].length;
+  if (occurrences > 0) retiredPushReferences.set(path, occurrences);
+}
+const allowedRetiredPushReferences = new Map();
+for (const entry of contract.retiredPushAllowlist) {
+  check(
+    entry && typeof entry.path === "string" && Number.isInteger(entry.occurrences) && entry.occurrences > 0 && typeof entry.reason === "string" && entry.reason,
+    "retiredPushAllowlist entries need path, positive occurrences, and reason",
+  );
+  check(!allowedRetiredPushReferences.has(entry.path), `duplicate retired push allowlist path ${entry.path}`);
+  allowedRetiredPushReferences.set(entry.path, entry.occurrences);
+}
+const retiredPushErrors = [];
+for (const [path, occurrences] of retiredPushReferences) {
+  const allowed = allowedRetiredPushReferences.get(path);
+  if (allowed !== occurrences) retiredPushErrors.push(`${path}: expected ${allowed ?? 0}, found ${occurrences}`);
+}
+for (const path of allowedRetiredPushReferences.keys()) {
+  if (!retiredPushReferences.has(path)) retiredPushErrors.push(`${path}: stale retired push allowlist entry`);
+}
+check(retiredPushErrors.length === 0, `retired push reference drift:\n${retiredPushErrors.join("\n")}`);
 
 for (const surface of surfaces) {
   for (const selector of surface.selectors) {

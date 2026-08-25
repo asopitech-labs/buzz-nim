@@ -27,19 +27,19 @@ and runtime evidence answer different questions.
 
 ## Ecosystem
 
-Buzz spans five repos. This one (`block/buzz`) is the OSS source for the relay, desktop, mobile, and CLI. The others handle internal builds and deployment:
+Buzz spans five repos. This one (`block/buzz`) is the OSS source for the relay, desktop, and CLI. The others handle internal builds and deployment:
 
 | Repo | Purpose |
 |------|---------|
-| [block/buzz](https://github.com/block/buzz) | OSS source — relay, desktop app, mobile app, CLI, agent harness |
-| [squareup/buzz-releases](https://github.com/squareup/buzz-releases) | Buildkite pipelines producing Block-signed macOS + iOS builds with `-block` desktop version suffix |
+| [block/buzz](https://github.com/block/buzz) | OSS source — relay, desktop app, CLI, agent harness |
+| [squareup/buzz-releases](https://github.com/squareup/buzz-releases) | Legacy Buildkite pipelines producing Block-signed desktop builds |
 | [squareup/sprout-oss](https://github.com/squareup/sprout-oss) | CI pipeline building the relay Docker image and pushing to internal ECR |
 | [squareup/block-coder-tf-stacks](https://github.com/squareup/block-coder-tf-stacks) | Terraform + ArgoCD deploying the relay to the staging Kubernetes cluster |
 | [squareup/sprout-backend-blox](https://github.com/squareup/sprout-backend-blox) | Desktop backend provider script connecting Blox workstation agents to the relay |
 
 ```
 block/buzz (source)
-  ├─► buzz-releases      (desktop + mobile builds → Artifactory, GitHub, Mobile Releases)
+  ├─► buzz-releases      (legacy desktop builds → Artifactory, GitHub)
   ├─► sprout-oss         (relay Docker image → ECR)
   │     └─► block-coder-tf-stacks  (Helm chart → ArgoCD → staging cluster)
   └─── sprout-backend-blox         (Blox compute provider for Desktop agent launch)
@@ -92,7 +92,6 @@ contracts/
   chirps-v0.6.3.json  # Exact dependency, feature, and API allowlist snapshot
 desktop/              # Tauri 2 + React 19 desktop app
 web/                  # Browser web client (repo browser, served by the relay)
-mobile/               # Flutter mobile app
 migrations/           # SQL migrations (auto-applied on relay startup)
 scripts/              # Dev tooling
 .env.example          # Config template — copy to .env before running
@@ -123,7 +122,7 @@ and static checks; Nim, Rust, Tauri, and desktop tests; and desktop and web
 builds. Clippy passing does not mean fmt passes; run both. For Nim-only
 changes, `just nim-ci` is the fast lane and must not invoke a Rust build; see
 `docs/development/nim-core.md`. Boundary changes run the separate focused
-`just nim-boundary-ci` lane. Mobile is not a product CI or git-hook lane.
+`just nim-boundary-ci` lane.
 
 Run `just test` for integration tests if you touched `buzz-relay`,
 `buzz-db`, or `buzz-auth` — these require a running Postgres and Redis.
@@ -146,12 +145,11 @@ refspec, `--all`) gets a non-fatal `push-head-scope` warning and relies on CI fo
 its path-scoped checks.
 Before agents run Git or hooks, activate the repo's Hermit environment
 (`. ./bin/activate-hermit`) so `./bin` leads `PATH` and the pinned toolchain
-(flutter, dart, lefthook) wins over any Homebrew version; do not
+wins over any system version; do not
 rewrite hook commands to compensate for an unconfigured shell `PATH`. The
 pre-push hook self-pins regardless: `bin/.lefthookrc` (sourced by the generated
-`.git/hooks/*`) prepends the Hermit `bin/` to `PATH` and pins `LEFTHOOK_BIN`, so
-lane subprocesses resolve the pinned flutter/dart/lefthook even when an
-unactivated shell has Homebrew first. Activating Hermit remains recommended for
+.git/hooks/*`) prepends the Hermit `bin/` to `PATH` and pins `LEFTHOOK_BIN` even
+when an unactivated shell has system tools first. Activating Hermit remains recommended for
 non-hook commands.
 
 **Commit with `git commit -s`.** The required **DCO Check** fails any PR with a commit missing a `Signed-off-by` trailer, and `just hooks` installs a `commit-msg` hook that adds it to commits you create locally (`git rebase` and `git cherry-pick` still need `--signoff`) — if you build commit commands programmatically, include `-s` every time. To repair a branch that already has unsigned commits: `git rebase --signoff main`, then force-push.
@@ -275,10 +273,6 @@ See [TESTING.md](TESTING.md) for the full multi-agent E2E guide.
 > proxy. Always use `scripts/post-screenshots.sh` for PNGs before linking them
 > from a PR body/comment. If you hand-edit PR markdown, run
 > `scripts/check-pr-image-urls.sh <markdown-file>` first to catch relay URLs.
-
-For mobile simulator screenshots, save the PNGs in a local directory and run
-`./scripts/post-screenshots.sh <PR-number> <png-dir>` or use the third argument
-with a markdown template containing `{{filename}}` placeholders.
 
 The desktop app requires the E2E mock bridge to render — it cannot run in a plain
 browser. Use `just desktop-screenshot` to capture screenshots (builds frontend,
@@ -560,98 +554,10 @@ Key files:
 
 ---
 
-## Mobile App (Flutter)
-
-The mobile app lives in `mobile/` — a Flutter app using Riverpod + Hooks.
-
-### Architecture
-
-- **State management:** Riverpod + `flutter_hooks` (`HookConsumerWidget`)
-- **Theme:** Catppuccin Latte (light) / Macchiato (dark) — matches desktop
-- **Features:** Isolated under `lib/features/`, shared code in `lib/shared/`
-- **Nostr models:** `lib/shared/relay/nostr_models.dart` — event kinds must
-  stay in sync with `desktop/src/shared/constants/kinds.ts`
-
-### Rules
-
-- **NEVER use `StatefulWidget`** — favor Riverpod for state and always use
-  `HookConsumerWidget` or `ConsumerWidget` with `flutter_hooks` for local state.
-- Agents may build and run the Flutter app when it materially helps implement,
-  debug, or validate mobile changes. Prefer the smallest relevant command and
-  reuse an already-running simulator/emulator and the app's configured staging
-  or production community when that is sufficient. Do not start or rebuild
-  local relay services unless the task specifically requires relay-side or
-  isolated integration behavior.
-- For iOS runtime validation, prefer `just mobile-dev`; it applies the
-  worktree-specific debug identity and runs `flutter run`. Direct `flutter run`
-  or IDE workflows are also allowed. Use `just mobile-build-android` only when
-  an APK build is relevant to the task.
-- Do not rebuild, reinstall, or relaunch merely for ceremony. Preserve Flutter's
-  incremental build cache and use hot reload/restart where appropriate. Use
-  `flutter clean` only when stale build artifacts are a credible cause. Run
-  `flutter upgrade` only when the task explicitly requires a toolchain change.
-- For user-visible or integration changes, exercise the affected workflow in a
-  real app when practical and report the device/simulator, connected community,
-  and workflow actually tested.
-- **Do NOT use `print()`** — use `debugPrint()` or structured logging.
-- Prefer `context.colors` and `context.textTheme` (via theme extensions)
-  over raw `Theme.of(context)` calls.
-- **Keep widgets small and composable.** One public widget per file; push
-  private sub-widgets (`_Foo`) into sibling `part` files under a
-  `<page>/` folder rather than growing the page file. Hard ceiling:
-  **1000 lines/file**, enforced across Desktop, Web, and Mobile by the
-  repository-level `just file-size-check` gate (`just check`, CI, and every
-  pre-push). If the guard trips, **split the file — never bump the limit or add
-  an override to slip under it.**
-- Feature modules must not import from other feature modules — only from
-  `shared/`.
-- Use `Grid` tokens for spacing, `Radii` for border radius.
-
-### Quality Checks
-
-```bash
-cd mobile
-dart format --output=none --set-exit-if-changed .
-flutter analyze
-flutter test
-```
-
-Or from repo root: `just mobile-fmt` (auto-fix), `just mobile-check` (lint + fmt check), `just mobile-test` (tests).
-
-To run the app locally with a worktree-specific debug identity and a
-started or reused iOS Simulator:
-
-```bash
-just mobile-dev
-```
-
-This runs `flutter run` against the app's configured community; it does not
-start Docker or local relay services.
-
-When run from a git worktree, `just mobile-dev` (and `just
-mobile-build-android`) give the debug build a per-worktree app identifier
-(keyed to the worktree directory name) and a branch-labelled app name via
-`scripts/mobile-worktree-overrides.sh`, so builds from multiple worktrees
-install side by side. Release builds are unaffected. `just mobile-clean`
-removes stale worktree-suffixed installs from simulators/emulators. See
-[mobile/README.md](mobile/README.md) for direct Xcode / Android Studio
-usage.
-
-### Testing Conventions
-
-- Prefer **widget tests** over unit tests for UI components — test the
-  whole widget tree, not individual methods.
-- Use `ProviderScope(overrides: [...])` to inject fake notifiers.
-- Fake notifiers should extend the real notifier class and override `build()`.
-- Use the `WidgetHelpers.testable()` wrapper for simple widget tests or
-  build a custom `ProviderScope` + `MaterialApp` when you need specific overrides.
-
----
-
 ## See Also
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) — setup, code style, PR process, how to add event kinds / CLI subcommands / HTTP endpoints
 - [TESTING.md](TESTING.md) — multi-agent E2E test guide
 - [ARCHITECTURE.md](ARCHITECTURE.md) — system design and component relationships
-- [RELEASING.md](RELEASING.md) — release process: `release-desktop`, `release-relay`, `scripts/mobile-release.sh`, candidate tags, internal builds
+- [RELEASING.md](RELEASING.md) — desktop and relay release process
 - [README.md](README.md) — project overview and quick start

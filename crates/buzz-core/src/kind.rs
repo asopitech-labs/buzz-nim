@@ -101,13 +101,6 @@ pub const KIND_AGENT_ENGRAM: u32 = 30174;
 /// author-only (see [`AUTHOR_ONLY_KINDS`]). See `docs/nips/NIP-ER.md`.
 pub const KIND_EVENT_REMINDER: u32 = 30300;
 
-/// NIP-PL: encrypted push lease (parameterized replaceable, author-only).
-///
-/// The source event contains endpoint-bearing NIP-44 ciphertext and is readable
-/// only by its authenticated author. Effective delivery state lives in the
-/// dedicated push lease tables.
-pub const KIND_PUSH_LEASE: u32 = 30350;
-
 /// NIP-PMA: owner-encrypted private managed-agent aggregate.
 ///
 /// Addressed by `(owner pubkey, kind, agent pubkey)`. The signed outer tags
@@ -126,11 +119,7 @@ pub const KIND_PRIVATE_MANAGED_AGENT: u32 = 30179;
 ///
 /// Currently a tiny linear set. If this grows past ~4 kinds, convert to a
 /// compile-time bitset or sorted array with binary search for hot-path use.
-pub const AUTHOR_ONLY_KINDS: &[u32] = &[
-    KIND_EVENT_REMINDER,
-    KIND_PUSH_LEASE,
-    KIND_PRIVATE_MANAGED_AGENT,
-];
+pub const AUTHOR_ONLY_KINDS: &[u32] = &[KIND_EVENT_REMINDER, KIND_PRIVATE_MANAGED_AGENT];
 
 /// Kinds that require a result-level read gate beyond the filter-layer
 /// `#p` check: even a reader who knows an event id MUST match the event's

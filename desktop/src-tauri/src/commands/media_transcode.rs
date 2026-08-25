@@ -63,9 +63,7 @@ pub(super) fn is_video_file(buf: &[u8]) -> bool {
 }
 
 /// HEIC/HEIF compatible-brand codes that mark an ISO-BMFF file as a still
-/// HEIF image. Mirrors mobile's `_heicBrands` set in
-/// `mobile/lib/shared/relay/media_upload.dart` so detection stays consistent
-/// across platforms — deliberately broader than the `infer` crate, which only
+/// HEIF image. Deliberately broader than the `infer` crate, which only
 /// recognizes `heic`/`heix` majors (or `mif1`/`msf1` with a `heic` compatible
 /// brand) and would miss `hevc`/`hevx`/`heim`/`heis`.
 const HEIC_BRANDS: &[&[u8; 4]] = &[
@@ -275,7 +273,7 @@ fn transcode_to_mp4_with_cancellation(
 ///
 /// The Tauri webview / Chromium cannot decode HEIC, so iPhone photos uploaded
 /// as-is render blank in the composer and are unviewable for everyone. This
-/// normalizes them to JPEG (the same fix mobile applies before upload).
+/// normalizes them to JPEG before upload.
 ///
 /// Uses `-frames:v 1` so multi-image HEIF containers (Live Photos, bursts)
 /// yield a single still, and `-q:v 2` for high JPEG quality. Returns the path
