@@ -103,8 +103,7 @@ fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
 }
 
 /// Run every data migration that must complete before identity resolution and
-/// agent restore. Ordering is load-bearing: `migrate_legacy_app_data_dir` must
-/// precede any disk read, and `sync_shared_agent_data` must precede
+/// agent restore. Ordering is load-bearing: `sync_shared_agent_data` must precede
 /// `restore_managed_agents_on_launch` (which reads `managed-agents.json`).
 /// Identity-dependent migrations (persona/team event signing) run separately in
 /// boot setup after the persisted identity is resolved.
@@ -190,38 +189,6 @@ fn run_boot_migrations_inner(app: &tauri::AppHandle, reset_completed: bool) {
     materialize_agent_runtimes(app);
 }
 
-/// Copy one-time app state from the legacy app identifier directory to
-/// the current Buzz identifier directory. The Tauri identifier controls the app
-/// data path, so without this copy a product rename would look like a fresh
-/// install and users would lose their persisted identity and agent settings.
-pub fn migrate_legacy_app_data_dir(app: &tauri::AppHandle) {
-    let current_dir = match app.path().app_data_dir() {
-        Ok(dir) => dir,
-        Err(e) => {
-            eprintln!("nimino-desktop: app-data-migration: cannot resolve app data dir: {e}");
-            return;
-        }
-    };
-    let Some(legacy_dir) = legacy_app_data_dir(&current_dir) else {
-        return;
-    };
-    if !legacy_dir.exists() {
-        return;
-    }
-    match copy_dir_all(&legacy_dir, &current_dir) {
-        Ok(()) => eprintln!(
-            "nimino-desktop: app-data-migration: copied legacy data from {} to {}",
-            legacy_dir.display(),
-            current_dir.display()
-        ),
-        Err(error) => eprintln!(
-            "nimino-desktop: app-data-migration: failed to copy {} to {}: {error}",
-            legacy_dir.display(),
-            current_dir.display()
-        ),
-    }
-}
-
 /// Knowledge directories and files carried from the legacy nest into the live
 /// nest. Deliberately excludes `REPOS/`: cloned repositories are re-clonable by
 /// definition (Will's stranded `REPOS/` measured 62 GB of checkouts plus build
@@ -237,7 +204,7 @@ pub fn migrate_legacy_app_data_dir(app: &tauri::AppHandle) {
 /// these dirs (e.g. by a skill writing into `.scratch/`) would hit that branch's
 /// clobber/abort hazard. The per-entry log-and-continue below bounds the blast
 /// radius of such a failure to the single offending entry.
-const LEGACY_NEST_KNOWLEDGE: &[&str] = &[
+const NEST_KNOWLEDGE: &[&str] = &[
     "AGENTS.md",
     "RESEARCH",
     "PLANS",
@@ -247,62 +214,30 @@ const LEGACY_NEST_KNOWLEDGE: &[&str] = &[
     ".scratch",
 ];
 
-/// Migrate the legacy agent nest (`~/.sprout`) into the current nest.
-///
-/// PR #960 renamed the nest directory but shipped no migration, stranding the
-/// agent's accumulated knowledge in `~/.sprout` while `~/.nimino` booted empty —
-/// so agents searched `$HOME` for files they "remembered", triggering macOS TCC
-/// prompts. This copies only the knowledge directories (see
-/// [`LEGACY_NEST_KNOWLEDGE`]), never `REPOS/`.
-///
-/// Non-fatal and idempotent, mirroring [`migrate_legacy_app_data_dir`]: a copy
-/// error is logged and never aborts startup. There is no completion sentinel —
-/// the migration re-runs on every launch while `~/.sprout` exists, which is
-/// cheap because the copy is tiny and `copy_dir_all` skips files that already
-/// exist in the destination. This relies on `REPOS/` being out of scope; if it
-/// is ever added back, a sentinel or off-thread copy becomes mandatory.
-///
-/// Returns `true` when a legacy `~/.sprout` nest was present (migration ran),
-/// so the caller can emit a one-time hint inviting the user to delete it. The
-/// frontend dedupes the hint, so re-firing while `~/.sprout` lingers is benign.
-pub fn migrate_legacy_nest() -> bool {
-    let Some(home) = dirs::home_dir() else {
-        eprintln!("nimino-desktop: nest-migration: cannot resolve home directory");
-        return false;
-    };
-    // Destination is the current build's nest dir (`.nimino` or `.nimino-dev`).
-    let Some(current_nest) = crate::managed_agents::nest_dir() else {
-        eprintln!("nimino-desktop: nest-migration: cannot resolve nest directory");
-        return false;
-    };
-    migrate_legacy_nest_at(&home.join(".sprout"), &current_nest)
-}
-
-/// Copy the [`LEGACY_NEST_KNOWLEDGE`] entries from `legacy` to `current`.
+/// Copy the [`NEST_KNOWLEDGE`] entries from `source` to `destination`.
 ///
 /// Each entry is copied independently with its own log-and-continue, so a
-/// failure on one entry never skips the rest. No-ops cleanly when `legacy` is
-/// absent or an entry does not exist. Returns `true` when `legacy` existed.
-fn migrate_legacy_nest_at(legacy: &Path, current: &Path) -> bool {
-    if !legacy.exists() {
+/// failure on one entry never skips the rest. No-ops cleanly when `source` is
+/// absent or an entry does not exist. Returns `true` when `source` existed.
+fn copy_nest_knowledge_at(source: &Path, destination: &Path) -> bool {
+    if !source.exists() {
         return false;
     }
-    // A deliberate dev reset pre-creates this marker to opt out of every
-    // production/legacy nest import. Normal first-run migration still copies
-    // `.sprout` before `migrate_dev_nest()` writes the marker later in boot.
-    if current
+    // A deliberate dev reset pre-creates this marker to opt out of the
+    // production nest import.
+    if destination
         .file_name()
         .is_some_and(|name| name == ".nimino-dev")
-        && current.join(DEV_NEST_MIGRATED_SENTINEL).exists()
+        && destination.join(DEV_NEST_MIGRATED_SENTINEL).exists()
     {
         return false;
     }
-    for name in LEGACY_NEST_KNOWLEDGE {
-        let src = legacy.join(name);
+    for name in NEST_KNOWLEDGE {
+        let src = source.join(name);
         if !src.exists() {
             continue;
         }
-        let dst = current.join(name);
+        let dst = destination.join(name);
         let result = if src.is_dir() {
             copy_dir_all(&src, &dst)
         } else if *name == "AGENTS.md" {
@@ -335,8 +270,7 @@ fn migrate_legacy_nest_at(legacy: &Path, current: &Path) -> bool {
 /// knowledge migration. Presence of this file means `~/.nimino` content has
 /// already been copied into `~/.nimino-dev` and subsequent boots can skip the
 /// copy. Using an explicit marker instead of checking for RESEARCH/PLANS
-/// content decouples the dev migration from the `.sprout` migration, which
-/// also copies into `~/.nimino-dev` and could otherwise set the sentinel early.
+/// content avoids mistaking partially copied content for a completed migration.
 const DEV_NEST_MIGRATED_SENTINEL: &str = ".dev-nest-migrated";
 
 /// Returns true when `migrate_dev_repos_dir` should run: dev build AND no
@@ -368,7 +302,7 @@ pub(crate) fn migrate_dev_repos_dir_at(home: &Path, dev_nest: &Path) {
     // Ensure the dev nest directory itself exists — this migration runs before
     // ensure_nest() in the boot sequence, so the directory may not yet exist.
     if let Err(e) = std::fs::create_dir_all(dev_nest) {
-        eprintln!("nimino-desktop: dev-nest: create {} failed: {e}", dev_nest.display());
+        eprintln!("nimino-desktop: create nest {}: {e}", dev_nest.display());
         return;
     }
     match std::fs::copy(&src, &dst) {
@@ -407,10 +341,8 @@ pub(crate) fn maybe_migrate_dev_repos_dir(
 /// `~/.nimino` is never deleted — prod builds continue to use it normally.
 ///
 /// Completion is tracked by a [`DEV_NEST_MIGRATED_SENTINEL`] file written into
-/// `~/.nimino-dev`. Using an explicit sentinel (rather than RESEARCH/PLANS file
-/// presence) decouples this migration from the `.sprout` → `~/.nimino-dev`
-/// migration that runs earlier in the same boot, which might otherwise populate
-/// RESEARCH/PLANS and incorrectly suppress the `~/.nimino` copy.
+/// `~/.nimino-dev`. Using an explicit sentinel avoids treating partial content
+/// as a completed migration.
 ///
 /// Only runs on dev builds (checked by the caller). Returns `true` when
 /// contents were copied (useful for a one-time log message, not required).
@@ -419,21 +351,20 @@ pub fn migrate_dev_nest() -> bool {
         eprintln!("nimino-desktop: dev-nest-migration: cannot resolve home directory");
         return false;
     };
-    let legacy = home.join(".nimino");
-    let current = home.join(".nimino-dev");
-    // If legacy doesn't exist, nothing to migrate.
-    if !legacy.exists() {
+    let source = home.join(".nimino");
+    let destination = home.join(".nimino-dev");
+    if !source.exists() {
         return false;
     }
     // Skip if migration has already run (explicit sentinel, not content-based).
-    if current.join(DEV_NEST_MIGRATED_SENTINEL).exists() {
+    if destination.join(DEV_NEST_MIGRATED_SENTINEL).exists() {
         return false;
     }
-    let copied = migrate_legacy_nest_at(&legacy, &current);
+    let copied = copy_nest_knowledge_at(&source, &destination);
     // Write the sentinel so future boots skip the copy. Non-fatal if it fails
     // — worst case we re-run the (idempotent) migration on the next boot.
     if copied {
-        let sentinel = current.join(DEV_NEST_MIGRATED_SENTINEL);
+        let sentinel = destination.join(DEV_NEST_MIGRATED_SENTINEL);
         if let Err(e) = std::fs::write(&sentinel, "") {
             eprintln!(
                 "nimino-desktop: dev-nest-migration: failed to write sentinel {}: {e}",

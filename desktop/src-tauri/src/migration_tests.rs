@@ -850,7 +850,7 @@ fn migrate_legacy_nest_carries_knowledge_and_skips_repos() {
     std::fs::create_dir_all(legacy.join("REPOS/buzz")).unwrap();
     std::fs::write(legacy.join("REPOS/buzz/huge.bin"), "checkout").unwrap();
 
-    let migrated = super::migrate_legacy_nest_at(&legacy, &current);
+    let migrated = super::copy_nest_knowledge_at(&legacy, &current);
 
     assert!(migrated, "migration ran because legacy nest existed");
     assert!(
@@ -881,7 +881,7 @@ fn migrate_legacy_nest_does_not_clobber_existing_destination() {
     std::fs::write(current.join("AGENTS.md"), "live-agents").unwrap();
     std::fs::write(current.join("RESEARCH/NOTES.md"), "live-notes").unwrap();
 
-    super::migrate_legacy_nest_at(&legacy, &current);
+    super::copy_nest_knowledge_at(&legacy, &current);
 
     assert_eq!(
         std::fs::read_to_string(current.join("AGENTS.md")).unwrap(),
@@ -904,8 +904,8 @@ fn migrate_legacy_nest_is_idempotent_on_rerun() {
     std::fs::create_dir_all(legacy.join("PLANS")).unwrap();
     std::fs::write(legacy.join("PLANS/PLAN.md"), "plan").unwrap();
 
-    super::migrate_legacy_nest_at(&legacy, &current);
-    super::migrate_legacy_nest_at(&legacy, &current);
+    super::copy_nest_knowledge_at(&legacy, &current);
+    super::copy_nest_knowledge_at(&legacy, &current);
 
     assert_eq!(
         std::fs::read_to_string(current.join("PLANS/PLAN.md")).unwrap(),
@@ -919,7 +919,7 @@ fn migrate_legacy_nest_noops_when_legacy_absent() {
     let legacy = dir.path().join(".sprout");
     let current = dir.path().join(".nimino");
 
-    let migrated = super::migrate_legacy_nest_at(&legacy, &current);
+    let migrated = super::copy_nest_knowledge_at(&legacy, &current);
 
     assert!(!migrated, "no migration when legacy nest is absent");
     assert!(
@@ -939,7 +939,7 @@ fn migrate_legacy_nest_respects_deliberate_dev_reset() {
     std::fs::create_dir_all(&current).unwrap();
     std::fs::write(current.join(".dev-nest-migrated"), "").unwrap();
 
-    let migrated = super::migrate_legacy_nest_at(&legacy, &current);
+    let migrated = super::copy_nest_knowledge_at(&legacy, &current);
 
     assert!(!migrated, "reset marker opts out of legacy nest imports");
     assert!(!current.join("RESEARCH").exists());
@@ -963,7 +963,7 @@ fn migrate_legacy_nest_overwrites_generated_default_agents_md() {
         "precondition: ensure_nest writes the generated default"
     );
 
-    super::migrate_legacy_nest_at(&legacy, &current);
+    super::copy_nest_knowledge_at(&legacy, &current);
 
     assert_eq!(
         std::fs::read_to_string(current.join("AGENTS.md")).unwrap(),
@@ -983,7 +983,7 @@ fn migrate_legacy_nest_preserves_user_edited_agents_md() {
     std::fs::create_dir_all(&current).unwrap();
     std::fs::write(current.join("AGENTS.md"), "user-edited live AGENTS").unwrap();
 
-    super::migrate_legacy_nest_at(&legacy, &current);
+    super::copy_nest_knowledge_at(&legacy, &current);
 
     assert_eq!(
         std::fs::read_to_string(current.join("AGENTS.md")).unwrap(),

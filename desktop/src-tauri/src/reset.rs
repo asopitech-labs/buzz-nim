@@ -94,9 +94,8 @@ pub(crate) struct ResetOutcome {
 /// Wipe parameters assembled by `lib.rs` and passed into `run_boot_reset_with_keychain`.
 pub(crate) struct ResetContext<'a> {
     pub app_data_dir: &'a Path,
-    /// Legacy App Support dir for this build (Sprout import source). When
-    /// present and non-empty, wiped alongside `app_data_dir` to prevent
-    /// `migrate_legacy_app_data_dir` from restoring the old identity.
+    /// Retired App Support dir for this build. When present and non-empty,
+    /// wiped alongside `app_data_dir` so a reset removes all local identity data.
     pub legacy_app_data_dir: Option<PathBuf>,
     /// Nest dir (`~/.nimino` or `~/.nimino-dev`) scoped to this build's variant,
     /// injected so unit tests can override without touching the global OnceLock.
