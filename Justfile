@@ -408,9 +408,6 @@ test-unit:
         # replay — so it belongs in the unit job. Run all targets (lib + the
         # tests/replay_fixtures.rs integration test), not just --lib.
         cargo nextest run -p buzz-conformance
-        # Gateway unit and black-box HTTP tests are infra-free. Postgres-backed
-        # contract/race tests run in the dedicated CI job below.
-        cargo nextest run -p buzz-push-gateway
         # Kubernetes backend provider: the decision layers (state machine, GC
         # planner, env precedence, naming, wire) are pure functions with a fake
         # substrate, so they belong in the unit job. Enumerated explicitly
@@ -749,57 +746,6 @@ web-build:
 web-e2e-smoke:
     cd {{web_dir}} && pnpm test:e2e:smoke
 
-# ─── Mobile ──────────────────────────────────────────────────────────────────
-
-mobile_dir := "mobile"
-
-# Install mobile Flutter dependencies
-mobile-install:
-    unset GIT_DIR GIT_WORK_TREE; cd {{mobile_dir}} && flutter pub get
-
-# Format all Dart code
-mobile-fmt:
-    unset GIT_DIR GIT_WORK_TREE; cd {{mobile_dir}} && dart format .
-
-# Fix mobile formatting and run analysis
-mobile-fix:
-    unset GIT_DIR GIT_WORK_TREE; cd {{mobile_dir}} && dart format . && flutter analyze
-
-# Run mobile lint and format checks
-mobile-check:
-    unset GIT_DIR GIT_WORK_TREE; cd {{mobile_dir}} && dart format --output=none --set-exit-if-changed . && flutter analyze
-
-# Run mobile tests
-mobile-test:
-    unset GIT_DIR GIT_WORK_TREE; cd {{mobile_dir}} && flutter test
-
-# Regenerate the emoji dataset asset from desktop's emoji-mart install.
-# Output is committed — rerun after bumping @emoji-mart/data.
-mobile-emoji-data:
-    node {{mobile_dir}}/scripts/generate-emoji-data.mjs
-
-# Compile an unsigned Android debug APK (worktree-aware debug identity)
-mobile-build-android:
-    ./scripts/mobile-worktree-overrides.sh
-    unset GIT_DIR GIT_WORK_TREE; cd {{mobile_dir}} && flutter build apk --debug --no-pub
-
-# Run the mobile app on iOS simulator (worktree-aware debug identity)
-mobile-dev:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    if ! pgrep -x Simulator &>/dev/null; then
-        open -a Simulator
-        sleep 3
-    fi
-    ./scripts/mobile-worktree-overrides.sh
-    cd {{mobile_dir}}
-    unset GIT_DIR GIT_WORK_TREE
-    flutter run
-
-# Uninstall stale worktree-suffixed Buzz debug installs (production apps kept)
-mobile-clean:
-    ./scripts/mobile-worktree-clean.sh
-
 # ─── Database ─────────────────────────────────────────────────────────────────
 
 # Apply database migrations
@@ -901,8 +847,7 @@ release-relay *ARGS:
     fi
     just _release-pr relay "$VERSION"
 
-# Shared release-PR engine for desktop and relay. Mobile publishes immutable
-# candidate tags directly from remote main instead of using metadata-only PRs.
+# Shared release-PR engine for desktop and relay.
 _release-pr lane version:
     #!/usr/bin/env bash
     set -euo pipefail

@@ -25,8 +25,6 @@ const skippedRoots = [
   "desktop/dist",
   "desktop/node_modules",
   "desktop/src-tauri/target",
-  "mobile/.dart_tool",
-  "mobile/build",
   "web/dist",
   "web/node_modules",
 ].map((path) => join(root, path));

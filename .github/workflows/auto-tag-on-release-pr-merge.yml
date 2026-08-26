@@ -7,23 +7,13 @@ name: Auto-tag on Release PR Merge
 #   version-bump/<v>   → tag desktop-v<v>        → release.yml (desktop app)
 #   relay-release/<v>  → tag relay-v<v>  → docker.yml (relay image)
 #   chart-release/<v>  → tag chart-v<v>  → helm-chart.yml (main helm chart)
-#   push-chart-release/<v> → tag push-chart-v<v> → push-gateway-helm-chart.yml
 #   any internal PR that bumps deploy/charts/buzz/Chart.yaml `version`
 #                       → tag chart-v<v>  → helm-chart.yml (helm chart)
-#
-# Mobile candidate tags do not come from merged PRs. Operators create immutable
-# mobile-v<v>-rc.N tags directly from remote main with scripts/mobile-release.sh,
-# then hand the exact tag to buzz-releases.
 #
 # Release tags are created with a short-lived token from the dedicated
 # buzz-release-bot GitHub App. GitHub attributes the ref creation to that
 # App, so the consumer's `on.push.tags` trigger runs normally. The workflow's
 # default GITHUB_TOKEN remains read-only and is never used to create a tag.
-#
-# Mobile is manual-only by infosec necessity: OSS `block/buzz` CI must
-# not trigger CI in the private `buzz-releases` repo. A human feeds the exact
-# mobile candidate tag to the private Buildkite pipeline, which builds and
-# ships mobile.
 
 on:
   pull_request:
@@ -69,9 +59,6 @@ jobs:
             chart-release/*)
               VERSION="${BRANCH#chart-release/}"
               TAG_PREFIX="chart-v" ;;
-            push-chart-release/*)
-              VERSION="${BRANCH#push-chart-release/}"
-              TAG_PREFIX="push-chart-v" ;;
             *)
               parent_sha="$(git rev-parse HEAD^)"
               old_version="$(git show "${parent_sha}:deploy/charts/buzz/Chart.yaml" 2>/dev/null | awk '/^version:/ {print $2}')"

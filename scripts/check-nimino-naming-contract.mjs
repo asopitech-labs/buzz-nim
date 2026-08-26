@@ -39,12 +39,10 @@ const requiredSurfaceIds = [
   "protocol.namespace",
   "protocol.tag-prefix",
   "release.artifact-prefix",
-  "release.container-repository.push-gateway",
   "release.container-repository.relay",
   "release.container-repository.sprig",
   "release.desktop-artifact-prefix",
   "release.helm-chart-repository",
-  "release.helm-chart.push-gateway",
   "release.helm-chart.relay",
   "release.rolling-tag",
   "repository.slug",
@@ -199,18 +197,6 @@ const expectedFamilies = {
         "ghcr.io/asopitech-labs/nimino@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     },
   ],
-  "release.container-repository.push-gateway": [
-    {
-      input: "ghcr.io/block/buzz-push-gateway",
-      output: "ghcr.io/asopitech-labs/nimino-push-gateway",
-    },
-    {
-      input:
-        "ghcr.io/block/buzz-push-gateway@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-      output:
-        "ghcr.io/asopitech-labs/nimino-push-gateway@sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
-    },
-  ],
   "release.container-repository.sprig": [
     {
       input: "ghcr.io/block/buzz-sprig",
@@ -236,9 +222,6 @@ const expectedFamilies = {
     },
   ],
   "release.helm-chart.relay": [{ input: "buzz", output: "nimino" }],
-  "release.helm-chart.push-gateway": [
-    { input: "buzz-push-gateway", output: "nimino-push-gateway" },
-  ],
   "release.helm-chart-repository": [
     {
       input: "oci://ghcr.io/block/buzz/charts",

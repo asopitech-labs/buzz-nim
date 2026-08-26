@@ -80,7 +80,6 @@ We review as capacity allows — focused PRs that follow this guide move fastest
 | Nim | 2.2.10 | Hermit-pinned; required only for the Nim core lane |
 | Node.js | 24+ | Required for desktop app commands and `just ci` |
 | pnpm | 10+ | Required for desktop app commands and `just ci` |
-| Flutter | 3.41+ | Required for mobile app — install via [flutter.dev](https://docs.flutter.dev/get-started/install) |
 | Docker | 24+ | For Postgres, Redis, MinIO |
 | `just` | latest | Task runner — `cargo install just` |
 | `lefthook` | 2.1.3 (Hermit-pinned) | Auto-installed by `just hooks` — no manual install needed |
@@ -242,11 +241,11 @@ Before opening a PR, run the full CI gate locally:
 
 ```bash
 just ci
-# Runs: check + unit tests + desktop build + Tauri check + mobile tests
+# Runs: check + unit tests + desktop build + Tauri check
 ```
 
 This is the same check that runs in CI. PRs that fail `just ci` will not be
-merged. If `just ci` fails on formatting, `just fix-all` fixes it in one shot (`rustfmt` + Tauri fmt + desktop, web, and mobile formatters).
+merged. If `just ci` fails on formatting, `just fix-all` fixes it in one shot (`rustfmt` + Tauri fmt + desktop and web formatters).
 
 ---
 
@@ -343,7 +342,7 @@ required. The scope (in parentheses) is optional but encouraged.
    - How to test it manually (if applicable)
    - Any follow-up work deferred to a future PR
 
-6. **Shows the UI** — any PR that changes the desktop or mobile UI includes
+6. **Shows the UI** — any PR that changes the desktop UI includes
    before/after screenshots (or a short recording for interactions) in the
    description. We can't run every branch locally — screenshots let us review
    UI changes same-day instead of waiting for someone to build your branch.
@@ -399,7 +398,7 @@ to existing clients.
 
 Buzz is developed across multiple repositories. This repo (`block/buzz`)
 is the open-source home for all application code — the relay, desktop app,
-mobile app, CLI, and agent harness. Internal repositories handle
+CLI, and agent harness. Internal repositories handle
 enterprise-signed builds and infrastructure deployment.
 
 See [AGENTS.md § Ecosystem](AGENTS.md#ecosystem) for the full repo table and

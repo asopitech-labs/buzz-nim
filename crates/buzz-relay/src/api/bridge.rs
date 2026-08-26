@@ -1315,7 +1315,7 @@ async fn query_events_authed(
                     }
                     // Result-level read auth: never hand a viewer-private snapshot
                     // (kind:30622) to anyone but its owner, even via kindless `ids`.
-                    // Also enforces author-only kinds (30300/30350) and the persona
+                    // Also enforces author-only kinds (such as 30300) and the persona
                     // shared-gate (kind:30175 without ["shared","true"]). Single call
                     // covers all three gated event classes.
                     if !crate::handlers::req::event_visible_to_reader(&se.event, &pubkey_bytes) {

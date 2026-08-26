@@ -46,7 +46,7 @@ NIP-34 is the metadata and discovery layer. Git remains the transport. The trans
 
 ## One Project, Many Repos
 
-Real work spans repositories. The platform is a relay, a desktop app, and a mobile app — three repos, one project. Render one card per repo and they look like three unrelated things.
+Real work spans repositories. The platform is a relay, a desktop app, and a browser surface — three repos, one project. Render one card per repo and they look like three unrelated things.
 
 Grouping is the one forge semantic that per-repo tags cannot express, and it's worth being precise about why, because everything else here deliberately avoids a custom kind.
 

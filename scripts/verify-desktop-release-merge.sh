@@ -19,7 +19,6 @@ required_checks=(
   "Security:15368"
   "Unit Tests:15368"
   "Windows Rust (x86_64-pc-windows-msvc):15368"
-  "Mobile:15368"
   "Web:15368"
   "Backend Integration (relay e2e):15368"
   "Desktop E2E Relay:15368"

@@ -44,8 +44,11 @@ require_release_tag_ruleset() {
 
   includes="$(gh api "$ruleset_endpoint" --jq '[.conditions.ref_name.include[]] | sort | join(",")')" || \
     fail_release_ruleset "could not verify Release tag ruleset $RELEASE_TAG_RULESET_ID scope" || return 1
-  [[ ",$includes," == *",refs/tags/mobile-v*,"* ]] || \
-    fail_release_ruleset "Release tag ruleset $RELEASE_TAG_RULESET_ID does not include refs/tags/mobile-v*" || return 1
+  local active_tag_pattern
+  for active_tag_pattern in 'refs/tags/desktop-v*' 'refs/tags/relay-v*' 'refs/tags/chart-v*'; do
+    [[ ",$includes," == *",$active_tag_pattern,"* ]] || \
+      fail_release_ruleset "Release tag ruleset $RELEASE_TAG_RULESET_ID does not include $active_tag_pattern" || return 1
+  done
 
   excludes="$(gh api "$ruleset_endpoint" --jq '[.conditions.ref_name.exclude[]] | sort | join(",")')" || \
     fail_release_ruleset "could not verify Release tag ruleset $RELEASE_TAG_RULESET_ID exclusions" || return 1

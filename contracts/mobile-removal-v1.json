@@ -2,10 +2,26 @@
   "schemaVersion": 1,
   "contractVersion": "mobile-removal-v1",
   "issue": 18,
-  "phase": "inventory",
-  "expectedCounts": { "mobileFiles": 580, "externalReferences": 143 },
+  "phase": "removed",
+  "expectedCounts": { "mobileFiles": 0, "externalReferences": 68 },
   "phaseTransitionOwner": 33,
   "physicalDeletionOwner": 33,
+  "retiredPushAllowlist": [
+    { "path": "CHANGELOG.md", "occurrences": 1, "reason": "immutable release history" },
+    { "path": "crates/buzz-db/src/migration.rs", "occurrences": 26, "reason": "migration ledger assertions and retirement upgrade test" },
+    { "path": "crates/buzz-relay/CHANGELOG.md", "occurrences": 1, "reason": "immutable relay release history" },
+    { "path": "crates/buzz-relay/src/handlers/ingest.rs", "occurrences": 1, "reason": "negative regression test rejects retired kind 30350" },
+    { "path": "migrations/0012_push_leases.sql", "occurrences": 8, "reason": "immutable SQLx migration history" },
+    { "path": "migrations/0013_push_endpoint_state.sql", "occurrences": 1, "reason": "immutable SQLx migration history" },
+    { "path": "migrations/0014_push_lease_fts.sql", "occurrences": 4, "reason": "immutable SQLx migration history" },
+    { "path": "migrations/0015_push_gateway_authority.sql", "occurrences": 1, "reason": "immutable SQLx migration history" },
+    { "path": "migrations/0018_push_match_queue.sql", "occurrences": 9, "reason": "immutable SQLx migration history" },
+    { "path": "migrations/0023_push_match_gate.sql", "occurrences": 7, "reason": "immutable SQLx migration history" },
+    { "path": "migrations/0024_event_ttl_refresh_shared_lock.sql", "occurrences": 1, "reason": "immutable SQLx migration history" },
+    { "path": "migrations/0029_community_deletion.sql", "occurrences": 3, "reason": "immutable SQLx migration history" },
+    { "path": "migrations/0033_remove_mobile_push.sql", "occurrences": 7, "reason": "additive teardown retained until Issue #12 reset" },
+    { "path": "schema/schema.sql", "occurrences": 2, "reason": "inert FTS exclusion retained until Issue #12 reset" }
+  ],
   "pairingDecision": {
     "productUseCase": "desktop-identity-transfer-and-recovery",
     "source": "an authorized Nimino Desktop sends its identity after SAS confirmation",
@@ -135,6 +151,8 @@
     {
       "id": "external.shared-doc-build-references",
       "action": "shrink",
+      "completionIssue": 33,
+      "state": "completed",
       "owner": "Issue #33",
       "dependencies": ["Issue #65 release-authority cleanup"],
       "selectors": [
@@ -173,21 +191,37 @@
         { "type": "exact", "value": "crates/buzz-relay/src/push_runtime.rs" },
         { "type": "exact", "value": "docs/formal/STATEFUL_GATEWAY.md" },
         { "type": "exact", "value": "docs/nips/NIP-PL.md" },
-        { "type": "exact", "value": "docs/push-gateway-deployment.md" },
+        { "type": "exact", "value": "docs/push-gateway-deployment.md" }
+      ],
+      "deleteWhen": "Issue #33 removes the APNs-only runtime, image, chart, and formal/deployment documents",
+      "proof": "no APNs credential, NIP-PL runtime, gateway image, or chart remains",
+      "evidence": { "path": "crates/buzz-push-gateway/Cargo.toml", "symbol": "for the Buzz mobile app", "signal": "Gateway declares the deleted Mobile app as its only product" }
+    },
+    {
+      "id": "external.mobile-push-migration-ledger",
+      "action": "keep",
+      "owner": "Issue #33 additive teardown; Issue #12 reset baseline",
+      "dependencies": ["SQLx immutable migration checksums"],
+      "selectors": [
         { "type": "exact", "value": "migrations/0012_push_leases.sql" },
         { "type": "exact", "value": "migrations/0013_push_endpoint_state.sql" },
         { "type": "exact", "value": "migrations/0014_push_lease_fts.sql" },
         { "type": "exact", "value": "migrations/0015_push_gateway_authority.sql" },
         { "type": "exact", "value": "migrations/0018_push_match_queue.sql" },
-        { "type": "exact", "value": "migrations/0023_push_match_gate.sql" }
+        { "type": "exact", "value": "migrations/0023_push_match_gate.sql" },
+        { "type": "exact", "value": "migrations/0024_event_ttl_refresh_shared_lock.sql" },
+        { "type": "exact", "value": "migrations/0029_community_deletion.sql" },
+        { "type": "exact", "value": "migrations/0033_remove_mobile_push.sql" }
       ],
-      "deleteWhen": "Issue #33 removes the APNs-only runtime, schema, image, chart, and formal/deployment documents",
-      "proof": "no APNs credential, NIP-PL runtime, push queue, gateway image, or chart remains",
-      "evidence": { "path": "crates/buzz-push-gateway/Cargo.toml", "symbol": "for the Buzz mobile app", "signal": "Gateway declares the deleted Mobile app as its only product" }
+      "deleteWhen": "Issue #12 may replace the complete migration ledger only when the incompatible reset baseline lands",
+      "proof": "historical checksums stay unchanged and migration 0033 drops every Mobile push table/function on upgrade",
+      "evidence": { "path": "migrations/0033_remove_mobile_push.sql", "symbol": "DROP TABLE IF EXISTS push_leases", "signal": "Additive teardown preserves existing database startup" }
     },
     {
       "id": "external.mobile-push-shared-integration",
       "action": "shrink",
+      "completionIssue": 33,
+      "state": "completed",
       "owner": "Issue #33",
       "selectors": [
         { "type": "exact", "value": ".github/workflows/docker.yml" },
@@ -203,7 +237,6 @@
         { "type": "exact", "value": "crates/buzz-relay/src/lib.rs" },
         { "type": "exact", "value": "crates/buzz-relay/src/main.rs" },
         { "type": "exact", "value": "crates/buzz-relay/src/nip11.rs" },
-        { "type": "exact", "value": "migrations/0024_event_ttl_refresh_shared_lock.sql" },
         { "type": "exact", "value": "schema/schema.sql" },
         { "type": "exact", "value": "scripts/check-chirps-api-contract.mjs" },
         { "type": "exact", "value": "scripts/check-nimino-naming-contract.mjs" },
@@ -217,6 +250,8 @@
     {
       "id": "external.desktop-identity-pairing",
       "action": "shrink",
+      "completionIssue": 28,
+      "state": "pending",
       "owner": "Issue #28",
       "selectors": [
         { "type": "exact", "value": "desktop/playwright.config.ts" },
@@ -297,6 +332,8 @@
     {
       "id": "external.protocol-mobile-examples",
       "action": "shrink",
+      "completionIssue": 20,
+      "state": "pending",
       "owner": "Issue #20",
       "selectors": [
         { "type": "exact", "value": "docs/nips/NIP-MP.md" },
