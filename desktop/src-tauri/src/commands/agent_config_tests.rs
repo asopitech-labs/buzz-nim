@@ -655,13 +655,13 @@ fn baked_env_thinking_summary_is_unmasked() {
 #[test]
 fn baked_env_allowlist_is_case_insensitive() {
     // Known-safe keys — case-insensitive match must allow them.
-    assert!(super::is_safe_to_reveal("buzz_agent_provider"));
+    assert!(super::is_safe_to_reveal("nimino_agent_provider"));
     assert!(super::is_safe_to_reveal("NIMINO_AGENT_PROVIDER"));
-    assert!(super::is_safe_to_reveal("buzz_agent_model"));
+    assert!(super::is_safe_to_reveal("nimino_agent_model"));
     assert!(super::is_safe_to_reveal("NIMINO_AGENT_MODEL"));
-    assert!(super::is_safe_to_reveal("buzz_agent_thinking_effort"));
+    assert!(super::is_safe_to_reveal("nimino_agent_thinking_effort"));
     assert!(super::is_safe_to_reveal("NIMINO_AGENT_THINKING_EFFORT"));
-    assert!(super::is_safe_to_reveal("buzz_agent_thinking_summary"));
+    assert!(super::is_safe_to_reveal("nimino_agent_thinking_summary"));
     assert!(super::is_safe_to_reveal("NIMINO_AGENT_THINKING_SUMMARY"));
     assert!(super::is_safe_to_reveal("databricks_host"));
     assert!(super::is_safe_to_reveal("DATABRICKS_HOST"));

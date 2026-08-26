@@ -920,7 +920,7 @@ mod tests {
         };
         let err = validate_harness_definition_pub(&def).unwrap_err();
         assert!(
-            err.contains("reserved by Buzz"),
+            err.contains("reserved by Nimino"),
             "ownership marker key must be rejected: {err}"
         );
     }
@@ -929,7 +929,7 @@ mod tests {
     fn validate_rejects_reserved_key_case_insensitive() {
         // NIMINO_PRIVATE_KEY in any casing must be blocked.
         let mut env = BTreeMap::new();
-        env.insert("buzz_private_key".to_string(), "secret".to_string());
+        env.insert("nimino_private_key".to_string(), "secret".to_string());
         let def = HarnessDefinition {
             id: "ci-marker".to_string(),
             label: "CI".to_string(),
@@ -941,7 +941,7 @@ mod tests {
         };
         let err = validate_harness_definition_pub(&def).unwrap_err();
         assert!(
-            err.contains("reserved by Buzz"),
+            err.contains("reserved by Nimino"),
             "reserved key must be blocked case-insensitively: {err}"
         );
     }

@@ -428,7 +428,7 @@ mod tests {
         // baked filter: env lookup is case-sensitive on Unix, but a lowercase
         // spelling would still be a reserved key smuggled past a case-sensitive
         // check on Windows.
-        let raw = "buzz_acp_respond_to=anyone\nBuzz_Private_Key=nsec1fake";
+        let raw = "nimino_acp_respond_to=anyone\nNiMiNo_Private_Key=nsec1fake";
         let blob = base64::engine::general_purpose::STANDARD.encode(raw.as_bytes());
         let map = build_env_map(None, None, Some(&blob));
         assert!(

@@ -221,13 +221,13 @@ fn allowlisted_env_key_is_case_insensitive() {
     let mut before = base();
     before
         .env
-        .insert("buzz_agent_provider".into(), "anthropic".into());
+        .insert("nimino_agent_provider".into(), "anthropic".into());
     let mut after = before.clone();
     after
         .env
-        .insert("buzz_agent_provider".into(), "openai".into());
+        .insert("nimino_agent_provider".into(), "openai".into());
     assert_eq!(
-        change_at(&diff(&before, &after), "env.buzz_agent_provider"),
+        change_at(&diff(&before, &after), "env.nimino_agent_provider"),
         &RestartChange::Value {
             before: Value::String("anthropic".into()),
             after: Value::String("openai".into()),
