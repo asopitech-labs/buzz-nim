@@ -2168,6 +2168,18 @@ mod tests {
     }
 
     #[test]
+    fn cli_help_uses_nimino_namespace() {
+        let help = match Cli::try_parse_from(["nimino", "--help"]) {
+            Err(error) => error.to_string(),
+            Ok(_) => panic!("--help must stop parsing"),
+        };
+
+        assert!(help.contains("Nimino CLI — interact with a Nimino relay"));
+        assert!(help.contains("NIMINO_PRIVATE_KEY"));
+        assert!(!help.contains("Buzz CLI"));
+    }
+
+    #[test]
     fn messages_thread_accepts_link_or_explicit_identifiers() {
         let channel = "123e4567-e89b-12d3-a456-426614174000";
         let event = "a".repeat(64);
