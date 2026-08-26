@@ -6,7 +6,7 @@
 #
 # Prerequisites:
 #   - Docker services running (postgres, redis, minio)
-#   - Relay built: cargo build --release --bin buzz-relay
+#   - Relay built: cargo build --release --bin nimino-relay
 #   - Credential helper built: cargo build --release --bin git-credential-nostr
 #   - Signing program built: cargo build --release --bin git-sign-nostr
 #   - Python 3 with websocket-client: pip install websocket-client
@@ -90,7 +90,7 @@ check_deps() {
     local missing=()
 
     if [[ ! -x "${REPO_ROOT}/target/release/nimino-relay" ]]; then
-        missing+=("buzz-relay (cargo build --release --bin buzz-relay)")
+        missing+=("nimino-relay (cargo build --release --bin nimino-relay)")
     fi
     if [[ ! -x "${REPO_ROOT}/target/release/git-credential-nostr" ]]; then
         missing+=("git-credential-nostr (cargo build --release --bin git-credential-nostr)")

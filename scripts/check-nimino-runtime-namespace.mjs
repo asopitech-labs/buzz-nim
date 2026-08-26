@@ -27,6 +27,13 @@ check(
   "relay binary is not Nimino",
 );
 
+const dockerfile = readFileSync(join(root, "Dockerfile"), "utf8");
+check(
+  dockerfile.includes("--bin nimino-relay") &&
+    dockerfile.includes('ENTRYPOINT ["/usr/local/bin/nimino-relay"]'),
+  "relay container does not build and launch nimino-relay",
+);
+
 const tauri = JSON.parse(
   readFileSync(join(root, "desktop", "src-tauri", "tauri.conf.json"), "utf8"),
 );
