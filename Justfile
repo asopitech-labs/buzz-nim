@@ -161,6 +161,10 @@ chirps-contract:
 naming-contract:
     node scripts/check-nimino-naming-contract.mjs
 
+# Verify the versioned Nimino wire/data classification and old-client rejection fixture
+protocol-contract:
+    node scripts/check-nimino-protocol-contract.mjs
+
 # Verify GUI surface/route dispositions and feature-root ownership
 gui-surface-contract:
     node scripts/check-gui-surface-contract.mjs
@@ -178,7 +182,7 @@ ci-lanes-contract:
     node scripts/test-ci-lanes.mjs
 
 # Run repo lint, formatting, and repository policy checks
-check: fmt-check clippy chirps-contract naming-contract gui-surface-contract wsl-support-contract removed-client-contract ci-lanes-contract desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check file-size-check
+check: fmt-check clippy chirps-contract naming-contract protocol-contract gui-surface-contract wsl-support-contract removed-client-contract ci-lanes-contract desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check file-size-check
 
 # Run the active-product differential file-size ratchet and its policy tests.
 # The ratchet inspects only files changed from the merge base, so this stays

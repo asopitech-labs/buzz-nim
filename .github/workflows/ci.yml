@@ -111,6 +111,8 @@ jobs:
         run: just ci-lanes-contract
       - name: Nimino naming contract
         run: just naming-contract
+      - name: Nimino protocol contract
+        run: just protocol-contract
       - name: GUI surface contract
         run: just gui-surface-contract
       - name: WSL support contract
