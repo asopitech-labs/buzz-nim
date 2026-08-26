@@ -2,10 +2,14 @@
 set -euo pipefail
 
 repo_root=$(cd "$(dirname "$0")/.." && pwd)
+export PATH="$repo_root/bin:$PATH"
 key_script="scripts/desktop-release-cache-key.py"
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
-cp -R "$repo_root"/. "$tmp/repo"
+mkdir "$tmp/repo"
+git -C "$repo_root" ls-files -z | tar -C "$repo_root" --null -T - -cf - | tar -C "$tmp/repo" -xf -
+git -C "$tmp/repo" init -q
+git -C "$tmp/repo" add -A
 cd "$tmp/repo"
 
 args=(--platform Linux --target x86_64-unknown-linux-gnu --features mesh-llm --native-inputs ubuntu-24.04-mold)

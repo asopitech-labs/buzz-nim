@@ -53,6 +53,12 @@ fi
 grep -q 'verify-release-ref\.sh' "$repo_root/.github/workflows/release.yml"
 grep -q 'verify-release-ref\.sh' "$repo_root/.github/workflows/docker.yml"
 grep -q 'test-release-ref-contract\.sh' "$repo_root/.github/workflows/ci.yml"
+for image_workflow in docker.yml sprig-image.yml; do
+  if grep -A1 'cache-to:' "$repo_root/.github/workflows/$image_workflow" | grep -q 'head.repo.full_name'; then
+    echo "$image_workflow pushes registry cache during pull-request validation" >&2
+    exit 1
+  fi
+done
 "$repo_root/scripts/test-signed-canary-contract.sh"
 "$repo_root/scripts/test-desktop-release-cache-key.sh"
 "$repo_root/scripts/test-desktop-release-cache-workflow.sh"
