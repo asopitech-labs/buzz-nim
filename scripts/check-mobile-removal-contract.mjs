@@ -132,6 +132,12 @@ check(Array.isArray(contract.retiredPushAllowlist), "retiredPushAllowlist must b
 for (const unsupported of ["automated or repeated secret transfer", "Chirps cluster negotiation", "database replication", "automatic sync"]) {
   check(contract.pairingDecision.unsupported.includes(unsupported), `NIP-AB must not own ${unsupported}`);
 }
+const desktopPairing = contract.externalSurfaces.find(({ id }) => id === "external.desktop-identity-pairing");
+check(desktopPairing?.state === "completed", "Issue #28 must complete the Desktop identity pairing shrink");
+const retiredPairingSurface = /MobilePairing|mobile[ -]pairing|start_pairing|nostr-import-phone|phone-recovery|recover from your phone|mobile app|mobile device/iu;
+for (const path of desktopPairing.selectors.map(({ value }) => value).filter((path) => existsSync(join(root, path)) && isText(path))) {
+  check(!retiredPairingSurface.test(readFileSync(join(root, path), "utf8")), `${path}: retired Mobile pairing route or wording remains`);
+}
 
 const actions = new Set(["keep", "shrink", "delete"]);
 const selectorTypes = new Set(["exact", "prefix"]);

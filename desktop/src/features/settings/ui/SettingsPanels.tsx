@@ -14,7 +14,7 @@ import {
   MonitorCog,
   Moon,
   ShieldAlert,
-  Smartphone,
+  KeyRound,
   Smile,
   Sun,
   SunMoon,
@@ -65,7 +65,7 @@ import { ChannelTemplatesSettingsCard } from "./ChannelTemplatesSettingsCard";
 import { ExperimentalFeaturesCard } from "./ExperimentalFeaturesCard";
 import { KeyboardShortcutsCard } from "./KeyboardShortcutsCard";
 import { MeshComputeSettingsCard } from "@/features/mesh-compute/ui/MeshComputeSettingsCard";
-import { MobilePairingCard } from "./MobilePairingCard";
+import { IdentityTransferCard } from "./IdentityTransferCard";
 import { ModerationQueueCard } from "./ModerationQueueCard";
 import { NotificationSettingsCard } from "./NotificationSettingsCard";
 import { AgentsSettingsPanel } from "./AgentsSettingsPanel";
@@ -96,7 +96,7 @@ export type SettingsSection =
   | "moderation"
   | "custom-emoji"
   | "local-archive"
-  | "mobile"
+  | "identity-transfer"
   | "updates";
 
 export const DEFAULT_SETTINGS_SECTION: SettingsSection = "profile";
@@ -116,7 +116,7 @@ const SETTINGS_SECTION_VALUES: readonly SettingsSection[] = [
   "moderation",
   "custom-emoji",
   "local-archive",
-  "mobile",
+  "identity-transfer",
   "updates",
 ];
 
@@ -225,9 +225,9 @@ export const settingsSections: SettingsSectionDescriptor[] = [
     icon: Archive,
   },
   {
-    value: "mobile",
-    label: "Mobile",
-    icon: Smartphone,
+    value: "identity-transfer",
+    label: "Identity transfer",
+    icon: KeyRound,
   },
   {
     value: "updates",
@@ -854,8 +854,8 @@ export function renderSettingsSection(
       return <CustomEmojiSettingsCard />;
     case "local-archive":
       return <LocalArchiveSettingsCard />;
-    case "mobile":
-      return <MobilePairingCard currentPubkey={props.currentPubkey} />;
+    case "identity-transfer":
+      return <IdentityTransferCard currentPubkey={props.currentPubkey} />;
     case "updates":
       return <UpdateChecker />;
     default: {

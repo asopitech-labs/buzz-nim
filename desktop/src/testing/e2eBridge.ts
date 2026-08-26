@@ -465,7 +465,7 @@ type E2eConfig = {
     /** Delay (ms) applied to `get_relay_self` so E2E tests can prove the
      *  fail-closed race: DMs are withheld while classification is unresolved. */
     relaySelfDelayMs?: number;
-    /** Delay (ms) applied to `start_pairing` so pairing loading UI is observable. */
+    /** Delay (ms) applied while starting a pairing session. */
     pairingStartDelayMs?: number;
     /**
      * Sequenced results for `confirm_team_snapshot_import`. String = throw
@@ -13743,12 +13743,12 @@ export function maybeInstallE2eTauriMocks() {
       case "plugin:webview|set_webview_zoom":
         window.__BUZZ_E2E_WEBVIEW_ZOOM__ = (payload as { value: number }).value;
         return;
-      case "start_pairing": {
+      case "join_identity_recovery_pairing": {
         const delayMs = activeConfig?.mock?.pairingStartDelayMs ?? 0;
         if (delayMs > 0) {
           await new Promise((resolve) => window.setTimeout(resolve, delayMs));
         }
-        return "nostrpair://8f4b8db31967ce14fef970a1ff1e8eecf19a430aa1c83875e2f5be68dcac0f1a?relay=wss%3A%2F%2Frelay.example.com&secret=87d5a8cfd5807a0cb44f728b67d88d6dcb8daf99be137c158f21a50c1e913c0a&v=1";
+        return null;
       }
       case "start_identity_recovery_pairing": {
         const delayMs = activeConfig?.mock?.pairingStartDelayMs ?? 0;

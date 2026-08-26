@@ -133,7 +133,7 @@ export default defineConfig({
         "**/onboarding-backup.spec.ts",
         "**/onboarding-agent-defaults.spec.ts",
         "**/nostr-bind.spec.ts",
-        "**/mobile-pairing-qr.spec.ts",
+        "**/identity-transfer.spec.ts",
         "**/profile-nsec-reveal.spec.ts",
         "**/profile-backup-settings.spec.ts",
         "**/signout-confirmation.spec.ts",

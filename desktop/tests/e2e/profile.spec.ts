@@ -2708,7 +2708,7 @@ test("settings subtitles share the Appearance secondary color", async ({
     "agents",
     "compute",
     "experimental",
-    "mobile",
+    "identity-transfer",
     "updates",
   ]) {
     await page.getByTestId(`settings-nav-${section}`).click();

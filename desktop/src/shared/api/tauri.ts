@@ -1063,10 +1063,6 @@ export async function nip44DecryptFromSelf(
   return invokeTauri<string>("nip44_decrypt_from_self", { ciphertext });
 }
 
-export async function startPairing(): Promise<string> {
-  return invokeTauri<string>("start_pairing");
-}
-
 export async function confirmPairingSas(): Promise<void> {
   await invokeTauri("confirm_pairing_sas");
 }

@@ -3,7 +3,7 @@
   "contractVersion": "mobile-removal-v1",
   "issue": 18,
   "phase": "removed",
-  "expectedCounts": { "mobileFiles": 0, "externalReferences": 68 },
+  "expectedCounts": { "mobileFiles": 0, "externalReferences": 63 },
   "phaseTransitionOwner": 33,
   "physicalDeletionOwner": 33,
   "retiredPushAllowlist": [
@@ -251,7 +251,7 @@
       "id": "external.desktop-identity-pairing",
       "action": "shrink",
       "completionIssue": 28,
-      "state": "pending",
+      "state": "completed",
       "owner": "Issue #28",
       "selectors": [
         { "type": "exact", "value": "desktop/playwright.config.ts" },
@@ -263,20 +263,20 @@
         { "type": "exact", "value": "desktop/src-tauri/src/lib.rs" },
         { "type": "exact", "value": "desktop/src/features/onboarding/ui/IdentityRecoveryPairing.tsx" },
         { "type": "exact", "value": "desktop/src/features/onboarding/ui/MachineOnboardingFlow.tsx" },
-        { "type": "exact", "value": "desktop/src/features/settings/ui/MobilePairingCard.tsx" },
+        { "type": "exact", "value": "desktop/src/features/settings/ui/IdentityTransferCard.tsx" },
         { "type": "exact", "value": "desktop/src/features/settings/ui/SettingsPanels.tsx" },
         { "type": "exact", "value": "desktop/src/shared/api/tauri.ts" },
         { "type": "exact", "value": "desktop/src/shared/api/tauriPairing.ts" },
         { "type": "exact", "value": "desktop/src/shared/ui/styled-qr-code.test.mjs" },
         { "type": "exact", "value": "desktop/src/testing/e2eBridge.ts" },
         { "type": "exact", "value": "desktop/tests/e2e/identity-lost.spec.ts" },
-        { "type": "exact", "value": "desktop/tests/e2e/mobile-pairing-qr.spec.ts" },
+        { "type": "exact", "value": "desktop/tests/e2e/identity-transfer.spec.ts" },
         { "type": "exact", "value": "desktop/tests/helpers/bridge.ts" }
       ],
       "deleteWhen": "Issue #28 removes Mobile names/routes and leaves one tested Desktop-to-Desktop identity transfer/recovery flow",
       "proof": "Desktop smoke/E2E covers both authorized sender and fresh receiver with no Mobile wording or dead route",
-      "evidence": { "path": "desktop/src/features/settings/ui/MobilePairingCard.tsx", "symbol": "MobilePairingCard", "signal": "Current Desktop sender surface still carries Mobile product wording" },
-      "postRemovalEvidence": { "path": "desktop/src-tauri/src/commands/pairing.rs", "symbol": "enum PairingMode", "signal": "Desktop send/recover roles remain after Mobile wording is removed" }
+      "evidence": { "path": "desktop/src/features/settings/ui/MobilePairingCard.tsx", "symbol": "MobilePairingCard", "signal": "Legacy Desktop sender surface carried Mobile product wording" },
+      "postRemovalEvidence": { "path": "desktop/src/features/settings/ui/IdentityTransferCard.tsx", "symbol": "IdentityTransferCard", "signal": "Explicit authorized-Desktop sender surface remains after Mobile wording and routes are removed" }
     },
     {
       "id": "external.nip-ab-interop",
