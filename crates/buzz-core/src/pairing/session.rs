@@ -271,9 +271,30 @@ impl PairingSession {
         payload_type: PayloadType,
         payload: Zeroizing<String>,
     ) -> Result<Event, PairingError> {
+        self.send_payload_as(Role::Source, payload_type, payload)
+    }
+
+    /// (Target) Return a payload to the QR-displaying source.
+    ///
+    /// Recovery uses this direction when an authorized device sends its
+    /// identity to a fresh device that displayed the pairing code.
+    pub fn send_return_payload(
+        &mut self,
+        payload_type: PayloadType,
+        payload: Zeroizing<String>,
+    ) -> Result<Event, PairingError> {
+        self.send_payload_as(Role::Target, payload_type, payload)
+    }
+
+    fn send_payload_as(
+        &mut self,
+        role: Role,
+        payload_type: PayloadType,
+        payload: Zeroizing<String>,
+    ) -> Result<Event, PairingError> {
         self.check_expired()?;
         self.expect_state(SessionState::Transferring)?;
-        self.expect_role(Role::Source)?;
+        self.expect_role(role)?;
 
         let mut msg = PairingMessage::Payload {
             payload_type,
@@ -294,9 +315,18 @@ impl PairingSession {
 
     /// (Source) Process the `complete` event from the target.
     pub fn handle_complete(&mut self, event: &Event) -> Result<(), PairingError> {
+        self.handle_completion_as(Role::Source, event)
+    }
+
+    /// (Target) Process the import result returned by a recovery source.
+    pub fn handle_source_complete(&mut self, event: &Event) -> Result<(), PairingError> {
+        self.handle_completion_as(Role::Target, event)
+    }
+
+    fn handle_completion_as(&mut self, role: Role, event: &Event) -> Result<(), PairingError> {
         self.check_expired()?;
         self.expect_state(SessionState::PayloadExchanged)?;
-        self.expect_role(Role::Source)?;
+        self.expect_role(role)?;
         self.validate_event_from_peer(event)?;
 
         let msg = self.decrypt_message(event)?;
@@ -880,10 +910,7 @@ mod tests {
         target.confirm_target_sas().expect("target confirm");
 
         let payload = target
-            .build_event(&PairingMessage::Payload {
-                payload_type: PayloadType::Nsec,
-                payload: "nsec1recovered".into(),
-            })
+            .send_return_payload(PayloadType::Nsec, Zeroizing::new("nsec1recovered".into()))
             .expect("return payload");
         let (payload_type, secret) = source
             .handle_return_payload(&payload)
@@ -895,10 +922,10 @@ mod tests {
 
         let complete = source.send_source_complete(true).expect("source complete");
         assert_eq!(source.state(), SessionState::Completed);
-        assert!(matches!(
-            target.decrypt_message(&complete).expect("decrypt complete"),
-            PairingMessage::Complete { success: true }
-        ));
+        target
+            .handle_source_complete(&complete)
+            .expect("target handles source completion");
+        assert_eq!(target.state(), SessionState::Completed);
     }
 
     #[test]
@@ -912,10 +939,7 @@ mod tests {
             .expect("sas-confirm");
         target.confirm_target_sas().expect("target confirm");
         let payload = target
-            .build_event(&PairingMessage::Payload {
-                payload_type: PayloadType::Nsec,
-                payload: "invalid".into(),
-            })
+            .send_return_payload(PayloadType::Nsec, Zeroizing::new("invalid".into()))
             .expect("return payload");
         source
             .handle_return_payload(&payload)
@@ -925,10 +949,8 @@ mod tests {
             .send_source_complete(false)
             .expect("failure complete");
         assert_eq!(source.state(), SessionState::Aborted);
-        assert!(matches!(
-            target.decrypt_message(&complete).expect("decrypt complete"),
-            PairingMessage::Complete { success: false }
-        ));
+        assert!(target.handle_source_complete(&complete).is_err());
+        assert_eq!(target.state(), SessionState::Aborted);
     }
 
     /// State machine rejects out-of-order operations.

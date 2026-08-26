@@ -720,8 +720,8 @@ test("fresh existing-identity path leads with private-key recovery", async ({
   await expect(page.getByTestId("nostr-import-file-button")).toHaveText(
     "backup file",
   );
-  await expect(page.getByTestId("nostr-import-phone-link")).toHaveText(
-    "recover from your phone",
+  await expect(page.getByTestId("nostr-import-recovery-link")).toHaveText(
+    "recover from another Desktop",
   );
   await expect(page.getByTestId("identity-recovery-pairing")).toHaveCount(0);
 
@@ -783,13 +783,15 @@ test("fresh existing-identity path leads with private-key recovery", async ({
   await expect(page.getByTestId("nostr-import-card")).toBeVisible();
   await backupDialog.getByRole("button", { name: "Close" }).click();
 
-  await page.getByTestId("nostr-import-phone-link").click();
-  const phoneDialog = page.getByTestId("phone-recovery-dialog");
-  await expect(phoneDialog).toBeVisible();
+  await page.getByTestId("nostr-import-recovery-link").click();
+  const recoveryDialog = page.getByTestId("identity-recovery-dialog");
+  await expect(recoveryDialog).toBeVisible();
   await expect(
-    phoneDialog.getByRole("heading", { name: "Use your Buzz identity" }),
+    recoveryDialog.getByRole("heading", { name: "Use your Buzz identity" }),
   ).toBeVisible();
-  await expect(phoneDialog.getByTestId("identity-recovery-qr")).toBeVisible();
+  await expect(
+    recoveryDialog.getByTestId("identity-recovery-qr"),
+  ).toBeVisible();
   await expect(page.getByTestId("nostr-import-card")).toBeVisible();
 });
 

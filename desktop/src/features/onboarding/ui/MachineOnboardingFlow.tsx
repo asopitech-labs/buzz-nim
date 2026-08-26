@@ -96,9 +96,10 @@ export function MachineOnboardingFlow({
   const [isKeyImporting, setIsKeyImporting] = React.useState(false);
   const [keyImportFormKey, setKeyImportFormKey] = React.useState(0);
   const [keyImportDialog, setKeyImportDialog] = React.useState<
-    "backup" | "phone" | null
+    "backup" | "pairing" | null
   >(null);
-  const [phoneRecoveryStep, setPhoneRecoveryStep] = React.useState("loading");
+  const [pairingRecoveryStep, setPairingRecoveryStep] =
+    React.useState("loading");
   const [selectedPubkey, setSelectedPubkey] = React.useState<string | null>(
     null,
   );
@@ -395,12 +396,12 @@ export function MachineOnboardingFlow({
                       , or{" "}
                       <button
                         className="rounded-sm font-medium underline decoration-foreground/40 underline-offset-4 transition-colors hover:decoration-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-60"
-                        data-testid="nostr-import-phone-link"
+                        data-testid="nostr-import-recovery-link"
                         disabled={isPending}
-                        onClick={() => setKeyImportDialog("phone")}
+                        onClick={() => setKeyImportDialog("pairing")}
                         type="button"
                       >
-                        recover from your phone
+                        recover from another Desktop
                       </button>
                       .
                     </p>
@@ -467,31 +468,31 @@ export function MachineOnboardingFlow({
                 onOpenChange={(open) => {
                   if (!open) setKeyImportDialog(null);
                 }}
-                open={keyImportDialog === "phone"}
+                open={keyImportDialog === "pairing"}
               >
                 <DialogContent
                   className="buzz-onboarding-neutral-theme max-h-[calc(100dvh-2rem)] max-w-[47.5rem] -translate-y-5 overflow-y-auto"
                   closeButtonClassName={ONBOARDING_INK_ICON_CLASS}
                   data-system-color-scheme="light"
-                  data-testid="phone-recovery-dialog"
+                  data-testid="identity-recovery-dialog"
                   surface="textured"
                 >
                   <div className="mx-auto flex w-full max-w-[35rem] flex-col items-center pb-6 pt-8 text-center max-sm:pb-4 max-sm:pt-4">
                     <DialogTitle className="text-balance px-8 text-3xl font-normal text-foreground">
                       {identityLost
-                        ? "Recover from your phone"
+                        ? "Recover from another Desktop"
                         : "Use your Buzz identity"}
                     </DialogTitle>
                     <DialogDescription className="mt-4 text-sm leading-6 text-foreground/80">
-                      {phoneRecoveryStep === "loading" ||
-                      phoneRecoveryStep === "qr"
-                        ? "Scan this code with a signed-in Buzz phone."
+                      {pairingRecoveryStep === "loading" ||
+                      pairingRecoveryStep === "qr"
+                        ? "Copy this code into Identity transfer on a signed-in Desktop you control."
                         : "Confirm the code before sharing your identity."}
                     </DialogDescription>
                     <div className="mt-5">
                       <IdentityRecoveryPairing
                         onRecovered={loadRecoveredIdentity}
-                        onStepChange={setPhoneRecoveryStep}
+                        onStepChange={setPairingRecoveryStep}
                       />
                     </div>
                   </div>

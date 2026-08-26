@@ -80,7 +80,7 @@ test("lost boot keeps the pairing-code action stable while generating", async ({
   );
   await page.goto("/");
 
-  await page.getByTestId("nostr-import-phone-link").click();
+  await page.getByTestId("nostr-import-recovery-link").click();
   const copyButton = page.getByTestId("copy-identity-recovery-code");
   await expect(copyButton).toBeVisible();
   await expect(copyButton).toBeDisabled();
@@ -97,7 +97,7 @@ test("lost boot keeps the pairing-code action stable while generating", async ({
   ).toBe(true);
 });
 
-test("lost boot offers phone recovery with a single-use QR", async ({
+test("lost boot offers Desktop recovery with a single-use QR", async ({
   page,
 }, testInfo) => {
   await installMockBridge(
@@ -107,18 +107,22 @@ test("lost boot offers phone recovery with a single-use QR", async ({
   );
   await page.goto("/");
 
-  await page.getByTestId("nostr-import-phone-link").click();
+  await page.getByTestId("nostr-import-recovery-link").click();
   await expect(page.getByTestId("identity-recovery-pairing")).toBeVisible();
   await expect(page.getByTestId("identity-recovery-qr")).toBeVisible();
   await expect(
-    page.getByText("Scan this code with a signed-in Buzz phone."),
+    page.getByText(
+      "Copy this code into Identity transfer on a signed-in Desktop you control.",
+    ),
   ).toBeVisible();
   await expect(
-    page.getByText("On your phone, open Settings → Send identity to desktop."),
+    page.getByText(
+      "On a signed-in Desktop you control, open Settings → Identity transfer and paste this code.",
+    ),
   ).toBeVisible();
   await page.waitForTimeout(1_000); // Let the onboarding entrance motion settle.
   await page.screenshot({
-    path: testInfo.outputPath("desktop-phone-recovery-qr.png"),
+    path: testInfo.outputPath("desktop-identity-recovery-qr.png"),
     fullPage: true,
   });
 
@@ -157,7 +161,7 @@ test("lost boot offers phone recovery with a single-use QR", async ({
   ).toBe(true);
 });
 
-test("phone recovery uses the desktop pairing card semantics", async ({
+test("Desktop recovery uses the shared pairing card semantics", async ({
   page,
 }) => {
   await installMockBridge(
@@ -167,7 +171,7 @@ test("phone recovery uses the desktop pairing card semantics", async ({
   );
   await page.goto("/");
 
-  await page.getByTestId("nostr-import-phone-link").click();
+  await page.getByTestId("nostr-import-recovery-link").click();
   const card = page.getByTestId("identity-recovery-pairing");
   const qrContainer = card.getByTestId("identity-recovery-qr-container");
   const qrCode = card.getByTestId("identity-recovery-qr");
@@ -194,7 +198,7 @@ test("phone recovery uses the desktop pairing card semantics", async ({
   });
 
   await expect(
-    card.getByText("Does this code match your phone?"),
+    card.getByText("Does this code match the sending Desktop?"),
   ).toBeVisible();
   await expect(
     page.getByText("Confirm the code before sharing your identity."),
@@ -205,7 +209,7 @@ test("phone recovery uses the desktop pairing card semantics", async ({
     ),
   ).toBeVisible();
   await expect(
-    card.getByText(/On your phone, open Settings/),
+    card.getByText(/On a signed-in Desktop you control, open Settings/),
   ).not.toBeVisible();
   await expect(card.getByTestId("identity-recovery-sas")).toHaveText("123 456");
   await expect(card.getByTestId("confirm-identity-recovery-sas")).toHaveText(
@@ -236,7 +240,7 @@ test("canceling recovery uses the standard pairing cancellation state", async ({
     { skipOnboardingSeed: true },
   );
   await page.goto("/");
-  await page.getByTestId("nostr-import-phone-link").click();
+  await page.getByTestId("nostr-import-recovery-link").click();
   await expect(page.getByTestId("identity-recovery-qr")).toBeVisible();
 
   await page.evaluate(async () => {
@@ -263,7 +267,7 @@ test("canceling recovery uses the standard pairing cancellation state", async ({
     .toBeGreaterThan(0);
 });
 
-test("phone recovery continues to harness setup without creating or restarting", async ({
+test("Desktop recovery continues to harness setup without creating or restarting", async ({
   page,
 }) => {
   await installMockBridge(
@@ -272,7 +276,7 @@ test("phone recovery continues to harness setup without creating or restarting",
     { skipOnboardingSeed: true },
   );
   await page.goto("/");
-  await page.getByTestId("nostr-import-phone-link").click();
+  await page.getByTestId("nostr-import-recovery-link").click();
   await expect(page.getByTestId("identity-recovery-qr")).toBeVisible();
 
   await page.evaluate(async () => {
@@ -299,7 +303,7 @@ test("recovery turns relay failures into actionable copy", async ({ page }) => {
     { skipOnboardingSeed: true },
   );
   await page.goto("/");
-  await page.getByTestId("nostr-import-phone-link").click();
+  await page.getByTestId("nostr-import-recovery-link").click();
   await expect(page.getByTestId("identity-recovery-qr")).toBeVisible();
 
   await page.evaluate(async () => {
@@ -327,7 +331,7 @@ test("desktop refreshes recovery codes before the relay expires them", async ({
     { skipOnboardingSeed: true },
   );
   await page.goto("/");
-  await page.getByTestId("nostr-import-phone-link").click();
+  await page.getByTestId("nostr-import-recovery-link").click();
   await expect(page.getByTestId("identity-recovery-qr")).toBeVisible();
 
   const recoveryStarts = () =>

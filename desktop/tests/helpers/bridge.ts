@@ -401,7 +401,7 @@ type MockBridgeOptions = {
   /** Delay (ms) applied to `get_relay_self` so E2E tests can prove the
    *  fail-closed race: DMs are withheld while classification is unresolved. */
   relaySelfDelayMs?: number;
-  /** Delay (ms) applied to `start_pairing` so pairing loading UI is observable. */
+  /** Delay (ms) applied while starting a pairing session. */
   pairingStartDelayMs?: number;
   /**
    * Sequenced results for `confirm_team_snapshot_import`. String = throw

@@ -12,12 +12,12 @@ test("renders the Wallet-style QR geometry locally", () => {
   const html = renderToStaticMarkup(
     React.createElement(StyledQrCode, {
       centerImageSrc: "/app-icon@2x.png",
-      title: "Mobile pairing QR code",
+      title: "Desktop identity recovery QR code",
       value: TEST_PAIRING_URI,
     }),
   );
 
-  assert.match(html, /aria-label="Mobile pairing QR code"/);
+  assert.match(html, /aria-label="Desktop identity recovery QR code"/);
   assert.match(html, /data-qr-matrix-size="57"/);
   assert.equal((html.match(/data-qr-finder-pattern=""/g) ?? []).length, 3);
   assert.ok(

@@ -4,9 +4,10 @@ use std::time::Duration;
 
 use super::{
     clear_pairing_session_if_current, commit_recovery_if_current, invalidate_pairing_generation,
-    recovery_result_after_completion, validate_recovery_payload_type, PairingHandle,
-    PairingSession, PayloadType,
+    parse_desktop_recovery_code, recovery_result_after_completion, validate_recovery_payload_type,
+    PairingHandle, PairingSession, PayloadType,
 };
+use buzz_core_pkg::pairing::qr::encode_qr;
 
 #[tokio::test]
 async fn overlapping_starts_are_serialized() {
@@ -30,8 +31,22 @@ fn recovery_rejects_non_nsec_payloads() {
     assert!(validate_recovery_payload_type(PayloadType::Nsec).is_ok());
     assert_eq!(
         validate_recovery_payload_type(PayloadType::Custom).unwrap_err(),
-        "Mobile device sent an unsupported recovery payload"
+        "The sending Desktop sent an unsupported recovery payload"
     );
+}
+
+#[test]
+fn desktop_recovery_code_requires_the_explicit_recovery_mode() {
+    let (_, qr) = PairingSession::new_source("wss://pairing.example".into());
+    let generic = encode_qr(&qr);
+    let recovery = format!("{generic}&mode=recover");
+
+    assert!(parse_desktop_recovery_code(&recovery).is_ok());
+    assert_eq!(
+        parse_desktop_recovery_code(&generic).unwrap_err(),
+        "This pairing code is not for Desktop identity recovery"
+    );
+    assert!(parse_desktop_recovery_code(&format!("{recovery}&mode=recover")).is_err());
 }
 
 #[test]
