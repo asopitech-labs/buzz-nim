@@ -3,7 +3,7 @@
   "contractVersion": "mobile-removal-v1",
   "issue": 18,
   "phase": "removed",
-  "expectedCounts": { "mobileFiles": 0, "externalReferences": 63 },
+  "expectedCounts": { "mobileFiles": 0, "externalReferences": 61 },
   "phaseTransitionOwner": 33,
   "physicalDeletionOwner": 33,
   "retiredPushAllowlist": [
@@ -333,7 +333,7 @@
       "id": "external.protocol-mobile-examples",
       "action": "shrink",
       "completionIssue": 20,
-      "state": "pending",
+      "state": "completed",
       "owner": "Issue #20",
       "selectors": [
         { "type": "exact", "value": "docs/nips/NIP-MP.md" },
@@ -342,7 +342,7 @@
       ],
       "deleteWhen": "Issue #20 removes Mobile-only examples while preserving protocol semantics that remain supported",
       "proof": "protocol contract and old-client negative fixtures",
-      "evidence": { "path": "docs/nips/NIP-RS.md", "symbol": "Mobile", "signal": "Protocol document contains a Mobile-specific example" },
+      "evidence": { "path": "docs/nips/NIP-RS.md", "symbol": "mobile app", "signal": "Protocol document contains a Mobile-specific example" },
       "postRemovalEvidence": { "path": "docs/nips/NIP-MP.md", "symbol": "NIP-MP", "signal": "Protocol semantics remain after Mobile-only examples are removed" }
     },
     {

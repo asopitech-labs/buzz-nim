@@ -16,7 +16,7 @@ A project is metadata only. Its signer gains no authority over any member reposi
 
 ## Motivation
 
-Buzz renders one card per `kind:30617`, so "the platform" — a relay, a desktop app, and a mobile app — appears as three unrelated repositories. Real work spans repositories; the model does not.
+Buzz renders one card per `kind:30617`, so "the platform" — a relay, a desktop app, and a web client — appears as three unrelated repositories. Real work spans repositories; the model does not.
 
 [VISION_PROJECTS.md](../../VISION_PROJECTS.md) sets the bar as "standard kinds as substrate, custom kinds only where genuinely novel," and every other forge concept in Buzz clears it: repositories, patches, issues, statuses, and ref state are all standard NIP-34 kinds. Multi-repository grouping is the one semantic that cannot be:
 
@@ -75,7 +75,7 @@ Both external registries are advisory, not authoritative allocators: neither res
   "tags": [
     ["d", "platform"],
     ["name", "Platform"],
-    ["description", "Relay, desktop, and mobile for the platform team."],
+    ["description", "Relay, desktop, and web for the platform team."],
     ["a", "30617:<owner-a-pubkey-hex>:buzz"],
     ["a", "30617:<owner-b-pubkey-hex>:buzz-infra"],
     ["buzz-channel", "<channel-uuid>"],

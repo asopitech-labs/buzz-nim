@@ -18,7 +18,7 @@ read.
 
 ## Motivation
 
-A user running Nostr clients on multiple devices (phone, desktop, web) has no way to share read position across those clients. Each instance independently tracks what has been read, causing already-read content to appear unread on other devices.
+A user running Nostr clients in multiple desktop and browser instances has no way to share read position across those clients. Each instance independently tracks what has been read, causing already-read content to appear unread elsewhere.
 
 This NIP defines a minimal, privacy-preserving protocol for propagating read state across client instances without requiring a new event kind, a new wire message, relay-stored read-state logic, or coordination between different client implementations. It is not free of relay obligations: a relay serving the manual-unread override layer's full-state load must satisfy the ordering, capacity, floor, push, and barrier contract that section enumerates.
 
@@ -612,7 +612,7 @@ The harness verifies the three load-bearing safety requirements — tombstone fl
 
 ## Example
 
-A user runs two clients: a desktop app and a mobile app. Each has a random `<slot-id>` with no relationship to its `client_id`.
+A user runs two clients: a desktop app and a browser client. Each has a random `<slot-id>` with no relationship to its `client_id`.
 
 Desktop blob (`d` tag: `read-state:a3f8c2e1d4b7906f5e2a1c8d3b6e9f04`), decrypted content:
 ```json
@@ -626,11 +626,11 @@ Desktop blob (`d` tag: `read-state:a3f8c2e1d4b7906f5e2a1c8d3b6e9f04`), decrypted
 }
 ```
 
-Mobile blob (`d` tag: `read-state:7b1d5a3e9c2f804d6e1b3a7c5d8f2e06`), decrypted content:
+Browser blob (`d` tag: `read-state:7b1d5a3e9c2f804d6e1b3a7c5d8f2e06`), decrypted content:
 ```json
 {
   "v": 1,
-  "client_id": "mobile-ios-v1",
+  "client_id": "web-v1-prod",
   "contexts": {
     "ctx:AAA": 1700000200,
     "ctx:CCC": 1700000080

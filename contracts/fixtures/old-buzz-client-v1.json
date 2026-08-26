@@ -1,0 +1,89 @@
+{
+  "$comment": "Minimal boundary vectors for the Nimino v1 contract. Reject cases are old Buzz-only operations; accept cases prove the replacement and standard NIP controls are not rejected with them.",
+  "schemaVersion": 1,
+  "protocolVersion": 1,
+  "cases": [
+    {
+      "id": "standard-pin-list-remains-valid",
+      "operation": { "type": "event", "kind": 10001, "tags": [] },
+      "expect": "accept",
+      "surface": "kind.current-registry"
+    },
+    {
+      "id": "standard-relay-list-remains-valid",
+      "operation": { "type": "event", "kind": 10002, "tags": [] },
+      "expect": "accept",
+      "surface": "kind.current-registry"
+    },
+    {
+      "id": "old-stream-kind-is-rejected",
+      "operation": { "type": "event", "kind": 40001, "tags": [] },
+      "expect": "reject",
+      "surface": "kind.legacy-stream-v1"
+    },
+    {
+      "id": "old-project-tag-is-rejected",
+      "operation": {
+        "type": "event",
+        "kind": 30621,
+        "tags": [["buzz-channel", "3580ca9b-47b4-4af9-b22a-1068778f26c6"]]
+      },
+      "expect": "reject",
+      "surface": "tag.nimino-namespace"
+    },
+    {
+      "id": "nimino-project-tag-is-valid",
+      "operation": { "type": "tag", "value": "nimino-channel" },
+      "expect": "accept",
+      "surface": "tag.nimino-namespace"
+    },
+    {
+      "id": "old-query-alias-is-rejected",
+      "operation": { "type": "query", "filter": { "kinds": [9], "threadCursor": 1700000000 } },
+      "expect": "reject",
+      "surface": "query-field.camel-case-aliases"
+    },
+    {
+      "id": "canonical-query-field-is-valid",
+      "operation": { "type": "query", "filter": { "kinds": [9], "thread_cursor": 1700000000 } },
+      "expect": "accept",
+      "surface": "query-field.canonical"
+    },
+    {
+      "id": "old-mesh-route-is-rejected",
+      "operation": { "type": "route", "value": "/_mesh" },
+      "expect": "reject",
+      "surface": "route.legacy"
+    },
+    {
+      "id": "nostr-event-route-is-valid",
+      "operation": { "type": "route", "value": "/events" },
+      "expect": "accept",
+      "surface": "route.current"
+    },
+    {
+      "id": "old-private-agent-format-is-rejected",
+      "operation": { "type": "schema", "value": "buzz-private-managed-agent" },
+      "expect": "reject",
+      "surface": "schema.private-managed-agent-format"
+    },
+    {
+      "id": "nimino-private-agent-format-is-valid",
+      "operation": { "type": "schema", "value": "nimino-private-managed-agent" },
+      "expect": "accept",
+      "surface": "schema.private-managed-agent-format"
+    },
+    {
+      "id": "old-capability-is-rejected",
+      "operation": { "type": "capability", "value": "buzz-v1" },
+      "expect": "reject",
+      "surface": "capability.nimino-v1"
+    },
+    {
+      "id": "nimino-capability-is-valid",
+      "operation": { "type": "capability", "value": "nimino-v1" },
+      "expect": "accept",
+      "surface": "capability.nimino-v1"
+    }
+  ]
+}
