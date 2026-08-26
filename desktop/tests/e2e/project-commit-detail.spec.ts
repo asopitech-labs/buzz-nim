@@ -12,7 +12,7 @@ const LATEST_COMMIT_HASH = "0123456789abcdef0123456789abcdef01234567";
 async function enableProjectsFeature(page: import("@playwright/test").Page) {
   await page.addInitScript(() => {
     window.localStorage.setItem(
-      "buzz-feature-overrides-v1",
+      "nimino-feature-overrides-v1",
       JSON.stringify({ projects: true }),
     );
   });
@@ -39,7 +39,7 @@ async function waitForMockLiveSubscription(
     .poll(() =>
       page.evaluate(
         (name) =>
-          window.__BUZZ_E2E_HAS_MOCK_LIVE_SUBSCRIPTION__?.({
+          window.__NIMINO_E2E_HAS_MOCK_LIVE_SUBSCRIPTION__?.({
             channelName: name,
           }) ?? false,
         channelName,
@@ -53,7 +53,7 @@ test("top-level project lists show metadata and overflow actions", async ({
 }) => {
   await enableProjectsFeature(page);
   await page.addInitScript(() => {
-    window.localStorage.setItem("buzz.projects.viewMode", "list");
+    window.localStorage.setItem("nimino.projects.viewMode", "list");
   });
   await installMockBridge(page);
   await page.goto("/", { waitUntil: "domcontentloaded" });
@@ -276,7 +276,7 @@ test("creating a project publishes its initial repository grouping", async ({
 
   const createdEvents = await page.evaluate(
     () =>
-      window.__BUZZ_E2E_ACCEPTED_PROJECT_EVENTS__?.filter((event) =>
+      window.__NIMINO_E2E_ACCEPTED_PROJECT_EVENTS__?.filter((event) =>
         event.tags.some(
           (tag) => tag[0] === "d" && tag[1] === "multi-repo-demo",
         ),
@@ -304,7 +304,7 @@ test("creating a project publishes its initial repository grouping", async ({
     .poll(() =>
       page.evaluate(
         () =>
-          window.__BUZZ_E2E_ACCEPTED_PROJECT_EVENTS__?.filter((event) =>
+          window.__NIMINO_E2E_ACCEPTED_PROJECT_EVENTS__?.filter((event) =>
             event.tags.some(
               (tag) => tag[0] === "d" && tag[1] === "multi-repo-demo",
             ),
@@ -319,7 +319,7 @@ test("unsupported relays keep the initial repository accessible", async ({
 }) => {
   await enableProjectsFeature(page);
   await page.addInitScript(() => {
-    window.__BUZZ_E2E_UNSUPPORTED_PROJECT_ANNOUNCEMENTS__ = true;
+    window.__NIMINO_E2E_UNSUPPORTED_PROJECT_ANNOUNCEMENTS__ = true;
   });
   await installMockBridge(page);
   await page.goto("/", { waitUntil: "domcontentloaded" });
@@ -352,7 +352,7 @@ test("unsupported relays keep the initial repository accessible", async ({
 
   const acceptedKinds = await page.evaluate(
     () =>
-      window.__BUZZ_E2E_ACCEPTED_PROJECT_EVENTS__
+      window.__NIMINO_E2E_ACCEPTED_PROJECT_EVENTS__
         ?.filter((event) =>
           event.tags.some(
             (tag) => tag[0] === "d" && tag[1] === "legacy-fallback",
@@ -368,7 +368,7 @@ test("project creation can retry after its repository publication fails", async 
 }) => {
   await enableProjectsFeature(page);
   await page.addInitScript(() => {
-    window.__BUZZ_E2E_REJECT_PROJECT_EVENT_KINDS__ = [30621];
+    window.__NIMINO_E2E_REJECT_PROJECT_EVENT_KINDS__ = [30621];
   });
   await installMockBridge(page);
   await page.goto("/", { waitUntil: "domcontentloaded" });
@@ -397,7 +397,7 @@ test("project creation is idempotent after a lost publish acknowledgement", asyn
 }) => {
   await enableProjectsFeature(page);
   await page.addInitScript(() => {
-    window.__BUZZ_E2E_FAIL_PROJECT_EVENT_ACK_KINDS__ = [30621];
+    window.__NIMINO_E2E_FAIL_PROJECT_EVENT_ACK_KINDS__ = [30621];
   });
   await installMockBridge(page);
   await page.goto("/", { waitUntil: "domcontentloaded" });
@@ -425,7 +425,7 @@ test("project creation is idempotent after a lost publish acknowledgement", asyn
     .poll(() =>
       page.evaluate(
         () =>
-          window.__BUZZ_E2E_ACCEPTED_PROJECT_EVENTS__?.filter((event) =>
+          window.__NIMINO_E2E_ACCEPTED_PROJECT_EVENTS__?.filter((event) =>
             event.tags.some(
               (tag) => tag[0] === "d" && tag[1] === "lost-ack-project",
             ),
@@ -541,7 +541,7 @@ test("multi-repository projects switch the active repository", async ({
   ).toBeVisible();
   const addedEvents = await page.evaluate(
     () =>
-      window.__BUZZ_E2E_ACCEPTED_PROJECT_EVENTS__?.filter(
+      window.__NIMINO_E2E_ACCEPTED_PROJECT_EVENTS__?.filter(
         (event) =>
           event.tags.some((tag) => tag[0] === "d" && tag[1] === "mobile-app") ||
           event.tags.some(
@@ -573,7 +573,7 @@ test("multi-repository projects switch the active repository", async ({
     .poll(() =>
       page.evaluate(
         () =>
-          window.__BUZZ_E2E_ACCEPTED_PROJECT_EVENTS__?.some(
+          window.__NIMINO_E2E_ACCEPTED_PROJECT_EVENTS__?.some(
             (event) =>
               event.kind === 30621 &&
               event.tags.some(
@@ -781,7 +781,7 @@ test("project discussion row opens its channel thread in context", async ({
   await page.evaluate(
     ({ author, commitHash }) => {
       const now = Math.floor(Date.now() / 1_000);
-      const root = window.__BUZZ_E2E_EMIT_MOCK_MESSAGE__?.({
+      const root = window.__NIMINO_E2E_EMIT_MOCK_MESSAGE__?.({
         channelName: "general",
         content: `Context leading to ${commitHash} OR ${commitHash.slice(0, 7)}`,
         createdAt: now - 1,
@@ -789,7 +789,7 @@ test("project discussion row opens its channel thread in context", async ({
         pubkey: author,
       });
       if (!root) throw new Error("mock message emitter is not installed");
-      window.__BUZZ_E2E_EMIT_MOCK_MESSAGE__?.({
+      window.__NIMINO_E2E_EMIT_MOCK_MESSAGE__?.({
         channelName: "general",
         content: `Follow-up about ${commitHash} OR ${commitHash.slice(0, 7)}`,
         createdAt: now,
@@ -944,7 +944,7 @@ test("adding a repository retries and reports an error when the 30617 publicatio
   // exhausts its retry and surfaces a partial-write error.
   await page.addInitScript(() => {
     // Reject kind 30617 twice (initial attempt + one retry).
-    window.__BUZZ_E2E_REJECT_PROJECT_EVENT_KINDS__ = [30617, 30617];
+    window.__NIMINO_E2E_REJECT_PROJECT_EVENT_KINDS__ = [30617, 30617];
   });
   await installMockBridge(page);
   await page.goto("/", { waitUntil: "domcontentloaded" });
@@ -967,7 +967,7 @@ test("adding a repository retries and reports an error when the 30617 publicatio
     .poll(() =>
       page.evaluate(
         () =>
-          window.__BUZZ_E2E_ACCEPTED_PROJECT_EVENTS__?.some(
+          window.__NIMINO_E2E_ACCEPTED_PROJECT_EVENTS__?.some(
             (event) =>
               event.kind === 30621 &&
               event.tags.some(
@@ -981,7 +981,7 @@ test("adding a repository retries and reports an error when the 30617 publicatio
   // The 30617 must NOT have been accepted (both attempts were rejected).
   const acceptedRepo = await page.evaluate(
     () =>
-      window.__BUZZ_E2E_ACCEPTED_PROJECT_EVENTS__?.some(
+      window.__NIMINO_E2E_ACCEPTED_PROJECT_EVENTS__?.some(
         (event) =>
           event.kind === 30617 &&
           event.tags.some(
@@ -1002,7 +1002,7 @@ test("adding a repository treats a lost 30617 acknowledgement as success", async
   // The relay will accept the 30617 but fail to deliver the ACK, then on the
   // retry query the event will be found — the mutation must succeed.
   await page.addInitScript(() => {
-    window.__BUZZ_E2E_FAIL_PROJECT_EVENT_ACK_KINDS__ = [30617];
+    window.__NIMINO_E2E_FAIL_PROJECT_EVENT_ACK_KINDS__ = [30617];
   });
   await installMockBridge(page);
   await page.goto("/", { waitUntil: "domcontentloaded" });
@@ -1026,7 +1026,7 @@ test("adding a repository treats a lost 30617 acknowledgement as success", async
     .poll(() =>
       page.evaluate(
         () =>
-          window.__BUZZ_E2E_ACCEPTED_PROJECT_EVENTS__?.filter((event) =>
+          window.__NIMINO_E2E_ACCEPTED_PROJECT_EVENTS__?.filter((event) =>
             event.tags.some(
               (tag) => tag[0] === "d" && tag[1] === "lost-ack-repo",
             ),
@@ -1047,7 +1047,7 @@ test("adding a repository blocks when a standalone 30617 already exists at that 
   const STANDALONE_DTAG = "existing-standalone";
   await page.addInitScript(
     ({ owner, dtag }) => {
-      window.__BUZZ_E2E_EXTRA_PROJECT_EVENTS__ = [
+      window.__NIMINO_E2E_EXTRA_PROJECT_EVENTS__ = [
         {
           id: "standalone00".padEnd(64, "0"),
           kind: 30617,
@@ -1092,7 +1092,7 @@ test("adding a repository blocks when a standalone 30617 already exists at that 
   // Neither a 30621 (project update) nor a 30617 (new repo) must have been published.
   const publishedForStandalone = await page.evaluate(
     ({ dtag }) =>
-      window.__BUZZ_E2E_ACCEPTED_PROJECT_EVENTS__?.some(
+      window.__NIMINO_E2E_ACCEPTED_PROJECT_EVENTS__?.some(
         (event) =>
           event.tags.some((tag) => tag[0] === "d" && tag[1] === dtag) ||
           event.tags.some(
@@ -1120,7 +1120,7 @@ test("navigating via a 30617 entity-link route opens the correct non-primary rep
 
   await page.addInitScript(
     ({ repoAddress, prId, alicePubkey }) => {
-      window.__BUZZ_E2E_EXTRA_PROJECT_EVENTS__ = [
+      window.__NIMINO_E2E_EXTRA_PROJECT_EVENTS__ = [
         {
           id: prId,
           kind: 1618, // KIND_GIT_PULL_REQUEST

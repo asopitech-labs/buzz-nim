@@ -132,8 +132,8 @@ pub async fn hydrate_for_read(
     let result = hydrate_for_read_inner(store, ctx, owner, repo, options).await;
     let outcome = match &result {
         Ok(Some(repo)) => {
-            metrics::histogram!("buzz_git_hydrate_bytes").record(repo.hydrated_bytes() as f64);
-            metrics::histogram!("buzz_git_hydrate_packs").record(repo.hydrated_packs() as f64);
+            metrics::histogram!("nimino_git_hydrate_bytes").record(repo.hydrated_bytes() as f64);
+            metrics::histogram!("nimino_git_hydrate_packs").record(repo.hydrated_packs() as f64);
             "success"
         }
         Ok(None) => "missing",
@@ -143,8 +143,8 @@ pub async fn hydrate_for_read(
         Err(HydrateError::Hydrate(_)) => "hydrate_error",
         Err(HydrateError::ResourceLimit(_)) => "resource_limit",
     };
-    metrics::counter!("buzz_git_hydrations_total", "outcome" => outcome).increment(1);
-    metrics::histogram!("buzz_git_hydrate_seconds", "outcome" => outcome)
+    metrics::counter!("nimino_git_hydrations_total", "outcome" => outcome).increment(1);
+    metrics::histogram!("nimino_git_hydrate_seconds", "outcome" => outcome)
         .record(started_at.elapsed().as_secs_f64());
     result
 }
@@ -580,18 +580,18 @@ mod tests {
     // -------- Live MinIO + real git roundtrip ----------------------------------
     //
     // Run manually:
-    //   BUZZ_GIT_S3_PROBE=1 cargo test -p buzz-relay --lib \
+    //   NIMINO_GIT_S3_PROBE=1 cargo test -p buzz-relay --lib \
     //     api::git::hydrate::tests::live -- --nocapture --test-threads=1
 
     fn probe_enabled() -> bool {
-        std::env::var("BUZZ_GIT_S3_PROBE").as_deref() == Ok("1")
+        std::env::var("NIMINO_GIT_S3_PROBE").as_deref() == Ok("1")
     }
 
     fn store() -> GitStore {
         GitStore::new(
             "http://localhost:9000",
-            "buzz_dev",
-            "buzz_dev_secret",
+            "nimino_dev",
+            "nimino_dev_secret",
             "buzz-git",
             "us-east-1",
             buzz_media::config::S3AddressingStyle::Path,

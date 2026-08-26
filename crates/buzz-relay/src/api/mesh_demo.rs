@@ -1,13 +1,13 @@
 //! `POST /_mesh/demo/echo` — testbed-only join-side ingress for the mesh
 //! reliable-stream smoke.
 //!
-//! This is the *client leg* of the `BUZZ_MESH_DEMO_ECHO` evidence run: the
+//! This is the *client leg* of the `NIMINO_MESH_DEMO_ECHO` evidence run: the
 //! owner-side echo consumer (see `mesh_boot::run_demo_echo`) validates and
 //! echoes frames, but nothing in the product calls
 //! [`ReliableStreamRouter::join`] yet — so cross-pod evidence needs a way to
 //! drive a join from a chosen pod. This route is that way, and nothing more:
 //!
-//! - Gated on **both** `BUZZ_MESH_DEMO_ECHO=on` and mesh enabled; 404
+//! - Gated on **both** `NIMINO_MESH_DEMO_ECHO=on` and mesh enabled; 404
 //!   otherwise (the same strictness as the owner-side consumer — the route
 //!   does not exist unless the operator opted the deployment into the demo).
 //! - `Owned` result: this pod acquired the fenced lease. No renewer is

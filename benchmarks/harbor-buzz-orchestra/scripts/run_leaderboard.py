@@ -216,7 +216,7 @@ def build_command(
         "endpoint_config": args.endpoint_config,
         "buzz_acp_binary": agent_binaries["buzz-acp"],
         "buzz_agent_binary": agent_binaries["buzz-agent"],
-        "buzz_dev_mcp_binary": agent_binaries["buzz-dev-mcp"],
+        "nimino_dev_mcp_binary": agent_binaries["buzz-dev-mcp"],
         "buzz_cli_binary": binaries["buzz"],
         "run_id": args.job_name,
     }

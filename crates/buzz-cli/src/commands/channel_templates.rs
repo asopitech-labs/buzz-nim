@@ -1,4 +1,4 @@
-//! Desktop-local channel template loading for `buzz channels create --template`.
+//! Desktop-local channel template loading for `nimino channels create --template`.
 //!
 //! Templates live in a JSON file the desktop app owns
 //! (`<app-data>/templates/channel-templates.json`); this module duplicates the

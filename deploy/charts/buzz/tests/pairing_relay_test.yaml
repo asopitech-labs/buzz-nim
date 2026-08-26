@@ -21,7 +21,7 @@ tests:
       - notContains:
           path: spec.template.spec.containers[0].env
           content:
-            name: BUZZ_PAIRING_RELAY_URL
+            name: NIMINO_PAIRING_RELAY_URL
         template: templates/deployment.yaml
 
   - it: renders and advertises the configured pairing relay
@@ -49,6 +49,6 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].env
           content:
-            name: BUZZ_PAIRING_RELAY_URL
+            name: NIMINO_PAIRING_RELAY_URL
             value: wss://pairing.buzz.xyz
         template: templates/deployment.yaml

@@ -33,8 +33,8 @@ async function openPasswordBackup(page: import("@playwright/test").Page) {
 async function invokedCommands(page: import("@playwright/test").Page) {
   return page.evaluate(
     () =>
-      (window as Window & { __BUZZ_E2E_COMMANDS__?: string[] })
-        .__BUZZ_E2E_COMMANDS__ ?? [],
+      (window as Window & { __NIMINO_E2E_COMMANDS__?: string[] })
+        .__NIMINO_E2E_COMMANDS__ ?? [],
   );
 }
 

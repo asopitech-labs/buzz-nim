@@ -235,7 +235,7 @@ fn hydrate_leaves_key_empty_on_keyring_outage() {
 #[test]
 fn spawn_refused_when_private_key_empty() {
     // The spawn path MUST refuse a record left empty by an outage/absence
-    // before injecting an empty BUZZ_PRIVATE_KEY / NOSTR_PRIVATE_KEY — never
+    // before injecting an empty NIMINO_PRIVATE_KEY / NOSTR_PRIVATE_KEY — never
     // launch an agent with no identity (Wes storage.rs:158).
     let record = record_with_key("");
     assert!(

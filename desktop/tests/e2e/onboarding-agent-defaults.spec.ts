@@ -47,12 +47,12 @@ async function readSavedRuntime(page: Parameters<typeof installMockBridge>[0]) {
   return await page.evaluate(async () => {
     const result = await (
       window as Window & {
-        __BUZZ_E2E_INVOKE_MOCK_COMMAND__?: (
+        __NIMINO_E2E_INVOKE_MOCK_COMMAND__?: (
           command: string,
           payload: unknown,
         ) => Promise<{ preferred_runtime?: string | null }>;
       }
-    ).__BUZZ_E2E_INVOKE_MOCK_COMMAND__?.("get_global_agent_config", null);
+    ).__NIMINO_E2E_INVOKE_MOCK_COMMAND__?.("get_global_agent_config", null);
     return result?.preferred_runtime ?? null;
   });
 }
@@ -63,12 +63,12 @@ async function readGlobalConfigSetterCallCount(
   return await page.evaluate(async () => {
     return await (
       window as Window & {
-        __BUZZ_E2E_INVOKE_MOCK_COMMAND__?: (
+        __NIMINO_E2E_INVOKE_MOCK_COMMAND__?: (
           command: string,
           payload: unknown,
         ) => Promise<number>;
       }
-    ).__BUZZ_E2E_INVOKE_MOCK_COMMAND__?.(
+    ).__NIMINO_E2E_INVOKE_MOCK_COMMAND__?.(
       "get_global_agent_config_set_call_count",
       null,
     );
@@ -467,7 +467,7 @@ test("defaults renders only fields supported by the selected harness", async ({
         runtime("claude", "available", { status: "logged_in" }),
       ],
       globalAgentConfig: {
-        env_vars: { BUZZ_AGENT_THINKING_EFFORT: "high" },
+        env_vars: { NIMINO_AGENT_THINKING_EFFORT: "high" },
         provider: null,
         model: "stale-model",
         preferred_runtime: null,
@@ -1127,7 +1127,7 @@ test("baked build config keeps Finish enabled without manual provider setup", as
         runtime("buzz-agent", "available", { status: "not_applicable" }),
       ],
       bakedBuildEnv: [
-        { key: "BUZZ_AGENT_PROVIDER", masked: false, value: "databricks_v2" },
+        { key: "NIMINO_AGENT_PROVIDER", masked: false, value: "databricks_v2" },
         {
           key: "DATABRICKS_HOST",
           masked: false,

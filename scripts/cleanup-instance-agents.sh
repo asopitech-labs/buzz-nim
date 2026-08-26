@@ -10,7 +10,7 @@
 # under `<app-data>/agents/agent-pids/<pubkey>.pid`, each containing the agent's
 # PGID (agents are spawned with `process_group(0)`, so PID == PGID). Killing by
 # PGID reaches the whole agent subtree. We deliberately do NOT match the
-# `BUZZ_MANAGED_AGENT` env var from the shell: on macOS `pkill -f` matches only
+# `NIMINO_MANAGED_AGENT` env var from the shell: on macOS `pkill -f` matches only
 # argv, not the environment, so an env-marker match silently reaps nothing.
 #
 # Scoping is exact because the app-data directory is keyed by the instance's
@@ -18,8 +18,8 @@
 # (the main checkout never reaps a worktree's agents, or vice versa).
 #
 # Usage: cleanup-instance-agents.sh <instance-id>
-#   <instance-id> is the desktop bundle identifier, e.g. `xyz.block.buzz.app.dev`
-#   (main checkout) or `xyz.block.buzz.app.dev.my-branch` (a worktree).
+#   <instance-id> is the desktop bundle identifier, e.g. `com.asopitech.nimino.dev`
+#   (main checkout) or `com.asopitech.nimino.dev.my-branch` (a worktree).
 
 set -euo pipefail
 

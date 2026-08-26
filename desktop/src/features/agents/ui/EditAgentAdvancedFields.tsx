@@ -17,7 +17,7 @@ import {
 } from "./buzzAgentModelTuningFields";
 import {
   isBuzzAgentRuntime,
-  BUZZ_AGENT_THINKING_EFFORT,
+  NIMINO_AGENT_THINKING_EFFORT,
 } from "./buzzAgentConfig";
 import {
   EDIT_AGENT_PARALLELISM_HELP,
@@ -124,7 +124,7 @@ export function EditAgentAdvancedFields({
     () => [
       ...hiddenEnvKeys,
       ...(isBuzzAgentRuntime(modelTuningRuntimeId)
-        ? [BUZZ_AGENT_THINKING_EFFORT]
+        ? [NIMINO_AGENT_THINKING_EFFORT]
         : []),
       ...structuredEnvKeys(numericDescriptors),
     ],

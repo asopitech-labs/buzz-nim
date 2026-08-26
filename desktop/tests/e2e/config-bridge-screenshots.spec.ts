@@ -13,7 +13,7 @@ const RUNTIME_OVERRIDE_PUBKEY = TEST_IDENTITIES.outsider.pubkey;
 // (matches PUBKEY_MULTI_ORIGIN in e2eBridge buildMockConfigSurface).
 const MULTI_ORIGIN_PUBKEY =
   "abc1230000000000000000000000000000000000000000000000000000000def";
-const BUZZ_AGENT_PUBKEY =
+const NIMINO_AGENT_PUBKEY =
   "b0220000000000000000000000000000000000000000000000000000000000a9";
 
 const MANAGED_AGENTS = [
@@ -47,11 +47,11 @@ async function waitForInvokeBridge(page: import("@playwright/test").Page) {
   await page.waitForFunction(
     () => {
       const tauriWindow = window as Window & {
-        __BUZZ_E2E_INVOKE_MOCK_COMMAND__?: unknown;
+        __NIMINO_E2E_INVOKE_MOCK_COMMAND__?: unknown;
         __TAURI_INTERNALS__?: { invoke?: unknown };
       };
       return (
-        typeof tauriWindow.__BUZZ_E2E_INVOKE_MOCK_COMMAND__ === "function" ||
+        typeof tauriWindow.__NIMINO_E2E_INVOKE_MOCK_COMMAND__ === "function" ||
         typeof tauriWindow.__TAURI_INTERNALS__?.invoke === "function"
       );
     },
@@ -69,7 +69,7 @@ async function invokeMockCommand(
   return page.evaluate(
     async ({ command: cmd, payload: pl }) => {
       const tauriWindow = window as Window & {
-        __BUZZ_E2E_INVOKE_MOCK_COMMAND__?: (
+        __NIMINO_E2E_INVOKE_MOCK_COMMAND__?: (
           command: string,
           payload?: Record<string, unknown>,
         ) => Promise<unknown>;
@@ -81,7 +81,7 @@ async function invokeMockCommand(
         };
       };
       const invoke =
-        tauriWindow.__BUZZ_E2E_INVOKE_MOCK_COMMAND__ ??
+        tauriWindow.__NIMINO_E2E_INVOKE_MOCK_COMMAND__ ??
         tauriWindow.__TAURI_INTERNALS__?.invoke;
       if (!invoke) throw new Error("Mock invoke bridge is unavailable.");
       return invoke(cmd, pl);
@@ -290,7 +290,7 @@ test.describe("config bridge screenshots", () => {
     await installMockBridge(page, {
       managedAgents: [
         {
-          pubkey: BUZZ_AGENT_PUBKEY,
+          pubkey: NIMINO_AGENT_PUBKEY,
           name: "Buzz Agent",
           status: "running" as const,
           channelNames: ["agents"],

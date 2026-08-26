@@ -153,7 +153,7 @@ impl SubscriptionRegistry {
             sub_id.clone(),
             (filters.clone(), community_id, scope.clone()),
         );
-        metrics::gauge!("buzz_subscriptions_active").increment(1.0);
+        metrics::gauge!("nimino_subscriptions_active").increment(1.0);
 
         if let SubscriptionScope::Channels(channel_ids) = &scope {
             for ch_id in channel_ids {
@@ -259,7 +259,7 @@ impl SubscriptionRegistry {
         self.remove_from_index(conn_id, sub_id, &filters, community_id, &scope);
         drop(conn_subs);
 
-        metrics::gauge!("buzz_subscriptions_active").decrement(1.0);
+        metrics::gauge!("nimino_subscriptions_active").decrement(1.0);
         Some(RemovedSubscription {
             community_id,
             scope,
@@ -278,7 +278,7 @@ impl SubscriptionRegistry {
                     scope: scope.clone(),
                 });
             }
-            metrics::gauge!("buzz_subscriptions_active").decrement(count as f64);
+            metrics::gauge!("nimino_subscriptions_active").decrement(count as f64);
         }
         removed
     }
@@ -330,7 +330,7 @@ impl SubscriptionRegistry {
             );
             if removed {
                 conn_subs.remove(&sub_id);
-                metrics::gauge!("buzz_subscriptions_active").decrement(1.0);
+                metrics::gauge!("nimino_subscriptions_active").decrement(1.0);
             }
             updates.push(ChannelSubscriptionUpdate { sub_id, removed });
         }

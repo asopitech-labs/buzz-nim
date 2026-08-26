@@ -29,7 +29,7 @@ from .runtime import RuntimeResult
 from .task_fixtures import fixture_for
 
 DEFAULT_MAX_AGENT_ROUNDS = (
-    0  # 0 = unbounded (BUZZ_AGENT_MAX_ROUNDS=0); the trial budget is the clock
+    0  # 0 = unbounded (NIMINO_AGENT_MAX_ROUNDS=0); the trial budget is the clock
 )
 # Reasoning effort for a roster entry that does not pin one. Pinned here rather
 # than left to the provider so an unset effort still means a recorded, stable
@@ -95,7 +95,7 @@ class BuzzContainerRuntime:
         endpoints: dict[str, EndpointLaunchConfig],
         buzz_acp_binary: str = "buzz-acp",
         buzz_agent_binary: str = "buzz-agent",
-        buzz_dev_mcp_binary: str = "buzz-dev-mcp",
+        nimino_dev_mcp_binary: str = "buzz-dev-mcp",
         buzz_cli_binary: str = "buzz",
         relay_gateway: str = "",
         forwarder_binary: str = "relay-forwarder",
@@ -113,7 +113,7 @@ class BuzzContainerRuntime:
         # Linux builds uploaded into the task container:
         self.buzz_acp_binary = buzz_acp_binary
         self.buzz_agent_binary = buzz_agent_binary
-        self.buzz_dev_mcp_binary = buzz_dev_mcp_binary
+        self.nimino_dev_mcp_binary = nimino_dev_mcp_binary
         # Host build used for user/provisioning operations only:
         self.buzz_cli_binary = buzz_cli_binary
         # Where the relay actually lives, as seen from inside the task
@@ -270,7 +270,7 @@ class BuzzContainerRuntime:
         uploads = {
             f"{REMOTE_BIN}/buzz-acp": self.buzz_acp_binary,
             f"{REMOTE_BIN}/buzz-agent": self.buzz_agent_binary,
-            f"{REMOTE_BIN}/buzz-dev-mcp": self.buzz_dev_mcp_binary,
+            f"{REMOTE_BIN}/buzz-dev-mcp": self.nimino_dev_mcp_binary,
         }
         if self.relay_gateway:
             uploads[FORWARDER] = self.forwarder_binary
@@ -428,37 +428,37 @@ class BuzzContainerRuntime:
         return {
             **endpoint.env,
             "RUST_LOG": self._rust_log(endpoint.env.get("RUST_LOG")),
-            "BUZZ_RELAY_URL": trial.relay_ws_url,
-            "BUZZ_PRIVATE_KEY": credential.nostr_secret_key,
+            "NIMINO_RELAY_URL": trial.relay_ws_url,
+            "NIMINO_PRIVATE_KEY": credential.nostr_secret_key,
             # Desktop parity: the GUI also sets NOSTR_PRIVATE_KEY on buzz-acp
             # so buzz-dev-mcp's shim can wire git auth/signing for the agent.
             "NOSTR_PRIVATE_KEY": credential.nostr_secret_key,
-            "BUZZ_AUTH_TAG": credential.nostr_auth_tag,
-            "BUZZ_ACP_AGENT_COMMAND": f"{REMOTE_BIN}/buzz-agent",
-            "BUZZ_ACP_AGENT_ARGS": "",
-            "BUZZ_ACP_MCP_COMMAND": f"{REMOTE_BIN}/buzz-dev-mcp",
-            "BUZZ_ACP_CHANNELS": trial.channel_id,
-            "BUZZ_ACP_SUBSCRIBE": "mentions",
-            "BUZZ_ACP_RESPOND_TO": "anyone",
-            "BUZZ_ACP_NO_MEMORY": "true",
-            "BUZZ_ACP_SYSTEM_PROMPT_FILE": remote_prompt,
-            "BUZZ_AGENT_PROVIDER": endpoint.provider,
-            "BUZZ_AGENT_MODEL": credential.llm_endpoint,
-            "BUZZ_AGENT_THINKING_EFFORT": (
+            "NIMINO_AUTH_TAG": credential.nostr_auth_tag,
+            "NIMINO_ACP_AGENT_COMMAND": f"{REMOTE_BIN}/buzz-agent",
+            "NIMINO_ACP_AGENT_ARGS": "",
+            "NIMINO_ACP_MCP_COMMAND": f"{REMOTE_BIN}/buzz-dev-mcp",
+            "NIMINO_ACP_CHANNELS": trial.channel_id,
+            "NIMINO_ACP_SUBSCRIBE": "mentions",
+            "NIMINO_ACP_RESPOND_TO": "anyone",
+            "NIMINO_ACP_NO_MEMORY": "true",
+            "NIMINO_ACP_SYSTEM_PROMPT_FILE": remote_prompt,
+            "NIMINO_AGENT_PROVIDER": endpoint.provider,
+            "NIMINO_AGENT_MODEL": credential.llm_endpoint,
+            "NIMINO_AGENT_THINKING_EFFORT": (
                 agent_class.generation.thinking_effort or THINKING_EFFORT
             ),
-            "BUZZ_AGENT_MAX_OUTPUT_TOKENS": str(
+            "NIMINO_AGENT_MAX_OUTPUT_TOKENS": str(
                 agent_class.generation.max_output_tokens
             ),
-            "BUZZ_AGENT_MAX_CONTEXT_TOKENS": str(
+            "NIMINO_AGENT_MAX_CONTEXT_TOKENS": str(
                 agent_class.generation.context_window_tokens
             ),
-            "BUZZ_AGENT_MAX_ROUNDS": str(
+            "NIMINO_AGENT_MAX_ROUNDS": str(
                 agent_class.budget.max_calls or self.max_agent_rounds
             ),
             # The pinned persona is the whole prompt: no hint-file or skill
             # discovery from the task filesystem (metadata reports this).
-            "BUZZ_AGENT_NO_HINTS": "1",
+            "NIMINO_AGENT_NO_HINTS": "1",
             endpoint.api_key_env: credential.llm_api_key,
         }
 
@@ -878,9 +878,9 @@ class BuzzContainerRuntime:
             stderr=asyncio.subprocess.PIPE,
             env={
                 **os.environ,
-                "BUZZ_RELAY_URL": self._user_relay_url(trial),
-                "BUZZ_PRIVATE_KEY": credential.nostr_secret_key,
-                "BUZZ_AUTH_TAG": credential.nostr_auth_tag,
+                "NIMINO_RELAY_URL": self._user_relay_url(trial),
+                "NIMINO_PRIVATE_KEY": credential.nostr_secret_key,
+                "NIMINO_AUTH_TAG": credential.nostr_auth_tag,
             },
         )
         stdout, stderr = await process.communicate()
@@ -995,12 +995,12 @@ class BuzzContainerRuntime:
     @staticmethod
     def _reject_identity_overrides(endpoint: EndpointLaunchConfig) -> None:
         forbidden = {
-            "BUZZ_RELAY_URL",
-            "BUZZ_PRIVATE_KEY",
-            "BUZZ_AUTH_TAG",
-            "BUZZ_ACP_CHANNELS",
-            "BUZZ_ACP_MCP_COMMAND",
-            "BUZZ_ACP_AGENT_COMMAND",
+            "NIMINO_RELAY_URL",
+            "NIMINO_PRIVATE_KEY",
+            "NIMINO_AUTH_TAG",
+            "NIMINO_ACP_CHANNELS",
+            "NIMINO_ACP_MCP_COMMAND",
+            "NIMINO_ACP_AGENT_COMMAND",
         }
         overlap = forbidden & endpoint.env.keys()
         if overlap:

@@ -127,8 +127,8 @@ pub fn build_router(state: Arc<AppState>) -> Router {
         )
         // Webhook trigger (secret-authenticated, no NIP-98)
         .route("/hooks/{id}", post(api::bridge::workflow_webhook))
-        // Mesh demo echo probe — testbed-only; 404 unless BUZZ_MESH=on and
-        // BUZZ_MESH_DEMO_ECHO=on (see api::mesh_demo).
+        // Mesh demo echo probe — testbed-only; 404 unless NIMINO_MESH=on and
+        // NIMINO_MESH_DEMO_ECHO=on (see api::mesh_demo).
         .route("/_mesh/demo/echo", post(api::mesh_demo::demo_echo))
         // Huddle audio WebSocket route
         .route(
@@ -206,7 +206,7 @@ fn http_trace_layer() -> TraceLayer<HttpMakeClassifier, fn(&Request<Body>) -> tr
 
 fn make_http_span(request: &Request<Body>) -> tracing::Span {
     tracing::info_span!(
-        target: "buzz_relay",
+        target: "nimino_relay",
         "http.request",
         otel.kind = "server",
         http.request.method = %request.method(),
@@ -417,7 +417,7 @@ async fn readiness_handler(State(state): State<Arc<AppState>>) -> impl IntoRespo
 async fn status_handler(State(state): State<Arc<AppState>>) -> impl IntoResponse {
     let uptime_secs = state.started_at.elapsed().as_secs();
     Json(json!({
-        "service": "buzz-relay",
+        "service": "nimino-relay",
         "version": env!("CARGO_PKG_VERSION"),
         "uptime_seconds": uptime_secs,
     }))
@@ -448,7 +448,7 @@ fn build_cors_layer(cors_origins: &[String]) -> CorsLayer {
 
     if origins.is_empty() {
         tracing::error!(
-            "BUZZ_CORS_ORIGINS set but no valid origins could be parsed — \
+            "NIMINO_CORS_ORIGINS set but no valid origins could be parsed — \
              refusing to fall back to permissive CORS. Fix the origins or unset \
              the variable for development mode."
         );
@@ -524,7 +524,7 @@ mod tests {
                 |_: axum::http::Request<axum::body::Body>| async {
                     async {}
                         .instrument(tracing::info_span!(
-                            target: "buzz_datastore",
+                            target: "nimino_datastore",
                             "SELECT",
                             otel.kind = "client",
                             db.system.name = "postgresql",

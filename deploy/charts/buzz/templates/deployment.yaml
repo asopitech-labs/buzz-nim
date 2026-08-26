@@ -72,12 +72,12 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ include "buzz.chartSecretName" . }}
-                  key: BUZZ_S3_ACCESS_KEY
+                  key: NIMINO_S3_ACCESS_KEY
             - name: S3_SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ include "buzz.chartSecretName" . }}
-                  key: BUZZ_S3_SECRET_KEY
+                  key: NIMINO_S3_SECRET_KEY
           command: ["/bin/sh", "-c"]
           args:
             - |
@@ -115,76 +115,76 @@ spec:
             - { name: metrics, containerPort: {{ .Values.service.metricsPort }}, protocol: TCP }
           env:
             # ── Networking ───────────────────────────────────────────
-            - { name: BUZZ_BIND_ADDR,     value: {{ .Values.relay.bindAddr | quote }} }
-            - { name: BUZZ_HEALTH_PORT,   value: {{ .Values.service.healthPort | quote }} }
-            - { name: BUZZ_METRICS_PORT,  value: {{ .Values.service.metricsPort | quote }} }
+            - { name: NIMINO_BIND_ADDR,     value: {{ .Values.relay.bindAddr | quote }} }
+            - { name: NIMINO_HEALTH_PORT,   value: {{ .Values.service.healthPort | quote }} }
+            - { name: NIMINO_METRICS_PORT,  value: {{ .Values.service.metricsPort | quote }} }
             - { name: RELAY_URL,          value: {{ .Values.relayUrl | quote }} }
             {{- if .Values.pairingRelay.url }}
-            - { name: BUZZ_PAIRING_RELAY_URL, value: {{ .Values.pairingRelay.url | quote }} }
+            - { name: NIMINO_PAIRING_RELAY_URL, value: {{ .Values.pairingRelay.url | quote }} }
             {{- end }}
-            - { name: BUZZ_MEDIA_BASE_URL, value: {{ include "buzz.mediaBaseUrl" . | quote }} }
+            - { name: NIMINO_MEDIA_BASE_URL, value: {{ include "buzz.mediaBaseUrl" . | quote }} }
 
             # ── Behavior ─────────────────────────────────────────────
-            - { name: BUZZ_MAX_CONNECTIONS,        value: {{ .Values.relay.maxConnections | quote }} }
-            - { name: BUZZ_MAX_CONCURRENT_HANDLERS, value: {{ .Values.relay.maxConcurrentHandlers | quote }} }
-            - { name: BUZZ_SEND_BUFFER,            value: {{ .Values.relay.sendBuffer | quote }} }
-            - { name: BUZZ_DRAIN_JITTER_MS,        value: {{ .Values.relay.drainJitterMs | quote }} }
-            - { name: BUZZ_REQUIRE_AUTH_TOKEN,     value: {{ .Values.relay.requireAuthToken | quote }} }
-            - { name: BUZZ_REQUIRE_RELAY_MEMBERSHIP, value: {{ .Values.relay.requireRelayMembership | quote }} }
-            - { name: BUZZ_ALLOW_NIP_OA_AUTH,      value: {{ .Values.relay.allowNipOaAuth | quote }} }
-            - { name: BUZZ_PUBKEY_ALLOWLIST,       value: {{ .Values.relay.pubkeyAllowlist | quote }} }
+            - { name: NIMINO_MAX_CONNECTIONS,        value: {{ .Values.relay.maxConnections | quote }} }
+            - { name: NIMINO_MAX_CONCURRENT_HANDLERS, value: {{ .Values.relay.maxConcurrentHandlers | quote }} }
+            - { name: NIMINO_SEND_BUFFER,            value: {{ .Values.relay.sendBuffer | quote }} }
+            - { name: NIMINO_DRAIN_JITTER_MS,        value: {{ .Values.relay.drainJitterMs | quote }} }
+            - { name: NIMINO_REQUIRE_AUTH_TOKEN,     value: {{ .Values.relay.requireAuthToken | quote }} }
+            - { name: NIMINO_REQUIRE_RELAY_MEMBERSHIP, value: {{ .Values.relay.requireRelayMembership | quote }} }
+            - { name: NIMINO_ALLOW_NIP_OA_AUTH,      value: {{ .Values.relay.allowNipOaAuth | quote }} }
+            - { name: NIMINO_PUBKEY_ALLOWLIST,       value: {{ .Values.relay.pubkeyAllowlist | quote }} }
             {{- if .Values.relay.corsOrigins }}
-            - { name: BUZZ_CORS_ORIGINS, value: {{ join "," .Values.relay.corsOrigins | quote }} }
+            - { name: NIMINO_CORS_ORIGINS, value: {{ join "," .Values.relay.corsOrigins | quote }} }
             {{- end }}
             {{- if gt (.Values.relay.ephemeralTtlOverride | int) 0 }}
-            - { name: BUZZ_EPHEMERAL_TTL_OVERRIDE, value: {{ .Values.relay.ephemeralTtlOverride | quote }} }
+            - { name: NIMINO_EPHEMERAL_TTL_OVERRIDE, value: {{ .Values.relay.ephemeralTtlOverride | quote }} }
             {{- end }}
             {{- if .Values.relay.uploadRecords }}
-            - { name: BUZZ_MEDIA_UPLOAD_RECORDS, value: "true" }
+            - { name: NIMINO_MEDIA_UPLOAD_RECORDS, value: "true" }
             {{- end }}
             {{- if .Values.relay.uploadIpHeader }}
-            - { name: BUZZ_MEDIA_UPLOAD_IP_HEADER, value: {{ .Values.relay.uploadIpHeader | quote }} }
+            - { name: NIMINO_MEDIA_UPLOAD_IP_HEADER, value: {{ .Values.relay.uploadIpHeader | quote }} }
             {{- end }}
             {{- if .Values.relay.uploadPortHeader }}
-            - { name: BUZZ_MEDIA_UPLOAD_PORT_HEADER, value: {{ .Values.relay.uploadPortHeader | quote }} }
+            - { name: NIMINO_MEDIA_UPLOAD_PORT_HEADER, value: {{ .Values.relay.uploadPortHeader | quote }} }
             {{- end }}
 
             # ── Owner ────────────────────────────────────────────────
             - { name: RELAY_OWNER_PUBKEY, value: {{ .Values.ownerPubkey | quote }} }
 
             # ── Migrations ───────────────────────────────────────────
-            - { name: BUZZ_AUTO_MIGRATE, value: {{ .Values.migrate.autoMigrate | quote }} }
+            - { name: NIMINO_AUTO_MIGRATE, value: {{ .Values.migrate.autoMigrate | quote }} }
 
             # ── Git ──────────────────────────────────────────────────
-            - { name: BUZZ_GIT_REPO_PATH,         value: {{ .Values.persistence.git.mountPath | quote }} }
-            - { name: BUZZ_GIT_MAX_PACK_BYTES,    value: {{ .Values.git.maxPackBytes | quote }} }
-            - { name: BUZZ_GIT_PACK_CACHE_PATH,   value: {{ .Values.git.packCachePath | quote }} }
-            - { name: BUZZ_GIT_PACK_CACHE_MAX_BYTES, value: {{ .Values.git.packCacheMaxBytes | quote }} }
-            - { name: BUZZ_GIT_PACK_CACHE_MAX_CONCURRENT_POPULATIONS, value: {{ .Values.git.packCacheMaxConcurrentPopulations | quote }} }
-            - { name: BUZZ_GIT_MAX_REPOS_PER_PUBKEY, value: {{ .Values.git.maxReposPerPubkey | quote }} }
-            - { name: BUZZ_GIT_MAX_CONCURRENT_OPS, value: {{ .Values.git.maxConcurrentOps | quote }} }
+            - { name: NIMINO_GIT_REPO_PATH,         value: {{ .Values.persistence.git.mountPath | quote }} }
+            - { name: NIMINO_GIT_MAX_PACK_BYTES,    value: {{ .Values.git.maxPackBytes | quote }} }
+            - { name: NIMINO_GIT_PACK_CACHE_PATH,   value: {{ .Values.git.packCachePath | quote }} }
+            - { name: NIMINO_GIT_PACK_CACHE_MAX_BYTES, value: {{ .Values.git.packCacheMaxBytes | quote }} }
+            - { name: NIMINO_GIT_PACK_CACHE_MAX_CONCURRENT_POPULATIONS, value: {{ .Values.git.packCacheMaxConcurrentPopulations | quote }} }
+            - { name: NIMINO_GIT_MAX_REPOS_PER_PUBKEY, value: {{ .Values.git.maxReposPerPubkey | quote }} }
+            - { name: NIMINO_GIT_MAX_CONCURRENT_OPS, value: {{ .Values.git.maxConcurrentOps | quote }} }
 
             # ── S3 (non-secret) ──────────────────────────────────────
             {{- $s3Endpoint := include "buzz.s3Endpoint" . }}
             {{- if $s3Endpoint }}
-            - { name: BUZZ_S3_ENDPOINT, value: {{ $s3Endpoint | quote }} }
+            - { name: NIMINO_S3_ENDPOINT, value: {{ $s3Endpoint | quote }} }
             {{- end }}
-            - { name: BUZZ_S3_BUCKET, value: {{ .Values.s3.bucket | quote }} }
-            - { name: BUZZ_S3_REGION, value: {{ .Values.s3.region | quote }} }
-            - { name: BUZZ_S3_ADDRESSING_STYLE, value: {{ .Values.s3.addressingStyle | quote }} }
+            - { name: NIMINO_S3_BUCKET, value: {{ .Values.s3.bucket | quote }} }
+            - { name: NIMINO_S3_REGION, value: {{ .Values.s3.region | quote }} }
+            - { name: NIMINO_S3_ADDRESSING_STYLE, value: {{ .Values.s3.addressingStyle | quote }} }
 
             # ── Secrets (from chart-managed or existing) ─────────────
-            - name: BUZZ_RELAY_PRIVATE_KEY
+            - name: NIMINO_RELAY_PRIVATE_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ include "buzz.envSecretName" . }}
-                  key: BUZZ_RELAY_PRIVATE_KEY
+                  key: NIMINO_RELAY_PRIVATE_KEY
                   optional: true
-            - name: BUZZ_GIT_HOOK_HMAC_SECRET
+            - name: NIMINO_GIT_HOOK_HMAC_SECRET
               valueFrom:
                 secretKeyRef:
                   name: {{ include "buzz.envSecretName" . }}
-                  key: BUZZ_GIT_HOOK_HMAC_SECRET
+                  key: NIMINO_GIT_HOOK_HMAC_SECRET
                   optional: true
             - name: DATABASE_URL
               valueFrom:
@@ -203,20 +203,20 @@ spec:
                   name: {{ include "buzz.envSecretName" . }}
                   key: REDIS_URL
                   optional: {{ and (eq (include "buzz.minimumReplicas" . | int) 1) (not .Values.redis.enabled) (not .Values.externalRedis.url) }}
-            - name: BUZZ_S3_ACCESS_KEY
+            - name: NIMINO_S3_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ include "buzz.envSecretName" . }}
-                  key: BUZZ_S3_ACCESS_KEY
+                  key: NIMINO_S3_ACCESS_KEY
                   optional: true
-            - name: BUZZ_S3_SECRET_KEY
+            - name: NIMINO_S3_SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ include "buzz.envSecretName" . }}
-                  key: BUZZ_S3_SECRET_KEY
+                  key: NIMINO_S3_SECRET_KEY
                   optional: true
 
-            - name: BUZZ_HUDDLE_AUDIO_AVAILABLE
+            - name: NIMINO_HUDDLE_AUDIO_AVAILABLE
               value: {{ include "buzz.huddleAudioAvailable" . | quote }}
 
             {{- with .Values.relay.extraEnv }}

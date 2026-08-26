@@ -12,7 +12,7 @@
 services:
   relay:
     ports:
-      - "${BUZZ_METRICS_HOST_PORT:-9102}:9102"
+      - "${NIMINO_METRICS_HOST_PORT:-9102}:9102"
   postgres:
     ports:
-      - "${BUZZ_PG_HOST_PORT:-5433}:5432"
+      - "${NIMINO_PG_HOST_PORT:-5433}:5432"

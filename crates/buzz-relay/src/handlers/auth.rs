@@ -81,7 +81,7 @@ pub async fn handle_auth(event: nostr::Event, conn: Arc<ConnectionState>, state:
         crate::api::bridge::nip42_expected_relay_url(&state.config.relay_url, &conn.tenant);
     let auth_svc = Arc::clone(&state.auth);
 
-    metrics::counter!("buzz_auth_attempts_total", "method" => "nip42").increment(1);
+    metrics::counter!("nimino_auth_attempts_total", "method" => "nip42").increment(1);
 
     // Pure NIP-42 verification — crypto only, no DB lookups.
     match auth_svc
@@ -167,7 +167,7 @@ pub async fn handle_auth(event: nostr::Event, conn: Arc<ConnectionState>, state:
 
                 if let Some((metric_reason, deny_reason)) = denial {
                     warn!(conn_id = %conn_id, pubkey = %pubkey.to_hex(), reason = deny_reason, "principal denied at ban seam");
-                    metrics::counter!("buzz_auth_failures_total", "reason" => metric_reason)
+                    metrics::counter!("nimino_auth_failures_total", "reason" => metric_reason)
                         .increment(1);
                     *conn.auth_state.write().await = AuthState::Failed;
                     // Decision 4: banned ⇒ OK false + immediate WebSocket close.
@@ -201,7 +201,7 @@ pub async fn handle_auth(event: nostr::Event, conn: Arc<ConnectionState>, state:
                 };
                 if !allowed {
                     warn!(conn_id = %conn_id, pubkey = %pubkey.to_hex(), "pubkey not in allowlist");
-                    metrics::counter!("buzz_auth_failures_total", "reason" => "allowlist_denied")
+                    metrics::counter!("nimino_auth_failures_total", "reason" => "allowlist_denied")
                         .increment(1);
                     *conn.auth_state.write().await = AuthState::Failed;
                     conn.send(RelayMessage::ok(
@@ -225,7 +225,7 @@ pub async fn handle_auth(event: nostr::Event, conn: Arc<ConnectionState>, state:
                 Ok(owner) => owner,
                 Err(e) => {
                     warn!(conn_id = %conn_id, pubkey = %pubkey.to_hex(), error = ?e, "not a relay member");
-                    metrics::counter!("buzz_auth_failures_total", "reason" => "not_relay_member")
+                    metrics::counter!("nimino_auth_failures_total", "reason" => "not_relay_member")
                         .increment(1);
                     *conn.auth_state.write().await = AuthState::Failed;
                     conn.send(RelayMessage::ok(
@@ -283,7 +283,8 @@ pub async fn handle_auth(event: nostr::Event, conn: Arc<ConnectionState>, state:
         }
         Err(e) => {
             warn!(conn_id = %conn_id, error = %e, "NIP-42 auth failed");
-            metrics::counter!("buzz_auth_failures_total", "reason" => "nip42_invalid").increment(1);
+            metrics::counter!("nimino_auth_failures_total", "reason" => "nip42_invalid")
+                .increment(1);
             *conn.auth_state.write().await = AuthState::Failed;
             conn.send(RelayMessage::ok(
                 &event_id_hex,

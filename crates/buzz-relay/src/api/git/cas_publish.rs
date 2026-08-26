@@ -965,15 +965,15 @@ fn record_compaction(
     packs_after: Option<usize>,
     compacted_bytes: Option<u64>,
 ) {
-    metrics::counter!("buzz_git_pack_compactions_total", "outcome" => outcome).increment(1);
-    metrics::histogram!("buzz_git_pack_compaction_seconds", "outcome" => outcome)
+    metrics::counter!("nimino_git_pack_compactions_total", "outcome" => outcome).increment(1);
+    metrics::histogram!("nimino_git_pack_compaction_seconds", "outcome" => outcome)
         .record(started_at.elapsed().as_secs_f64());
-    metrics::histogram!("buzz_git_pack_compaction_packs_before").record(packs_before as f64);
+    metrics::histogram!("nimino_git_pack_compaction_packs_before").record(packs_before as f64);
     if let Some(packs_after) = packs_after {
-        metrics::histogram!("buzz_git_pack_compaction_packs_after").record(packs_after as f64);
+        metrics::histogram!("nimino_git_pack_compaction_packs_after").record(packs_after as f64);
     }
     if let Some(compacted_bytes) = compacted_bytes {
-        metrics::histogram!("buzz_git_pack_compaction_bytes").record(compacted_bytes as f64);
+        metrics::histogram!("nimino_git_pack_compaction_bytes").record(compacted_bytes as f64);
     }
 }
 
@@ -1131,7 +1131,7 @@ async fn cas_publish_inner(
                         "repository already names {packs_before} packs and compaction failed"
                     ))
                 });
-            metrics::counter!("buzz_git_pack_compaction_required_failures_total").increment(1);
+            metrics::counter!("nimino_git_pack_compaction_required_failures_total").increment(1);
             return Err(error);
         }
         let new_pack_key = if let Some(bytes) = pack_bytes {
@@ -1588,15 +1588,15 @@ mod tests {
     }
 
     fn probe_enabled() -> bool {
-        std::env::var("BUZZ_GIT_S3_PROBE").as_deref() == Ok("1")
+        std::env::var("NIMINO_GIT_S3_PROBE").as_deref() == Ok("1")
     }
 
     fn live_store() -> GitStore {
         GitStore::new(
             "http://localhost:9000",
-            "buzz_dev",
-            "buzz_dev_secret",
-            "buzz-media",
+            "nimino_dev",
+            "nimino_dev_secret",
+            "nimino-media",
             "us-east-1",
             buzz_media::config::S3AddressingStyle::Path,
         )

@@ -244,7 +244,7 @@ pub(super) async fn update_persona_with<R: Send + 'static>(
             )
             .await
             {
-                eprintln!("buzz-desktop: relay profile sync failed after persona update: {e}");
+                eprintln!("nimino-desktop: relay profile sync failed after persona update: {e}");
             }
         }
     }

@@ -12,11 +12,11 @@ name = "buzz_cli"
 path = "src/lib.rs"
 
 [[bin]]
-name = "buzz"
+name = "nimino"
 path = "src/main.rs"
 
 [dependencies]
-# CLI argument parsing — derive macros + env var support (BUZZ_API_TOKEN auto-wired)
+# CLI argument parsing — derive macros + env var support (NIMINO_API_TOKEN auto-wired)
 clap = { version = "4", features = ["derive", "env"] }
 
 # HTTP client — async REST calls to the relay
@@ -32,7 +32,7 @@ serde_json = { workspace = true }
 # Structured error types with exit code mapping
 thiserror = { workspace = true }
 
-# Nostr event signing — used in `buzz auth`, auto-mint, and signed event writes
+# Nostr event signing — used in `nimino auth`, auto-mint, and signed event writes
 nostr = { workspace = true }
 
 # UUID parsing for validate_uuid + event building

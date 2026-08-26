@@ -61,7 +61,7 @@ import { formatTranscriptTimestampTitle } from "./agentSessionUtils";
 import { hasFileEditLineDiff } from "./FileEditDiffView";
 import { UserMessageBubble } from "./activityRenderClasses/UserMessageBubble";
 
-const TRANSCRIPT_ACP_SOURCE_STORAGE_KEY = "buzz:show-transcript-acp-source";
+const TRANSCRIPT_ACP_SOURCE_STORAGE_KEY = "nimino:show-transcript-acp-source";
 
 const ROW_ENTER_SPRING = {
   damping: 38,

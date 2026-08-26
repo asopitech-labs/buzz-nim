@@ -132,7 +132,7 @@ pub(crate) fn read_config_surface(
         thinking_env_var,
         max_tokens_env_var,
         context_limit_env_var,
-        Some("BUZZ_ACP_SYSTEM_PROMPT"),
+        Some("NIMINO_ACP_SYSTEM_PROMPT"),
     ]
     .into_iter()
     .flatten()
@@ -655,14 +655,14 @@ fn build_numeric_env_field(
 /// Env tiers sit above structured per spawn contract: `descriptor.env` is
 /// written last (after the structured prompt), so env wins on collision.
 /// `GlobalAgentConfig` has no structured system_prompt, so the global tier
-/// is env-only. `BUZZ_ACP_SYSTEM_PROMPT` is not reserved and is therefore
+/// is env-only. `NIMINO_ACP_SYSTEM_PROMPT` is not reserved and is therefore
 /// a real global env tier.
 fn build_system_prompt_field(
     record: &ManagedAgentRecord,
     file_prompt: &Option<String>,
     tiers: &InheritedConfigTiers,
 ) -> Option<NormalizedField> {
-    const PROMPT_ENV_KEY: &str = "BUZZ_ACP_SYSTEM_PROMPT";
+    const PROMPT_ENV_KEY: &str = "NIMINO_ACP_SYSTEM_PROMPT";
 
     let [rec_env, pers_env, glob_env, def_env] = env_candidates(
         PROMPT_ENV_KEY,

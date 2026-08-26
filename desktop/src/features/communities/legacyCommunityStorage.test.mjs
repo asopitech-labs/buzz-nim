@@ -66,14 +66,17 @@ test("applyLegacyCommunityStorage seeds missing communities and active community
     storage,
   );
 
-  assert.equal(storage.getItem("buzz-communities"), legacyCommunities);
-  assert.equal(storage.getItem("buzz-active-community-id"), "legacy-community");
+  assert.equal(storage.getItem("nimino-communities"), legacyCommunities);
+  assert.equal(
+    storage.getItem("nimino-active-community-id"),
+    "legacy-community",
+  );
 });
 
 test("applyLegacyCommunityStorage preserves existing non-local Buzz communities", () => {
   const storage = createMemoryStorage({
-    "buzz-communities": currentCommunities,
-    "buzz-active-community-id": "current-community",
+    "nimino-communities": currentCommunities,
+    "nimino-active-community-id": "current-community",
   });
 
   applyLegacyCommunityStorage(
@@ -85,17 +88,17 @@ test("applyLegacyCommunityStorage preserves existing non-local Buzz communities"
     storage,
   );
 
-  assert.equal(storage.getItem("buzz-communities"), currentCommunities);
+  assert.equal(storage.getItem("nimino-communities"), currentCommunities);
   assert.equal(
-    storage.getItem("buzz-active-community-id"),
+    storage.getItem("nimino-active-community-id"),
     "current-community",
   );
 });
 
 test("applyLegacyCommunityStorage replaces broken localhost first-run community", () => {
   const storage = createMemoryStorage({
-    "buzz-communities": localhostCommunities,
-    "buzz-active-community-id": "local-community",
+    "nimino-communities": localhostCommunities,
+    "nimino-active-community-id": "local-community",
   });
 
   applyLegacyCommunityStorage(
@@ -107,13 +110,16 @@ test("applyLegacyCommunityStorage replaces broken localhost first-run community"
     storage,
   );
 
-  assert.equal(storage.getItem("buzz-communities"), legacyCommunities);
-  assert.equal(storage.getItem("buzz-active-community-id"), "legacy-community");
+  assert.equal(storage.getItem("nimino-communities"), legacyCommunities);
+  assert.equal(
+    storage.getItem("nimino-active-community-id"),
+    "legacy-community",
+  );
 });
 
 test("applyLegacyCommunityStorage treats trailing-slash localhost as broken", () => {
   const storage = createMemoryStorage({
-    "buzz-communities": JSON.stringify([
+    "nimino-communities": JSON.stringify([
       {
         id: "local-community",
         name: "Local Dev",
@@ -121,7 +127,7 @@ test("applyLegacyCommunityStorage treats trailing-slash localhost as broken", ()
         addedAt: "2026-06-12T00:00:00.000Z",
       },
     ]),
-    "buzz-active-community-id": "local-community",
+    "nimino-active-community-id": "local-community",
   });
 
   applyLegacyCommunityStorage(
@@ -133,8 +139,11 @@ test("applyLegacyCommunityStorage treats trailing-slash localhost as broken", ()
     storage,
   );
 
-  assert.equal(storage.getItem("buzz-communities"), legacyCommunities);
-  assert.equal(storage.getItem("buzz-active-community-id"), "legacy-community");
+  assert.equal(storage.getItem("nimino-communities"), legacyCommunities);
+  assert.equal(
+    storage.getItem("nimino-active-community-id"),
+    "legacy-community",
+  );
 });
 
 test("applyLegacyCommunityStorage migrates onboarding completion keys", () => {
@@ -149,5 +158,5 @@ test("applyLegacyCommunityStorage migrates onboarding completion keys", () => {
     storage,
   );
 
-  assert.equal(storage.getItem("buzz-onboarding-complete.v1:abc123"), "true");
+  assert.equal(storage.getItem("nimino-onboarding-complete.v1:abc123"), "true");
 });

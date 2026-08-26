@@ -398,8 +398,8 @@ impl AprilPocketTts {
         prepared: &AprilPreparedPrompt,
         style: &VoiceStyle,
     ) -> Result<Vec<f32>, String> {
-        // EXPERIMENTAL (latency bench): phase timing, enabled by BUZZ_TTS_PHASE_LOG=1.
-        let phase_log = std::env::var("BUZZ_TTS_PHASE_LOG").is_ok_and(|v| v == "1");
+        // EXPERIMENTAL (latency bench): phase timing, enabled by NIMINO_TTS_PHASE_LOG=1.
+        let phase_log = std::env::var("NIMINO_TTS_PHASE_LOG").is_ok_and(|v| v == "1");
         let t0 = std::time::Instant::now();
         let mut flow_state = self.conditioned_flow_state(style)?;
         let t_condition = t0.elapsed();
@@ -1618,10 +1618,10 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "requires BUZZ_POCKET_TEST_MODEL_DIR"]
+    #[ignore = "requires NIMINO_POCKET_TEST_MODEL_DIR"]
     fn switching_between_equal_length_voices_reconditions_the_flow_state() {
-        let dir = std::env::var("BUZZ_POCKET_TEST_MODEL_DIR")
-            .expect("set BUZZ_POCKET_TEST_MODEL_DIR to the verified April bundle");
+        let dir = std::env::var("NIMINO_POCKET_TEST_MODEL_DIR")
+            .expect("set NIMINO_POCKET_TEST_MODEL_DIR to the verified April bundle");
         let style_a =
             crate::pocket::load_voice_style(&Path::new(&dir).join("reference_sample.wav"))
                 .expect("load reference voice");
@@ -1705,10 +1705,10 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "requires BUZZ_POCKET_TEST_MODEL_DIR"]
+    #[ignore = "requires NIMINO_POCKET_TEST_MODEL_DIR"]
     fn incremental_stateful_decode_matches_batch_decode() {
-        let dir = std::env::var("BUZZ_POCKET_TEST_MODEL_DIR")
-            .expect("set BUZZ_POCKET_TEST_MODEL_DIR to the verified April bundle");
+        let dir = std::env::var("NIMINO_POCKET_TEST_MODEL_DIR")
+            .expect("set NIMINO_POCKET_TEST_MODEL_DIR to the verified April bundle");
         let mut engine = AprilPocketTts::load(Path::new(&dir), 1).expect("load April bundle");
         let style = crate::pocket::load_voice_style(&Path::new(&dir).join("reference_sample.wav"))
             .expect("load reference voice");
@@ -1806,10 +1806,10 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "requires BUZZ_POCKET_TEST_MODEL_DIR"]
+    #[ignore = "requires NIMINO_POCKET_TEST_MODEL_DIR"]
     fn tokenizer_matches_sentencepiece_reference_including_unknown_words() {
-        let dir = std::env::var("BUZZ_POCKET_TEST_MODEL_DIR")
-            .expect("set BUZZ_POCKET_TEST_MODEL_DIR to the verified April bundle");
+        let dir = std::env::var("NIMINO_POCKET_TEST_MODEL_DIR")
+            .expect("set NIMINO_POCKET_TEST_MODEL_DIR to the verified April bundle");
         let tokenizer =
             load_tokenizer(&Path::new(&dir).join("tokenizer.model")).expect("load April tokenizer");
         let cases: &[(&str, &[u32])] = &[
@@ -1830,10 +1830,10 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "requires BUZZ_POCKET_TEST_MODEL_DIR"]
+    #[ignore = "requires NIMINO_POCKET_TEST_MODEL_DIR"]
     fn loader_splits_oversized_prompts_at_bundle_token_limit() {
-        let dir = std::env::var("BUZZ_POCKET_TEST_MODEL_DIR")
-            .expect("set BUZZ_POCKET_TEST_MODEL_DIR to the verified April bundle");
+        let dir = std::env::var("NIMINO_POCKET_TEST_MODEL_DIR")
+            .expect("set NIMINO_POCKET_TEST_MODEL_DIR to the verified April bundle");
         let engine = AprilPocketTts::load(Path::new(&dir), 1).expect("load April bundle");
         let text = "This deliberately long sentence repeats ordinary English words so the exact SentencePiece token limit is exercised without relying on punctuation, and it keeps adding more material until the prompt must be divided into multiple independently safe generation chunks before the recurrent state cache can be exhausted.";
         let prepared = prepare_april_prompt(text).expect("prepare prompt");
@@ -1848,10 +1848,10 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "requires BUZZ_POCKET_TEST_MODEL_DIR"]
+    #[ignore = "requires NIMINO_POCKET_TEST_MODEL_DIR"]
     fn gary_provost_long_sentence_respects_bundle_token_limit() {
-        let dir = std::env::var("BUZZ_POCKET_TEST_MODEL_DIR")
-            .expect("set BUZZ_POCKET_TEST_MODEL_DIR to the verified April bundle");
+        let dir = std::env::var("NIMINO_POCKET_TEST_MODEL_DIR")
+            .expect("set NIMINO_POCKET_TEST_MODEL_DIR to the verified April bundle");
         let engine = AprilPocketTts::load(Path::new(&dir), 1).expect("load April bundle");
         let text = "And sometimes, when I am certain the reader is rested, I will engage him with a sentence of considerable length, a sentence that burns with energy and builds with all the impetus of a crescendo, the roll of the drums, the crash of the cymbals–sounds that say listen to this, it is important.";
         let prepared = prepare_april_prompt(text).expect("prepare prompt");

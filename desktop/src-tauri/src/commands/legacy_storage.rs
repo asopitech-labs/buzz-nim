@@ -3,9 +3,9 @@ use std::path::{Path, PathBuf};
 use rusqlite::{Connection, OpenFlags};
 use serde::Serialize;
 
-const BUZZ_RELEASE_IDENTIFIER_PREFIX: &str = "xyz.block.buzz.app";
+const NIMINO_RELEASE_IDENTIFIER_PREFIX: &str = "com.asopitech.nimino";
 const SPROUT_RELEASE_IDENTIFIER: &str = "xyz.block.sprout.app";
-const BUZZ_DEV_IDENTIFIER_PREFIX: &str = "xyz.block.buzz.app.dev";
+const NIMINO_DEV_IDENTIFIER_PREFIX: &str = "com.asopitech.nimino.dev";
 const SPROUT_DEV_IDENTIFIER_PREFIX: &str = "xyz.block.sprout.app.dev";
 
 const SPROUT_WORKSPACES_KEY: &str = "sprout-workspaces";
@@ -28,15 +28,15 @@ pub struct LegacyOnboardingCompletion {
 }
 
 fn legacy_identifier(current_identifier: &str) -> Option<String> {
-    if current_identifier.starts_with(BUZZ_DEV_IDENTIFIER_PREFIX) {
+    if current_identifier.starts_with(NIMINO_DEV_IDENTIFIER_PREFIX) {
         Some(current_identifier.replacen(
-            BUZZ_DEV_IDENTIFIER_PREFIX,
+            NIMINO_DEV_IDENTIFIER_PREFIX,
             SPROUT_DEV_IDENTIFIER_PREFIX,
             1,
         ))
-    } else if current_identifier.starts_with(BUZZ_RELEASE_IDENTIFIER_PREFIX) {
+    } else if current_identifier.starts_with(NIMINO_RELEASE_IDENTIFIER_PREFIX) {
         Some(current_identifier.replacen(
-            BUZZ_RELEASE_IDENTIFIER_PREFIX,
+            NIMINO_RELEASE_IDENTIFIER_PREFIX,
             SPROUT_RELEASE_IDENTIFIER,
             1,
         ))
@@ -194,7 +194,7 @@ pub async fn get_legacy_workspace_storage(
             match read_legacy_workspace_storage_db(&database) {
                 Ok(storage) => merge_legacy_workspace_storage(&mut result, storage),
                 Err(error) => eprintln!(
-                    "buzz-desktop: legacy-local-storage-migration: {}: {error}",
+                    "nimino-desktop: legacy-local-storage-migration: {}: {error}",
                     database.display()
                 ),
             }
@@ -213,7 +213,7 @@ mod tests {
     #[test]
     fn legacy_identifier_maps_release_identifier() {
         assert_eq!(
-            legacy_identifier("xyz.block.buzz.app"),
+            legacy_identifier("com.asopitech.nimino"),
             Some("xyz.block.sprout.app".to_string())
         );
     }
@@ -221,7 +221,7 @@ mod tests {
     #[test]
     fn legacy_identifier_maps_dev_worktree_identifier() {
         assert_eq!(
-            legacy_identifier("xyz.block.buzz.app.dev.my-branch"),
+            legacy_identifier("com.asopitech.nimino.dev.my-branch"),
             Some("xyz.block.sprout.app.dev.my-branch".to_string())
         );
     }

@@ -4,7 +4,7 @@ import { relayWsUrl } from "@/shared/lib/relay-url";
 import { Button } from "@/shared/ui/button";
 
 export function ConnectButton({ className }: { className?: string }) {
-  const deepLink = `buzz://connect?relay=${encodeURIComponent(relayWsUrl())}`;
+  const deepLink = `nimino://connect?relay=${encodeURIComponent(relayWsUrl())}`;
 
   return (
     <Button

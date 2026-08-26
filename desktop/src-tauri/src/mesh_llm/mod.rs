@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 mod coordinator;
 pub(crate) use coordinator::{publish_current_status_once, publish_stopped_status_once_at};
-pub use coordinator::{start_coordinator, MeshCoordinator, KIND_BUZZ_MESH_MEMBER_STATUS};
+pub use coordinator::{start_coordinator, MeshCoordinator, KIND_NIMINO_MESH_MEMBER_STATUS};
 
 mod discovery;
 pub use discovery::{
@@ -44,9 +44,9 @@ use std::time::Duration;
 
 const DEFAULT_MESH_API_PORT: u16 = 9337;
 const DEFAULT_MESH_CONSOLE_PORT: u16 = 3131;
-const MESH_STATUS_KIND: u64 = KIND_BUZZ_MESH_MEMBER_STATUS as u64;
-const MESH_API_PORT_ENV: &str = "BUZZ_MESH_API_PORT";
-const MESH_CONSOLE_PORT_ENV: &str = "BUZZ_MESH_CONSOLE_PORT";
+const MESH_STATUS_KIND: u64 = KIND_NIMINO_MESH_MEMBER_STATUS as u64;
+const MESH_API_PORT_ENV: &str = "NIMINO_MESH_API_PORT";
+const MESH_CONSOLE_PORT_ENV: &str = "NIMINO_MESH_CONSOLE_PORT";
 /// Iroh relay tunneling for symmetric-NAT peers. Unset/empty/"1"/"default" =
 /// enabled with the SDK's default iroh relays (the default — members connect
 /// regardless of NAT). "0" = disabled (direct QUIC only, for
@@ -55,7 +55,7 @@ const MESH_CONSOLE_PORT_ENV: &str = "BUZZ_MESH_CONSOLE_PORT";
 /// only) and are transport-only; mesh presence is NEVER published to public
 /// Nostr relays regardless of this setting (`publish` is hardcoded false and
 /// the Nostr relay list stays empty).
-const MESH_IROH_RELAYS_ENV: &str = "BUZZ_MESH_IROH_RELAYS";
+const MESH_IROH_RELAYS_ENV: &str = "NIMINO_MESH_IROH_RELAYS";
 /// First model load can include a multi-GB download plus Metal warmup; the
 /// SDK default (30s) times out long before that. Matches mesh-console.
 const MESH_STARTUP_TIMEOUT: Duration = Duration::from_secs(180);

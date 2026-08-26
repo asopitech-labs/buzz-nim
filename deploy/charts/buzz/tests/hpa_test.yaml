@@ -41,7 +41,7 @@ tests:
           value: 65
       - equal:
           path: spec.metrics[1].pods.metric.name
-          value: buzz_ws_connections_active
+          value: nimino_ws_connections_active
       - equal:
           path: spec.metrics[1].pods.target.averageValue
           value: "5000"
@@ -75,5 +75,5 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].env
           content:
-            name: BUZZ_HUDDLE_AUDIO_AVAILABLE
+            name: NIMINO_HUDDLE_AUDIO_AVAILABLE
             value: "false"

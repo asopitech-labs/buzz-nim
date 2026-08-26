@@ -567,10 +567,10 @@ fn tauri_platform_configs_bundle_kubernetes_only_on_supported_hosts() {
 fn current_build_deploy_payload_forwards_compiled_policy() {
     use crate::managed_agents::{BackendKind, RespondTo};
 
-    let expected_owner_only = match std::env::var("BUZZ_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY") {
+    let expected_owner_only = match std::env::var("NIMINO_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY") {
         Ok(value) => value
             .parse::<bool>()
-            .expect("BUZZ_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY must be true or false"),
+            .expect("NIMINO_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY must be true or false"),
         Err(std::env::VarError::NotPresent)
             if !crate::managed_agents::owner_only_access_build() =>
         {
@@ -578,11 +578,11 @@ fn current_build_deploy_payload_forwards_compiled_policy() {
         }
         Err(std::env::VarError::NotPresent) => {
             panic!(
-                "BUZZ_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY must be set for owner-only-access-build tests"
+                "NIMINO_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY must be set for owner-only-access-build tests"
             )
         }
         Err(std::env::VarError::NotUnicode(_)) => {
-            panic!("BUZZ_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY must be valid UTF-8")
+            panic!("NIMINO_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY must be valid UTF-8")
         }
     };
     let mut record = bare_agent_record(None, None, None);

@@ -1,7 +1,7 @@
-export const BUZZ_RELEASES_URL = "https://github.com/block/buzz/releases";
-const BUZZ_RELEASES_API_URL =
+export const NIMINO_RELEASES_URL = "https://github.com/block/buzz/releases";
+const NIMINO_RELEASES_API_URL =
   "https://api.github.com/repos/block/buzz/releases?per_page=10";
-const CACHE_KEY = "buzz.latestDownload.v1";
+const CACHE_KEY = "nimino.latestDownload.v1";
 const CACHE_TTL_MS = 60 * 60 * 1000;
 
 export type BuzzDownloadPlatform = {
@@ -161,15 +161,15 @@ export async function resolveBuzzDownloadUrlForPlatform(
   }
 
   try {
-    const response = await fetch(BUZZ_RELEASES_API_URL, {
+    const response = await fetch(NIMINO_RELEASES_API_URL, {
       headers: { Accept: "application/vnd.github+json" },
     });
-    if (!response.ok) return BUZZ_RELEASES_URL;
+    if (!response.ok) return NIMINO_RELEASES_URL;
     const url = selectBuzzDownloadUrl(
       (await response.json()) as GitHubRelease[],
       platform,
     );
-    if (!url) return BUZZ_RELEASES_URL;
+    if (!url) return NIMINO_RELEASES_URL;
     try {
       sessionStorage.setItem(
         CACHE_KEY,
@@ -184,7 +184,7 @@ export async function resolveBuzzDownloadUrlForPlatform(
     }
     return url;
   } catch {
-    return BUZZ_RELEASES_URL;
+    return NIMINO_RELEASES_URL;
   }
 }
 

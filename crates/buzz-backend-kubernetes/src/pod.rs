@@ -221,7 +221,7 @@ mod tests {
             &identity(),
             &cfg,
             "gen00001",
-            &intent_template(&cfg, ["BUZZ_RELAY_URL".to_string()]).fingerprint(),
+            &intent_template(&cfg, ["NIMINO_RELAY_URL".to_string()]).fingerprint(),
         )
     }
 
@@ -374,7 +374,7 @@ mod tests {
     fn secret_is_immutable_marked_and_holds_the_env() {
         let id = identity();
         let env: BTreeMap<String, String> =
-            [("BUZZ_RELAY_URL".to_string(), "wss://r".to_string())].into();
+            [("NIMINO_RELAY_URL".to_string(), "wss://r".to_string())].into();
         let secret = build_secret(&id, "ns", "gen1", env.clone());
         assert_eq!(secret.immutable, Some(true));
         assert_eq!(secret.string_data.as_ref().unwrap(), &env);
@@ -408,7 +408,7 @@ mod tests {
     #[test]
     fn recorded_fingerprint_matches_a_fresh_computation() {
         let cfg = provider_config();
-        let keys = ["BUZZ_RELAY_URL".to_string(), "GOOSE_MODE".to_string()];
+        let keys = ["NIMINO_RELAY_URL".to_string(), "GOOSE_MODE".to_string()];
         let fp = intent_template(&cfg, keys.clone()).fingerprint();
         let pod = build_pod(&identity(), &cfg, "gen-a", &fp);
         let recorded = Fingerprint::from_annotation(
@@ -423,7 +423,7 @@ mod tests {
     #[test]
     fn generation_does_not_change_the_recorded_fingerprint() {
         let cfg = provider_config();
-        let keys = ["BUZZ_RELAY_URL".to_string()];
+        let keys = ["NIMINO_RELAY_URL".to_string()];
         let a = intent_template(&cfg, keys.clone()).fingerprint();
         let b = intent_template(&cfg, keys).fingerprint();
         let id = identity();

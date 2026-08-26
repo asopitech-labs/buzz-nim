@@ -14,7 +14,7 @@
 export { normalizeRelayUrl } from "@/shared/lib/normalizeRelayUrl";
 import { normalizeRelayUrl } from "@/shared/lib/normalizeRelayUrl";
 
-const STORAGE_KEY_PREFIX = "buzz-self-profile.v1";
+const STORAGE_KEY_PREFIX = "nimino-self-profile.v1";
 export const MAX_SELF_PROFILE_CACHES_PER_RELAY = 8;
 export const MAX_SELF_PROFILE_CACHES = 32;
 

@@ -58,7 +58,7 @@ def provisioner_from_dict(config: dict[str, object]) -> BuzzTrialProvisioner:
 class BuzzTrialProvisioner:
     """Implements the TrialHandle v1.1 contract against a live Buzz relay.
 
-    Guarantees (contract PLANS/HARBOR_BUZZ_TRIALHANDLE_CONTRACT.md):
+    Guarantees (contract PLANS/HARBOR_NIMINO_TRIALHANDLE_CONTRACT.md):
     - create_trial is synchronous and idempotent per (run_id, trial_id);
       concurrency-safe via a Postgres advisory lock on the trial key.
     - One private channel per trial; membership is exactly the trial's

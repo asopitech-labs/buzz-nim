@@ -10,7 +10,7 @@ import {
 import type { PersonaBehaviorDraft } from "./personaBehaviorDraft";
 import {
   isBuzzAgentRuntime,
-  BUZZ_AGENT_THINKING_EFFORT,
+  NIMINO_AGENT_THINKING_EFFORT,
 } from "./buzzAgentConfig";
 import {
   AGENT_PARALLELISM_HELP,
@@ -109,7 +109,7 @@ export function PersonaAdvancedFields({
     () => [
       ...hiddenEnvKeys,
       ...(isBuzzAgentRuntime(modelTuningRuntimeId)
-        ? [BUZZ_AGENT_THINKING_EFFORT]
+        ? [NIMINO_AGENT_THINKING_EFFORT]
         : []),
       ...structuredEnvKeys(numericDescriptors),
     ],

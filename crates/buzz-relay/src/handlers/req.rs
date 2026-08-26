@@ -106,7 +106,7 @@ pub async fn handle_req(
     };
 
     let mut accessible_channels = if filters_are_nip43_membership_only(&filters) {
-        metrics::counter!("buzz_req_global_access_resolution_skips_total", "kind" => "13534")
+        metrics::counter!("nimino_req_global_access_resolution_skips_total", "kind" => "13534")
             .increment(1);
         Vec::new()
     } else {

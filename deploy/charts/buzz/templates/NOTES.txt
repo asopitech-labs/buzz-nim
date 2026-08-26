@@ -44,7 +44,7 @@
 ──────────────────────────────────────────────────────────────────────────────
   Backups — save these
 ──────────────────────────────────────────────────────────────────────────────
-  1. BUZZ_RELAY_PRIVATE_KEY — relay identity. Rotating it = identity change;
+  1. NIMINO_RELAY_PRIVATE_KEY — relay identity. Rotating it = identity change;
      federation peers will treat the relay as a new identity.
   2. PostgreSQL database{{ if .Values.postgresql.enabled }} ({{ .Release.Name }}-postgresql PVC){{ end }}
   3. S3 bucket "{{ .Values.s3.bucket }}" — media blobs

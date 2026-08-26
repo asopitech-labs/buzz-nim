@@ -19,7 +19,7 @@ use crate::{
     util::now_iso,
 };
 
-/// Read the workspace owner pubkey without holding the lock. Used to populate `BUZZ_ACP_AGENT_OWNER`
+/// Read the workspace owner pubkey without holding the lock. Used to populate `NIMINO_ACP_AGENT_OWNER`
 /// as a fallback for legacy agent records that have no NIP-OA `auth_tag`.
 pub(super) fn workspace_owner_hex(state: &AppState) -> Result<String, String> {
     let keys = state.keys.lock().map_err(|e| e.to_string())?;
@@ -660,7 +660,7 @@ pub async fn create_managed_agent(
             agent_command_override,
             agent_args,
             mcp_command,
-            // BUZZ_ACP_TURN_TIMEOUT is deprecated and ignored by the harness;
+            // NIMINO_ACP_TURN_TIMEOUT is deprecated and ignored by the harness;
             // store the schema default only. Use idle_timeout_seconds or
             // max_turn_duration_seconds for actual turn-length control.
             turn_timeout_seconds: DEFAULT_AGENT_TURN_TIMEOUT_SECONDS,
@@ -1027,7 +1027,7 @@ pub async fn start_managed_agent(
                     .await
             {
                 eprintln!(
-                    "buzz-desktop: profile reconciliation failed for agent {reconcile_pubkey}: {e}"
+                    "nimino-desktop: profile reconciliation failed for agent {reconcile_pubkey}: {e}"
                 );
             }
         });

@@ -6,7 +6,7 @@
 #
 # WHY
 #   `just reset` deletes the entire dev app-data dir (agent records included),
-#   every buzz-desktop-dev keychain entry, and the `_dev_migration_v1` marker.
+#   every nimino-desktop-dev keychain entry, and the `_dev_migration_v1` marker.
 #   The next dev boot sees an empty store, so key-less records mint fresh
 #   keypairs against the prod relay → duplicate agent instances, and a fresh
 #   owner key → auth-tag split-brain. This script restores the two things the
@@ -21,7 +21,7 @@
 #   clobber a non-empty dev store unless --force.
 #
 # WHAT THIS DOES NOT DO (verified against block/buzz origin/main)
-#   - It does NOT touch the buzz-desktop-dev keychain. Agent private keys are
+#   - It does NOT touch the nimino-desktop-dev keychain. Agent private keys are
 #     copied prod→dev automatically at next dev boot by
 #     `migrate_agent_keys_to_dev_service` (desktop/src-tauri/src/managed_agents/
 #     storage.rs:460): the reset wiped the `_dev_migration_v1` marker, so it
@@ -52,8 +52,8 @@
 #
 # ENV OVERRIDES (read-only against prod; exist so the identity read can be
 # fixture-tested against a scratch keychain without touching real secrets)
-#   BUZZ_KEYCHAIN_SVC   keychain service    (default buzz-desktop)
-#   BUZZ_KEYCHAIN_ACCT  keychain account    (default secrets)
+#   NIMINO_KEYCHAIN_SVC   keychain service    (default nimino-desktop)
+#   NIMINO_KEYCHAIN_ACCT  keychain account    (default secrets)
 #
 set -euo pipefail
 
@@ -62,10 +62,10 @@ set -euo pipefail
 # real invocation ever uses. Keychain service/account stay overridable because
 # they are read-only against prod (used to fixture-test the identity read).
 SUPPORT="$HOME/Library/Application Support"
-PROD_DIR="$SUPPORT/xyz.block.buzz.app"
-DEV_DIR="$SUPPORT/xyz.block.buzz.app.dev"
-KEYCHAIN_SVC="${BUZZ_KEYCHAIN_SVC:-buzz-desktop}"
-KEYCHAIN_ACCT="${BUZZ_KEYCHAIN_ACCT:-secrets}"
+PROD_DIR="$SUPPORT/com.asopitech.nimino"
+DEV_DIR="$SUPPORT/com.asopitech.nimino.dev"
+KEYCHAIN_SVC="${NIMINO_KEYCHAIN_SVC:-nimino-desktop}"
+KEYCHAIN_ACCT="${NIMINO_KEYCHAIN_ACCT:-secrets}"
 
 DRY_RUN=0
 FORCE=0
@@ -172,9 +172,9 @@ say "[1/4] Preflight"
 
 # 1a. Refuse if a running DEV build is detected; a running installed DMG is
 #     allowed (read-only detection; never kills). The main app binary is
-#     `buzz-desktop` for both the installed DMG
-#     (/Applications/Buzz.app/Contents/MacOS/buzz-desktop) and dev builds
-#     (target/<profile>/buzz-desktop via `tauri dev`). Match that path component
+#     `nimino-desktop` for both the installed DMG
+#     (/Applications/Buzz.app/Contents/MacOS/nimino-desktop) and dev builds
+#     (target/<profile>/nimino-desktop via `tauri dev`). Match that path component
 #     exactly so sidecars/helpers (buzz, buzz-dev-mcp, buzz-agent) don't
 #     false-positive.
 #
@@ -194,7 +194,7 @@ say "[1/4] Preflight"
 #     and resolution (path unresolvable AND process gone) is ignored — it is no
 #     longer running. A PID still alive but unresolvable (permissions, exotic
 #     state) blocks.
-ALLOWED_PROD_EXE="/Applications/Buzz.app/Contents/MacOS/buzz-desktop"
+ALLOWED_PROD_EXE="/Applications/Buzz.app/Contents/MacOS/nimino-desktop"
 
 # Echo a PID's true executable path (first txt-mapped vnode), or empty if none.
 # lsof exits nonzero when the PID is gone; callers use `|| true` so a raced exit
@@ -221,7 +221,7 @@ pid_gone() {
   [[ $rc -eq 1 && -z "$out" && $had_err -eq 0 ]]
 }
 
-running_pids="$(pgrep -f '/buzz-desktop( |$)' 2>/dev/null || true)"
+running_pids="$(pgrep -f '/nimino-desktop( |$)' 2>/dev/null || true)"
 dmg_running=0
 dev_blocking=()   # "pid:reason" for each PID that blocks the run
 if [[ -n "$running_pids" ]]; then
@@ -244,7 +244,7 @@ if [[ -n "$running_pids" ]]; then
   done <<< "$running_pids"
 fi
 if [[ ${#dev_blocking[@]} -gt 0 ]]; then
-  warn "A non-installed buzz-desktop process is running (dev build or unresolvable):"
+  warn "A non-installed nimino-desktop process is running (dev build or unresolvable):"
   for entry in "${dev_blocking[@]}"; do warn "  PID ${entry%%:*} → ${entry#*:}"; done
   warn "Quit any running dev build, then re-run. This script never kills processes."
   exit 1
@@ -466,14 +466,14 @@ say "[4/4] Done. Next steps"
 cat <<EOF
   1. Start your dev build (\`just production\` or \`just dev\`).
      - First boot re-runs the agent-key migration → ONE prod-keychain prompt
-       (copies agent:<pubkey> keys buzz-desktop → buzz-desktop-dev).
+       (copies agent:<pubkey> keys nimino-desktop → nimino-desktop-dev).
      - First boot adopts identity.key into the dev keyring, then deletes it.
   2. Worktree launches: worktree-suffixed dev dirs are symlinked to the
-     canonical dev dir by sync_shared_agent_data ONLY when BUZZ_SHARE_IDENTITY=1.
-     If you launch from a worktree, export BUZZ_SHARE_IDENTITY=1 (and
-     BUZZ_PRIVATE_KEY) or the worktree will mint its own duplicate agents.
+     canonical dev dir by sync_shared_agent_data ONLY when NIMINO_SHARE_IDENTITY=1.
+     If you launch from a worktree, export NIMINO_SHARE_IDENTITY=1 (and
+     NIMINO_PRIVATE_KEY) or the worktree will mint its own duplicate agents.
 EOF
-if [[ "${BUZZ_SHARE_IDENTITY:-}" != "1" ]]; then
-  say "  NOTE: BUZZ_SHARE_IDENTITY is not set in this shell — set it for worktree launches."
+if [[ "${NIMINO_SHARE_IDENTITY:-}" != "1" ]]; then
+  say "  NOTE: NIMINO_SHARE_IDENTITY is not set in this shell — set it for worktree launches."
 fi
 exit 0

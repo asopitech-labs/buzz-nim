@@ -35,7 +35,7 @@ use crate::validation::{
 /// separate (see [`process_video_upload`]) because it never buffers in RAM.
 ///
 /// `attribution` is `Some` when per-event upload records are enabled
-/// (`BUZZ_MEDIA_UPLOAD_RECORDS`): a record is then written for **every**
+/// (`NIMINO_MEDIA_UPLOAD_RECORDS`): a record is then written for **every**
 /// accepted upload — including the idempotent short-circuit, which does no
 /// blob PUT and would otherwise be invisible to the moderation pipeline.
 /// For fresh uploads, the record is written after the blob and derived

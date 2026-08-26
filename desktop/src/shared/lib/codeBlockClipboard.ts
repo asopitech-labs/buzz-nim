@@ -1,6 +1,6 @@
 import { copyTextToSystemClipboard } from "@/shared/api/tauriMedia";
 
-const BUZZ_CODE_BLOCK_ATTRIBUTE = "data-buzz-code-block";
+const NIMINO_CODE_BLOCK_ATTRIBUTE = "data-buzz-code-block";
 
 function escapeHtml(value: string) {
   return value
@@ -12,7 +12,7 @@ function escapeHtml(value: string) {
 
 function createBuzzCodeBlockHtml(code: string) {
   // Keep the code as one text node; the paste reader recovers it via textContent.
-  return `<pre ${BUZZ_CODE_BLOCK_ATTRIBUTE}="true"><code>${escapeHtml(code)}</code></pre>`;
+  return `<pre ${NIMINO_CODE_BLOCK_ATTRIBUTE}="true"><code>${escapeHtml(code)}</code></pre>`;
 }
 
 export async function copyCodeBlockToClipboard(code: string) {
@@ -44,13 +44,13 @@ export function getBuzzCodeBlockClipboardText(
   clipboardData: DataTransfer | null | undefined,
 ) {
   const html = clipboardData?.getData("text/html");
-  if (!html?.includes(BUZZ_CODE_BLOCK_ATTRIBUTE)) {
+  if (!html?.includes(NIMINO_CODE_BLOCK_ATTRIBUTE)) {
     return null;
   }
 
   const document = new DOMParser().parseFromString(html, "text/html");
-  const code = document.querySelector(`[${BUZZ_CODE_BLOCK_ATTRIBUTE}] code`);
-  const fallback = document.querySelector(`[${BUZZ_CODE_BLOCK_ATTRIBUTE}]`);
+  const code = document.querySelector(`[${NIMINO_CODE_BLOCK_ATTRIBUTE}] code`);
+  const fallback = document.querySelector(`[${NIMINO_CODE_BLOCK_ATTRIBUTE}]`);
 
   return code?.textContent ?? fallback?.textContent ?? null;
 }

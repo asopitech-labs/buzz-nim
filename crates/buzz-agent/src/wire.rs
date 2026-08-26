@@ -82,7 +82,7 @@ pub struct SessionSteerParams {
 
 /// Params for `session/set_model`: override the active model for an existing
 /// session without respawning. Applied immediately; subsequent prompts on this
-/// session use `model_id` instead of the configured `BUZZ_AGENT_MODEL`.
+/// session use `model_id` instead of the configured `NIMINO_AGENT_MODEL`.
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SessionSetModelParams {

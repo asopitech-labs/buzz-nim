@@ -10,7 +10,7 @@ use nostr::PublicKey;
 use std::collections::HashMap;
 
 use crate::error::PubSubError;
-use crate::topic::BUZZ_PREFIX;
+use crate::topic::NIMINO_PREFIX;
 
 /// 3x the 60s heartbeat — single missed heartbeat won't cause presence flap.
 pub const PRESENCE_TTL_SECS: u64 = 180;
@@ -18,7 +18,7 @@ pub const PRESENCE_TTL_SECS: u64 = 180;
 /// Returns the Redis key for the presence entry of `pubkey` under `ctx`.
 pub fn presence_key(ctx: &TenantContext, pubkey: &PublicKey) -> String {
     format!(
-        "{BUZZ_PREFIX}:{}:presence:{}",
+        "{NIMINO_PREFIX}:{}:presence:{}",
         ctx.community(),
         pubkey.to_hex()
     )

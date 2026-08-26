@@ -1,4 +1,4 @@
-//! Buzz Nest — persistent agent workspace at `~/.buzz`.
+//! Buzz Nest — persistent agent workspace at `~/.nimino`.
 //!
 //! Creates a shared knowledge directory on first launch so every
 //! Buzz-spawned agent starts with orientation (AGENTS.md) and a
@@ -42,8 +42,8 @@ const NEST_DIRS: &[&str] = &[
 pub(crate) const AGENTS_MD: &str = include_str!("nest_agents.md");
 
 /// Default SKILL.md content for the buzz-cli skill.
-/// Written to ~/.buzz/.agents/skills/buzz-cli/SKILL.md on first init.
-const BUZZ_CLI_SKILL_MD: &str = include_str!("nest_skill.md");
+/// Written to ~/.nimino/.agents/skills/buzz-cli/SKILL.md on first init.
+const NIMINO_CLI_SKILL_MD: &str = include_str!("nest_skill.md");
 
 /// Template content version for AGENTS.md static content (above managed markers).
 /// Bump this when changing `nest_agents.md` to trigger refresh on existing installs.
@@ -61,13 +61,13 @@ const END_MARKER: &str = "<!-- END BUZZ MANAGED -->";
 const CANONICAL_SKILL_DIR: &str = ".agents/skills/buzz-cli";
 
 /// Nest directory name for production builds.
-const NEST_DIR_PROD: &str = ".buzz";
+const NEST_DIR_PROD: &str = ".nimino";
 
 /// Nest directory name for dev builds. Dev builds (those whose Tauri app-data
-/// directory name starts with `"xyz.block.buzz.app.dev"`) use a separate nest
+/// directory name starts with `"com.asopitech.nimino.dev"`) use a separate nest
 /// so that the DMG and dev-build instances don't clobber each other's
 /// `.repos-dir` dotfile and `REPOS` symlink.
-const NEST_DIR_DEV: &str = ".buzz-dev";
+const NEST_DIR_DEV: &str = ".nimino-dev";
 
 /// Process-lifetime nest directory. Initialized once at startup via
 /// [`init_nest_dir`] before any call to [`nest_dir`].
@@ -85,7 +85,7 @@ static NEST_DIR: std::sync::OnceLock<Option<PathBuf>> = std::sync::OnceLock::new
 /// `OnceLock` is set exactly once.
 ///
 /// `is_dev` should be `true` when the running binary is a dev build — i.e.
-/// when the Tauri app-data directory name starts with `"xyz.block.buzz.app.dev"`.
+/// when the Tauri app-data directory name starts with `"com.asopitech.nimino.dev"`.
 /// Pass `false` for production (signed DMG) builds.
 pub fn init_nest_dir(is_dev: bool) {
     let suffix = if is_dev { NEST_DIR_DEV } else { NEST_DIR_PROD };
@@ -95,11 +95,11 @@ pub fn init_nest_dir(is_dev: bool) {
     let _ = NEST_DIR.set(path);
 }
 
-/// Returns the nest root path (`~/.buzz` for prod, `~/.buzz-dev` for dev),
+/// Returns the nest root path (`~/.nimino` for prod, `~/.nimino-dev` for dev),
 /// or `None` if the home directory cannot be resolved.
 ///
 /// If [`init_nest_dir`] has not been called yet (e.g. in unit tests), falls
-/// back to the production path `~/.buzz`.
+/// back to the production path `~/.nimino`.
 pub fn nest_dir() -> Option<PathBuf> {
     match NEST_DIR.get() {
         Some(path) => path.clone(),
@@ -108,7 +108,7 @@ pub fn nest_dir() -> Option<PathBuf> {
     }
 }
 
-/// Creates the Buzz nest at `~/.buzz` if it doesn't already exist.
+/// Creates the Buzz nest at `~/.nimino` if it doesn't already exist.
 ///
 /// Delegates to [`ensure_nest_at`] with the resolved nest directory.
 /// Returns an error string if the home directory cannot be resolved.
@@ -202,7 +202,7 @@ pub fn ensure_nest_at(root: &Path) -> Result<(), String> {
     {
         Ok(mut file) => {
             use std::io::Write;
-            file.write_all(BUZZ_CLI_SKILL_MD.as_bytes())
+            file.write_all(NIMINO_CLI_SKILL_MD.as_bytes())
                 .map_err(|e| format!("write {}: {e}", skill_md.display()))?;
         }
         Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {}
@@ -312,24 +312,24 @@ fn ensure_skill_symlinks(_root: &Path) -> Result<(), String> {
 
 /// Returns the `~/.local/bin` link name for the bundled CLI.
 ///
-/// Dev builds (`is_dev = true`) use `"buzz-dev"` so that a running DMG and a
+/// Dev builds (`is_dev = true`) use `"nimino-dev"` so that a running DMG and a
 /// concurrent dev build each own a separate link and never clobber each other —
-/// the same isolation that separates `~/.buzz` (prod) from `~/.buzz-dev` (dev).
+/// the same isolation that separates `~/.nimino` (prod) from `~/.nimino-dev` (dev).
 pub fn cli_link_name(is_dev: bool) -> &'static str {
     if is_dev {
-        "buzz-dev"
+        "nimino-dev"
     } else {
-        "buzz"
+        "nimino"
     }
 }
 
-/// Ensures `~/.local/bin/buzz` (prod) or `~/.local/bin/buzz-dev` (dev) is a
+/// Ensures `~/.local/bin/nimino` (prod) or `~/.local/bin/nimino-dev` (dev) is a
 /// symlink to the bundled CLI binary.
 ///
 /// The link name is split by `is_dev` so that an installed DMG and a
 /// concurrently running dev build each maintain their own symlink and never
 /// overwrite each other's target — the same isolation that separates the
-/// `~/.buzz` and `~/.buzz-dev` nests (see [`NEST_DIR_DEV`]).
+/// `~/.nimino` and `~/.nimino-dev` nests (see [`NEST_DIR_DEV`]).
 ///
 /// On every boot: replaces any existing symlink unconditionally (the `buzz` /
 /// `buzz-dev` name is our namespace), creates a new one if absent, and leaves
@@ -339,8 +339,8 @@ pub fn cli_link_name(is_dev: bool) -> &'static str {
 /// for human Terminal use; agents find the CLI via PATH augmentation.
 #[cfg(unix)]
 pub fn ensure_cli_symlink(exe_parent: &Path, is_dev: bool) -> Result<(), String> {
-    let buzz_bin = exe_parent.join("buzz");
-    if !buzz_bin.exists() {
+    let nimino_bin = exe_parent.join("nimino");
+    if !nimino_bin.exists() {
         return Ok(()); // CLI not bundled (e.g., dev builds without sidecars).
     }
 
@@ -354,14 +354,14 @@ pub fn ensure_cli_symlink(exe_parent: &Path, is_dev: bool) -> Result<(), String>
     match link.symlink_metadata() {
         Ok(meta) if meta.file_type().is_symlink() => {
             let _ = fs::remove_file(&link);
-            create_symlink(&buzz_bin, &link)
+            create_symlink(&nimino_bin, &link)
                 .map_err(|e| format!("symlink {}: {e}", link.display()))?;
         }
         Ok(_) => {
             // Regular file or directory — don't clobber.
         }
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            create_symlink(&buzz_bin, &link)
+            create_symlink(&nimino_bin, &link)
                 .map_err(|e| format!("symlink {}: {e}", link.display()))?;
         }
         Err(e) => {
@@ -465,9 +465,9 @@ fn refresh_skill_md_if_stale(root: &Path) -> Result<(), String> {
     let skill_content = if old_is_real_dir {
         // Preserve user-edited content during migration.
         fs::read_to_string(old_skill_dir.join("SKILL.md"))
-            .unwrap_or_else(|_| BUZZ_CLI_SKILL_MD.to_string())
+            .unwrap_or_else(|_| NIMINO_CLI_SKILL_MD.to_string())
     } else {
-        BUZZ_CLI_SKILL_MD.to_string()
+        NIMINO_CLI_SKILL_MD.to_string()
     };
 
     // Ensure the canonical .agents skill directory exists.
@@ -830,7 +830,7 @@ pub fn try_regenerate_nest(app: &AppHandle) {
     let app = app.clone();
     tauri::async_runtime::spawn(async move {
         if let Err(error) = regenerate_nest_context(&app, generation).await {
-            eprintln!("buzz-desktop: nest context regeneration failed: {error}");
+            eprintln!("nimino-desktop: nest context regeneration failed: {error}");
         }
     });
 }

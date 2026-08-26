@@ -100,7 +100,7 @@ enum Command {
         channel: Option<String>,
 
         /// Relay private key (hex) for signing events. Falls back to
-        /// BUZZ_RELAY_PRIVATE_KEY env var. If neither is set, generates
+        /// NIMINO_RELAY_PRIVATE_KEY env var. If neither is set, generates
         /// an ephemeral key (events will be unverifiable after restart).
         #[arg(long)]
         relay_key: Option<String>,
@@ -145,7 +145,7 @@ async fn run(cli: Cli) -> Result<i32> {
             let keys = Keys::generate();
             println!("Public key:  {}", keys.public_key().to_hex());
             println!("Secret key:  {}", keys.secret_key().display_secret());
-            println!("\nSet BUZZ_PRIVATE_KEY to the secret key to use this identity.");
+            println!("\nSet NIMINO_PRIVATE_KEY to the secret key to use this identity.");
             Ok(0)
         }
         Command::Migrate => {
@@ -398,18 +398,18 @@ async fn publish_membership_list_with_bump(
 
 /// Connect to DB, Redis pub/sub, and load the relay keypair.
 ///
-/// `BUZZ_RELAY_PRIVATE_KEY` is required — the CLI signs kind:13534 events.
+/// `NIMINO_RELAY_PRIVATE_KEY` is required — the CLI signs kind:13534 events.
 async fn connect_member_services() -> Result<(Db, Arc<PubSubManager>, Keys)> {
     let db = connect_db().await?;
 
     let relay_keypair = {
-        let hex = std::env::var("BUZZ_RELAY_PRIVATE_KEY").map_err(|_| {
+        let hex = std::env::var("NIMINO_RELAY_PRIVATE_KEY").map_err(|_| {
             anyhow::anyhow!(
-                "BUZZ_RELAY_PRIVATE_KEY is required for add-member/remove-member.\n\
+                "NIMINO_RELAY_PRIVATE_KEY is required for add-member/remove-member.\n\
                  The relay must have a stable signing key to publish kind:13534 events."
             )
         })?;
-        Keys::parse(&hex).map_err(|e| anyhow::anyhow!("invalid BUZZ_RELAY_PRIVATE_KEY: {e}"))?
+        Keys::parse(&hex).map_err(|e| anyhow::anyhow!("invalid NIMINO_RELAY_PRIVATE_KEY: {e}"))?
     };
 
     let redis_url =
@@ -432,7 +432,7 @@ async fn connect_member_services() -> Result<(Db, Arc<PubSubManager>, Keys)> {
 
 async fn connect_db() -> Result<Db> {
     let db_url = std::env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "postgres://buzz:buzz_dev@localhost:5432/buzz".to_string());
+        .unwrap_or_else(|_| "postgres://nimino:nimino_dev@localhost:5432/nimino".to_string());
     let db = Db::new(&DbConfig {
         database_url: db_url,
         ..DbConfig::default()
@@ -484,10 +484,10 @@ async fn reconcile_channels(
     // never use an ephemeral key because it replaces an existing authoritative
     // snapshot.
     let configured_relay_key =
-        relay_key_arg.or_else(|| std::env::var("BUZZ_RELAY_PRIVATE_KEY").ok());
+        relay_key_arg.or_else(|| std::env::var("NIMINO_RELAY_PRIVATE_KEY").ok());
     if channel_arg.is_some() && configured_relay_key.is_none() {
         return Err(anyhow::anyhow!(
-            "--channel requires --relay-key or BUZZ_RELAY_PRIVATE_KEY"
+            "--channel requires --relay-key or NIMINO_RELAY_PRIVATE_KEY"
         ));
     }
     let relay_keys = match configured_relay_key {
@@ -501,7 +501,7 @@ async fn reconcile_channels(
                 k.public_key().to_hex()
             );
             eprintln!("Events signed with this key won't be verifiable after this run.");
-            eprintln!("Pass --relay-key or set BUZZ_RELAY_PRIVATE_KEY for production use.");
+            eprintln!("Pass --relay-key or set NIMINO_RELAY_PRIVATE_KEY for production use.");
             k
         }
     };

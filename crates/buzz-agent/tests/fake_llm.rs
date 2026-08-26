@@ -175,13 +175,13 @@ impl Harness {
     async fn spawn(base_url: &str) -> Self {
         let bin = env!("CARGO_BIN_EXE_buzz-agent");
         let mut cmd = tokio::process::Command::new(bin);
-        cmd.env("BUZZ_AGENT_PROVIDER", "openai")
+        cmd.env("NIMINO_AGENT_PROVIDER", "openai")
             .env("OPENAI_COMPAT_API_KEY", "test")
             .env("OPENAI_COMPAT_MODEL", "fake-model")
             .env("OPENAI_COMPAT_BASE_URL", base_url)
-            .env("BUZZ_AGENT_LLM_TIMEOUT_SECS", "5")
-            .env("BUZZ_AGENT_TOOL_TIMEOUT_SECS", "5")
-            .env("BUZZ_AGENT_MAX_ROUNDS", "4")
+            .env("NIMINO_AGENT_LLM_TIMEOUT_SECS", "5")
+            .env("NIMINO_AGENT_TOOL_TIMEOUT_SECS", "5")
+            .env("NIMINO_AGENT_MAX_ROUNDS", "4")
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::inherit())
@@ -572,11 +572,11 @@ async fn rejects_oversized_line() {
     let url = spawn_fake_llm(vec![]).await;
     let bin = env!("CARGO_BIN_EXE_buzz-agent");
     let mut cmd = tokio::process::Command::new(bin);
-    cmd.env("BUZZ_AGENT_PROVIDER", "openai")
+    cmd.env("NIMINO_AGENT_PROVIDER", "openai")
         .env("OPENAI_COMPAT_API_KEY", "test")
         .env("OPENAI_COMPAT_MODEL", "fake-model")
         .env("OPENAI_COMPAT_BASE_URL", &url)
-        .env("BUZZ_AGENT_MAX_LINE_BYTES", "256")
+        .env("NIMINO_AGENT_MAX_LINE_BYTES", "256")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::null())

@@ -140,7 +140,7 @@ export function TerminalSubstrate({
   );
   const [dockHeight, setDockHeight] = React.useState(() => {
     const stored = Number.parseInt(
-      window.localStorage.getItem("buzz-terminal-dock-height") ?? "",
+      window.localStorage.getItem("nimino-terminal-dock-height") ?? "",
       10,
     );
     return Number.isFinite(stored) ? stored : 320;
@@ -521,7 +521,7 @@ export function TerminalSubstrate({
             );
             setDockHeight(next);
             window.localStorage.setItem(
-              "buzz-terminal-dock-height",
+              "nimino-terminal-dock-height",
               String(Math.round(next)),
             );
           }}
@@ -582,7 +582,7 @@ export function TerminalSubstrate({
               delete substrate.dataset.terminalResizing;
               setDockHeight(nextHeight);
               window.localStorage.setItem(
-                "buzz-terminal-dock-height",
+                "nimino-terminal-dock-height",
                 String(Math.round(nextHeight)),
               );
               resizeReportFrameRef.current = window.requestAnimationFrame(

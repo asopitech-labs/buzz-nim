@@ -32,7 +32,7 @@ pub(crate) const GIT_BASH_INSTALL_HINT: &str = INSTALL_HINT;
 /// Resolve the Git Bash executable path using the same resolver chain as Doctor.
 ///
 /// Returns `Some(path)` on Windows when a usable bash is found, `None` otherwise
-/// (including all non-Windows platforms). Honors `BUZZ_SHELL` (any executable) —
+/// (including all non-Windows platforms). Honors `NIMINO_SHELL` (any executable) —
 /// correct for the Doctor readiness gate where any shell suffices.
 #[allow(dead_code)] // used only on Windows; called by discover_git_bash()
 pub(crate) fn resolve_git_bash_path() -> Option<std::path::PathBuf> {
@@ -56,7 +56,7 @@ pub(crate) fn resolve_git_bash_path() -> Option<std::path::PathBuf> {
 
 /// Resolve a bash-compatible shell for install commands and login-shell discovery.
 ///
-/// Unlike `resolve_git_bash_path`, this skips `BUZZ_SHELL` entirely — that override
+/// Unlike `resolve_git_bash_path`, this skips `NIMINO_SHELL` entirely — that override
 /// intentionally accepts any executable (`cmd`, `pwsh`) for the MCP child, but install
 /// commands and `login_shell_candidates` use bash-only `-l -c` syntax. Skipping the
 /// override means the chain falls through to: `GIT_BASH` → PATH scan → derive-from-git
@@ -68,7 +68,7 @@ pub(crate) fn resolve_bash_path() -> Option<std::path::PathBuf> {
         let env = GitBashEnv::from_process();
         return resolve_git_bash(
             &env.path,
-            None, // skip BUZZ_SHELL — install/login-shell callers require bash
+            None, // skip NIMINO_SHELL — install/login-shell callers require bash
             env.git_bash_override,
             env.system_root,
             env.program_files,
@@ -153,7 +153,7 @@ impl GitBashEnv {
                 .unwrap_or_default()
                 .to_string_lossy()
                 .into_owned(),
-            shell_override: get("BUZZ_SHELL").map(PathBuf::from),
+            shell_override: get("NIMINO_SHELL").map(PathBuf::from),
             git_bash_override: get("GIT_BASH").map(PathBuf::from),
             system_root: get("SystemRoot").map(PathBuf::from),
             program_files: get("ProgramFiles").map(PathBuf::from),
@@ -243,7 +243,7 @@ pub(crate) fn resolve_git_bash_no_registry(
     )
 }
 
-/// Resolve `BUZZ_SHELL` with the same rooted/bare-name semantics as the MCP
+/// Resolve `NIMINO_SHELL` with the same rooted/bare-name semantics as the MCP
 /// resolver. This intentionally accepts any executable shell; its presence is
 /// sufficient for the MCP child and therefore for the readiness gate.
 #[cfg(windows)]
@@ -423,7 +423,7 @@ mod tests {
 
     const DETECTOR_ENV_KEYS: &[&str] = &[
         "PATH",
-        "BUZZ_SHELL",
+        "NIMINO_SHELL",
         "GIT_BASH",
         "SystemRoot",
         "ProgramFiles",
@@ -441,7 +441,7 @@ mod tests {
 
         let env = GitBashEnv::from_lookup(|key| Some(key.into()));
         assert_eq!(env.path, "PATH");
-        assert_eq!(env.shell_override, Some(PathBuf::from("BUZZ_SHELL")));
+        assert_eq!(env.shell_override, Some(PathBuf::from("NIMINO_SHELL")));
         assert_eq!(env.git_bash_override, Some(PathBuf::from("GIT_BASH")));
         assert_eq!(env.system_root, Some(PathBuf::from("SystemRoot")));
         assert_eq!(env.program_files, Some(PathBuf::from("ProgramFiles")));
@@ -548,9 +548,9 @@ mod tests {
         );
     }
 
-    // ── Regression: install/login-shell must skip non-bash BUZZ_SHELL ─────────
+    // ── Regression: install/login-shell must skip non-bash NIMINO_SHELL ─────────
 
-    /// When BUZZ_SHELL=pwsh.exe, `resolve_git_bash` with `shell_override=None`
+    /// When NIMINO_SHELL=pwsh.exe, `resolve_git_bash` with `shell_override=None`
     /// (the `resolve_bash_path` code path) skips it and falls through to the
     /// bash.exe on PATH. The readiness gate (`shell_override=Some`) still
     /// returns pwsh — both contracts hold simultaneously.
@@ -565,22 +565,22 @@ mod tests {
         let path = std::env::join_paths([temp.path()]).expect("PATH");
         let path_str = path.to_str().expect("utf8");
 
-        // Readiness gate: BUZZ_SHELL=pwsh accepted (Doctor green).
+        // Readiness gate: NIMINO_SHELL=pwsh accepted (Doctor green).
         assert_eq!(
             resolve_git_bash(path_str, Some(pwsh.clone()), None, None, None, None, None),
             Some(pwsh),
-            "readiness gate must accept BUZZ_SHELL=pwsh"
+            "readiness gate must accept NIMINO_SHELL=pwsh"
         );
 
         // Install path: shell_override=None skips pwsh, finds bash on PATH.
         assert_eq!(
             resolve_git_bash(path_str, None, None, None, None, None, None),
             Some(bash),
-            "install path must skip BUZZ_SHELL and find bash on PATH"
+            "install path must skip NIMINO_SHELL and find bash on PATH"
         );
     }
 
-    /// Same as above but with BUZZ_SHELL=cmd.exe.
+    /// Same as above but with NIMINO_SHELL=cmd.exe.
     #[test]
     fn test_install_path_skips_buzz_shell_cmd() {
         let temp = tempdir().expect("tempdir");
@@ -592,18 +592,18 @@ mod tests {
         let path = std::env::join_paths([temp.path()]).expect("PATH");
         let path_str = path.to_str().expect("utf8");
 
-        // Readiness gate: BUZZ_SHELL=cmd accepted.
+        // Readiness gate: NIMINO_SHELL=cmd accepted.
         assert_eq!(
             resolve_git_bash(path_str, Some(cmd.clone()), None, None, None, None, None),
             Some(cmd),
-            "readiness gate must accept BUZZ_SHELL=cmd"
+            "readiness gate must accept NIMINO_SHELL=cmd"
         );
 
         // Install path: shell_override=None skips cmd, finds bash on PATH.
         assert_eq!(
             resolve_git_bash(path_str, None, None, None, None, None, None),
             Some(bash),
-            "install path must skip BUZZ_SHELL and find bash on PATH"
+            "install path must skip NIMINO_SHELL and find bash on PATH"
         );
     }
 }

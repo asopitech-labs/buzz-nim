@@ -469,7 +469,7 @@ impl AcpClient {
             // Callers MUST still call shutdown().await for guaranteed cleanup.
             .kill_on_drop(true);
 
-        // Per-persona env vars (e.g., GOOSE_PROVIDER, BUZZ_AGENT_PROVIDER).
+        // Per-persona env vars (e.g., GOOSE_PROVIDER, NIMINO_AGENT_PROVIDER).
         // For most keys, operator precedence wins: skip injection if already set
         // in the parent environment.
         //
@@ -2530,11 +2530,11 @@ mod tests {
             args: vec![],
             env: vec![
                 EnvVar {
-                    name: "BUZZ_RELAY_URL".into(),
+                    name: "NIMINO_RELAY_URL".into(),
                     value: "ws://localhost:3000".into(),
                 },
                 EnvVar {
-                    name: "BUZZ_PRIVATE_KEY".into(),
+                    name: "NIMINO_PRIVATE_KEY".into(),
                     value: "nsec1abc".into(),
                 },
             ],
@@ -2551,7 +2551,7 @@ mod tests {
         assert_eq!(serialized["env"].as_array().unwrap().len(), 2);
         assert_eq!(
             serialized["env"][0]["name"].as_str(),
-            Some("BUZZ_RELAY_URL")
+            Some("NIMINO_RELAY_URL")
         );
     }
 

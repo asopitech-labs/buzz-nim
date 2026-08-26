@@ -24,12 +24,12 @@ CACHE_TTL=86400  # 24 hours in seconds
 
 # ── Argument parsing ──────────────────────────────────────────────────────────
 
-BUZZ_NAME=""
+NIMINO_NAME=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --name)
-      BUZZ_NAME="$2"
+      NIMINO_NAME="$2"
       shift 2
       ;;
     --)
@@ -53,7 +53,7 @@ if [[ $# -eq 0 ]]; then
   exit 1
 fi
 
-if [[ -n "$BUZZ_NAME" && $# -ne 1 ]]; then
+if [[ -n "$NIMINO_NAME" && $# -ne 1 ]]; then
   echo "ERROR: --name can only be used when specifying a single emoji" >&2
   exit 1
 fi
@@ -148,7 +148,7 @@ _resolve_url() {
 
 for emoji_name in "$@"; do
   # Use --name override if provided, otherwise use the Slack emoji name
-  buzz_shortcode="${BUZZ_NAME:-$emoji_name}"
+  buzz_shortcode="${NIMINO_NAME:-$emoji_name}"
 
   # Resolve URL
   emoji_url=$(_resolve_url "$emoji_name") || {

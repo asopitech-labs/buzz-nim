@@ -81,7 +81,7 @@ test("issue discussion ignores an author-claimed origin channel", async ({
   const forgedIssueId = "f".repeat(64);
   await page.addInitScript(
     ({ issueId, owner }) => {
-      window.__BUZZ_E2E_EXTRA_PROJECT_EVENTS__ = [
+      window.__NIMINO_E2E_EXTRA_PROJECT_EVENTS__ = [
         {
           id: issueId,
           kind: 1621,

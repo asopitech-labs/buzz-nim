@@ -1,4 +1,4 @@
-//! `buzz projects` commands — NIP-MP kind:30621 write path.
+//! `nimino projects` commands — NIP-MP kind:30621 write path.
 //!
 //! All mutations follow a read-modify-write pattern:
 //!   1. Fetch the caller's own live head via `kinds:[30621] + authors:[self] + #d:[slug]`.
@@ -113,7 +113,7 @@ fn make_tag(parts: &[&str]) -> Result<Tag, CliError> {
 /// Submit a project event and print the relay's write response.
 ///
 /// `link_slug` carries the project's d-tag on creates whose slug fits the
-/// `buzz://` link charset; the response then also carries a `link` field,
+/// `nimino://` link charset; the response then also carries a `link` field,
 /// which renders as a rich preview card in Buzz Desktop when included in a
 /// chat message — agents announce projects with it (see base_prompt.md).
 async fn submit_project(
@@ -171,7 +171,7 @@ fn rebuild_project(
 
 // ── Command implementations ───────────────────────────────────────────────────
 
-/// `buzz projects create`
+/// `nimino projects create`
 pub async fn cmd_create(
     client: &BuzzClient,
     slug: &str,
@@ -222,7 +222,7 @@ pub async fn cmd_create(
     // ── Network: collision preflight ──────────────────────────────────────
     if fetch_own_project(client, slug).await?.is_some() {
         return Err(CliError::Conflict(format!(
-            "project {slug:?} already exists; use 'buzz projects update' to modify it"
+            "project {slug:?} already exists; use 'nimino projects update' to modify it"
         )));
     }
 
@@ -240,7 +240,7 @@ pub async fn cmd_create(
     .await
 }
 
-/// `buzz projects get`
+/// `nimino projects get`
 pub async fn cmd_get(client: &BuzzClient, slug: &str, owner: Option<&str>) -> Result<(), CliError> {
     validate_project_slug(slug)?;
     let resp = match fetch_project(client, slug, owner).await? {
@@ -263,7 +263,7 @@ pub async fn cmd_get(client: &BuzzClient, slug: &str, owner: Option<&str>) -> Re
     Ok(())
 }
 
-/// `buzz projects list`
+/// `nimino projects list`
 pub async fn cmd_list(
     client: &BuzzClient,
     owner: Option<&str>,
@@ -288,7 +288,7 @@ pub async fn cmd_list(
     Ok(())
 }
 
-/// `buzz projects add-repo`
+/// `nimino projects add-repo`
 pub async fn cmd_add_repo(
     client: &BuzzClient,
     slug: &str,
@@ -353,7 +353,7 @@ pub async fn cmd_add_repo(
     submit_project(client, builder, None).await
 }
 
-/// `buzz projects remove-repo`
+/// `nimino projects remove-repo`
 pub async fn cmd_remove_repo(
     client: &BuzzClient,
     slug: &str,
@@ -416,7 +416,7 @@ pub async fn cmd_remove_repo(
     submit_project(client, builder, None).await
 }
 
-/// `buzz projects update`
+/// `nimino projects update`
 ///
 /// Requires at least one setter or clearer; a no-op call is a usage error.
 #[allow(clippy::too_many_arguments)]
@@ -446,7 +446,7 @@ pub async fn cmd_update(
         || clear_visibility;
     if !has_mutation {
         return Err(CliError::Usage(
-            "buzz projects update requires at least one of: \
+            "nimino projects update requires at least one of: \
              --name, --clear-name, --description, --clear-description, \
              --channel, --clear-channel, --visibility, --clear-visibility"
                 .into(),
@@ -517,7 +517,7 @@ pub async fn cmd_update(
     submit_project(client, builder, None).await
 }
 
-/// `buzz projects delete`
+/// `nimino projects delete`
 ///
 /// Head-based and verified:
 ///   1. Fetch own live head — `NotFound` if absent.

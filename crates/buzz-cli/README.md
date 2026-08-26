@@ -12,12 +12,12 @@ cargo install --path crates/buzz-cli
 
 | Env Var | Mode | Use Case |
 |---------|------|----------|
-| `BUZZ_PRIVATE_KEY` | NIP-98 Schnorr signature | Agents with a keypair |
+| `NIMINO_PRIVATE_KEY` | NIP-98 Schnorr signature | Agents with a keypair |
 
 ```bash
 # Private key identity (NIP-98 signed requests)
-export BUZZ_PRIVATE_KEY="nsec1..."
-buzz channels list
+export NIMINO_PRIVATE_KEY="nsec1..."
+nimino channels list
 ```
 
 ## Usage
@@ -26,73 +26,73 @@ All output is JSON on stdout. Errors are JSON on stderr. Exit codes: 0=ok, 1=use
 
 ```bash
 # Set relay URL (defaults to http://localhost:3000)
-export BUZZ_RELAY_URL="https://relay.example.com"
+export NIMINO_RELAY_URL="https://relay.example.com"
 
 # Messages
-buzz messages send --channel <uuid> --content "Hello"
-buzz messages send --channel <uuid> --content "Reply" --reply-to <event-id> --broadcast
-buzz messages send --channel <uuid> --content - < message.md   # read body from stdin
-buzz messages get --channel <uuid> --limit 20
-buzz messages thread --channel <uuid> --event <event-id>
-buzz messages thread --link 'buzz://message?channel=<uuid>&id=<event-id>&thread=<root-id>'
-buzz messages search --query "architecture"
-buzz messages search --author <pubkey|npub|name> --since <unix-ts>
-buzz messages edit --event <event-id> --content "Updated text"
-buzz messages delete --event <event-id>
+nimino messages send --channel <uuid> --content "Hello"
+nimino messages send --channel <uuid> --content "Reply" --reply-to <event-id> --broadcast
+nimino messages send --channel <uuid> --content - < message.md   # read body from stdin
+nimino messages get --channel <uuid> --limit 20
+nimino messages thread --channel <uuid> --event <event-id>
+nimino messages thread --link 'nimino://message?channel=<uuid>&id=<event-id>&thread=<root-id>'
+nimino messages search --query "architecture"
+nimino messages search --author <pubkey|npub|name> --since <unix-ts>
+nimino messages edit --event <event-id> --content "Updated text"
+nimino messages delete --event <event-id>
 
 # Diffs
-buzz messages send-diff --channel <uuid> --diff - --repo https://github.com/org/repo --commit abc123 < diff.patch
+nimino messages send-diff --channel <uuid> --diff - --repo https://github.com/org/repo --commit abc123 < diff.patch
 
 # Channels
-buzz channels list
-buzz channels create --name "my-channel" --type stream --visibility open
-buzz channels join --channel <uuid>
-buzz channels topic --channel <uuid> --topic "New topic"
+nimino channels list
+nimino channels create --name "my-channel" --type stream --visibility open
+nimino channels join --channel <uuid>
+nimino channels topic --channel <uuid> --topic "New topic"
 
 # Reactions
 buzz reactions add --event <event-id> --emoji "👍"
 buzz reactions get --event <event-id>
 
 # Users & Presence
-buzz users get                          # your own profile
-buzz users get --pubkey <hex>           # single user
-buzz users get --pubkey <hex> --pubkey <hex>  # batch (max 200)
-buzz users get --name Honey --owner me  # exact-name lookup in your managed agents
-buzz users set-presence --status online
-buzz users set-status --text "heads down on the CLI" --emoji "🚀"
-buzz users set-status --clear                 # remove your status
+nimino users get                          # your own profile
+nimino users get --pubkey <hex>           # single user
+nimino users get --pubkey <hex> --pubkey <hex>  # batch (max 200)
+nimino users get --name Honey --owner me  # exact-name lookup in your managed agents
+nimino users set-presence --status online
+nimino users set-status --text "heads down on the CLI" --emoji "🚀"
+nimino users set-status --clear                 # remove your status
 
 # DMs
 buzz dms open --pubkey <hex>
 buzz dms list
 
 # Workflows
-buzz workflows list --channel <uuid>
-buzz workflows trigger --workflow <uuid>
-buzz workflows approve --token <uuid>
-buzz workflows approve --token <uuid> --approved false --note "needs revision"
+nimino workflows list --channel <uuid>
+nimino workflows trigger --workflow <uuid>
+nimino workflows approve --token <uuid>
+nimino workflows approve --token <uuid> --approved false --note "needs revision"
 
 # Forum
-buzz messages vote --event <event-id> --direction up
+nimino messages vote --event <event-id> --direction up
 
 # Canvas
 buzz canvas get --channel <uuid>
 buzz canvas set --channel <uuid> --content "# Welcome"
 
 # Agent Memory (NIP-AE)
-buzz mem ls
-buzz mem get <slug>
-buzz mem set <slug> "my-value"
-buzz mem patch <slug> --base-hash <hex> < diff.patch  # or --no-base-hash
-buzz mem rm <slug>
+nimino mem ls
+nimino mem get <slug>
+nimino mem set <slug> "my-value"
+nimino mem patch <slug> --base-hash <hex> < diff.patch  # or --no-base-hash
+nimino mem rm <slug>
 
 # Repository protection
-buzz repos protect list --id my-repo
-buzz repos protect set --id my-repo --ref refs/heads/main --push admin --no-force-push --no-delete
-buzz repos protect remove --id my-repo --ref refs/heads/main
+nimino repos protect list --id my-repo
+nimino repos protect set --id my-repo --ref refs/heads/main --push admin --no-force-push --no-delete
+nimino repos protect remove --id my-repo --ref refs/heads/main
 
 # Pipe to jq
-buzz channels list | jq '.[].name'
+nimino channels list | jq '.[].name'
 ```
 
 `protect set` replaces every existing rule for the exact ref pattern. Any

@@ -723,7 +723,7 @@ mod api_tokens_nip98_replay {
     /// wrong-content-stored, not silent-absent). The wire surface is `POST
     /// /events` with `Authorization: Nostr <base64-NIP-98-event>`. Bodies are
     /// minimal valid kind:1 nostr events authored by the same NIP-98 signer
-    /// (relay-membership is open under `BUZZ_REQUIRE_AUTH_TOKEN=false`).
+    /// (relay-membership is open under `NIMINO_REQUIRE_AUTH_TOKEN=false`).
     #[tokio::test]
     #[ignore]
     async fn nip98_replay_seenset_is_shared_and_community_scoped() {
@@ -961,7 +961,7 @@ mod users_profiles_nip05 {
     }
 
     /// Query latest kind:0 for `pubkey_hex` via REST `POST /query` (relay's
-    /// bridge endpoint; with `BUZZ_REQUIRE_AUTH_TOKEN=false` the dev-mode
+    /// bridge endpoint; with `NIMINO_REQUIRE_AUTH_TOKEN=false` the dev-mode
     /// `X-Pubkey` header is sufficient — no NIP-98 mint needed). Returns the
     /// list of event JSON values (typically 0 or 1 since kind:0 is
     /// NIP-01-replaceable).
@@ -1438,7 +1438,7 @@ mod channels_membership {
 
     /// Query kind:9 events on a given channel via REST `POST /query`
     /// (dev-mode `X-Pubkey` auth — no NIP-98 mint needed under the
-    /// `BUZZ_REQUIRE_AUTH_TOKEN=false` recipe). Returns the events as their
+    /// `NIMINO_REQUIRE_AUTH_TOKEN=false` recipe). Returns the events as their
     /// raw JSON values (typically 0 or more depending on what the
     /// host-derived community has stored against that channel id).
     async fn query_kind9_in_channel(
@@ -1687,7 +1687,7 @@ mod workflows {
     }
 
     /// Submit a signed event to the community bound to `http_base`'s host via
-    /// the REST bridge (`POST /events`). In dev mode (`BUZZ_REQUIRE_AUTH_TOKEN
+    /// the REST bridge (`POST /events`). In dev mode (`NIMINO_REQUIRE_AUTH_TOKEN
     /// =false`) the `X-Pubkey` header authenticates. Returns the parsed JSON
     /// `{accepted, message, ...}` body. The community is derived from the host,
     /// never from anything in the event — that's row zero.
@@ -2629,7 +2629,7 @@ mod media_blossom {
     #[ignore]
     async fn media_metadata_boundary_holds_while_blob_bytes_shared() {
         pending_lane(
-            "buzz-media",
+            "nimino-media",
             "reads require host/hash-scoped Blossom auth and bind to the header tenant; \
              bare reads 401 before storage; shared SHA bytes OK; A cannot read B's upload \
              metadata/quota/audit; errors generic",
@@ -2649,7 +2649,7 @@ mod git_hosting {
     #[ignore]
     async fn same_owner_repo_isolated_push_does_not_cross() {
         pending_lane(
-            "buzz-media",
+            "nimino-media",
             "repos/{community}/{owner}/{repo}/pointer; push in A leaves B pointer unchanged",
         );
     }

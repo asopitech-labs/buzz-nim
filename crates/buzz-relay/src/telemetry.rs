@@ -18,7 +18,7 @@
 //! connection is attempted.
 //!
 //! Standard OTEL env vars honoured:
-//! - `OTEL_SERVICE_NAME` (default: `buzz-relay`; read explicitly — not via SDK detector)
+//! - `OTEL_SERVICE_NAME` (default: `nimino-relay`; read explicitly — not via SDK detector)
 //! - `OTEL_RESOURCE_ATTRIBUTES` (overlaid by [`EnvResourceDetector`])
 //! - `OTEL_TRACES_SAMPLER` (default: `parentbased_always_on`)
 //! - `OTEL_TRACES_SAMPLER_ARG`
@@ -179,9 +179,9 @@ where
 ///
 /// This is intentionally independent from `RUST_LOG`: changing stdout log
 /// verbosity must not remove parent spans from exported traces. Set
-/// `BUZZ_OTEL_FILTER` to override the default targets.
+/// `NIMINO_OTEL_FILTER` to override the default targets.
 pub fn otel_env_filter(configured: Option<&str>) -> EnvFilter {
-    EnvFilter::new(configured.unwrap_or("buzz_relay=info,buzz_datastore=info"))
+    EnvFilter::new(configured.unwrap_or("nimino_relay=info,buzz_datastore=info"))
 }
 
 /// Build the OTEL [`Resource`] used by the trace provider.
@@ -190,25 +190,25 @@ pub fn otel_env_filter(configured: Option<&str>) -> EnvFilter {
 /// 1. `service.name` in `OTEL_RESOURCE_ATTRIBUTES` — overlaid last by
 ///    [`EnvResourceDetector`], wins over everything below.
 /// 2. `OTEL_SERVICE_NAME` — read explicitly (non-empty wins over the fallback).
-/// 3. Hard-coded fallback `buzz-relay`.
+/// 3. Hard-coded fallback `nimino-relay`.
 ///
 /// Note: [`EnvResourceDetector`] only reads `OTEL_RESOURCE_ATTRIBUTES`; it
 /// does **not** read `OTEL_SERVICE_NAME`.  `SdkProvidedResourceDetector` does
 /// read `OTEL_SERVICE_NAME` but always emits a `service.name` key (falling
 /// back to `unknown_service:<exe>` when unset), which would clobber our
-/// `buzz-relay` default.  We therefore read `OTEL_SERVICE_NAME` explicitly
+/// `nimino-relay` default.  We therefore read `OTEL_SERVICE_NAME` explicitly
 /// so the fallback is fully under our control.
 ///
 /// The tracer provider receives this `Resource` so Datadog can identify
 /// spans under the correct `service.name`.
 pub fn service_resource() -> Resource {
-    // Honor OTEL_SERVICE_NAME when set+non-empty; otherwise use buzz-relay.
+    // Honor OTEL_SERVICE_NAME when set+non-empty; otherwise use nimino-relay.
     // EnvResourceDetector overlays OTEL_RESOURCE_ATTRIBUTES last, so an
     // explicit service.name there still wins over OTEL_SERVICE_NAME per spec.
     let service_name = std::env::var("OTEL_SERVICE_NAME")
         .ok()
         .filter(|s| !s.is_empty())
-        .unwrap_or_else(|| "buzz-relay".to_string());
+        .unwrap_or_else(|| "nimino-relay".to_string());
 
     Resource::builder_empty()
         .with_service_name(service_name)
@@ -502,8 +502,8 @@ mod tests {
         let r = service_resource();
         assert_eq!(
             service_name_from(&r).as_deref(),
-            Some("buzz-relay"),
-            "expected buzz-relay fallback when OTEL_SERVICE_NAME is unset"
+            Some("nimino-relay"),
+            "expected nimino-relay fallback when OTEL_SERVICE_NAME is unset"
         );
     }
 
@@ -534,8 +534,8 @@ mod tests {
 
         assert_eq!(
             service_name_from(&r).as_deref(),
-            Some("buzz-relay"),
-            "expected buzz-relay fallback when OTEL_SERVICE_NAME is empty"
+            Some("nimino-relay"),
+            "expected nimino-relay fallback when OTEL_SERVICE_NAME is empty"
         );
     }
 

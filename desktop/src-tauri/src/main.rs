@@ -12,7 +12,7 @@ fn main() {
     // `std::env::set_var` sound.
     #[cfg(target_os = "linux")]
     if let Err(diagnostic) = buzz_lib::webkit_rendering::apply() {
-        eprintln!("buzz-desktop: {diagnostic}");
+        eprintln!("nimino-desktop: {diagnostic}");
         std::process::exit(1);
     }
 

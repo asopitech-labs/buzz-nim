@@ -14,7 +14,7 @@ use super::*;
 fn numeric_context_limit_inherits_from_persona_env() {
     let record = test_record();
     let runtime = buzz_agent_runtime();
-    let tiers = persona_env_tiers("BUZZ_AGENT_MAX_CONTEXT_TOKENS", "200000");
+    let tiers = persona_env_tiers("NIMINO_AGENT_MAX_CONTEXT_TOKENS", "200000");
 
     let surface = read_config_surface(&record, Some(runtime), None, &tiers, None);
 
@@ -27,11 +27,11 @@ fn numeric_context_limit_inherits_from_persona_env() {
 fn record_max_tokens_overrides_global_env_with_secondary() {
     let mut record = test_record();
     record.env_vars.insert(
-        "BUZZ_AGENT_MAX_OUTPUT_TOKENS".to_string(),
+        "NIMINO_AGENT_MAX_OUTPUT_TOKENS".to_string(),
         "8192".to_string(),
     );
     let runtime = buzz_agent_runtime();
-    let tiers = global_env_tiers("BUZZ_AGENT_MAX_OUTPUT_TOKENS", "16384");
+    let tiers = global_env_tiers("NIMINO_AGENT_MAX_OUTPUT_TOKENS", "16384");
 
     let surface = read_config_surface(&record, Some(runtime), None, &tiers, None);
 
@@ -45,7 +45,7 @@ fn record_max_tokens_overrides_global_env_with_secondary() {
 
 // ── Env-vs-structured collision tests (plan v3, Phase 2) ─────────────────────
 
-/// Collision test 1: persona structured prompt + global env BUZZ_ACP_SYSTEM_PROMPT
+/// Collision test 1: persona structured prompt + global env NIMINO_ACP_SYSTEM_PROMPT
 /// → global env wins (env block sits entirely above structured).
 #[test]
 fn global_env_prompt_wins_over_persona_structured_prompt() {
@@ -55,7 +55,7 @@ fn global_env_prompt_wins_over_persona_structured_prompt() {
         global_env: {
             let mut m = BTreeMap::new();
             m.insert(
-                "BUZZ_ACP_SYSTEM_PROMPT".to_string(),
+                "NIMINO_ACP_SYSTEM_PROMPT".to_string(),
                 "global-env-prompt".to_string(),
             );
             m
@@ -128,7 +128,7 @@ fn post_sanitization_empty_global_env_falls_through_to_persona_tier() {
     let record = test_record();
     let runtime = buzz_agent_rt();
     // No global env (stripped); persona provides the valid fallback.
-    let tiers = persona_env_tiers("BUZZ_AGENT_THINKING_EFFORT", "medium");
+    let tiers = persona_env_tiers("NIMINO_AGENT_THINKING_EFFORT", "medium");
 
     let surface = read_config_surface(&record, Some(runtime), None, &tiers, None);
 
@@ -144,7 +144,7 @@ fn post_sanitization_empty_global_env_falls_through_to_persona_tier() {
 // definition-less record with both structured and env prompt — env wins.
 
 /// Pass-3 clarification: record.system_prompt = A + record env
-/// BUZZ_ACP_SYSTEM_PROMPT = B → B wins as BuzzExplicit.
+/// NIMINO_ACP_SYSTEM_PROMPT = B → B wins as BuzzExplicit.
 /// The env block sits above the struct block per v3 candidate-preparation
 /// contract; current reader semantics (struct before env) would be wrong.
 #[test]
@@ -152,7 +152,7 @@ fn record_env_prompt_wins_over_record_struct_prompt_as_buzz_explicit() {
     let mut record = test_record();
     record.system_prompt = Some("struct-prompt-A".to_string());
     record.env_vars.insert(
-        "BUZZ_ACP_SYSTEM_PROMPT".to_string(),
+        "NIMINO_ACP_SYSTEM_PROMPT".to_string(),
         "env-prompt-B".to_string(),
     );
     let runtime = test_runtime();
@@ -301,9 +301,10 @@ fn b4_canonical_effort_level_shadows_file_tier() {
 fn b4_record_env_var_wins_over_canonical_effort_level() {
     let mut record = test_record();
     record.effort_level = Some("low".to_string());
-    record
-        .env_vars
-        .insert("BUZZ_AGENT_THINKING_EFFORT".to_string(), "high".to_string());
+    record.env_vars.insert(
+        "NIMINO_AGENT_THINKING_EFFORT".to_string(),
+        "high".to_string(),
+    );
     let runtime = buzz_agent_runtime();
     let surface = read_config_surface(&record, Some(runtime), None, &no_tiers(), None);
     let effort = surface

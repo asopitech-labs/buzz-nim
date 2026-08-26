@@ -74,16 +74,17 @@ impl SharedState {
 
 fn build_bootstrap(cwd: &Path, shell_hint: &str) -> String {
     let stack = detect_stack(cwd);
-    let buzz_hint =
-        if std::env::var("BUZZ_RELAY_URL").is_ok() && std::env::var("BUZZ_PRIVATE_KEY").is_ok() {
-            "\nBuzz relay configured. Run `buzz --help` to see available commands.\n"
-        } else {
-            ""
-        };
+    let buzz_hint = if std::env::var("NIMINO_RELAY_URL").is_ok()
+        && std::env::var("NIMINO_PRIVATE_KEY").is_ok()
+    {
+        "\nBuzz relay configured. Run `nimino --help` to see available commands.\n"
+    } else {
+        ""
+    };
     format!(
         "Working directory: {}\n\
          Detected stack: {}\n\
-         Shell: {shell_hint} (set BUZZ_SHELL to override) — write command strings in that shell's syntax.\n\
+         Shell: {shell_hint} (set NIMINO_SHELL to override) — write command strings in that shell's syntax.\n\
          Pass `workdir` per call rather than `cd`.\n\
          {buzz_hint}",
         cwd.display(),
@@ -168,7 +169,7 @@ pub async fn run(
     cmd.current_dir(&workdir);
     cmd.env("PATH", &state.shim.path_env);
     // NOSTR_PRIVATE_KEY is already removed from this process's env (shim.rs).
-    // BUZZ_PRIVATE_KEY is intentionally inherited — the buzz CLI needs it.
+    // NIMINO_PRIVATE_KEY is intentionally inherited — the buzz CLI needs it.
     for (k, v) in &state.shim.git_env {
         cmd.env(k, v);
     }
@@ -329,7 +330,7 @@ pub async fn run(
 /// cmd.exe:     `/C`
 /// powershell/pwsh: `-Command`
 ///
-/// The resolver supports `BUZZ_SHELL=cmd`/`pwsh` (explicit operator overrides
+/// The resolver supports `NIMINO_SHELL=cmd`/`pwsh` (explicit operator overrides
 /// resolve without the System32 exclusion, so these shells work). The dispatch
 /// here ensures each shell receives the correct flag regardless of which one
 /// was resolved.
@@ -355,15 +356,15 @@ fn shell_name_from_path(p: &Path) -> String {
 }
 
 /// Resolve the shell to spawn. On Unix, bash on PATH is correct and was never
-/// broken, so the resolver only needs to honor BUZZ_SHELL. The probe logic and
+/// broken, so the resolver only needs to honor NIMINO_SHELL. The probe logic and
 /// System32 exclusion are Windows-only.
 ///
 /// Returns `(resolved_path, display_name)`. The display name is derived from the
 /// resolved path so the caller can use it for diagnostics without a second lookup.
 #[cfg(not(windows))]
 fn resolve_bash(_path_env: &str) -> Result<(PathBuf, String), String> {
-    // Honor BUZZ_SHELL on Unix so power users can opt into zsh or another shell.
-    if let Some(raw) = std::env::var_os("BUZZ_SHELL") {
+    // Honor NIMINO_SHELL on Unix so power users can opt into zsh or another shell.
+    if let Some(raw) = std::env::var_os("NIMINO_SHELL") {
         let p = PathBuf::from(&raw);
         // Absolute / rooted path: must exist as a file.
         if p.components().count() > 1 || p.has_root() {
@@ -389,7 +390,7 @@ fn resolve_bash(_path_env: &str) -> Result<(PathBuf, String), String> {
 }
 
 /// Windows bash resolution. Probe order (first hit wins):
-///   1. `BUZZ_SHELL` env override — explicit operator choice, any shell (cmd,
+///   1. `NIMINO_SHELL` env override — explicit operator choice, any shell (cmd,
 ///      PowerShell, bash, etc.). Bare command names are resolved through PATH
 ///      WITHOUT the System32 exclusion — the operator explicitly chose this shell,
 ///      and cmd.exe/powershell.exe live in System32 legitimately.
@@ -408,7 +409,7 @@ fn resolve_bash(_path_env: &str) -> Result<(PathBuf, String), String> {
 /// No bash found -> actionable error pointing at the prerequisite.
 #[cfg(windows)]
 fn resolve_bash(path_env: &str) -> Result<(PathBuf, String), String> {
-    if let Some(raw) = std::env::var_os("BUZZ_SHELL") {
+    if let Some(raw) = std::env::var_os("NIMINO_SHELL") {
         let p = PathBuf::from(&raw);
         if p.components().count() > 1 || p.has_root() {
             if p.is_file() {
@@ -449,12 +450,12 @@ fn resolve_bash(path_env: &str) -> Result<(PathBuf, String), String> {
 
     Err(
         "Git for Windows (Git Bash) is required but was not found. Checked \\
-         BUZZ_SHELL, GIT_BASH, bash.exe and git.exe on PATH, the standard Git install locations, \\
+         NIMINO_SHELL, GIT_BASH, bash.exe and git.exe on PATH, the standard Git install locations, \\
          and HKLM/HKCU\\\\SOFTWARE\\\\GitForWindows. Git's \"Cmd\" PATH option adds \\
          Git\\\\cmd\\\\git.exe but not Git\\\\bin\\\\bash.exe; Buzz normally derives Git Bash from that git.exe. \\
          Install it from https://git-scm.com/download/win and select \"Git from the command line \\
          and also from 3rd-party software\", then relaunch Buzz. You can also set \\
-         BUZZ_SHELL to a shell executable."
+         NIMINO_SHELL to a shell executable."
             .into(),
     )
 }
@@ -1143,7 +1144,7 @@ mod windows_resolver_tests {
     use std::sync::Mutex;
     use tempfile::tempdir;
 
-    // Process-global env mutation guard: tests that mutate BUZZ_SHELL,
+    // Process-global env mutation guard: tests that mutate NIMINO_SHELL,
     // SystemRoot, or GIT_BASH must hold this lock for the duration of the
     // test so parallel test threads cannot race on these env vars.
     static ENV_MUTEX: Mutex<()> = Mutex::new(());
@@ -1158,68 +1159,68 @@ mod windows_resolver_tests {
     #[test]
     fn buzz_shell_override_wins_over_everything() {
         let _guard = ENV_MUTEX.lock().unwrap_or_else(|p| p.into_inner());
-        // BUZZ_SHELL pointing at a real file must be returned without probing
+        // NIMINO_SHELL pointing at a real file must be returned without probing
         // the standard Git-for-Windows locations or PATH.
         let dir = tempdir().expect("tempdir");
         let fake_bash = dir.path().join("my-bash.exe");
         touch(&fake_bash);
-        // Temporarily set BUZZ_SHELL; clean up after the test.
-        env::set_var("BUZZ_SHELL", &fake_bash);
+        // Temporarily set NIMINO_SHELL; clean up after the test.
+        env::set_var("NIMINO_SHELL", &fake_bash);
         let result = resolve_bash("");
-        env::remove_var("BUZZ_SHELL");
-        let (resolved, _name) = result.expect("BUZZ_SHELL override should resolve");
+        env::remove_var("NIMINO_SHELL");
+        let (resolved, _name) = result.expect("NIMINO_SHELL override should resolve");
         assert_eq!(resolved, fake_bash);
     }
 
     #[test]
     fn buzz_shell_override_skipped_when_path_absent() {
         let _guard = ENV_MUTEX.lock().unwrap_or_else(|p| p.into_inner());
-        // If BUZZ_SHELL points at a non-existent path the resolver must fall
+        // If NIMINO_SHELL points at a non-existent path the resolver must fall
         // through rather than returning a dead path.
-        env::set_var("BUZZ_SHELL", r"C:\does\not\exist\bash.exe");
+        env::set_var("NIMINO_SHELL", r"C:\does\not\exist\bash.exe");
         // We cannot easily assert the fallback here without a full Git install,
         // but we can assert the override itself is not returned.
         let result = resolve_bash("");
-        env::remove_var("BUZZ_SHELL");
+        env::remove_var("NIMINO_SHELL");
         if let Ok((resolved, _)) = result {
             assert_ne!(
                 resolved.to_str().unwrap_or(""),
                 r"C:\does\not\exist\bash.exe",
-                "non-existent BUZZ_SHELL must not be returned"
+                "non-existent NIMINO_SHELL must not be returned"
             );
         }
         // An Err is also acceptable (no Git installed on test host).
     }
 
-    /// Explicit BUZZ_SHELL bare name resolves through PATH and uses NO System32
+    /// Explicit NIMINO_SHELL bare name resolves through PATH and uses NO System32
     /// exclusion — cmd/pwsh live in System32 legitimately.
     #[test]
     fn buzz_shell_explicit_bare_name_resolves_from_system32() {
         let _guard = ENV_MUTEX.lock().unwrap_or_else(|p| p.into_inner());
         // Simulate cmd.exe living in a dir that would be excluded by the WSL guard.
-        // The explicit BUZZ_SHELL branch must NOT skip System32.
+        // The explicit NIMINO_SHELL branch must NOT skip System32.
         let sys32 = tempdir().expect("sys32");
         let fake_cmd = sys32.path().join("cmd.exe");
         touch(&fake_cmd);
 
         // Build a path_env with only sys32 (the WSL exclusion would skip this dir
-        // for bash.exe, but must NOT skip it for an explicit BUZZ_SHELL).
+        // for bash.exe, but must NOT skip it for an explicit NIMINO_SHELL).
         let path_env = env::join_paths([sys32.path().to_path_buf()]).expect("join");
-        env::set_var("BUZZ_SHELL", "cmd");
+        env::set_var("NIMINO_SHELL", "cmd");
         // Override SystemRoot so the exclusion would trigger on sys32 if applied.
         let old_sysroot = env::var_os("SystemRoot");
         env::set_var("SystemRoot", sys32.path());
 
         let result = resolve_bash(path_env.to_str().expect("utf8"));
 
-        env::remove_var("BUZZ_SHELL");
+        env::remove_var("NIMINO_SHELL");
         match old_sysroot {
             Some(v) => env::set_var("SystemRoot", v),
             None => env::remove_var("SystemRoot"),
         }
 
         let (resolved, name) =
-            result.expect("explicit BUZZ_SHELL=cmd should resolve even from System32-like dir");
+            result.expect("explicit NIMINO_SHELL=cmd should resolve even from System32-like dir");
         assert_eq!(resolved, fake_cmd);
         assert_eq!(name, "cmd");
     }
@@ -1229,13 +1230,13 @@ mod windows_resolver_tests {
     fn implicit_bash_scan_still_skips_system32() {
         let _guard = ENV_MUTEX.lock().unwrap_or_else(|p| p.into_inner());
         // Same setup: bash.exe is only in a dir that is under SystemRoot.
-        // Without an explicit BUZZ_SHELL, the fallback scan must skip it.
+        // Without an explicit NIMINO_SHELL, the fallback scan must skip it.
         let sys32 = tempdir().expect("sys32");
         touch(&sys32.path().join("bash.exe"));
 
         let path_env = env::join_paths([sys32.path().to_path_buf()]).expect("join");
-        // No BUZZ_SHELL — trigger the implicit bash fallback scan.
-        env::remove_var("BUZZ_SHELL");
+        // No NIMINO_SHELL — trigger the implicit bash fallback scan.
+        env::remove_var("NIMINO_SHELL");
         env::remove_var("GIT_BASH");
         // Point SystemRoot at sys32's parent so sys32 is "under SystemRoot".
         let parent = sys32.path().parent().unwrap().to_path_buf();
@@ -1263,7 +1264,7 @@ mod windows_resolver_tests {
 
     /// The bootstrap hint (resolved_shell field) and the spawn path are the
     /// same object — both come from SharedState.resolved_shell.
-    /// Verify that constructing SharedState with BUZZ_SHELL set produces a
+    /// Verify that constructing SharedState with NIMINO_SHELL set produces a
     /// resolved_shell whose display name appears in bootstrap_instructions.
     #[test]
     fn shared_state_bootstrap_hint_matches_resolved_shell() {
@@ -1271,12 +1272,12 @@ mod windows_resolver_tests {
         let dir = tempdir().expect("tempdir");
         let fake_pwsh = dir.path().join("pwsh.exe");
         touch(&fake_pwsh);
-        env::set_var("BUZZ_SHELL", &fake_pwsh);
+        env::set_var("NIMINO_SHELL", &fake_pwsh);
 
         let shim = crate::shim::Shim::install().expect("shim");
         let state = SharedState::new(dir.path().to_path_buf(), shim).expect("state");
 
-        env::remove_var("BUZZ_SHELL");
+        env::remove_var("NIMINO_SHELL");
 
         let (_, name) = state.resolved_shell.as_ref().expect("resolved ok");
         assert_eq!(name, "pwsh");
@@ -1286,7 +1287,7 @@ mod windows_resolver_tests {
         );
     }
 
-    /// F3: BUZZ_SHELL bare command name (e.g. "pwsh") resolved through PATH.
+    /// F3: NIMINO_SHELL bare command name (e.g. "pwsh") resolved through PATH.
     /// When pwsh.exe is on PATH, resolve_bash must return it and report "pwsh".
     #[test]
     fn buzz_shell_bare_name_resolved_through_path_when_present() {
@@ -1296,33 +1297,33 @@ mod windows_resolver_tests {
         touch(&fake_pwsh);
 
         let path_env = env::join_paths([dir.path().to_path_buf()]).expect("join");
-        env::set_var("BUZZ_SHELL", "pwsh");
+        env::set_var("NIMINO_SHELL", "pwsh");
         let result = resolve_bash(path_env.to_str().expect("utf8"));
-        env::remove_var("BUZZ_SHELL");
+        env::remove_var("NIMINO_SHELL");
 
-        let (resolved, name) = result.expect("bare BUZZ_SHELL=pwsh should resolve from PATH");
+        let (resolved, name) = result.expect("bare NIMINO_SHELL=pwsh should resolve from PATH");
         assert_eq!(resolved, fake_pwsh, "should resolve to pwsh.exe on PATH");
         assert_eq!(name, "pwsh", "display name must match resolved shell");
     }
 
-    /// F3: BUZZ_SHELL bare command name absent from PATH → fall through, do not
+    /// F3: NIMINO_SHELL bare command name absent from PATH → fall through, do not
     /// report pwsh as the active shell.
     #[test]
     fn buzz_shell_bare_name_absent_from_path_falls_through() {
         let _guard = ENV_MUTEX.lock().unwrap_or_else(|p| p.into_inner());
-        // Set BUZZ_SHELL to a command that won't be on any real PATH.
-        env::set_var("BUZZ_SHELL", "buzz-shell-does-not-exist-xyz");
+        // Set NIMINO_SHELL to a command that won't be on any real PATH.
+        env::set_var("NIMINO_SHELL", "buzz-shell-does-not-exist-xyz");
         let result = resolve_bash("");
-        env::remove_var("BUZZ_SHELL");
+        env::remove_var("NIMINO_SHELL");
         if let Ok((resolved, name)) = result {
             assert_ne!(
                 resolved.file_name().and_then(|n| n.to_str()).unwrap_or(""),
                 "buzz-shell-does-not-exist-xyz.exe",
-                "absent BUZZ_SHELL must not be returned as the resolved path"
+                "absent NIMINO_SHELL must not be returned as the resolved path"
             );
             assert_ne!(
                 name, "buzz-shell-does-not-exist-xyz",
-                "absent BUZZ_SHELL must not be reported as the shell name"
+                "absent NIMINO_SHELL must not be reported as the shell name"
             );
         }
         // Err is also acceptable (no Git on test host).
@@ -1338,16 +1339,16 @@ mod windows_resolver_tests {
         touch(&bash);
 
         let path_env = env::join_paths([git.parent().expect("cmd dir")]).expect("join");
-        let old_buzz_shell = env::var_os("BUZZ_SHELL");
+        let old_buzz_shell = env::var_os("NIMINO_SHELL");
         let old_git_bash = env::var_os("GIT_BASH");
-        env::remove_var("BUZZ_SHELL");
+        env::remove_var("NIMINO_SHELL");
         env::remove_var("GIT_BASH");
 
         let result = resolve_bash(path_env.to_str().expect("utf8"));
 
         match old_buzz_shell {
-            Some(value) => env::set_var("BUZZ_SHELL", value),
-            None => env::remove_var("BUZZ_SHELL"),
+            Some(value) => env::set_var("NIMINO_SHELL", value),
+            None => env::remove_var("NIMINO_SHELL"),
         }
         match old_git_bash {
             Some(value) => env::set_var("GIT_BASH", value),

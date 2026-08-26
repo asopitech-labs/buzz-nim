@@ -5,7 +5,7 @@ Status: **partially implemented**. Done on this branch:
 - Slice 0 — HTTPS relay git clone URLs (`{relay-origin}/git/<pubkey>/<repo>`)
   render as Buzz repository preview cards in chat
   (`desktop/src/shared/lib/linkPreview.ts`).
-- Slice 1 — `buzz://pr|issue|repo|project` deep links: `entityLink.ts`
+- Slice 1 — `nimino://pr|issue|repo|project` deep links: `entityLink.ts`
   builders/parser, preview cards with relay title enrichment (repo and
   project titles resolve from their announcement events), in-timeline click
   navigation to `/projects/$projectId`.
@@ -34,13 +34,13 @@ are produced entirely client-side by URL parsing in
 Buzz-hosted entities have no equivalent. There is **no link format at all**
 for a Buzz repository, project, pull request, or issue:
 
-- The only rich deep link today is `buzz://message?channel=…&id=…`
+- The only rich deep link today is `nimino://message?channel=…&id=…`
   (`desktop/src/features/messages/lib/messageLink.ts`), rendered as an inline
   pill via `remarkMessageLinks.ts` + `MessageLinkPill.tsx`.
 - OS-level deep links (`desktop/src-tauri/src/deep_link.rs`,
   `desktop/src/shared/deep-link.ts`) support `connect`, `join`,
   `add-community`, `message`, and `nostr-bind` — no git entities.
-- `buzz pr open` / `buzz issues create` return raw event ids; there is no URL
+- `nimino pr open` / `nimino issues create` return raw event ids; there is no URL
   in their output and no guidance in the agent base prompt
   (`crates/buzz-acp/src/base_prompt.md`) for referencing Buzz work items in
   chat. Agents can only say "PR up" with a hex id.
@@ -64,8 +64,8 @@ free.
 ## Non-goals (v1)
 
 - Web (browser) pages for PRs/issues — the web client has no such views yet,
-  so links are app-only, same as `buzz://message` today.
-- Cross-community links. Like `buzz://message`, links are interpreted against
+  so links are app-only, same as `nimino://message` today.
+- Cross-community links. Like `nimino://message`, links are interpreted against
   the community the message was received in. A `relay=` query parameter is
   reserved for a future cross-community version but not emitted or consumed.
 - Generic OpenGraph unfurling for arbitrary URLs — that is the separate
@@ -75,13 +75,13 @@ free.
 
 ## Link format
 
-Extend the existing `buzz://` scheme, mirroring `buzz://message`:
+Extend the existing `nimino://` scheme, mirroring `nimino://message`:
 
 ```
-buzz://repo?owner=<pubkey-hex>&d=<repo-dtag>[&tab=<tab>]
-buzz://project?owner=<pubkey-hex>&d=<project-dtag>[&tab=<tab>]
-buzz://pr?id=<event-id-hex>&owner=<pubkey-hex>&d=<repo-dtag>
-buzz://issue?id=<event-id-hex>&owner=<pubkey-hex>&d=<repo-dtag>
+nimino://repo?owner=<pubkey-hex>&d=<repo-dtag>[&tab=<tab>]
+nimino://project?owner=<pubkey-hex>&d=<project-dtag>[&tab=<tab>]
+nimino://pr?id=<event-id-hex>&owner=<pubkey-hex>&d=<repo-dtag>
+nimino://issue?id=<event-id-hex>&owner=<pubkey-hex>&d=<repo-dtag>
 ```
 
 - `owner` is the 64-char lowercase hex pubkey of the repository/project
@@ -115,14 +115,14 @@ Agents naturally paste HTTPS clone URLs
 recognized **first** — implemented on this branch. Detection keys on the
 path shape (`/git/` + 64-hex pubkey segment) rather than a host allow-list,
 since relay hosts differ per community. The preview href is normalized to
-the canonical `buzz://repo?owner=…&d=…` deep link (the raw transport URL is
+the canonical `nimino://repo?owner=…&d=…` deep link (the raw transport URL is
 not a browsable page), so clone-URL cards and inline clone-URL anchors get
 the same in-app click navigation as explicit entity links, and both
 spellings of the same repository dedupe to one card.
 
 PRs, issues, and projects have no HTTPS page to link to (the web client has
-no such routes), which is why they use the `buzz://` scheme above: it is
-community-relative by construction, matches the established `buzz://message`
+no such routes), which is why they use the `nimino://` scheme above: it is
+community-relative by construction, matches the established `nimino://message`
 precedent, and requires no new relay surface. If web views land later, the
 desktop can additionally recognize those `{relay-origin}/…` URLs with the
 same card treatment.
@@ -132,11 +132,11 @@ same card treatment.
 Two presentations, consistent with how GitHub links and message links behave
 today:
 
-1. **Autolinked bare URL** (`<buzz://pr?…>` or bare in text): render an
+1. **Autolinked bare URL** (`<nimino://pr?…>` or bare in text): render an
    **attachment card** below the message in the existing `AttachmentGroup`,
    exactly like GitHub cards. Provider label `Buzz`, type label
    `PR` / `issue` / `repo` / `project`.
-2. **Explicitly labeled markdown link** (`[fix the tooltip](buzz://pr?…)`):
+2. **Explicitly labeled markdown link** (`[fix the tooltip](nimino://pr?…)`):
    keep the author's label inline (same rule as
    `resolveMessageLinkRenderTarget` in `messageLink.ts`), still clickable.
 
@@ -179,7 +179,7 @@ it without a feature→shared boundary violation):
   first and hide the share affordance instead of surfacing a builder throw
 
 Detection: extend `extractSupportedLinkPreviews` in `linkPreview.ts` with a
-`buzz://` pattern (new `SupportedLinkPreviewKind` members
+`nimino://` pattern (new `SupportedLinkPreviewKind` members
 `buzz-pull-request`, `buzz-issue`, `buzz-repository`, `buzz-project`), or —
 if mixing schemes into the URL regex is awkward — a parallel extractor
 composed in `markdown.tsx`. Code blocks / spoiler / image-link masking rules
@@ -216,17 +216,17 @@ same view as one clicked in a message.
 Add a `link` field to the JSON output of the write commands that create
 linkable entities:
 
-- `buzz pr open` → `{ event_id, accepted, message, link }`
-- `buzz issues create` → same
-- `buzz repos create` → link built from owner pubkey + `d`-tag
-- `buzz projects create` → same
+- `nimino pr open` → `{ event_id, accepted, message, link }`
+- `nimino issues create` → same
+- `nimino repos create` → link built from owner pubkey + `d`-tag
+- `nimino projects create` → same
 
 The builder lives in one Rust helper (e.g. `crates/buzz-cli/src/links.rs`)
 so the format has exactly one definition on the Rust side; the TypeScript
 `entityLink.ts` is its mirror and both are covered by shared-format tests
 (golden strings asserted on both sides, like the NIP-MP fixture pattern).
 
-`buzz pr get` / `buzz issues get` / `buzz repos get` also include `link` in
+`nimino pr get` / `nimino issues get` / `nimino repos get` also include `link` in
 their output so agents can link to existing entities, not just ones they
 just created.
 
@@ -255,7 +255,7 @@ No persona changes needed — the base prompt applies to all managed agents.
 
 0. **HTTPS clone-URL repo cards** *(done, this branch)* — recognize relay
    `/git/<pubkey>/<repo>` URLs in `linkPreview.ts`, `Buzz` provider card
-   with the `BuzzMark` logo, href normalized to the `buzz://repo` deep link
+   with the `BuzzMark` logo, href normalized to the `nimino://repo` deep link
    for in-app navigation.
 1. **Link core + cards** *(done, this branch)* — `entityLink.ts`, detection
    in `linkPreview.ts`, `Buzz` card variant in

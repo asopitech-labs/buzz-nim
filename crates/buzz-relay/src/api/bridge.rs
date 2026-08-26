@@ -39,14 +39,14 @@ pub(crate) async fn enforce_http_admission(
     {
         Ok(()) => Ok(()),
         Err(crate::admission::AdmissionError::Exceeded { reset_in_secs }) => {
-            metrics::counter!("buzz_admission_rejections_total", "transport" => "http", "reason" => "quota").increment(1);
+            metrics::counter!("nimino_admission_rejections_total", "transport" => "http", "reason" => "quota").increment(1);
             Err(api_error(
                 StatusCode::TOO_MANY_REQUESTS,
                 &format!("rate-limited: quota exceeded; retry in {reset_in_secs}s"),
             ))
         }
         Err(crate::admission::AdmissionError::Unavailable) => {
-            metrics::counter!("buzz_admission_rejections_total", "transport" => "http", "reason" => "unavailable").increment(1);
+            metrics::counter!("nimino_admission_rejections_total", "transport" => "http", "reason" => "unavailable").increment(1);
             Err(api_error(
                 StatusCode::SERVICE_UNAVAILABLE,
                 "rate-limited: shared admission unavailable",
@@ -1578,7 +1578,8 @@ async fn count_events_authed(
                 {
                     Ok(stored_events) => {
                         if crate::handlers::req::count_fallback_exceeded(stored_events.len()) {
-                            metrics::counter!("buzz_count_fallback_rejections_total").increment(1);
+                            metrics::counter!("nimino_count_fallback_rejections_total")
+                                .increment(1);
                             return Err(api_error(
                                 StatusCode::BAD_REQUEST,
                                 "count filter requires narrower constraints",
@@ -1648,7 +1649,8 @@ async fn count_events_authed(
                 {
                     Ok(stored_events) => {
                         if crate::handlers::req::count_fallback_exceeded(stored_events.len()) {
-                            metrics::counter!("buzz_count_fallback_rejections_total").increment(1);
+                            metrics::counter!("nimino_count_fallback_rejections_total")
+                                .increment(1);
                             return Err(api_error(
                                 StatusCode::BAD_REQUEST,
                                 "count filter requires narrower constraints",
@@ -3433,7 +3435,7 @@ mod tests {
         }
     }
 
-    const TEST_DB_URL: &str = "postgres://buzz:buzz_dev@localhost:5432/buzz"; // sadscan:disable np.postgres.1
+    const TEST_DB_URL: &str = "postgres://nimino:nimino_dev@localhost:5432/nimino"; // sadscan:disable np.postgres.1
 
     /// Build an AppState suitable for handler-level bridge tests.
     ///
@@ -3526,10 +3528,10 @@ mod tests {
             .snapshot()
             .into_vec()
             .into_iter()
-            .filter(|(key, ..)| key.key().name() == "buzz_events_rejected_total")
+            .filter(|(key, ..)| key.key().name() == "nimino_events_rejected_total")
             .map(|(key, _, _, value)| {
                 let metrics_util::debugging::DebugValue::Counter(n) = value else {
-                    panic!("buzz_events_rejected_total must be a counter");
+                    panic!("nimino_events_rejected_total must be a counter");
                 };
                 let labels: Vec<_> = key.key().labels().collect();
                 let transport = labels

@@ -54,13 +54,13 @@ export function nextRepositoryEntryLimit(current: number, total: number) {
   return Math.min(current + REPOSITORY_ENTRY_PAGE_SIZE, total);
 }
 
-const PROJECTS_VIEW_MODE_STORAGE_KEY = "buzz.projects.viewMode";
-const PROJECTS_FILTER_STORAGE_KEY = "buzz.projects.filter";
-const PROJECTS_REPOSITORY_SCOPE_STORAGE_KEY = "buzz.projects.repositoryScope";
+const PROJECTS_VIEW_MODE_STORAGE_KEY = "nimino.projects.viewMode";
+const PROJECTS_FILTER_STORAGE_KEY = "nimino.projects.filter";
+const PROJECTS_REPOSITORY_SCOPE_STORAGE_KEY = "nimino.projects.repositoryScope";
 const PROJECTS_PULL_REQUEST_SCOPE_STORAGE_KEY =
-  "buzz.projects.pullRequestScope";
-const PROJECTS_ISSUE_SCOPE_STORAGE_KEY = "buzz.projects.issueScope";
-const PROJECTS_SORT_STORAGE_KEY = "buzz.projects.sort";
+  "nimino.projects.pullRequestScope";
+const PROJECTS_ISSUE_SCOPE_STORAGE_KEY = "nimino.projects.issueScope";
+const PROJECTS_SORT_STORAGE_KEY = "nimino.projects.sort";
 
 export function readStoredViewMode(): ProjectsViewMode | null {
   try {

@@ -16,23 +16,24 @@ import {
 } from "./modelCapabilities";
 
 /** Env var key for the thinking/effort level sent to the LLM. */
-export const BUZZ_AGENT_THINKING_EFFORT = "BUZZ_AGENT_THINKING_EFFORT";
+export const NIMINO_AGENT_THINKING_EFFORT = "NIMINO_AGENT_THINKING_EFFORT";
 
 /** Env var key for the maximum output token count per turn. */
-export const BUZZ_AGENT_MAX_OUTPUT_TOKENS = "BUZZ_AGENT_MAX_OUTPUT_TOKENS";
+export const NIMINO_AGENT_MAX_OUTPUT_TOKENS = "NIMINO_AGENT_MAX_OUTPUT_TOKENS";
 
 /** Env var key for the context window token limit. */
-export const BUZZ_AGENT_MAX_CONTEXT_TOKENS = "BUZZ_AGENT_MAX_CONTEXT_TOKENS";
+export const NIMINO_AGENT_MAX_CONTEXT_TOKENS =
+  "NIMINO_AGENT_MAX_CONTEXT_TOKENS";
 
 /** Env var key for the maximum number of LLM/tool rounds per turn. */
-export const BUZZ_AGENT_MAX_ROUNDS = "BUZZ_AGENT_MAX_ROUNDS";
+export const NIMINO_AGENT_MAX_ROUNDS = "NIMINO_AGENT_MAX_ROUNDS";
 
 /**
  * Ordered set of valid thinking-effort values accepted by buzz-agent.
  * Re-exported from the manifest interpreter, which owns the canonical list
  * (mirrors `parse_thinking_effort` in `crates/buzz-agent/src/config.rs`).
  */
-export const BUZZ_AGENT_THINKING_EFFORT_VALUES = THINKING_EFFORT_VALUES;
+export const NIMINO_AGENT_THINKING_EFFORT_VALUES = THINKING_EFFORT_VALUES;
 
 export type { ThinkingEffortValue };
 

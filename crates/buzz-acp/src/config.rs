@@ -23,11 +23,11 @@ use crate::filter::SubscriptionRule;
 /// codex/claude doing multi-minute single tool calls). 900s gives 300s of
 /// breathing room above the 600s max shell timeout, so legitimate long-running
 /// tool calls don't race the idle deadline.
-/// Override via `--idle-timeout` / `BUZZ_ACP_IDLE_TIMEOUT`.
+/// Override via `--idle-timeout` / `NIMINO_ACP_IDLE_TIMEOUT`.
 pub(crate) const DEFAULT_IDLE_TIMEOUT_SECS: u64 = 900;
 
 /// Default absolute wall-clock cap per agent turn (2 hours).
-/// Override via `--max-turn-duration` / `BUZZ_ACP_MAX_TURN_DURATION`.
+/// Override via `--max-turn-duration` / `NIMINO_ACP_MAX_TURN_DURATION`.
 pub(crate) const DEFAULT_MAX_TURN_DURATION_SECS: u64 = 7200;
 
 /// Upper bound for `max_turn_duration` (7 days). Any higher is operationally
@@ -194,13 +194,13 @@ pub struct ModelsArgs {
 #[derive(Debug, Parser)]
 pub struct AuthAgentArgs {
     /// Agent binary to spawn (e.g. "goose", "claude-agent-acp", "codex-acp").
-    #[arg(long, env = "BUZZ_ACP_AGENT_COMMAND", default_value = "goose")]
+    #[arg(long, env = "NIMINO_ACP_AGENT_COMMAND", default_value = "goose")]
     pub agent_command: String,
 
     /// Arguments passed to the agent binary.
     #[arg(
         long,
-        env = "BUZZ_ACP_AGENT_ARGS",
+        env = "NIMINO_ACP_AGENT_ARGS",
         default_value = "acp",
         value_delimiter = ','
     )]
@@ -243,75 +243,75 @@ pub struct AuthenticateArgs {
     about = "ACP harness that bridges Buzz events to AI agents"
 )]
 pub struct CliArgs {
-    #[arg(long, env = "BUZZ_RELAY_URL", default_value = "ws://localhost:3000")]
+    #[arg(long, env = "NIMINO_RELAY_URL", default_value = "ws://localhost:3000")]
     pub relay_url: String,
 
-    #[arg(long, env = "BUZZ_PRIVATE_KEY", hide_env_values = true)]
+    #[arg(long, env = "NIMINO_PRIVATE_KEY", hide_env_values = true)]
     pub private_key: String,
 
     /// Agent owner pubkey (64-char hex). Used for --respond-to=owner-only gate.
-    #[arg(long, env = "BUZZ_ACP_AGENT_OWNER")]
+    #[arg(long, env = "NIMINO_ACP_AGENT_OWNER")]
     pub agent_owner: Option<String>,
 
-    #[arg(long, env = "BUZZ_ACP_AGENT_COMMAND", default_value = "goose")]
+    #[arg(long, env = "NIMINO_ACP_AGENT_COMMAND", default_value = "goose")]
     pub agent_command: String,
 
     #[arg(
         long,
-        env = "BUZZ_ACP_AGENT_ARGS",
+        env = "NIMINO_ACP_AGENT_ARGS",
         default_value = "acp",
         value_delimiter = ','
     )]
     pub agent_args: Vec<String>,
 
-    #[arg(long, env = "BUZZ_ACP_MCP_COMMAND", default_value = "")]
+    #[arg(long, env = "NIMINO_ACP_MCP_COMMAND", default_value = "")]
     pub mcp_command: String,
 
     /// Idle timeout: max seconds of silence before killing a turn.
     /// Resets on any agent stdout activity.
-    #[arg(long, env = "BUZZ_ACP_IDLE_TIMEOUT")]
+    #[arg(long, env = "NIMINO_ACP_IDLE_TIMEOUT")]
     pub idle_timeout: Option<u64>,
 
     /// Absolute wall-clock cap per turn (safety valve).
-    #[arg(long, env = "BUZZ_ACP_MAX_TURN_DURATION", default_value_t = DEFAULT_MAX_TURN_DURATION_SECS)]
+    #[arg(long, env = "NIMINO_ACP_MAX_TURN_DURATION", default_value_t = DEFAULT_MAX_TURN_DURATION_SECS)]
     pub max_turn_duration: u64,
 
     /// Deprecated: alias for --idle-timeout. If both set, --idle-timeout wins.
-    #[arg(long, env = "BUZZ_ACP_TURN_TIMEOUT", hide = true)]
+    #[arg(long, env = "NIMINO_ACP_TURN_TIMEOUT", hide = true)]
     pub turn_timeout: Option<u64>,
 
     #[arg(
         long,
-        env = "BUZZ_ACP_SYSTEM_PROMPT",
+        env = "NIMINO_ACP_SYSTEM_PROMPT",
         conflicts_with = "system_prompt_file"
     )]
     pub system_prompt: Option<String>,
 
     #[arg(
         long,
-        env = "BUZZ_ACP_SYSTEM_PROMPT_FILE",
+        env = "NIMINO_ACP_SYSTEM_PROMPT_FILE",
         conflicts_with = "system_prompt"
     )]
     pub system_prompt_file: Option<PathBuf>,
 
     /// Number of parallel agent subprocesses.
-    #[arg(long, env = "BUZZ_ACP_AGENTS", default_value_t = 1,
+    #[arg(long, env = "NIMINO_ACP_AGENTS", default_value_t = 1,
           value_parser = clap::value_parser!(u32).range(1..=32))]
     pub agents: u32,
 
     /// Seconds between heartbeat prompts. 0 = disabled.
-    #[arg(long, env = "BUZZ_ACP_HEARTBEAT_INTERVAL", default_value_t = 0)]
+    #[arg(long, env = "NIMINO_ACP_HEARTBEAT_INTERVAL", default_value_t = 0)]
     pub heartbeat_interval: u64,
 
     /// Seconds between per-turn liveness pings (the crash backstop signal —
     /// distinct from heartbeat self-prompting). 0 = disabled.
-    #[arg(long, env = "BUZZ_ACP_TURN_LIVENESS_SECS", default_value_t = 10)]
+    #[arg(long, env = "NIMINO_ACP_TURN_LIVENESS_SECS", default_value_t = 10)]
     pub turn_liveness_secs: u64,
 
     /// Heartbeat prompt text. Conflicts with --heartbeat-prompt-file.
     #[arg(
         long,
-        env = "BUZZ_ACP_HEARTBEAT_PROMPT",
+        env = "NIMINO_ACP_HEARTBEAT_PROMPT",
         conflicts_with = "heartbeat_prompt_file"
     )]
     pub heartbeat_prompt: Option<String>,
@@ -319,35 +319,35 @@ pub struct CliArgs {
     /// Read heartbeat prompt from file.
     #[arg(
         long,
-        env = "BUZZ_ACP_HEARTBEAT_PROMPT_FILE",
+        env = "NIMINO_ACP_HEARTBEAT_PROMPT_FILE",
         conflicts_with = "heartbeat_prompt"
     )]
     pub heartbeat_prompt_file: Option<PathBuf>,
 
-    #[arg(long, env = "BUZZ_ACP_INITIAL_MESSAGE")]
+    #[arg(long, env = "NIMINO_ACP_INITIAL_MESSAGE")]
     pub initial_message: Option<String>,
 
     #[arg(
         long,
-        env = "BUZZ_ACP_SUBSCRIBE",
+        env = "NIMINO_ACP_SUBSCRIBE",
         default_value = "mentions",
         value_enum
     )]
     pub subscribe: SubscribeMode,
 
-    #[arg(long, env = "BUZZ_ACP_KINDS", value_delimiter = ',')]
+    #[arg(long, env = "NIMINO_ACP_KINDS", value_delimiter = ',')]
     pub kinds: Option<Vec<u32>>,
 
-    #[arg(long, env = "BUZZ_ACP_CHANNELS", value_delimiter = ',')]
+    #[arg(long, env = "NIMINO_ACP_CHANNELS", value_delimiter = ',')]
     pub channels: Option<Vec<String>>,
 
-    #[arg(long, env = "BUZZ_ACP_NO_MENTION_FILTER")]
+    #[arg(long, env = "NIMINO_ACP_NO_MENTION_FILTER")]
     pub no_mention_filter: bool,
 
-    #[arg(long, env = "BUZZ_ACP_CONFIG", default_value = "./buzz-acp.toml")]
+    #[arg(long, env = "NIMINO_ACP_CONFIG", default_value = "./buzz-acp.toml")]
     pub config: PathBuf,
 
-    #[arg(long, env = "BUZZ_ACP_DEDUP", default_value = "queue", value_enum)]
+    #[arg(long, env = "NIMINO_ACP_DEDUP", default_value = "queue", value_enum)]
     pub dedup: DedupMode,
 
     /// How to handle new @mentions while a turn is already in-flight.
@@ -358,33 +358,33 @@ pub struct CliArgs {
     /// owner-interrupt: interrupt only for the agent owner's mentions.
     #[arg(
         long,
-        env = "BUZZ_ACP_MULTIPLE_EVENT_HANDLING",
+        env = "NIMINO_ACP_MULTIPLE_EVENT_HANDLING",
         default_value = "steer",
         value_enum
     )]
     pub multiple_event_handling: MultipleEventHandling,
 
-    #[arg(long, env = "BUZZ_ACP_NO_IGNORE_SELF")]
+    #[arg(long, env = "NIMINO_ACP_NO_IGNORE_SELF")]
     pub no_ignore_self: bool,
 
     /// Maximum number of context messages to include for thread replies and DMs.
     /// Set to 0 to disable automatic context fetching. Max 100.
-    #[arg(long, env = "BUZZ_ACP_CONTEXT_MESSAGE_LIMIT", default_value_t = 12,
+    #[arg(long, env = "NIMINO_ACP_CONTEXT_MESSAGE_LIMIT", default_value_t = 12,
           value_parser = clap::value_parser!(u32).range(0..=100))]
     pub context_message_limit: u32,
 
     /// Maximum turns per session before proactive rotation. 0 = disabled
     /// (rotate only on MaxTokens / MaxTurnRequests).
-    #[arg(long, env = "BUZZ_ACP_MAX_TURNS_PER_SESSION", default_value_t = 0,
+    #[arg(long, env = "NIMINO_ACP_MAX_TURNS_PER_SESSION", default_value_t = 0,
           value_parser = clap::value_parser!(u32))]
     pub max_turns_per_session: u32,
 
     /// Disable automatic presence (online/offline) status.
-    #[arg(long, env = "BUZZ_ACP_NO_PRESENCE")]
+    #[arg(long, env = "NIMINO_ACP_NO_PRESENCE")]
     pub no_presence: bool,
 
     /// Disable typing indicators while agent is processing.
-    #[arg(long, env = "BUZZ_ACP_NO_TYPING")]
+    #[arg(long, env = "NIMINO_ACP_NO_TYPING")]
     pub no_typing: bool,
 
     /// Enable NIP-AE agent core memory injection.
@@ -392,13 +392,13 @@ pub struct CliArgs {
     /// Memory injection is on by default. When enabled, the harness
     /// fetches the agent's per-session core engram and renders it as an
     /// `[Agent Memory — core]` prompt section (or renders the onboarding nudge
-    /// when the relay confirms no core engram exists). The `buzz mem` CLI
+    /// when the relay confirms no core engram exists). The `nimino mem` CLI
     /// and the relay's acceptance of kind:30174 engrams are unaffected — this
     /// flag controls prompt-time injection in the ACP harness only.
-    /// Pass `--no-memory` / `BUZZ_ACP_NO_MEMORY=true` to disable.
+    /// Pass `--no-memory` / `NIMINO_ACP_NO_MEMORY=true` to disable.
     #[arg(
         long,
-        env = "BUZZ_ACP_MEMORY",
+        env = "NIMINO_ACP_MEMORY",
         conflicts_with = "no_memory",
         default_value_t = true
     )]
@@ -407,26 +407,26 @@ pub struct CliArgs {
     /// Disable NIP-AE agent core memory injection.
     ///
     /// Memory injection is on by default; set this flag/env var to opt out.
-    #[arg(long, env = "BUZZ_ACP_NO_MEMORY", conflicts_with = "memory")]
+    #[arg(long, env = "NIMINO_ACP_NO_MEMORY", conflicts_with = "memory")]
     pub no_memory: bool,
 
     /// Disable the [Base] platform-context section prepended to every prompt.
     /// When set, agents receive only the persona `[Agent Instructions]` prompt with no Buzz orientation.
-    #[arg(long, env = "BUZZ_ACP_NO_BASE_PROMPT")]
+    #[arg(long, env = "NIMINO_ACP_NO_BASE_PROMPT")]
     pub no_base_prompt: bool,
 
     /// Path to a custom base prompt file. Overrides the compiled-in default.
     /// Mutually exclusive with --no-base-prompt.
     #[arg(
         long,
-        env = "BUZZ_ACP_BASE_PROMPT_FILE",
+        env = "NIMINO_ACP_BASE_PROMPT_FILE",
         conflicts_with = "no_base_prompt"
     )]
     pub base_prompt_file: Option<PathBuf>,
 
     /// Desired LLM model ID. Applied to every new ACP session after creation.
     /// Use `buzz-acp models` to discover available model IDs.
-    #[arg(long, env = "BUZZ_ACP_MODEL")]
+    #[arg(long, env = "NIMINO_ACP_MODEL")]
     pub model: Option<String>,
 
     /// Persisted effort level value (e.g. "high", "medium", "low") to apply via
@@ -434,13 +434,13 @@ pub struct CliArgs {
     /// resolved from the adapter's advertised `thought_level` capability — not
     /// hardcoded. Non-fatal: if the adapter does not advertise `thought_level`,
     /// the value is silently ignored and the persisted effort is not overwritten.
-    #[arg(long, env = "BUZZ_ACP_EFFORT_LEVEL")]
+    #[arg(long, env = "NIMINO_ACP_EFFORT_LEVEL")]
     pub effort_level: Option<String>,
 
     /// Title for the agent's ACP sessions, passed out-of-band in `session/new`
     /// `_meta`. Adapters that recognize it name the session after this value;
     /// others ignore it. Never enters the prompt.
-    #[arg(long, env = "BUZZ_ACP_SESSION_TITLE")]
+    #[arg(long, env = "NIMINO_ACP_SESSION_TITLE")]
     pub session_title: Option<String>,
 
     /// Permission mode for agents that support `session/set_config_option`
@@ -451,7 +451,7 @@ pub struct CliArgs {
     /// behaviour.
     #[arg(
         long,
-        env = "BUZZ_ACP_PERMISSION_MODE",
+        env = "NIMINO_ACP_PERMISSION_MODE",
         default_value = "bypass-permissions",
         value_enum
     )]
@@ -461,7 +461,7 @@ pub struct CliArgs {
     /// Modes: owner-only (default), allowlist, anyone, nobody.
     #[arg(
         long,
-        env = "BUZZ_ACP_RESPOND_TO",
+        env = "NIMINO_ACP_RESPOND_TO",
         default_value = "owner-only",
         value_enum
     )]
@@ -469,39 +469,39 @@ pub struct CliArgs {
 
     /// Comma-separated 64-char hex pubkeys for allowlist mode.
     /// Owner pubkey is always implicitly included.
-    #[arg(long, env = "BUZZ_ACP_RESPOND_TO_ALLOWLIST", value_delimiter = ',')]
+    #[arg(long, env = "NIMINO_ACP_RESPOND_TO_ALLOWLIST", value_delimiter = ',')]
     pub respond_to_allowlist: Option<Vec<String>>,
 
     /// Comma-separated list of allowed `--respond-to` modes.
     /// When set, the harness rejects startup if `--respond-to` is not in this list.
     /// Modes: owner-only, allowlist, anyone, nobody.
     /// Default: empty (all modes allowed — no restriction).
-    /// Example: `BUZZ_ACP_ALLOWED_RESPOND_TO=owner-only,allowlist`
-    #[arg(long, env = "BUZZ_ACP_ALLOWED_RESPOND_TO", value_delimiter = ',')]
+    /// Example: `NIMINO_ACP_ALLOWED_RESPOND_TO=owner-only,allowlist`
+    #[arg(long, env = "NIMINO_ACP_ALLOWED_RESPOND_TO", value_delimiter = ',')]
     pub allowed_respond_to: Option<Vec<String>>,
 
     /// Team-owned instructions layered after `[Agent Instructions]` and before agent memory.
-    #[arg(long, env = "BUZZ_ACP_TEAM_INSTRUCTIONS")]
+    #[arg(long, env = "NIMINO_ACP_TEAM_INSTRUCTIONS")]
     pub team_instructions: Option<String>,
 
     /// Publish encrypted ACP observer frames over the relay.
-    #[arg(long, env = "BUZZ_ACP_RELAY_OBSERVER", default_value_t = false)]
+    #[arg(long, env = "NIMINO_ACP_RELAY_OBSERVER", default_value_t = false)]
     pub relay_observer: bool,
 
     /// Exit after this many seconds with no dispatched events and no turn in flight.
     /// 0 disables inactivity self-termination.
-    #[arg(long, env = "BUZZ_ACP_EXIT_AFTER_INACTIVITY", default_value_t = 0)]
+    #[arg(long, env = "NIMINO_ACP_EXIT_AFTER_INACTIVITY", default_value_t = 0)]
     pub exit_after_inactivity: u64,
 
     /// Connect and subscribe before starting the ACP/LLM subprocess pool.
-    #[arg(long, env = "BUZZ_ACP_LAZY_POOL", default_value_t = false)]
+    #[arg(long, env = "NIMINO_ACP_LAZY_POOL", default_value_t = false)]
     pub lazy_pool: bool,
 
     /// Tear the woken pool back down to the lazy empty-slot state after this
     /// many seconds with no dispatched turn in flight and an empty queue,
     /// releasing worker subprocesses until the next accepted event re-wakes.
     /// Requires `--lazy-pool`; ignored otherwise. 0 disables idle re-sleep.
-    #[arg(long, env = "BUZZ_ACP_IDLE_POOL_SLEEP", default_value_t = 0)]
+    #[arg(long, env = "NIMINO_ACP_IDLE_POOL_SLEEP", default_value_t = 0)]
     pub idle_pool_sleep: u64,
 }
 
@@ -550,7 +550,7 @@ pub struct Config {
     /// Whether NIP-AE agent core memory injection is enabled. When false,
     /// the harness skips the per-session core engram fetch and renders no
     /// `[Agent Memory — core]` section. On by default; disabled via the
-    /// `--no-memory` / `BUZZ_ACP_NO_MEMORY` opt-out.
+    /// `--no-memory` / `NIMINO_ACP_NO_MEMORY` opt-out.
     pub memory_enabled: bool,
     /// Desired LLM model ID. Applied after every `session_new_full()`.
     pub model: Option<String>,
@@ -571,7 +571,7 @@ pub struct Config {
     pub respond_to_allowlist: HashSet<String>,
     /// Allowed `respond_to` modes. Empty = all modes allowed.
     pub allowed_respond_to: Vec<String>,
-    /// Per-persona env vars to inject at agent spawn time (e.g., GOOSE_PROVIDER, GOOSE_MODEL, BUZZ_AGENT_MODEL).
+    /// Per-persona env vars to inject at agent spawn time (e.g., GOOSE_PROVIDER, GOOSE_MODEL, NIMINO_AGENT_MODEL).
     /// Populated from persona pack resolution. Empty when no pack is configured.
     pub persona_env_vars: Vec<(String, String)>,
     /// Whether `codex_network_env()` successfully injected a `CODEX_CONFIG` entry into
@@ -847,8 +847,8 @@ pub fn normalize_agent_args(command: &str, agent_args: Vec<String>) -> Vec<Strin
 /// // Must be called before tokio runtime starts — see Rust 2024 edition safety.
 pub fn propagate_legacy_env_vars() {
     for (legacy, canonical) in [
-        ("BUZZ_ACP_PRIVATE_KEY", "BUZZ_PRIVATE_KEY"),
-        ("BUZZ_ACP_API_TOKEN", "BUZZ_API_TOKEN"),
+        ("NIMINO_ACP_PRIVATE_KEY", "NIMINO_PRIVATE_KEY"),
+        ("NIMINO_ACP_API_TOKEN", "NIMINO_API_TOKEN"),
     ] {
         if std::env::var(canonical).is_err() {
             if let Ok(val) = std::env::var(legacy) {
@@ -983,16 +983,16 @@ impl Config {
             let raw = match (args.idle_timeout, args.turn_timeout) {
                 (Some(idle), Some(_turn)) => {
                     tracing::warn!(
-                        "--turn-timeout / BUZZ_ACP_TURN_TIMEOUT is deprecated and ignored \
-                         when --idle-timeout / BUZZ_ACP_IDLE_TIMEOUT is also set"
+                        "--turn-timeout / NIMINO_ACP_TURN_TIMEOUT is deprecated and ignored \
+                         when --idle-timeout / NIMINO_ACP_IDLE_TIMEOUT is also set"
                     );
                     idle
                 }
                 (Some(idle), None) => idle,
                 (None, Some(turn)) => {
                     tracing::warn!(
-                        "--turn-timeout / BUZZ_ACP_TURN_TIMEOUT is deprecated; \
-                         use --idle-timeout / BUZZ_ACP_IDLE_TIMEOUT instead"
+                        "--turn-timeout / NIMINO_ACP_TURN_TIMEOUT is deprecated; \
+                         use --idle-timeout / NIMINO_ACP_IDLE_TIMEOUT instead"
                     );
                     turn
                 }
@@ -1054,7 +1054,7 @@ impl Config {
             for s in &raw {
                 RespondTo::from_str(s.trim(), true).map_err(|_| {
                     ConfigError::ConfigFile(format!(
-                        "invalid value in BUZZ_ACP_ALLOWED_RESPOND_TO: '{s}' \
+                        "invalid value in NIMINO_ACP_ALLOWED_RESPOND_TO: '{s}' \
                          (valid values: owner-only, allowlist, anyone, nobody)"
                     ))
                 })?;
@@ -1063,7 +1063,7 @@ impl Config {
             if !allowed_modes.is_empty() && !allowed_modes.contains(&args.respond_to.to_string()) {
                 return Err(ConfigError::ConfigFile(format!(
                     "respond_to '{}' is not permitted on this deployment \
-                     (BUZZ_ACP_ALLOWED_RESPOND_TO={})",
+                     (NIMINO_ACP_ALLOWED_RESPOND_TO={})",
                     args.respond_to,
                     raw.join(",")
                 )));
@@ -2414,7 +2414,7 @@ channels = "ALL"
     #[test]
     fn test_permission_mode_value_enum_camel_case_aliases() {
         // Operators may set env vars using the camelCase wire-format strings
-        // (e.g. BUZZ_ACP_PERMISSION_MODE=bypassPermissions). The #[value(alias)]
+        // (e.g. NIMINO_ACP_PERMISSION_MODE=bypassPermissions). The #[value(alias)]
         // attributes ensure these parse correctly.
         use clap::ValueEnum;
         let cases = [
@@ -2696,14 +2696,14 @@ channels = "ALL"
         }
     }
 
-    // --- BUZZ_ACP_ALLOWED_RESPOND_TO gate ---
+    // --- NIMINO_ACP_ALLOWED_RESPOND_TO gate ---
 
     fn parse_allowed_respond_to(raw: &[&str]) -> Result<HashSet<RespondTo>, ConfigError> {
         let mut set = HashSet::new();
         for s in raw {
             let mode = RespondTo::from_str(s.trim(), true).map_err(|_| {
                 ConfigError::ConfigFile(format!(
-                    "invalid value in BUZZ_ACP_ALLOWED_RESPOND_TO: '{s}' \
+                    "invalid value in NIMINO_ACP_ALLOWED_RESPOND_TO: '{s}' \
                      (valid values: owner-only, allowlist, anyone, nobody)"
                 ))
             })?;
@@ -2720,7 +2720,7 @@ channels = "ALL"
         if !set.is_empty() && !set.contains(&respond_to) {
             return Err(ConfigError::ConfigFile(format!(
                 "respond_to '{}' is not permitted on this deployment \
-                 (BUZZ_ACP_ALLOWED_RESPOND_TO={})",
+                 (NIMINO_ACP_ALLOWED_RESPOND_TO={})",
                 respond_to,
                 allowed_raw.join(",")
             )));
@@ -2764,7 +2764,7 @@ channels = "ALL"
         assert!(result.is_err(), "invalid mode string should be rejected");
         let msg = result.unwrap_err().to_string();
         assert!(
-            msg.contains("invalid value in BUZZ_ACP_ALLOWED_RESPOND_TO"),
+            msg.contains("invalid value in NIMINO_ACP_ALLOWED_RESPOND_TO"),
             "error should name the env var: {msg}"
         );
         assert!(
@@ -2796,7 +2796,7 @@ channels = "ALL"
 
     // --- Integration tests: full env-var → CliArgs → Config::from_args() path ---
     //
-    // These tests exercise the actual wiring: BUZZ_ACP_ALLOWED_RESPOND_TO in the
+    // These tests exercise the actual wiring: NIMINO_ACP_ALLOWED_RESPOND_TO in the
     // environment causes clap to populate CliArgs::allowed_respond_to, which then
     // flows through Config::from_args() to produce a ConfigError. If the #[arg(env)]
     // attribute or field name were removed, these tests would fail.

@@ -1,6 +1,6 @@
 //! Environment fence for spawned PTY children.
 //!
-//! Buzz's own process holds `BUZZ_PRIVATE_KEY` (an nsec), `BUZZ_AUTH_TAG`, and
+//! Buzz's own process holds `NIMINO_PRIVATE_KEY` (an nsec), `NIMINO_AUTH_TAG`, and
 //! relay credentials. `portable_pty::CommandBuilder::new()` pre-seeds its env
 //! map from `std::env::vars_os()` (`cmdbuilder.rs:218` -> `get_base_env()`
 //! `:74`), so a shell spawned with the default builder inherits **all** of it:

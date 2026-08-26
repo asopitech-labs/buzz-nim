@@ -286,8 +286,8 @@ test.describe("your harnesses split", () => {
       page.evaluate(
         () =>
           (
-            (window as Window & { __BUZZ_E2E_COMMANDS__?: string[] })
-              .__BUZZ_E2E_COMMANDS__ ?? []
+            (window as Window & { __NIMINO_E2E_COMMANDS__?: string[] })
+              .__NIMINO_E2E_COMMANDS__ ?? []
           ).filter((command) => command === "install_acp_runtime").length,
       );
 
@@ -654,7 +654,7 @@ test("onboarding setup More-harnesses click navigates to Settings → Agents", a
   await page.addInitScript(() => {
     const communityId = "e2e-default-community";
     window.localStorage.setItem(
-      "buzz-communities",
+      "nimino-communities",
       JSON.stringify([
         {
           id: communityId,
@@ -665,7 +665,7 @@ test("onboarding setup More-harnesses click navigates to Settings → Agents", a
         },
       ]),
     );
-    window.localStorage.setItem("buzz-active-community-id", communityId);
+    window.localStorage.setItem("nimino-active-community-id", communityId);
   });
   await page.goto("/");
 

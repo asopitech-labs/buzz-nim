@@ -61,9 +61,9 @@ async function openNostrBind(
     () =>
       typeof (
         window as Window & {
-          __BUZZ_E2E_INVOKE_MOCK_COMMAND__?: unknown;
+          __NIMINO_E2E_INVOKE_MOCK_COMMAND__?: unknown;
         }
-      ).__BUZZ_E2E_INVOKE_MOCK_COMMAND__ === "function",
+      ).__NIMINO_E2E_INVOKE_MOCK_COMMAND__ === "function",
   );
   await emitNostrBind(page, payload);
   await expect(page.getByTestId("nostr-bind-page")).toBeVisible();
@@ -88,12 +88,12 @@ async function signCommandPayloads(page: Page): Promise<unknown[]> {
     (
       (
         window as Window & {
-          __BUZZ_E2E_COMMAND_LOG__?: Array<{
+          __NIMINO_E2E_COMMAND_LOG__?: Array<{
             command: string;
             payload: unknown;
           }>;
         }
-      ).__BUZZ_E2E_COMMAND_LOG__ ?? []
+      ).__NIMINO_E2E_COMMAND_LOG__ ?? []
     )
       .filter(({ command }) => command === "sign_nostr_identity_binding")
       .map(({ payload }) => payload),
@@ -104,7 +104,7 @@ async function installClipboardStub(page: Page, shouldFail: boolean) {
   await page.addInitScript(
     ({ fail }) => {
       const testWindow = window as Window & {
-        __BUZZ_E2E_CLIPBOARD_TEXT__?: string;
+        __NIMINO_E2E_CLIPBOARD_TEXT__?: string;
       };
       Object.defineProperty(navigator, "clipboard", {
         configurable: true,
@@ -113,7 +113,7 @@ async function installClipboardStub(page: Page, shouldFail: boolean) {
             if (fail) {
               throw new Error("clipboard unavailable");
             }
-            testWindow.__BUZZ_E2E_CLIPBOARD_TEXT__ = text;
+            testWindow.__NIMINO_E2E_CLIPBOARD_TEXT__ = text;
           },
         },
       });
@@ -125,17 +125,17 @@ async function installClipboardStub(page: Page, shouldFail: boolean) {
 async function installShakeCounter(page: Page) {
   await page.addInitScript(() => {
     const testWindow = window as Window & {
-      __BUZZ_E2E_CODE_SHAKE_CALLS__?: number;
+      __NIMINO_E2E_CODE_SHAKE_CALLS__?: number;
     };
-    testWindow.__BUZZ_E2E_CODE_SHAKE_CALLS__ = 0;
+    testWindow.__NIMINO_E2E_CODE_SHAKE_CALLS__ = 0;
     const originalAnimate = Element.prototype.animate;
     Element.prototype.animate = function animate(keyframes, options) {
       if (
         this instanceof HTMLElement &&
         this.dataset.testid === "nostr-bind-verification-code"
       ) {
-        testWindow.__BUZZ_E2E_CODE_SHAKE_CALLS__ =
-          (testWindow.__BUZZ_E2E_CODE_SHAKE_CALLS__ ?? 0) + 1;
+        testWindow.__NIMINO_E2E_CODE_SHAKE_CALLS__ =
+          (testWindow.__NIMINO_E2E_CODE_SHAKE_CALLS__ ?? 0) + 1;
       }
       return originalAnimate.call(this, keyframes, options);
     };
@@ -147,9 +147,9 @@ async function shakeCount(page: Page): Promise<number> {
     () =>
       (
         window as Window & {
-          __BUZZ_E2E_CODE_SHAKE_CALLS__?: number;
+          __NIMINO_E2E_CODE_SHAKE_CALLS__?: number;
         }
-      ).__BUZZ_E2E_CODE_SHAKE_CALLS__ ?? 0,
+      ).__NIMINO_E2E_CODE_SHAKE_CALLS__ ?? 0,
   );
 }
 
@@ -320,9 +320,9 @@ test("signs a valid request, shows the response, and copies it", async ({
         () =>
           (
             window as Window & {
-              __BUZZ_E2E_CLIPBOARD_TEXT__?: string;
+              __NIMINO_E2E_CLIPBOARD_TEXT__?: string;
             }
-          ).__BUZZ_E2E_CLIPBOARD_TEXT__,
+          ).__NIMINO_E2E_CLIPBOARD_TEXT__,
       ),
     )
     .toBe(signedResponse);
@@ -349,9 +349,9 @@ test("returns a signed response in the callback fragment after consent", async (
           (
             (
               window as Window & {
-                __BUZZ_E2E_COMMAND_LOG__?: Array<{ command: string }>;
+                __NIMINO_E2E_COMMAND_LOG__?: Array<{ command: string }>;
               }
-            ).__BUZZ_E2E_COMMAND_LOG__ ?? []
+            ).__NIMINO_E2E_COMMAND_LOG__ ?? []
           ).filter(({ command }) => command === "plugin:opener|open_url")
             .length,
       ),
@@ -386,9 +386,9 @@ test("returns a signed response in the callback fragment after consent", async (
         () =>
           (
             window as Window & {
-              __BUZZ_E2E_CLIPBOARD_TEXT__?: string;
+              __NIMINO_E2E_CLIPBOARD_TEXT__?: string;
             }
-          ).__BUZZ_E2E_CLIPBOARD_TEXT__,
+          ).__NIMINO_E2E_CLIPBOARD_TEXT__,
       ),
     )
     .toBe(await signedResponse.textContent());
@@ -397,12 +397,12 @@ test("returns a signed response in the callback fragment after consent", async (
     const command = (
       (
         window as Window & {
-          __BUZZ_E2E_COMMAND_LOG__?: Array<{
+          __NIMINO_E2E_COMMAND_LOG__?: Array<{
             command: string;
             payload: { url?: string };
           }>;
         }
-      ).__BUZZ_E2E_COMMAND_LOG__ ?? []
+      ).__NIMINO_E2E_COMMAND_LOG__ ?? []
     ).find(({ command }) => command === "plugin:opener|open_url");
     return command?.payload.url;
   });

@@ -3,9 +3,9 @@ import { expect, test, type Page } from "@playwright/test";
 import { installMockBridge } from "../helpers/bridge";
 import { openSettings } from "../helpers/settings";
 
-const SIDEBAR_WIDTH_STORAGE_KEY = "buzz-sidebar-width";
+const SIDEBAR_WIDTH_STORAGE_KEY = "nimino-sidebar-width";
 const COMMUNITY_ONBOARDING_STORAGE_KEY =
-  "buzz-community-onboarding-transaction.v1";
+  "nimino-community-onboarding-transaction.v1";
 const DEFAULT_SIDEBAR_WIDTH = 300;
 
 test.beforeEach(async ({ page }) => {
@@ -27,7 +27,7 @@ async function storedSidebarWidth(page: Page) {
 
 async function loadTheme(page: Page, theme: string) {
   await page.addInitScript((selectedTheme) => {
-    window.localStorage.setItem("buzz-theme", selectedTheme);
+    window.localStorage.setItem("nimino-theme", selectedTheme);
   }, theme);
   await installMockBridge(page);
   await page.goto("/");
@@ -685,13 +685,13 @@ test("shows a sidebar update card when an update is ready", async ({
 
   await page.evaluate(() => {
     const testWindow = window as Window & {
-      __BUZZ_E2E__?: { mock?: { updateAvailable?: boolean } };
+      __NIMINO_E2E__?: { mock?: { updateAvailable?: boolean } };
     };
 
-    testWindow.__BUZZ_E2E__ = {
-      ...(testWindow.__BUZZ_E2E__ ?? {}),
+    testWindow.__NIMINO_E2E__ = {
+      ...(testWindow.__NIMINO_E2E__ ?? {}),
       mock: {
-        ...(testWindow.__BUZZ_E2E__?.mock ?? {}),
+        ...(testWindow.__NIMINO_E2E__?.mock ?? {}),
         restartDelayMs: 500,
         updateAvailable: true,
       },
@@ -711,9 +711,9 @@ test("shows a sidebar update card when an update is ready", async ({
         const commands =
           (
             window as Window & {
-              __BUZZ_E2E_COMMANDS__?: string[];
+              __NIMINO_E2E_COMMANDS__?: string[];
             }
-          ).__BUZZ_E2E_COMMANDS__ ?? [];
+          ).__NIMINO_E2E_COMMANDS__ ?? [];
         return (
           commands.includes("plugin:updater|install") ||
           commands.includes("plugin:process|restart")
@@ -739,9 +739,9 @@ test("shows a sidebar update card when an update is ready", async ({
         () =>
           (
             window as Window & {
-              __BUZZ_E2E_COMMANDS__?: string[];
+              __NIMINO_E2E_COMMANDS__?: string[];
             }
-          ).__BUZZ_E2E_COMMANDS__ ?? [],
+          ).__NIMINO_E2E_COMMANDS__ ?? [],
       ),
     )
     .toEqual(
@@ -756,9 +756,9 @@ test("shows a sidebar update card when an update is ready", async ({
     () =>
       (
         window as Window & {
-          __BUZZ_E2E_COMMANDS__?: string[];
+          __NIMINO_E2E_COMMANDS__?: string[];
         }
-      ).__BUZZ_E2E_COMMANDS__ ?? [],
+      ).__NIMINO_E2E_COMMANDS__ ?? [],
   );
   expect(commands.indexOf("plugin:updater|download")).toBeLessThan(
     commands.indexOf("plugin:updater|install"),
@@ -780,13 +780,13 @@ test("reflects an install started from the header update button on the sidebar c
 
   await page.evaluate(() => {
     const testWindow = window as Window & {
-      __BUZZ_E2E__?: { mock?: { updateAvailable?: boolean } };
+      __NIMINO_E2E__?: { mock?: { updateAvailable?: boolean } };
     };
 
-    testWindow.__BUZZ_E2E__ = {
-      ...(testWindow.__BUZZ_E2E__ ?? {}),
+    testWindow.__NIMINO_E2E__ = {
+      ...(testWindow.__NIMINO_E2E__ ?? {}),
       mock: {
-        ...(testWindow.__BUZZ_E2E__?.mock ?? {}),
+        ...(testWindow.__NIMINO_E2E__?.mock ?? {}),
         restartDelayMs: 500,
         updateAvailable: true,
       },
@@ -832,14 +832,14 @@ test("shows manual-required update card and never auto-downloads on non-AppImage
   // live (mirrors the ready-card test pattern).
   await page.evaluate(() => {
     const testWindow = window as Window & {
-      __BUZZ_E2E__?: {
+      __NIMINO_E2E__?: {
         mock?: { updateAvailable?: boolean; autoUpdateSupported?: boolean };
       };
     };
-    testWindow.__BUZZ_E2E__ = {
-      ...(testWindow.__BUZZ_E2E__ ?? {}),
+    testWindow.__NIMINO_E2E__ = {
+      ...(testWindow.__NIMINO_E2E__ ?? {}),
       mock: {
-        ...(testWindow.__BUZZ_E2E__?.mock ?? {}),
+        ...(testWindow.__NIMINO_E2E__?.mock ?? {}),
         updateAvailable: true,
         autoUpdateSupported: false,
       },
@@ -871,9 +871,9 @@ test("shows manual-required update card and never auto-downloads on non-AppImage
     () =>
       (
         window as Window & {
-          __BUZZ_E2E_COMMANDS__?: string[];
+          __NIMINO_E2E_COMMANDS__?: string[];
         }
-      ).__BUZZ_E2E_COMMANDS__ ?? [],
+      ).__NIMINO_E2E_COMMANDS__ ?? [],
   );
   expect(commands).not.toContain("plugin:updater|download");
   expect(commands).not.toContain("plugin:updater|install");

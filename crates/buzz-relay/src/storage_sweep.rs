@@ -47,26 +47,26 @@ pub struct StorageSweepConfig {
 }
 
 impl StorageSweepConfig {
-    /// Reads `BUZZ_STORAGE_SWEEP_INTERVAL_SECS` (default 3600, floor 60),
-    /// `BUZZ_STORAGE_SWEEP_TIMEOUT_SECS` (default 120),
-    /// `BUZZ_STORAGE_SWEEP_MAX_OBJECTS` (default 1_000_000), and the
-    /// `BUZZ_STORAGE_METRICS` kill switch (`off` ⇒ disabled, anything else
+    /// Reads `NIMINO_STORAGE_SWEEP_INTERVAL_SECS` (default 3600, floor 60),
+    /// `NIMINO_STORAGE_SWEEP_TIMEOUT_SECS` (default 120),
+    /// `NIMINO_STORAGE_SWEEP_MAX_OBJECTS` (default 1_000_000), and the
+    /// `NIMINO_STORAGE_METRICS` kill switch (`off` ⇒ disabled, anything else
     /// including unset ⇒ enabled).
     pub fn from_env() -> Self {
-        let interval_secs = std::env::var("BUZZ_STORAGE_SWEEP_INTERVAL_SECS")
+        let interval_secs = std::env::var("NIMINO_STORAGE_SWEEP_INTERVAL_SECS")
             .ok()
             .and_then(|v| v.parse::<u64>().ok())
             .unwrap_or(3600)
             .max(60);
-        let timeout_secs = std::env::var("BUZZ_STORAGE_SWEEP_TIMEOUT_SECS")
+        let timeout_secs = std::env::var("NIMINO_STORAGE_SWEEP_TIMEOUT_SECS")
             .ok()
             .and_then(|v| v.parse::<u64>().ok())
             .unwrap_or(120);
-        let max_objects = std::env::var("BUZZ_STORAGE_SWEEP_MAX_OBJECTS")
+        let max_objects = std::env::var("NIMINO_STORAGE_SWEEP_MAX_OBJECTS")
             .ok()
             .and_then(|v| v.parse::<u64>().ok())
             .unwrap_or(1_000_000);
-        let enabled = std::env::var("BUZZ_STORAGE_METRICS")
+        let enabled = std::env::var("NIMINO_STORAGE_METRICS")
             .ok()
             .map(|v| v.trim().to_ascii_lowercase())
             .as_deref()
@@ -120,11 +120,11 @@ impl StorageEmittedKey {
     fn set(&self, value: f64) {
         match self {
             Self::Bytes(host) => {
-                metrics::gauge!("buzz_community_storage_bytes", "community" => host.clone())
+                metrics::gauge!("nimino_community_storage_bytes", "community" => host.clone())
                     .set(value);
             }
             Self::Objects(host) => {
-                metrics::gauge!("buzz_community_storage_objects", "community" => host.clone())
+                metrics::gauge!("nimino_community_storage_objects", "community" => host.clone())
                     .set(value);
             }
         }
@@ -284,13 +284,14 @@ pub async fn emit_storage_metrics(
     let mut state = state.lock().await;
 
     let ok = state.last_attempt.is_some_and(|a| a.ok);
-    metrics::gauge!("buzz_storage_sweep_ok").set(if ok { 1.0 } else { 0.0 });
+    metrics::gauge!("nimino_storage_sweep_ok").set(if ok { 1.0 } else { 0.0 });
     // Process-local gauge: resets/jumps on leader failover — not a global counter.
     // Named without _total suffix to avoid confusing tools that infer counter
     // semantics from the _total convention (e.g. rate() in PromQL).
-    metrics::gauge!("buzz_storage_sweep_failures").set(state.failures_total as f64);
+    metrics::gauge!("nimino_storage_sweep_failures").set(state.failures_total as f64);
     if let Some(attempt) = state.last_attempt {
-        metrics::gauge!("buzz_storage_sweep_duration_seconds").set(attempt.duration.as_secs_f64());
+        metrics::gauge!("nimino_storage_sweep_duration_seconds")
+            .set(attempt.duration.as_secs_f64());
     }
 
     // Cold cache + failure (F5): no storage-family/per-community gauges yet.
@@ -302,26 +303,26 @@ pub async fn emit_storage_metrics(
         }
         return;
     };
-    metrics::gauge!("buzz_storage_sweep_age_seconds")
+    metrics::gauge!("nimino_storage_sweep_age_seconds")
         .set(cached.completed_at.elapsed().as_secs_f64());
 
     let snapshot = &cached.data;
-    metrics::gauge!("buzz_total_storage_bytes", "kind" => "physical")
+    metrics::gauge!("nimino_total_storage_bytes", "kind" => "physical")
         .set(snapshot.physical_bytes as f64);
-    metrics::gauge!("buzz_total_storage_objects", "kind" => "physical")
+    metrics::gauge!("nimino_total_storage_objects", "kind" => "physical")
         .set(snapshot.physical_objects as f64);
-    metrics::gauge!("buzz_total_storage_bytes", "kind" => "logical")
+    metrics::gauge!("nimino_total_storage_bytes", "kind" => "logical")
         .set(snapshot.logical_bytes as f64);
-    metrics::gauge!("buzz_total_storage_objects", "kind" => "logical")
+    metrics::gauge!("nimino_total_storage_objects", "kind" => "logical")
         .set(snapshot.logical_objects as f64);
 
-    metrics::gauge!("buzz_storage_orphan_blob_bytes").set(snapshot.orphan_blob_bytes as f64);
-    metrics::gauge!("buzz_storage_orphan_blobs").set(snapshot.orphan_blob_count as f64);
-    metrics::gauge!("buzz_storage_orphan_sidecars").set(snapshot.orphan_sidecar_count as f64);
-    metrics::gauge!("buzz_storage_multi_variant_shas").set(snapshot.multi_variant_shas as f64);
-    metrics::gauge!("buzz_storage_multi_variant_bytes").set(snapshot.multi_variant_bytes as f64);
-    metrics::gauge!("buzz_storage_unknown_key_bytes").set(snapshot.unknown_key_bytes as f64);
-    metrics::gauge!("buzz_storage_unknown_key_objects").set(snapshot.unknown_key_objects as f64);
+    metrics::gauge!("nimino_storage_orphan_blob_bytes").set(snapshot.orphan_blob_bytes as f64);
+    metrics::gauge!("nimino_storage_orphan_blobs").set(snapshot.orphan_blob_count as f64);
+    metrics::gauge!("nimino_storage_orphan_sidecars").set(snapshot.orphan_sidecar_count as f64);
+    metrics::gauge!("nimino_storage_multi_variant_shas").set(snapshot.multi_variant_shas as f64);
+    metrics::gauge!("nimino_storage_multi_variant_bytes").set(snapshot.multi_variant_bytes as f64);
+    metrics::gauge!("nimino_storage_unknown_key_bytes").set(snapshot.unknown_key_bytes as f64);
+    metrics::gauge!("nimino_storage_unknown_key_objects").set(snapshot.unknown_key_objects as f64);
 
     let mut current = HashSet::new();
     let mut unmapped_bytes = 0u64;
@@ -333,14 +334,14 @@ pub async fn emit_storage_metrics(
         if !allows(community_id) {
             continue;
         }
-        metrics::gauge!("buzz_community_storage_bytes", "community" => host.clone())
+        metrics::gauge!("nimino_community_storage_bytes", "community" => host.clone())
             .set(storage.bytes as f64);
-        metrics::gauge!("buzz_community_storage_objects", "community" => host.clone())
+        metrics::gauge!("nimino_community_storage_objects", "community" => host.clone())
             .set(storage.objects as f64);
         current.insert(StorageEmittedKey::Bytes(host.clone()));
         current.insert(StorageEmittedKey::Objects(host.clone()));
     }
-    metrics::gauge!("buzz_storage_unmapped_community_bytes").set(unmapped_bytes as f64);
+    metrics::gauge!("nimino_storage_unmapped_community_bytes").set(unmapped_bytes as f64);
 
     // Zero series for communities that were emitted last tick but are no longer
     // present in the current snapshot (community removed, host renamed, or
@@ -385,10 +386,10 @@ mod tests {
         // No env manipulation: absent vars in the test process must resolve
         // to the documented defaults.
         for key in [
-            "BUZZ_STORAGE_SWEEP_INTERVAL_SECS",
-            "BUZZ_STORAGE_SWEEP_TIMEOUT_SECS",
-            "BUZZ_STORAGE_SWEEP_MAX_OBJECTS",
-            "BUZZ_STORAGE_METRICS",
+            "NIMINO_STORAGE_SWEEP_INTERVAL_SECS",
+            "NIMINO_STORAGE_SWEEP_TIMEOUT_SECS",
+            "NIMINO_STORAGE_SWEEP_MAX_OBJECTS",
+            "NIMINO_STORAGE_METRICS",
         ] {
             if std::env::var(key).is_ok() {
                 return; // externally forced — skip rather than assert a lie
@@ -716,13 +717,13 @@ mod tests {
 
         let values = gauge_snapshot(&recorder);
         assert_eq!(
-            values.get("buzz_storage_sweep_ok"),
+            values.get("nimino_storage_sweep_ok"),
             Some(&0.0),
             "unharvested attempt must not register as a success"
         );
-        assert!(!values.contains_key("buzz_total_storage_bytes"));
-        assert!(!values.contains_key("buzz_community_storage_bytes"));
-        assert!(!values.contains_key("buzz_storage_sweep_age_seconds"));
+        assert!(!values.contains_key("nimino_total_storage_bytes"));
+        assert!(!values.contains_key("nimino_community_storage_bytes"));
+        assert!(!values.contains_key("nimino_storage_sweep_age_seconds"));
     }
 
     #[tokio::test(start_paused = true)]
@@ -767,8 +768,8 @@ mod tests {
                 futures::executor::block_on(emit_storage_metrics(&state, &host_map, |_| true));
             });
             let values = gauge_snapshot(&recorder);
-            assert_eq!(values.get("buzz_storage_sweep_ok"), Some(&0.0));
-            assert!(!values.contains_key("buzz_total_storage_bytes"));
+            assert_eq!(values.get("nimino_storage_sweep_ok"), Some(&0.0));
+            assert!(!values.contains_key("nimino_total_storage_bytes"));
         }
 
         // Let the stalled sweep complete; the next tick harvests it.
@@ -788,8 +789,8 @@ mod tests {
             futures::executor::block_on(emit_storage_metrics(&state, &host_map, |_| true));
         });
         let values = gauge_snapshot(&recorder);
-        assert_eq!(values.get("buzz_storage_sweep_ok"), Some(&1.0));
-        assert_eq!(values.get("buzz_total_storage_bytes"), Some(&500.0));
+        assert_eq!(values.get("nimino_storage_sweep_ok"), Some(&1.0));
+        assert_eq!(values.get("nimino_total_storage_bytes"), Some(&500.0));
     }
 
     // --- emit_storage_metrics ---
@@ -818,10 +819,10 @@ mod tests {
         });
 
         let values = gauge_snapshot(&recorder);
-        assert_eq!(values.get("buzz_storage_sweep_ok"), Some(&0.0));
-        assert_eq!(values.get("buzz_storage_sweep_failures"), Some(&0.0));
-        assert!(!values.contains_key("buzz_total_storage_bytes"));
-        assert!(!values.contains_key("buzz_storage_sweep_age_seconds"));
+        assert_eq!(values.get("nimino_storage_sweep_ok"), Some(&0.0));
+        assert_eq!(values.get("nimino_storage_sweep_failures"), Some(&0.0));
+        assert!(!values.contains_key("nimino_total_storage_bytes"));
+        assert!(!values.contains_key("nimino_storage_sweep_age_seconds"));
     }
 
     #[tokio::test]
@@ -884,13 +885,13 @@ mod tests {
         });
 
         let values = gauge_snapshot(&recorder);
-        assert_eq!(values.get("buzz_storage_sweep_ok"), Some(&1.0));
-        assert_eq!(values.get("buzz_total_storage_bytes"), Some(&137.0));
+        assert_eq!(values.get("nimino_storage_sweep_ok"), Some(&1.0));
+        assert_eq!(values.get("nimino_total_storage_bytes"), Some(&137.0));
         assert_eq!(
-            values.get("buzz_storage_unmapped_community_bytes"),
+            values.get("nimino_storage_unmapped_community_bytes"),
             Some(&30.0)
         );
-        assert_eq!(values.get("buzz_community_storage_bytes"), Some(&100.0));
+        assert_eq!(values.get("nimino_community_storage_bytes"), Some(&100.0));
     }
 
     // --- F-EXT1 regression: stale per-community series are zeroed ---
@@ -995,7 +996,7 @@ mod tests {
             let labeled = labeled_community_gauges(&recorder);
             assert_eq!(
                 labeled.get(&(
-                    "buzz_community_storage_bytes".to_string(),
+                    "nimino_community_storage_bytes".to_string(),
                     "host.a".to_string()
                 )),
                 Some(&10.0),
@@ -1003,7 +1004,7 @@ mod tests {
             );
             assert_eq!(
                 labeled.get(&(
-                    "buzz_community_storage_bytes".to_string(),
+                    "nimino_community_storage_bytes".to_string(),
                     "host.old".to_string()
                 )),
                 Some(&20.0),
@@ -1036,7 +1037,7 @@ mod tests {
         // (a) community_a disappeared — old host.a series must be zeroed
         assert_eq!(
             labeled.get(&(
-                "buzz_community_storage_bytes".to_string(),
+                "nimino_community_storage_bytes".to_string(),
                 "host.a".to_string()
             )),
             Some(&0.0),
@@ -1044,7 +1045,7 @@ mod tests {
         );
         assert_eq!(
             labeled.get(&(
-                "buzz_community_storage_objects".to_string(),
+                "nimino_community_storage_objects".to_string(),
                 "host.a".to_string()
             )),
             Some(&0.0),
@@ -1054,7 +1055,7 @@ mod tests {
         // (b) community_b renamed host.old → host.new — old series must be zeroed
         assert_eq!(
             labeled.get(&(
-                "buzz_community_storage_bytes".to_string(),
+                "nimino_community_storage_bytes".to_string(),
                 "host.old".to_string()
             )),
             Some(&0.0),
@@ -1062,7 +1063,7 @@ mod tests {
         );
         assert_eq!(
             labeled.get(&(
-                "buzz_community_storage_bytes".to_string(),
+                "nimino_community_storage_bytes".to_string(),
                 "host.new".to_string()
             )),
             Some(&20.0),
@@ -1072,7 +1073,7 @@ mod tests {
         // (c) community_c scope-excluded — host.c series must be zeroed
         assert_eq!(
             labeled.get(&(
-                "buzz_community_storage_bytes".to_string(),
+                "nimino_community_storage_bytes".to_string(),
                 "host.c".to_string()
             )),
             Some(&0.0),
@@ -1080,7 +1081,7 @@ mod tests {
         );
         assert_eq!(
             labeled.get(&(
-                "buzz_community_storage_objects".to_string(),
+                "nimino_community_storage_objects".to_string(),
                 "host.c".to_string()
             )),
             Some(&0.0),

@@ -8,7 +8,7 @@ export type ThemePreviewVars = Record<string, string>;
  * colors live once in `shared/styles/globals/theme.css`; the picker consumes
  * those same semantic variables instead of duplicating raw values here.
  */
-export const BUZZ_GRADIENT_STOPS: Record<
+export const NIMINO_GRADIENT_STOPS: Record<
   string,
   { top: string; bottom: string }
 > = {

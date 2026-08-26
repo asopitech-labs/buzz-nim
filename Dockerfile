@@ -74,7 +74,7 @@ RUN cargo build --release --locked -p buzz-relay --bin buzz-relay \
 # Derive the normal release binaries from the same optimized ELF files as the
 # debug image so the two variants cannot drift at code-generation time.
 FROM builder AS stripped-binaries
-RUN strip target/release/buzz-relay \
+RUN strip target/release/nimino-relay \
     && strip target/release/buzz-admin \
     && strip target/release/buzz-pair-relay
 
@@ -146,10 +146,10 @@ COPY --from=web-builder /build/web/dist                 /srv/buzz/web
 COPY --from=web-builder /build/admin-web/dist           /srv/buzz/admin-web
 
 # The invite landing page is always served from the bundled web UI. Repository
-# browser routes require the separate BUZZ_SERVE_GIT_WEB_GUI=true opt-in. The
-# admin bundle is inert until BUZZ_ADMIN_HOST is configured.
-ENV BUZZ_WEB_DIR=/srv/buzz/web \
-    BUZZ_ADMIN_WEB_DIR=/srv/buzz/admin-web
+# browser routes require the separate NIMINO_SERVE_GIT_WEB_GUI=true opt-in. The
+# admin bundle is inert until NIMINO_ADMIN_HOST is configured.
+ENV NIMINO_WEB_DIR=/srv/buzz/web \
+    NIMINO_ADMIN_WEB_DIR=/srv/buzz/admin-web
 
 # 3000: app (WS + REST)  ·  8080: /_liveness, /_readiness  ·  9102: /metrics
 EXPOSE 3000 8080 9102
@@ -160,19 +160,19 @@ RUN mkdir -p /data/git && chown buzz:buzz /data/git
 USER buzz:buzz
 WORKDIR /var/lib/buzz
 
-ENTRYPOINT ["/usr/local/bin/buzz-relay"]
+ENTRYPOINT ["/usr/local/bin/nimino-relay"]
 
 # Optimized binaries with line-table debug information for native profiling.
 # Published under debug-* tags; runtime behavior otherwise matches the normal
 # image exactly.
 FROM runtime-base AS runtime-debug
-COPY --from=builder /build/target/release/buzz-relay /usr/local/bin/buzz-relay
+COPY --from=builder /build/target/release/nimino-relay /usr/local/bin/nimino-relay
 COPY --from=builder /build/target/release/buzz-admin /usr/local/bin/buzz-admin
 COPY --from=builder /build/target/release/buzz-pair-relay /usr/local/bin/buzz-pair-relay
 
 # Keep the stripped runtime as the final/default Dockerfile target so existing
 # `docker build .` callers and release tags retain their current behavior.
 FROM runtime-base AS runtime
-COPY --from=stripped-binaries /build/target/release/buzz-relay /usr/local/bin/buzz-relay
+COPY --from=stripped-binaries /build/target/release/nimino-relay /usr/local/bin/nimino-relay
 COPY --from=stripped-binaries /build/target/release/buzz-admin /usr/local/bin/buzz-admin
 COPY --from=stripped-binaries /build/target/release/buzz-pair-relay /usr/local/bin/buzz-pair-relay

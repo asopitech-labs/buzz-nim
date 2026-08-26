@@ -1,10 +1,10 @@
 """Live provisioning tests against a running benchmark stack.
 
-Gated by BUZZ_TESTBED_LIVE=1 with stack coordinates in the environment:
-  BUZZ_TESTBED_RELAY_HTTP   (default http://localhost:3000)
-  BUZZ_TESTBED_RELAY_WS     (default ws://host.docker.internal:3000)
-  BUZZ_TESTBED_OWNER_KEY    relay owner secret key (hex)
-  BUZZ_TESTBED_PG_DSN       benchmark Postgres DSN
+Gated by NIMINO_TESTBED_LIVE=1 with stack coordinates in the environment:
+  NIMINO_TESTBED_RELAY_HTTP   (default http://localhost:3000)
+  NIMINO_TESTBED_RELAY_WS     (default ws://host.docker.internal:3000)
+  NIMINO_TESTBED_OWNER_KEY    relay owner secret key (hex)
+  NIMINO_TESTBED_PG_DSN       benchmark Postgres DSN
 """
 
 from __future__ import annotations
@@ -23,24 +23,24 @@ from harbor_buzz_testbed.provisioner import (
 )
 
 pytestmark = pytest.mark.skipif(
-    os.environ.get("BUZZ_TESTBED_LIVE") != "1",
-    reason="live testbed suite; set BUZZ_TESTBED_LIVE=1 with a running stack",
+    os.environ.get("NIMINO_TESTBED_LIVE") != "1",
+    reason="live testbed suite; set NIMINO_TESTBED_LIVE=1 with a running stack",
 )
 
 
 @pytest.fixture()
 def provisioner() -> BuzzTrialProvisioner:
-    owner_key = os.environ.get("BUZZ_TESTBED_OWNER_KEY")
-    dsn = os.environ.get("BUZZ_TESTBED_PG_DSN")
+    owner_key = os.environ.get("NIMINO_TESTBED_OWNER_KEY")
+    dsn = os.environ.get("NIMINO_TESTBED_PG_DSN")
     if not owner_key or not dsn:
-        pytest.fail("BUZZ_TESTBED_OWNER_KEY and BUZZ_TESTBED_PG_DSN are required")
+        pytest.fail("NIMINO_TESTBED_OWNER_KEY and NIMINO_TESTBED_PG_DSN are required")
     return BuzzTrialProvisioner(
         TestbedConfig(
             relay_http_url=os.environ.get(
-                "BUZZ_TESTBED_RELAY_HTTP", "http://localhost:3000"
+                "NIMINO_TESTBED_RELAY_HTTP", "http://localhost:3000"
             ),
             relay_ws_url=os.environ.get(
-                "BUZZ_TESTBED_RELAY_WS", "ws://host.docker.internal:3000"
+                "NIMINO_TESTBED_RELAY_WS", "ws://host.docker.internal:3000"
             ),
             owner_secret_key=owner_key,
             postgres_dsn=dsn,
@@ -115,7 +115,7 @@ def test_create_is_idempotent_and_isolated(provisioner, manifest):
 
     # Teardown is idempotent and stamps archived_at.
     provisioner.teardown(handle_a)
-    with psycopg.connect(os.environ["BUZZ_TESTBED_PG_DSN"]) as conn:
+    with psycopg.connect(os.environ["NIMINO_TESTBED_PG_DSN"]) as conn:
         row = conn.execute(
             "SELECT archived_at FROM benchmark.trial_manifest"
             " WHERE run_id = %s AND trial_id = %s",

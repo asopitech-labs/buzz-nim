@@ -287,7 +287,7 @@ mod tests {
 
     async fn test_pool() -> Option<PgPool> {
         let url = std::env::var("DATABASE_URL")
-            .unwrap_or_else(|_| "postgres://buzz:buzz_dev@localhost:5432/buzz".into()); // sadscan:disable np.postgres.1 -- local test fixture
+            .unwrap_or_else(|_| "postgres://nimino:nimino_dev@localhost:5432/nimino".into()); // sadscan:disable np.postgres.1 -- local test fixture
         PgPool::connect(&url).await.ok()
     }
 

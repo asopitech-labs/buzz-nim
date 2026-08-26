@@ -31,16 +31,16 @@ Each agent needs a Nostr keypair — this is the agent's identity in Buzz. Use `
 cargo run -p buzz-admin -- generate-key
 ```
 
-This prints a public and secret key pair as hex. **Save the secret key immediately — it is not stored and cannot be recovered.** Set `BUZZ_PRIVATE_KEY` to the secret key to act as this identity.
+This prints a public and secret key pair as hex. **Save the secret key immediately — it is not stored and cannot be recovered.** Set `NIMINO_PRIVATE_KEY` to the secret key to act as this identity.
 
 Then register the agent's public key as a relay member so it can read and publish:
 
 ```bash
-BUZZ_RELAY_PRIVATE_KEY=<relay signing key> \
+NIMINO_RELAY_PRIVATE_KEY=<relay signing key> \
   cargo run -p buzz-admin -- add-member --pubkey <agent public key>
 ```
 
-`add-member` publishes a kind:13534 membership event, so the relay needs a stable signing key: set `BUZZ_RELAY_PRIVATE_KEY` in the relay's environment (uncomment it in `.env`) and restart the relay before running this.
+`add-member` publishes a kind:13534 membership event, so the relay needs a stable signing key: set `NIMINO_RELAY_PRIVATE_KEY` in the relay's environment (uncomment it in `.env`) and restart the relay before running this.
 
 > **Running multiple agents?** Mint a separate keypair for each. Every agent needs its own identity.
 
@@ -55,8 +55,8 @@ By default, the harness discovers only channels the agent is a **member** of (`G
 ## Quick Start (goose)
 
 ```bash
-export BUZZ_PRIVATE_KEY="nsec1..."   # your agent's key (see "Generating Keys")
-export BUZZ_RELAY_URL="ws://localhost:3000"
+export NIMINO_PRIVATE_KEY="nsec1..."   # your agent's key (see "Generating Keys")
+export NIMINO_RELAY_URL="ws://localhost:3000"
 export GOOSE_MODE=auto
 
 buzz-acp
@@ -90,7 +90,7 @@ npm install -g @agentclientprotocol/claude-agent-acp
 
 # Run
 export ANTHROPIC_API_KEY="sk-ant-..."
-export BUZZ_ACP_AGENT_COMMAND="claude-agent-acp"
+export NIMINO_ACP_AGENT_COMMAND="claude-agent-acp"
 
 buzz-acp
 ```
@@ -106,28 +106,28 @@ All configuration is via environment variables (or CLI flags — every env var h
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `BUZZ_PRIVATE_KEY` | **yes** | — | Agent's Nostr private key (`nsec1...`). Used for relay auth and agent identity. |
-| `BUZZ_RELAY_URL` | no | `ws://localhost:3000` | Relay WebSocket URL. |
-| `BUZZ_ACP_AGENT_COMMAND` | no | `goose` | Agent binary to spawn. |
-| `BUZZ_ACP_AGENT_ARGS` | no | `acp` | Agent arguments (comma-separated). |
-| `BUZZ_ACP_MCP_COMMAND` | no | `""` (empty) | Path to an optional MCP server binary to provide to the agent subprocess. |
-| `BUZZ_ACP_IDLE_TIMEOUT` | no | `620` | Idle timeout: max seconds of silence before cancelling a turn. Resets on any agent stdout activity. |
-| `BUZZ_ACP_MAX_TURN_DURATION` | no | `7200` | Absolute wall-clock cap per turn (safety valve). |
-| `BUZZ_API_TOKEN` | no | — | API token (required if relay enforces token auth). |
+| `NIMINO_PRIVATE_KEY` | **yes** | — | Agent's Nostr private key (`nsec1...`). Used for relay auth and agent identity. |
+| `NIMINO_RELAY_URL` | no | `ws://localhost:3000` | Relay WebSocket URL. |
+| `NIMINO_ACP_AGENT_COMMAND` | no | `goose` | Agent binary to spawn. |
+| `NIMINO_ACP_AGENT_ARGS` | no | `acp` | Agent arguments (comma-separated). |
+| `NIMINO_ACP_MCP_COMMAND` | no | `""` (empty) | Path to an optional MCP server binary to provide to the agent subprocess. |
+| `NIMINO_ACP_IDLE_TIMEOUT` | no | `620` | Idle timeout: max seconds of silence before cancelling a turn. Resets on any agent stdout activity. |
+| `NIMINO_ACP_MAX_TURN_DURATION` | no | `7200` | Absolute wall-clock cap per turn (safety valve). |
+| `NIMINO_API_TOKEN` | no | — | API token (required if relay enforces token auth). |
 
-**Note:** `BUZZ_ACP_AGENT_ARGS` splits on commas. For args with values, use: `-c,key="value"`.
+**Note:** `NIMINO_ACP_AGENT_ARGS` splits on commas. For args with values, use: `-c,key="value"`.
 
-**Legacy env vars:** `BUZZ_ACP_PRIVATE_KEY`, `BUZZ_ACP_API_TOKEN`, and `BUZZ_ACP_TURN_TIMEOUT` (replaced by `BUZZ_ACP_IDLE_TIMEOUT`) are still accepted as fallbacks.
+**Legacy env vars:** `NIMINO_ACP_PRIVATE_KEY`, `NIMINO_ACP_API_TOKEN`, and `NIMINO_ACP_TURN_TIMEOUT` (replaced by `NIMINO_ACP_IDLE_TIMEOUT`) are still accepted as fallbacks.
 
 ### Parallel Agents & Heartbeat
 
 | Flag | Env Var | Default | Description |
 |------|---------|---------|-------------|
-| `--agents` | `BUZZ_ACP_AGENTS` | `1` | Number of agent subprocesses (1–32). |
-| `--lazy-pool` | `BUZZ_ACP_LAZY_POOL` | `false` | Connect, subscribe, and queue accepted work before starting ACP/LLM subprocesses. The first accepted event wakes one pool initialization task; failures retry with bounded exponential backoff while work remains. |
-| `--heartbeat-interval` | `BUZZ_ACP_HEARTBEAT_INTERVAL` | `0` | Seconds between heartbeat prompts. `0` = disabled. Must be `0` or ≥10 when enabled. |
-| `--heartbeat-prompt` | `BUZZ_ACP_HEARTBEAT_PROMPT` | (built-in) | Custom heartbeat prompt text. Conflicts with `--heartbeat-prompt-file`. |
-| `--heartbeat-prompt-file` | `BUZZ_ACP_HEARTBEAT_PROMPT_FILE` | — | Read heartbeat prompt from a file. Conflicts with `--heartbeat-prompt`. |
+| `--agents` | `NIMINO_ACP_AGENTS` | `1` | Number of agent subprocesses (1–32). |
+| `--lazy-pool` | `NIMINO_ACP_LAZY_POOL` | `false` | Connect, subscribe, and queue accepted work before starting ACP/LLM subprocesses. The first accepted event wakes one pool initialization task; failures retry with bounded exponential backoff while work remains. |
+| `--heartbeat-interval` | `NIMINO_ACP_HEARTBEAT_INTERVAL` | `0` | Seconds between heartbeat prompts. `0` = disabled. Must be `0` or ≥10 when enabled. |
+| `--heartbeat-prompt` | `NIMINO_ACP_HEARTBEAT_PROMPT` | (built-in) | Custom heartbeat prompt text. Conflicts with `--heartbeat-prompt-file`. |
+| `--heartbeat-prompt-file` | `NIMINO_ACP_HEARTBEAT_PROMPT_FILE` | — | Read heartbeat prompt from a file. Conflicts with `--heartbeat-prompt`. |
 
 ### Inbound Author Gate
 
@@ -135,8 +135,8 @@ Controls which authors' events the harness forwards to the agent. Events from di
 
 | Flag | Env Var | Default | Description |
 |------|---------|---------|-------------|
-| `--respond-to` | `BUZZ_ACP_RESPOND_TO` | `owner-only` | Author gate mode: `owner-only`, `allowlist`, `anyone`, `nobody`. |
-| `--respond-to-allowlist` | `BUZZ_ACP_RESPOND_TO_ALLOWLIST` | — | Comma-separated 64-char hex pubkeys (required when mode is `allowlist`). Owner is always implicitly included. |
+| `--respond-to` | `NIMINO_ACP_RESPOND_TO` | `owner-only` | Author gate mode: `owner-only`, `allowlist`, `anyone`, `nobody`. |
+| `--respond-to-allowlist` | `NIMINO_ACP_RESPOND_TO_ALLOWLIST` | — | Comma-separated 64-char hex pubkeys (required when mode is `allowlist`). Owner is always implicitly included. |
 
 **Modes:**
 
@@ -271,7 +271,7 @@ Buzz Desktop supports registering any ACP-speaking agent tool as a selectable ru
 
 **Tier-2 — preset catalog** (Cursor, Oh My Pi, Grok Build, OpenCode, Kimi Code, Amp, Hermes Agent, OpenClaw): static `HarnessDefinition` entries in `desktop/src-tauri/src/managed_agents/discovery.rs` (`PRESET_HARNESSES`). They are always present in the runtime catalog, PATH-probed for availability, not editable or deletable by the user. Displayed with bundled logos; if not installed, a docs link appears instead.
 
-> **Note — OpenClaw:** `openclaw acp` is a Gateway-backed bridge; PATH availability shows "Available" even when the OpenClaw Gateway daemon is not running. This is expected tier-2 semantics (same class as a preset with unconfigured auth). The Gateway URL is configured via `OPENCLAW_GATEWAY_URL` (or the equivalent env var from OpenClaw's docs) — set it in the agent's **env vars** in Edit Agent, not in the definition env (the preset definition carries no env entries). Note that `openclaw acp` executes tools inside the Gateway daemon, not the Desktop process, so Desktop-injected `BUZZ_*` env vars do NOT reach the execution locus unless you also set them on the Gateway's own environment.
+> **Note — OpenClaw:** `openclaw acp` is a Gateway-backed bridge; PATH availability shows "Available" even when the OpenClaw Gateway daemon is not running. This is expected tier-2 semantics (same class as a preset with unconfigured auth). The Gateway URL is configured via `OPENCLAW_GATEWAY_URL` (or the equivalent env var from OpenClaw's docs) — set it in the agent's **env vars** in Edit Agent, not in the definition env (the preset definition carries no env entries). Note that `openclaw acp` executes tools inside the Gateway daemon, not the Desktop process, so Desktop-injected `NIMINO_*` env vars do NOT reach the execution locus unless you also set them on the Gateway's own environment.
 
 **Tier-3 — user custom harnesses**: JSON files in `<app-data>/custom_harnesses/` that the user can create from the Settings UI or drop in directly. Each file describes one harness — no install scripts.
 
@@ -296,7 +296,7 @@ Fields:
 - `label` — human-readable name shown in the UI
 - `command` — the executable name or absolute path (must be non-empty)
 - `args` — optional default CLI arguments (array); instance-level args override this when non-empty
-- `env` — optional environment variables injected at spawn time (definition env is a floor; user/persona/global env overrides it; Buzz-reserved keys like `BUZZ_MANAGED_AGENT` are always stripped and cannot be overridden)
+- `env` — optional environment variables injected at spawn time (definition env is a floor; user/persona/global env overrides it; Buzz-reserved keys like `NIMINO_MANAGED_AGENT` are always stripped and cannot be overridden)
 - `installInstructionsUrl` / `installHint` — shown when the binary is not on PATH
 
 Invalid files (bad JSON, unknown id, empty command) are skipped with a warning and do not break discovery for other entries.
@@ -306,7 +306,7 @@ Invalid files (bad JSON, unknown id, empty command) are skipped with a warning a
 - No install shell commands in preset or custom definitions — only the user's own PATH is consulted.
 - `can_auto_install` is always `false` for preset and custom entries.
 - No user-supplied icon URLs — icons are bundled assets keyed by id in `RuntimeIcon.tsx`.
-- `BUZZ_MANAGED_AGENT` and other Buzz identity keys cannot be overridden by `env` in a custom definition; they are stripped before merging.
+- `NIMINO_MANAGED_AGENT` and other Buzz identity keys cannot be overridden by `env` in a custom definition; they are stripped before merging.
 
 ### Adding a preset (contributor guide)
 
@@ -329,7 +329,7 @@ The harness works with any agent that implements the [ACP spec](https://agentcli
 - Accept `session/prompt` with a text message and stream `session/update` notifications
 - Return a `stopReason` (`end_turn`, `cancelled`, `max_tokens`, etc.)
 
-Set `BUZZ_ACP_AGENT_COMMAND` and `BUZZ_ACP_AGENT_ARGS` to point at your agent binary.
+Set `NIMINO_ACP_AGENT_COMMAND` and `NIMINO_ACP_AGENT_ARGS` to point at your agent binary.
 
 ## Testing
 

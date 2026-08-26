@@ -49,7 +49,7 @@
 //! ```text
 //! ./scripts/start-relay-for-tests.sh            # with membership env set
 //! cargo build --profile ci -p buzz-admin
-//! BUZZ_ADMIN_BIN=target/ci/buzz-admin \
+//! NIMINO_ADMIN_BIN=target/ci/buzz-admin \
 //!   cargo run --profile ci -p buzz-relay --example mesh_relay_lifecycle_smoke
 //! ```
 use std::collections::BTreeSet;
@@ -66,7 +66,7 @@ use nostr::{Alphabet, Event, EventBuilder, Filter, Keys, Kind, SingleLetterTag, 
 use sha2::{Digest, Sha256};
 
 /// NIP-51 bookmark set reused for client-owned mesh discovery notes
-/// (`KIND_BUZZ_MESH_MEMBER_STATUS` in the desktop coordinator).
+/// (`KIND_NIMINO_MESH_MEMBER_STATUS` in the desktop coordinator).
 const KIND_MESH_STATUS: u16 = 30_003;
 /// NIP-43 membership roster snapshot.
 const KIND_MEMBERSHIP: u16 = 13_534;
@@ -394,7 +394,7 @@ fn member_owner_ids(events: &[Event]) -> BTreeSet<String> {
 async fn role_serve() -> anyhow::Result<()> {
     init_native_runtime().await?;
     let model = std::env::var("MESH_SMOKE_MODEL").unwrap_or_else(|_| DEFAULT_MODEL.to_string());
-    let keys = Keys::parse(&env("BUZZ_MEMBER_NSEC")?)?;
+    let keys = Keys::parse(&env("NIMINO_MEMBER_NSEC")?)?;
     let owner = load_keystore(std::path::Path::new(&env("MESH_OWNER_KEY")?), None)
         .map_err(|error| anyhow::anyhow!("loading serve owner keystore: {error}"))?;
     // The exact owner ids the orchestrator provisioned for members A and B.
@@ -494,7 +494,7 @@ async fn role_serve() -> anyhow::Result<()> {
 /// stranger's admission attack, so denial is differential, not absence.
 async fn role_client() -> anyhow::Result<()> {
     init_native_runtime().await?;
-    let keys = Keys::parse(&env("BUZZ_MEMBER_NSEC")?)?;
+    let keys = Keys::parse(&env("NIMINO_MEMBER_NSEC")?)?;
     let owner = load_keystore(std::path::Path::new(&env("MESH_OWNER_KEY")?), None)
         .map_err(|error| anyhow::anyhow!("loading client owner keystore: {error}"))?;
 
@@ -603,7 +603,7 @@ async fn role_client() -> anyhow::Result<()> {
 /// rejection, and the mesh must not route inference for it even with the
 /// leaked endpoint address.
 async fn role_stranger() -> anyhow::Result<()> {
-    let keys = Keys::parse(&env("BUZZ_MEMBER_NSEC")?)?;
+    let keys = Keys::parse(&env("NIMINO_MEMBER_NSEC")?)?;
     let leaked_endpoint = env("MESH_LEAKED_ENDPOINT")?;
 
     // DENY (relay read): the membership-gated relay must reject the
@@ -677,10 +677,10 @@ fn orchestrate() -> anyhow::Result<()> {
     let model = std::env::var("MESH_SMOKE_MODEL").unwrap_or_else(|_| DEFAULT_MODEL.to_string());
     eprintln!("[lifecycle] model: {model}");
     let admin =
-        std::env::var("BUZZ_ADMIN_BIN").unwrap_or_else(|_| "target/ci/buzz-admin".to_string());
+        std::env::var("NIMINO_ADMIN_BIN").unwrap_or_else(|_| "target/ci/buzz-admin".to_string());
     anyhow::ensure!(
         std::path::Path::new(&admin).exists(),
-        "buzz-admin binary not found at {admin} (set BUZZ_ADMIN_BIN)"
+        "buzz-admin binary not found at {admin} (set NIMINO_ADMIN_BIN)"
     );
 
     let scratch = std::env::temp_dir().join(format!("buzz-mesh-lifecycle-{}", std::process::id()));
@@ -740,7 +740,7 @@ fn orchestrate() -> anyhow::Result<()> {
     let mut serve_child = Command::new(&exe)
         .env("MESH_ROLE", "serve")
         .env("MESH_SMOKE_MODEL", &model)
-        .env("BUZZ_MEMBER_NSEC", secret_hex(&member_a))
+        .env("NIMINO_MEMBER_NSEC", secret_hex(&member_a))
         .env("MESH_OWNER_KEY", &serve_key)
         .env("MESH_EXPECTED_OWNERS", &expected_owners)
         .env("HOME", role_home("serve")?)
@@ -765,7 +765,7 @@ fn orchestrate() -> anyhow::Result<()> {
     eprintln!("[lifecycle] starting CLIENT member (relay-driven join)...");
     let mut client_child = Command::new(&exe)
         .env("MESH_ROLE", "client")
-        .env("BUZZ_MEMBER_NSEC", secret_hex(&member_b))
+        .env("NIMINO_MEMBER_NSEC", secret_hex(&member_b))
         .env("MESH_OWNER_KEY", &client_key)
         .env("HOME", role_home("client")?)
         .env("MESH_LLM_NATIVE_RUNTIME_CACHE_DIR", &native_cache)
@@ -821,7 +821,7 @@ fn orchestrate() -> anyhow::Result<()> {
     eprintln!("[lifecycle] starting STRANGER (non-member, leaked endpoint)...");
     let mut stranger_child = Command::new(&exe)
         .env("MESH_ROLE", "stranger")
-        .env("BUZZ_MEMBER_NSEC", secret_hex(&stranger))
+        .env("NIMINO_MEMBER_NSEC", secret_hex(&stranger))
         .env("MESH_OWNER_KEY", &stranger_key)
         .env("MESH_LEAKED_ENDPOINT", &endpoint)
         .env("HOME", role_home("stranger")?)

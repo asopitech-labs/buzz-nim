@@ -200,11 +200,11 @@ function ResolvedAuthoredDeepLink({
 }
 
 /**
- * Renders an intentionally-labeled `buzz://channel|message` deep link through
+ * Renders an intentionally-labeled `nimino://channel|message` deep link through
  * the shared visibility gate. Known channels are interactive immediately;
  * unknown ids without a runtime resolver stay inert; otherwise a bounded
  * per-id lookup decides openability. Both parser families
- * (`buzz://channel/...` and `buzz://message?...`) share this decision so a
+ * (`nimino://channel/...` and `nimino://message?...`) share this decision so a
  * private destination can never render clickable via a custom label.
  */
 export function AuthoredDeepLinkAnchor({

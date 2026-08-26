@@ -6,7 +6,7 @@ use tracing::{error, info, warn};
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 fn log_env_filter(rust_log: Option<&str>) -> EnvFilter {
-    EnvFilter::new(rust_log.unwrap_or("buzz_relay=info"))
+    EnvFilter::new(rust_log.unwrap_or("nimino_relay=info"))
 }
 use uuid::Uuid;
 
@@ -44,7 +44,7 @@ fn buzz_auto_migrate_enabled(value: Option<&str>) -> bool {
 ///
 /// Fleet-wide totals (`buzz_total_*`) always emit regardless of mode.
 ///
-/// Set via `BUZZ_USAGE_METRICS_PER_COMMUNITY`:
+/// Set via `NIMINO_USAGE_METRICS_PER_COMMUNITY`:
 ///   - `all` — emit per-community series for every community (default)
 ///   - `off` — suppress all per-community series; fleet totals only
 ///
@@ -59,7 +59,7 @@ enum EmissionScope {
 
 impl EmissionScope {
     fn from_env() -> Self {
-        let raw = std::env::var("BUZZ_USAGE_METRICS_PER_COMMUNITY")
+        let raw = std::env::var("NIMINO_USAGE_METRICS_PER_COMMUNITY")
             .unwrap_or_default()
             .trim()
             .to_ascii_lowercase();
@@ -69,7 +69,7 @@ impl EmissionScope {
             other => {
                 warn!(
                     value = other,
-                    "BUZZ_USAGE_METRICS_PER_COMMUNITY: unknown value — defaulting to all"
+                    "NIMINO_USAGE_METRICS_PER_COMMUNITY: unknown value — defaulting to all"
                 );
                 EmissionScope::All
             }
@@ -97,7 +97,7 @@ async fn main() -> anyhow::Result<()> {
     // If OTEL_EXPORTER_OTLP_ENDPOINT is set, also attach an OpenTelemetry tracing
     // layer that exports spans via OTLP gRPC alongside the JSON stdout logs.
     //
-    // Build a single shared Resource (service.name=buzz-relay by default, overridable
+    // Build a single shared Resource (service.name=nimino-relay by default, overridable
     // via OTEL_SERVICE_NAME) for the trace provider so that Datadog can identify
     // spans under the correct service identity.
     let resource = telemetry::service_resource();
@@ -106,7 +106,7 @@ async fn main() -> anyhow::Result<()> {
     let otel_layer = match &tracer_init {
         telemetry::TracerInit::Enabled(p) => {
             use opentelemetry::trace::TracerProvider as _;
-            Some(tracing_opentelemetry::layer().with_tracer(p.tracer("buzz-relay")))
+            Some(tracing_opentelemetry::layer().with_tracer(p.tracer("nimino-relay")))
         }
         _ => None,
     };
@@ -126,7 +126,7 @@ async fn main() -> anyhow::Result<()> {
         )
         .with(otel_layer.map(|layer| {
             layer.with_filter(telemetry::otel_env_filter(
-                std::env::var("BUZZ_OTEL_FILTER").ok().as_deref(),
+                std::env::var("NIMINO_OTEL_FILTER").ok().as_deref(),
             ))
         }))
         .with(trace_context_lookup_layer)
@@ -137,7 +137,7 @@ async fn main() -> anyhow::Result<()> {
         warn!(error = %e, "Failed to build OTLP trace exporter; distributed tracing disabled");
     }
 
-    info!("Starting buzz-relay");
+    info!("Starting nimino-relay");
 
     let config = Config::from_env().map_err(|e| {
         error!("Invalid configuration: {e}");
@@ -156,7 +156,7 @@ async fn main() -> anyhow::Result<()> {
     let usage_interval_secs = usage_metrics_interval_secs();
     let usage_idle_timeout_secs = usage_metrics_idle_timeout_secs(usage_interval_secs);
     relay_metrics::install(config.metrics_port, usage_idle_timeout_secs);
-    metrics::gauge!("buzz_audit_enabled").set(if config.audit_enabled { 1.0 } else { 0.0 });
+    metrics::gauge!("nimino_audit_enabled").set(if config.audit_enabled { 1.0 } else { 0.0 });
     info!(
         port = config.metrics_port,
         idle_timeout_secs = usage_idle_timeout_secs,
@@ -186,7 +186,7 @@ async fn main() -> anyhow::Result<()> {
     }
 
     let auto_migrate =
-        buzz_auto_migrate_enabled(std::env::var("BUZZ_AUTO_MIGRATE").ok().as_deref());
+        buzz_auto_migrate_enabled(std::env::var("NIMINO_AUTO_MIGRATE").ok().as_deref());
     if auto_migrate {
         db.migrate().await.map_err(|e| {
             error!("Failed to run database migrations: {e}");
@@ -194,7 +194,7 @@ async fn main() -> anyhow::Result<()> {
         })?;
         info!("Database migrations complete");
     } else {
-        info!("Skipping database migrations because BUZZ_AUTO_MIGRATE is not enabled");
+        info!("Skipping database migrations because NIMINO_AUTO_MIGRATE is not enabled");
     }
 
     if let Err(e) = db.ensure_future_partitions(3).await {
@@ -212,7 +212,7 @@ async fn main() -> anyhow::Result<()> {
     // the migration decision: spawn_fence_probe first verifies the
     // commit-time floor guard (catalog shape + observed behavior through the
     // armed pool) against the live schema, so a relay running with
-    // BUZZ_AUTO_MIGRATE off and migration 0021 unapplied can never open the
+    // NIMINO_AUTO_MIGRATE off and migration 0021 unapplied can never open the
     // fence over an unenforced floor. Verification failure is loud but
     // non-fatal: the fence stays closed and every cursor page routes to the
     // writer.
@@ -233,11 +233,11 @@ async fn main() -> anyhow::Result<()> {
     // that no one can administer.
     if config.require_relay_membership && config.relay_owner_pubkey.is_none() {
         error!(
-            "BUZZ_REQUIRE_RELAY_MEMBERSHIP=true but RELAY_OWNER_PUBKEY is not set or invalid. \
+            "NIMINO_REQUIRE_RELAY_MEMBERSHIP=true but RELAY_OWNER_PUBKEY is not set or invalid. \
              Set RELAY_OWNER_PUBKEY to a valid 64-char hex pubkey."
         );
         return Err(anyhow::anyhow!(
-            "RELAY_OWNER_PUBKEY required when BUZZ_REQUIRE_RELAY_MEMBERSHIP=true"
+            "RELAY_OWNER_PUBKEY required when NIMINO_REQUIRE_RELAY_MEMBERSHIP=true"
         ));
     }
 
@@ -246,7 +246,7 @@ async fn main() -> anyhow::Result<()> {
     // or bootstrapping if we'll reject the config anyway.
     if config.require_relay_membership && config.relay_private_key.is_none() {
         return Err(anyhow::anyhow!(
-            "BUZZ_RELAY_PRIVATE_KEY is required when BUZZ_REQUIRE_RELAY_MEMBERSHIP=true. \
+            "NIMINO_RELAY_PRIVATE_KEY is required when NIMINO_REQUIRE_RELAY_MEMBERSHIP=true. \
              NIP-43 events signed with an ephemeral key become unverifiable after restart."
         ));
     }
@@ -267,7 +267,7 @@ async fn main() -> anyhow::Result<()> {
         if host.is_empty() {
             if config.require_relay_membership {
                 return Err(anyhow::anyhow!(
-                    "Cannot derive a community host from BUZZ_RELAY_URL ({:?}); a resolvable host is required when BUZZ_REQUIRE_RELAY_MEMBERSHIP=true",
+                    "Cannot derive a community host from NIMINO_RELAY_URL ({:?}); a resolvable host is required when NIMINO_REQUIRE_RELAY_MEMBERSHIP=true",
                     config.relay_url
                 ));
             }
@@ -286,7 +286,7 @@ async fn main() -> anyhow::Result<()> {
                     if config.require_relay_membership {
                         error!("Fatal: failed to ensure deployment community with membership enforcement enabled: {e}");
                         return Err(anyhow::anyhow!(
-                            "Failed to ensure deployment community (required when BUZZ_REQUIRE_RELAY_MEMBERSHIP=true): {e}"
+                            "Failed to ensure deployment community (required when NIMINO_REQUIRE_RELAY_MEMBERSHIP=true): {e}"
                         ));
                     }
                     error!("Failed to ensure deployment community (non-fatal, membership not required): {e}");
@@ -310,7 +310,7 @@ async fn main() -> anyhow::Result<()> {
                         "Fatal: failed to backfill allowlist with membership enforcement enabled: {e}"
                     );
                     return Err(anyhow::anyhow!(
-                        "Failed to backfill pubkey_allowlist (required when BUZZ_REQUIRE_RELAY_MEMBERSHIP=true): {e}"
+                        "Failed to backfill pubkey_allowlist (required when NIMINO_REQUIRE_RELAY_MEMBERSHIP=true): {e}"
                     ));
                 } else {
                     error!("Failed to backfill pubkey_allowlist (non-fatal): {e}");
@@ -333,7 +333,7 @@ async fn main() -> anyhow::Result<()> {
                     // in a broken state.
                     error!("Fatal: failed to bootstrap relay owner with membership enforcement enabled: {e}");
                     return Err(anyhow::anyhow!(
-                        "Failed to bootstrap relay owner (required when BUZZ_REQUIRE_RELAY_MEMBERSHIP=true): {e}"
+                        "Failed to bootstrap relay owner (required when NIMINO_REQUIRE_RELAY_MEMBERSHIP=true): {e}"
                     ));
                 } else {
                     error!(
@@ -362,7 +362,7 @@ async fn main() -> anyhow::Result<()> {
         info!("Audit service ready");
         Some(AuditService::new(audit_pool))
     } else {
-        info!("Audit logging disabled by BUZZ_AUDIT_ENABLED");
+        info!("Audit logging disabled by NIMINO_AUDIT_ENABLED");
         None
     };
 
@@ -424,7 +424,7 @@ async fn main() -> anyhow::Result<()> {
 
     let relay_keypair = if let Some(hex) = &config.relay_private_key {
         nostr::Keys::parse(hex)
-            .map_err(|e| anyhow::anyhow!("invalid BUZZ_RELAY_PRIVATE_KEY: {e}"))?
+            .map_err(|e| anyhow::anyhow!("invalid NIMINO_RELAY_PRIVATE_KEY: {e}"))?
     } else if !config.require_auth_token {
         // Dev mode: use a deterministic keypair so addressable events (kind:39000/39001/39002)
         // replace correctly across restarts. Without this, each restart generates a new pubkey
@@ -434,13 +434,13 @@ async fn main() -> anyhow::Result<()> {
         let keys = nostr::Keys::parse(DEV_RELAY_PRIVKEY).expect("hardcoded dev key is valid");
         tracing::warn!(
             pubkey = %keys.public_key().to_hex(),
-            "Using hardcoded dev relay keypair (BUZZ_REQUIRE_AUTH_TOKEN=false). \
-             Set BUZZ_RELAY_PRIVATE_KEY for production."
+            "Using hardcoded dev relay keypair (NIMINO_REQUIRE_AUTH_TOKEN=false). \
+             Set NIMINO_RELAY_PRIVATE_KEY for production."
         );
         keys
     } else {
         panic!(
-            "BUZZ_RELAY_PRIVATE_KEY must be set when BUZZ_REQUIRE_AUTH_TOKEN=true. \
+            "NIMINO_RELAY_PRIVATE_KEY must be set when NIMINO_REQUIRE_AUTH_TOKEN=true. \
              A stable relay identity is required for production."
         );
     };
@@ -467,7 +467,7 @@ async fn main() -> anyhow::Result<()> {
     );
     let state = Arc::new(app_state);
 
-    // Inter-relay mesh (BUZZ_MESH seam). `boot_mesh` returns None when the
+    // Inter-relay mesh (NIMINO_MESH seam). `boot_mesh` returns None when the
     // kill switch is off — nothing is bound, published, or spawned, so the
     // relay behaves byte-identically to a build without the mesh. When
     // enabled, a misconfigured mesh is fatal here (bind/Redis failure): an
@@ -484,7 +484,7 @@ async fn main() -> anyhow::Result<()> {
         let runtime_id = handle.local_runtime_id;
         // Register the per-profile inbound consumers (huddle datagram fan-in,
         // HuddleControl accept loop, reliable-stream accept + optional
-        // BUZZ_MESH_DEMO_ECHO) before peers can route traffic here.
+        // NIMINO_MESH_DEMO_ECHO) before peers can route traffic here.
         handle.wire_consumers(
             Arc::clone(&state.audio_rooms),
             state.config.mesh_demo_echo,
@@ -500,15 +500,15 @@ async fn main() -> anyhow::Result<()> {
     // linearizable conditional-write axiom (A3) before serving git traffic.
     // Failure is fatal: a backend that cannot satisfy pointer CAS invalidates
     // the manifest-pointer protocol. This is a deployment gate, not a proof.
-    if std::env::var("BUZZ_GIT_CONFORMANCE_PROBE")
+    if std::env::var("NIMINO_GIT_CONFORMANCE_PROBE")
         .map(|v| v != "false")
         .unwrap_or(true)
     {
-        let race_width = std::env::var("BUZZ_GIT_PROBE_WRITERS")
+        let race_width = std::env::var("NIMINO_GIT_PROBE_WRITERS")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(32);
-        let race_rounds = std::env::var("BUZZ_GIT_PROBE_ROUNDS")
+        let race_rounds = std::env::var("NIMINO_GIT_PROBE_ROUNDS")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(3);
@@ -573,7 +573,7 @@ async fn main() -> anyhow::Result<()> {
         }
 
         let reconcile_state = Arc::clone(&state);
-        let interval_secs = std::env::var("BUZZ_NIP43_RECONCILE_INTERVAL_SECS")
+        let interval_secs = std::env::var("NIMINO_NIP43_RECONCILE_INTERVAL_SECS")
             .ok()
             .and_then(|value| value.parse::<u64>().ok())
             .unwrap_or(60)
@@ -603,9 +603,9 @@ async fn main() -> anyhow::Result<()> {
 
     // Emit kind:39000/39002 discovery events for channels that exist in the DB
     // but don't have corresponding events (e.g. seeded via direct SQL inserts).
-    // Only runs when BUZZ_RECONCILE_CHANNELS=true (dev/CI environments).
+    // Only runs when NIMINO_RECONCILE_CHANNELS=true (dev/CI environments).
     // Production relays create channels through the event pipeline and don't need this.
-    if std::env::var("BUZZ_RECONCILE_CHANNELS").is_ok() {
+    if std::env::var("NIMINO_RECONCILE_CHANNELS").is_ok() {
         let reconcile_state = Arc::clone(&state);
         tokio::spawn(async move {
             // Resolve the deployment's community from the configured relay URL
@@ -665,7 +665,7 @@ async fn main() -> anyhow::Result<()> {
     // together with the workflow engine in a future multi-pod coordination pass.
     {
         let reaper_state = Arc::clone(&state);
-        let reaper_interval_secs: u64 = std::env::var("BUZZ_REAPER_INTERVAL_SECS")
+        let reaper_interval_secs: u64 = std::env::var("NIMINO_REAPER_INTERVAL_SECS")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(60);
@@ -879,7 +879,7 @@ async fn main() -> anyhow::Result<()> {
                         .await;
                     }
                     Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
-                        metrics::counter!("buzz_multinode_fanout_lag_total").increment(n);
+                        metrics::counter!("nimino_multinode_fanout_lag_total").increment(n);
                         tracing::warn!("Multi-node fan-out lagged by {n} messages");
                     }
                     Err(tokio::sync::broadcast::error::RecvError::Closed) => {
@@ -910,7 +910,7 @@ async fn main() -> anyhow::Result<()> {
                             .apply_cache_invalidation(scoped.community_id, scoped.invalidation);
                     }
                     Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
-                        metrics::counter!("buzz_cache_invalidation_lag_total").increment(n);
+                        metrics::counter!("nimino_cache_invalidation_lag_total").increment(n);
                         tracing::warn!("Cache-invalidation consumer lagged by {n} messages");
                     }
                     Err(tokio::sync::broadcast::error::RecvError::Closed) => {
@@ -927,7 +927,7 @@ async fn main() -> anyhow::Result<()> {
     // so missed archive commands still converge without a global DB scan.
     {
         let lifecycle_state = Arc::clone(&state);
-        let interval_secs = std::env::var("BUZZ_COMMUNITY_REVALIDATE_INTERVAL_SECS")
+        let interval_secs = std::env::var("NIMINO_COMMUNITY_REVALIDATE_INTERVAL_SECS")
             .ok()
             .and_then(|value| value.parse::<u64>().ok())
             .unwrap_or(30)
@@ -972,7 +972,7 @@ async fn main() -> anyhow::Result<()> {
                         }
                     },
                     Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
-                        metrics::counter!("buzz_conn_control_lag_total").increment(n);
+                        metrics::counter!("nimino_conn_control_lag_total").increment(n);
                         tracing::warn!("Connection-control consumer lagged by {n} messages");
                     }
                     Err(tokio::sync::broadcast::error::RecvError::Closed) => {
@@ -990,7 +990,7 @@ async fn main() -> anyhow::Result<()> {
     // Pool metrics: periodic background task polling DB + Redis pool stats.
     {
         let pool_state = Arc::clone(&state);
-        let interval_secs = std::env::var("BUZZ_POOL_METRICS_INTERVAL_SECS")
+        let interval_secs = std::env::var("NIMINO_POOL_METRICS_INTERVAL_SECS")
             .ok()
             .and_then(|v| v.parse::<u64>().ok())
             .unwrap_or(10)
@@ -1001,17 +1001,17 @@ async fn main() -> anyhow::Result<()> {
                 interval.tick().await;
                 let db_stats = pool_state.db.pool_stats();
                 let active = db_stats.size.saturating_sub(db_stats.idle);
-                metrics::gauge!("buzz_db_pool_size").set(db_stats.size as f64);
-                metrics::gauge!("buzz_db_pool_idle").set(db_stats.idle as f64);
-                metrics::gauge!("buzz_db_pool_active").set(active as f64);
-                metrics::gauge!("buzz_db_pool_max").set(db_stats.max as f64);
+                metrics::gauge!("nimino_db_pool_size").set(db_stats.size as f64);
+                metrics::gauge!("nimino_db_pool_idle").set(db_stats.idle as f64);
+                metrics::gauge!("nimino_db_pool_active").set(active as f64);
+                metrics::gauge!("nimino_db_pool_max").set(db_stats.max as f64);
 
                 if let Some(read_stats) = pool_state.db.read_pool_stats() {
                     let read_active = read_stats.size.saturating_sub(read_stats.idle);
-                    metrics::gauge!("buzz_db_read_pool_size").set(read_stats.size as f64);
-                    metrics::gauge!("buzz_db_read_pool_idle").set(read_stats.idle as f64);
-                    metrics::gauge!("buzz_db_read_pool_active").set(read_active as f64);
-                    metrics::gauge!("buzz_db_read_pool_max").set(read_stats.max as f64);
+                    metrics::gauge!("nimino_db_read_pool_size").set(read_stats.size as f64);
+                    metrics::gauge!("nimino_db_read_pool_idle").set(read_stats.idle as f64);
+                    metrics::gauge!("nimino_db_read_pool_active").set(read_active as f64);
+                    metrics::gauge!("nimino_db_read_pool_max").set(read_stats.max as f64);
 
                     // Fence observability: 1 when replica routing is
                     // eligible, and the verified-freshness lag in seconds.
@@ -1019,40 +1019,40 @@ async fn main() -> anyhow::Result<()> {
                     match pool_state.db.fence().verified_through() {
                         Some(fence_ts) => {
                             let lag = (chrono::Utc::now() - fence_ts).num_seconds();
-                            metrics::gauge!("buzz_db_replica_fence_open").set(1.0);
-                            metrics::gauge!("buzz_db_replica_fence_lag_seconds").set(lag as f64);
+                            metrics::gauge!("nimino_db_replica_fence_open").set(1.0);
+                            metrics::gauge!("nimino_db_replica_fence_lag_seconds").set(lag as f64);
                         }
                         None => {
-                            metrics::gauge!("buzz_db_replica_fence_open").set(0.0);
+                            metrics::gauge!("nimino_db_replica_fence_open").set(0.0);
                         }
                     }
                     // Probe liveness, ungated by staleness: how long since
                     // the probe last committed a heartbeat token.
                     if let Some(age) = pool_state.db.fence().heartbeat_age() {
-                        metrics::gauge!("buzz_db_replica_heartbeat_age_seconds")
+                        metrics::gauge!("nimino_db_replica_heartbeat_age_seconds")
                             .set(age.as_secs_f64());
                     }
                 }
 
                 let rs = pool_state.redis_pool.status();
-                metrics::gauge!("buzz_redis_pool_available").set(rs.available as f64);
-                metrics::gauge!("buzz_redis_pool_size").set(rs.size as f64);
-                metrics::gauge!("buzz_redis_pool_max").set(rs.max_size as f64);
-                metrics::gauge!("buzz_redis_pool_waiting").set(rs.waiting as f64);
+                metrics::gauge!("nimino_redis_pool_available").set(rs.available as f64);
+                metrics::gauge!("nimino_redis_pool_size").set(rs.size as f64);
+                metrics::gauge!("nimino_redis_pool_max").set(rs.max_size as f64);
+                metrics::gauge!("nimino_redis_pool_waiting").set(rs.waiting as f64);
 
                 let deletion_store = pool_state.db.deletion_store();
                 match deletion_store.reap_expired_serving_write_leases(1000).await {
-                    Ok(reaped) => metrics::counter!("buzz_deletion_serving_leases_reaped_total")
+                    Ok(reaped) => metrics::counter!("nimino_deletion_serving_leases_reaped_total")
                         .increment(reaped),
                     Err(error) => tracing::warn!(%error, "serving-lease reaper failed"),
                 }
                 match deletion_store.serving_lease_stats().await {
                     Ok(stats) => {
-                        metrics::gauge!("buzz_deletion_serving_leases_active")
+                        metrics::gauge!("nimino_deletion_serving_leases_active")
                             .set(stats.active as f64);
-                        metrics::gauge!("buzz_deletion_serving_leases_expired")
+                        metrics::gauge!("nimino_deletion_serving_leases_expired")
                             .set(stats.expired as f64);
-                        metrics::gauge!("buzz_deletion_serving_leases_dead_tuples")
+                        metrics::gauge!("nimino_deletion_serving_leases_dead_tuples")
                             .set(stats.dead_tuples as f64);
                     }
                     Err(error) => tracing::warn!(%error, "serving-lease metrics failed"),
@@ -1103,7 +1103,7 @@ async fn main() -> anyhow::Result<()> {
                 {
                     error!(error = %e, "Usage metrics tick failed — skipping");
                 }
-                metrics::gauge!("buzz_usage_poller_is_leader").set(if leader.is_some() {
+                metrics::gauge!("nimino_usage_poller_is_leader").set(if leader.is_some() {
                     1.0
                 } else {
                     0.0
@@ -1142,29 +1142,29 @@ mod env_filter_tests {
     fn unset_enables_datastore_only_for_otel_filter() {
         let logs = tracing_subscriber::registry().with(log_env_filter(None));
         tracing::subscriber::with_default(logs, || {
-            assert!(!tracing::enabled!(target: "buzz_datastore", tracing::Level::INFO));
-            assert!(tracing::enabled!(target: "buzz_relay", tracing::Level::INFO));
+            assert!(!tracing::enabled!(target: "nimino_datastore", tracing::Level::INFO));
+            assert!(tracing::enabled!(target: "nimino_relay", tracing::Level::INFO));
         });
 
         let otel = tracing_subscriber::registry().with(otel_env_filter(None));
         tracing::subscriber::with_default(otel, || {
-            assert!(tracing::enabled!(target: "buzz_datastore", tracing::Level::INFO));
+            assert!(tracing::enabled!(target: "nimino_datastore", tracing::Level::INFO));
         });
     }
 
     #[test]
     fn explicit_datastore_off_is_preserved_alone() {
         assert_eq!(
-            otel_env_filter(Some("buzz_datastore=off")).to_string(),
-            "buzz_datastore=off"
+            otel_env_filter(Some("nimino_datastore=off")).to_string(),
+            "nimino_datastore=off"
         );
     }
 
     #[test]
     fn explicit_datastore_debug_is_preserved_alone() {
         assert_eq!(
-            otel_env_filter(Some("buzz_datastore=debug")).to_string(),
-            "buzz_datastore=debug"
+            otel_env_filter(Some("nimino_datastore=debug")).to_string(),
+            "nimino_datastore=debug"
         );
     }
 
@@ -1172,8 +1172,8 @@ mod env_filter_tests {
     fn log_and_otel_filters_are_configured_independently() {
         assert_eq!(log_env_filter(Some("warn")).to_string(), "warn");
         assert_eq!(
-            otel_env_filter(Some("buzz_relay=debug")).to_string(),
-            "buzz_relay=debug"
+            otel_env_filter(Some("nimino_relay=debug")).to_string(),
+            "nimino_relay=debug"
         );
     }
 }
@@ -1218,8 +1218,8 @@ async fn run_periodic_until_cancelled<Tick, TickFuture>(
 ///
 /// ```text
 /// ┌─────────────────────────────────────────────────────────┐
-/// │  Listener 1: TCP BUZZ_BIND_ADDR:3000  (app router)   │
-/// │  Listener 2: UDS BUZZ_UDS_PATH        (app, optional)│
+/// │  Listener 1: TCP NIMINO_BIND_ADDR:3000  (app router)   │
+/// │  Listener 2: UDS NIMINO_UDS_PATH        (app, optional)│
 /// │  Listener 3: TCP 0.0.0.0:8080           (health only)  │
 /// │  Listener 4: TCP 0.0.0.0:9102           (metrics, via  │
 /// │              PrometheusBuilder — already bound)         │
@@ -1254,7 +1254,7 @@ async fn run_periodic_until_cancelled<Tick, TickFuture>(
 /// case from SIGTERM to forced exit is 5s + 30s = 35s. Both fit inside the
 /// chart's `terminationGracePeriodSeconds: 60` (`deploy/charts/buzz/values.yaml`),
 /// which leaves headroom but assumes no `preStop` hook adds further delay.
-/// With jitter off (`BUZZ_DRAIN_JITTER_MS=0`, the default) sockets close
+/// With jitter off (`NIMINO_DRAIN_JITTER_MS=0`, the default) sockets close
 /// all-at-once right after the grace, so the per-socket delay collapses to
 /// roughly the 5s grace plus the ack wait.
 const GRACEFUL_DRAIN_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(30);
@@ -1344,7 +1344,7 @@ async fn serve(
     let tcp_listener = tokio::net::TcpListener::bind(&config.bind_addr)
         .await
         .map_err(|e| anyhow::anyhow!("Failed to bind {}: {e}", config.bind_addr))?;
-    info!(addr = %config.bind_addr, "buzz-relay TCP listening");
+    info!(addr = %config.bind_addr, "nimino-relay TCP listening");
 
     #[cfg(unix)]
     if let Some(ref uds_path) = config.uds_path {
@@ -1355,14 +1355,14 @@ async fn serve(
             }
             Ok(_) => {
                 return Err(anyhow::anyhow!(
-                    "BUZZ_UDS_PATH {uds_path} exists but is not a socket"
+                    "NIMINO_UDS_PATH {uds_path} exists but is not a socket"
                 ));
             }
             Err(_) => {}
         }
         let uds_listener = tokio::net::UnixListener::bind(uds_path)
             .map_err(|e| anyhow::anyhow!("Failed to bind UDS {uds_path}: {e}"))?;
-        info!(path = %uds_path, "buzz-relay UDS listening");
+        info!(path = %uds_path, "nimino-relay UDS listening");
 
         let router_uds = router.clone();
         let mut uds_rx = shutdown_tx.subscribe();
@@ -1396,7 +1396,7 @@ async fn serve(
 
     #[cfg(not(unix))]
     if config.uds_path.is_some() {
-        tracing::warn!("BUZZ_UDS_PATH set but UDS not supported on this platform");
+        tracing::warn!("NIMINO_UDS_PATH set but UDS not supported on this platform");
     }
 
     // TCP-only path.
@@ -1451,7 +1451,7 @@ fn reminder_to_event(reminder: &buzz_db::event::DueReminder) -> nostr::Event {
 
 /// Return the usage poll interval, with a floor that prevents a busy loop.
 fn usage_metrics_interval_secs() -> u64 {
-    std::env::var("BUZZ_USAGE_METRICS_INTERVAL_SECS")
+    std::env::var("NIMINO_USAGE_METRICS_INTERVAL_SECS")
         .ok()
         .and_then(|value| value.parse().ok())
         .unwrap_or(300)
@@ -1460,7 +1460,7 @@ fn usage_metrics_interval_secs() -> u64 {
 
 /// Return a gauge lifetime that always outlives several usage-poller ticks.
 fn usage_metrics_idle_timeout_secs(interval_secs: u64) -> u64 {
-    let configured = std::env::var("BUZZ_USAGE_METRICS_IDLE_TIMEOUT_SECS")
+    let configured = std::env::var("NIMINO_USAGE_METRICS_IDLE_TIMEOUT_SECS")
         .ok()
         .and_then(|value| value.parse().ok());
     idle_timeout_secs(configured, interval_secs)
@@ -1483,15 +1483,15 @@ impl InMemoryMetricKey {
     fn set(&self, value: f64) {
         match self {
             Self::WsConnections(community) => {
-                metrics::gauge!("buzz_community_ws_connections", "community" => community.clone())
+                metrics::gauge!("nimino_community_ws_connections", "community" => community.clone())
                     .set(value);
             }
             Self::UsersOnline(community) => {
-                metrics::gauge!("buzz_community_users_online_pod", "community" => community.clone())
+                metrics::gauge!("nimino_community_users_online_pod", "community" => community.clone())
                     .set(value);
             }
             Self::Subscriptions(community) => {
-                metrics::gauge!("buzz_community_subscriptions", "community" => community.clone())
+                metrics::gauge!("nimino_community_subscriptions", "community" => community.clone())
                     .set(value);
             }
         }
@@ -1506,8 +1506,8 @@ impl InMemoryMetricKey {
 /// that generation, so this retains a steady gauge without a snapshot `set()`
 /// racing the lifecycle-relative increments and decrements.
 fn refresh_legacy_active_gauge_recency() {
-    metrics::gauge!("buzz_ws_connections_active").increment(0.0);
-    metrics::gauge!("buzz_subscriptions_active").increment(0.0);
+    metrics::gauge!("nimino_ws_connections_active").increment(0.0);
+    metrics::gauge!("nimino_subscriptions_active").increment(0.0);
 }
 
 /// Emit pod-local gauges and zero only label keys that disappeared since the
@@ -1525,9 +1525,9 @@ fn emit_in_memory_usage_metrics(
     let total_connections = connections.values().sum::<u64>();
     let total_subscriptions = subscriptions.values().sum::<u64>();
 
-    metrics::gauge!("buzz_total_ws_connections").set(total_connections as f64);
-    metrics::gauge!("buzz_total_users_online_pod").set(users_online.values().sum::<u64>() as f64);
-    metrics::gauge!("buzz_total_subscriptions").set(total_subscriptions as f64);
+    metrics::gauge!("nimino_total_ws_connections").set(total_connections as f64);
+    metrics::gauge!("nimino_total_users_online_pod").set(users_online.values().sum::<u64>() as f64);
+    metrics::gauge!("nimino_total_subscriptions").set(total_subscriptions as f64);
     refresh_legacy_active_gauge_recency();
 
     let Some(host_map) = host_map else {
@@ -1728,7 +1728,7 @@ async fn emit_db_usage_metrics(
     // --- A. Adoption stocks (DB-polled) ---
 
     // buzz_communities_total (no tag — fleet-wide count)
-    metrics::gauge!("buzz_communities_total").set(community_total as f64);
+    metrics::gauge!("nimino_communities_total").set(community_total as f64);
 
     // buzz_community_users{community, type:human|agent}
     // Emit from host_map so communities that have zero users still get a 0
@@ -1739,17 +1739,17 @@ async fn emit_db_usage_metrics(
         let (total_human, total_agent): (i64, i64) = rows
             .values()
             .fold((0, 0), |(h, a), r| (h + r.human, a + r.agent));
-        metrics::gauge!("buzz_total_users", "type" => "human").set(total_human as f64);
-        metrics::gauge!("buzz_total_users", "type" => "agent").set(total_agent as f64);
+        metrics::gauge!("nimino_total_users", "type" => "human").set(total_human as f64);
+        metrics::gauge!("nimino_total_users", "type" => "agent").set(total_agent as f64);
         // Per-community series (gated by active_set).
         for (&id, community) in host_map {
             if !active_set.contains(&id) {
                 continue;
             }
             let (human, agent) = rows.get(&id).map(|r| (r.human, r.agent)).unwrap_or((0, 0));
-            metrics::gauge!("buzz_community_users", "community" => community.clone(), "type" => "human")
+            metrics::gauge!("nimino_community_users", "community" => community.clone(), "type" => "human")
                 .set(human as f64);
-            metrics::gauge!("buzz_community_users", "community" => community.clone(), "type" => "agent")
+            metrics::gauge!("nimino_community_users", "community" => community.clone(), "type" => "agent")
                 .set(agent as f64);
         }
     }
@@ -1781,7 +1781,7 @@ async fn emit_db_usage_metrics(
                 .keys()
                 .map(|id| rows.get(&(*id, ct)).copied().unwrap_or(0))
                 .sum();
-            metrics::gauge!("buzz_total_channels", "type" => ct).set(total as f64);
+            metrics::gauge!("nimino_total_channels", "type" => ct).set(total as f64);
         }
         // Per-community series (gated by active_set).
         for (&id, community) in host_map {
@@ -1791,7 +1791,7 @@ async fn emit_db_usage_metrics(
             for &ct in CHANNEL_TYPES {
                 let count = rows.get(&(id, ct)).copied().unwrap_or(0);
                 metrics::gauge!(
-                    "buzz_community_channels",
+                    "nimino_community_channels",
                     "community" => community.clone(),
                     "type" => ct
                 )
@@ -1809,14 +1809,14 @@ async fn emit_db_usage_metrics(
             .collect();
         // Fleet total (always emitted).
         let total: i64 = rows.values().sum();
-        metrics::gauge!("buzz_total_messages").set(total as f64);
+        metrics::gauge!("nimino_total_messages").set(total as f64);
         // Per-community series (gated by active_set).
         for (&id, community) in host_map {
             if !active_set.contains(&id) {
                 continue;
             }
             let count = rows.get(&id).copied().unwrap_or(0);
-            metrics::gauge!("buzz_community_messages", "community" => community.clone())
+            metrics::gauge!("nimino_community_messages", "community" => community.clone())
                 .set(count as f64);
         }
     }
@@ -1848,7 +1848,7 @@ async fn emit_db_usage_metrics(
                 .keys()
                 .map(|id| rows.get(&(*id, role)).copied().unwrap_or(0))
                 .sum();
-            metrics::gauge!("buzz_total_relay_members", "role" => role).set(total as f64);
+            metrics::gauge!("nimino_total_relay_members", "role" => role).set(total as f64);
         }
         // Per-community series (gated by active_set).
         for (&id, community) in host_map {
@@ -1858,7 +1858,7 @@ async fn emit_db_usage_metrics(
             for &role in RELAY_ROLES {
                 let count = rows.get(&(id, role)).copied().unwrap_or(0);
                 metrics::gauge!(
-                    "buzz_community_relay_members",
+                    "nimino_community_relay_members",
                     "community" => community.clone(),
                     "role" => role
                 )
@@ -1894,7 +1894,7 @@ async fn emit_db_usage_metrics(
                 .keys()
                 .map(|id| rows.get(&(*id, status)).copied().unwrap_or(0))
                 .sum();
-            metrics::gauge!("buzz_total_workflows", "status" => status).set(total as f64);
+            metrics::gauge!("nimino_total_workflows", "status" => status).set(total as f64);
         }
         // Per-community series (gated by active_set).
         for (&id, community) in host_map {
@@ -1904,7 +1904,7 @@ async fn emit_db_usage_metrics(
             for &status in WORKFLOW_STATUSES {
                 let count = rows.get(&(id, status)).copied().unwrap_or(0);
                 metrics::gauge!(
-                    "buzz_community_workflows",
+                    "nimino_community_workflows",
                     "community" => community.clone(),
                     "status" => status
                 )
@@ -1922,14 +1922,14 @@ async fn emit_db_usage_metrics(
             .collect();
         // Fleet total (always emitted).
         let total: i64 = rows.values().sum();
-        metrics::gauge!("buzz_total_git_repos").set(total as f64);
+        metrics::gauge!("nimino_total_git_repos").set(total as f64);
         // Per-community series (gated by active_set).
         for (&id, community) in host_map {
             if !active_set.contains(&id) {
                 continue;
             }
             let count = rows.get(&id).copied().unwrap_or(0);
-            metrics::gauge!("buzz_community_git_repos", "community" => community.clone())
+            metrics::gauge!("nimino_community_git_repos", "community" => community.clone())
                 .set(count as f64);
         }
     }
@@ -1950,11 +1950,11 @@ async fn emit_db_usage_metrics(
             rows.values().fold((0, 0, 0), |(h, a, u), r| {
                 (h + r.human, a + r.agent, u + r.unknown)
             });
-        metrics::gauge!("buzz_total_active_users", "window" => label, "type" => "human")
+        metrics::gauge!("nimino_total_active_users", "window" => label, "type" => "human")
             .set(total_human as f64);
-        metrics::gauge!("buzz_total_active_users", "window" => label, "type" => "agent")
+        metrics::gauge!("nimino_total_active_users", "window" => label, "type" => "agent")
             .set(total_agent as f64);
-        metrics::gauge!("buzz_total_active_users", "window" => label, "type" => "unknown")
+        metrics::gauge!("nimino_total_active_users", "window" => label, "type" => "unknown")
             .set(total_unknown as f64);
         // Per-community series (gated by active_set).
         for (&id, community) in host_map {
@@ -1966,21 +1966,21 @@ async fn emit_db_usage_metrics(
                 .map(|r| (r.human, r.agent, r.unknown))
                 .unwrap_or((0, 0, 0));
             metrics::gauge!(
-                "buzz_community_active_users",
+                "nimino_community_active_users",
                 "community" => community.clone(),
                 "window" => label,
                 "type" => "human"
             )
             .set(human as f64);
             metrics::gauge!(
-                "buzz_community_active_users",
+                "nimino_community_active_users",
                 "community" => community.clone(),
                 "window" => label,
                 "type" => "agent"
             )
             .set(agent as f64);
             metrics::gauge!(
-                "buzz_community_active_users",
+                "nimino_community_active_users",
                 "community" => community.clone(),
                 "window" => label,
                 "type" => "unknown"
@@ -1996,7 +1996,7 @@ async fn emit_db_usage_metrics(
             .collect();
         // Fleet total (always emitted).
         let total: i64 = rows.values().sum();
-        metrics::gauge!("buzz_total_active_channels", "window" => label).set(total as f64);
+        metrics::gauge!("nimino_total_active_channels", "window" => label).set(total as f64);
         // Per-community series (gated by active_set).
         for (&id, community) in host_map {
             if !active_set.contains(&id) {
@@ -2004,7 +2004,7 @@ async fn emit_db_usage_metrics(
             }
             let count = rows.get(&id).copied().unwrap_or(0);
             metrics::gauge!(
-                "buzz_community_active_channels",
+                "nimino_community_active_channels",
                 "community" => community.clone(),
                 "window" => label
             )
@@ -2103,8 +2103,8 @@ mod tests {
         let snapshotter = recorder.snapshotter();
 
         metrics::with_local_recorder(&recorder, || {
-            let connections = metrics::gauge!("buzz_ws_connections_active");
-            let subscriptions = metrics::gauge!("buzz_subscriptions_active");
+            let connections = metrics::gauge!("nimino_ws_connections_active");
+            let subscriptions = metrics::gauge!("nimino_subscriptions_active");
             connections.increment(1.0);
             subscriptions.increment(1.0);
 
@@ -2126,8 +2126,8 @@ mod tests {
             })
             .collect::<std::collections::HashMap<_, _>>();
 
-        assert_eq!(values.get("buzz_ws_connections_active"), Some(&0.0));
-        assert_eq!(values.get("buzz_subscriptions_active"), Some(&2.0));
+        assert_eq!(values.get("nimino_ws_connections_active"), Some(&0.0));
+        assert_eq!(values.get("nimino_subscriptions_active"), Some(&2.0));
     }
 
     #[test]

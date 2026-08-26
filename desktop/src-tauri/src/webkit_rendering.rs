@@ -103,11 +103,11 @@ pub fn apply() -> Result<(), String> {
                 std::env::set_var(var, "1");
             }
             let applied: Vec<String> = vars.iter().map(|var| format!("{var}=1")).collect();
-            eprintln!("buzz-desktop: {} — {why}", applied.join(" "));
+            eprintln!("nimino-desktop: {} — {why}", applied.join(" "));
             Ok(())
         }
         Plan::Leave { why } => {
-            eprintln!("buzz-desktop: WebKit rendering left as-is — {why}");
+            eprintln!("nimino-desktop: WebKit rendering left as-is — {why}");
             Ok(())
         }
         Plan::Fatal { diagnostic } => Err(diagnostic),

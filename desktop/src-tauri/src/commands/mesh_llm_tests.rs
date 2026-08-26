@@ -106,7 +106,7 @@ fn buzz_mesh_name_is_stable_and_does_not_expose_the_relay() {
 
     assert_eq!(first, second);
     assert_ne!(first, other_relay);
-    assert!(first.starts_with("buzz-community-"));
+    assert!(first.starts_with("nimino-community-"));
     assert!(!first.contains("example"));
 }
 
@@ -117,7 +117,7 @@ fn sharing_config_keeps_the_community_where_sharing_was_enabled() {
         model_id: Some("test-model".to_string()),
         max_vram_gb: Some(24),
         join_token: None,
-        mesh_name: Some("buzz-community-test".to_string()),
+        mesh_name: Some("nimino-community-test".to_string()),
         relay_url: Some("wss://community.example".to_string()),
         trusted_owner_ids: Some(Vec::new()),
     };
@@ -363,7 +363,7 @@ fn ensure_serve_runtime_serves_other_model() {
                 const DEFAULT_HOSTED_MODEL: &str =
                     "jc-builds/SmolLM2-135M-Instruct-Q4_K_M-GGUF:Q4_K_M";
                 const OTHER_MODEL: &str = "some/other-model-not-hosted-locally:Q4_K_M";
-                let hosted_model = std::env::var("BUZZ_MESH_TEST_MODEL")
+                let hosted_model = std::env::var("NIMINO_MESH_TEST_MODEL")
                     .unwrap_or_else(|_| DEFAULT_HOSTED_MODEL.to_string());
 
                 let state = build_app_state();
@@ -489,7 +489,7 @@ fn ensure_serve_runtime_serves_other_model() {
                             "model": "auto",
                             "messages": [{
                                 "role": "user",
-                                "content": "Reply with exactly BUZZ_SINGLE_SHARE_OK and nothing else."
+                                "content": "Reply with exactly NIMINO_SINGLE_SHARE_OK and nothing else."
                             }],
                             "max_tokens": 512,
                             "temperature": 0

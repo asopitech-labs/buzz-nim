@@ -119,7 +119,7 @@ export function formatModelDiscoveryErrorStatus(
   if (
     message.includes("DATABRICKS_HOST required") ||
     message.includes("DATABRICKS_MODEL required") ||
-    message.includes("BUZZ_AGENT_PROVIDER is required")
+    message.includes("NIMINO_AGENT_PROVIDER is required")
   ) {
     return null;
   }

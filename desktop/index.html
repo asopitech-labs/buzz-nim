@@ -17,7 +17,7 @@
       injection for style-src (see boot.css for the full rationale).
 
       The inline script below reads the cached theme background (same
-      `buzz-theme-cache` entry ThemeProvider writes) and applies it synchronously
+      `nimino-theme-cache` entry ThemeProvider writes) and applies it synchronously
       so the boot color matches the themed loading gate — no black flash on light
       themes. On the first-ever launch (no cache yet) it seeds the light/dark
       class from the OS color scheme, matching the Buzz theme in System mode
@@ -29,7 +29,7 @@
       (() => {
         var cached, bg, parsed;
         try {
-          cached = window.localStorage.getItem("buzz-theme-cache");
+          cached = window.localStorage.getItem("nimino-theme-cache");
           if (!cached) {
             // No stored theme: the default is Buzz following the OS scheme,
             // so seed the matching class (and backdrop) now. Otherwise the

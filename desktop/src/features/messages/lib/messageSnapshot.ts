@@ -19,7 +19,7 @@ import { normalizeRelayUrl } from "@/features/profile/lib/selfProfileStorage";
 import type { RelayEvent } from "@/shared/api/types";
 import { setLocalStorageItemWithRecovery } from "@/shared/lib/localStorageQuota";
 
-const STORAGE_KEY_PREFIX = "buzz-channel-messages.v1";
+const STORAGE_KEY_PREFIX = "nimino-channel-messages.v1";
 
 // Newest events kept per channel. The trailing slice of the sorted timeline
 // cache, so recent auxiliary events (reactions/edits) ride along with the

@@ -51,9 +51,9 @@ else
   cargo build --profile "${CARGO_PROFILE}" -p buzz-relay --example mesh_relay_lifecycle_smoke
 fi
 
-ADMIN_BIN="target/${CARGO_PROFILE}/buzz-admin"
+ADMIN_BIN="target/${CARGO_PROFILE}/nimino-admin"
 HARNESS_BIN="target/${CARGO_PROFILE}/examples/mesh_relay_lifecycle_smoke"
-for bin in "${ADMIN_BIN}" "${HARNESS_BIN}" "target/${CARGO_PROFILE}/buzz-relay"; do
+for bin in "${ADMIN_BIN}" "${HARNESS_BIN}" "target/${CARGO_PROFILE}/nimino-relay"; do
   if [[ ! -x "${bin}" ]]; then
     err "Missing binary: ${bin}"
     exit 1
@@ -70,14 +70,14 @@ read_keys() { "${ADMIN_BIN}" generate-key 2>/dev/null; }
 OWNER_OUT="$(read_keys)"
 RELAY_OWNER_PUBKEY="$(echo "${OWNER_OUT}" | awk '/Public key:/ {print $3}')"
 SIGNER_OUT="$(read_keys)"
-BUZZ_RELAY_PRIVATE_KEY="$(echo "${SIGNER_OUT}" | awk '/Secret key:/ {print $3}')"
-if [[ -z "${RELAY_OWNER_PUBKEY}" || -z "${BUZZ_RELAY_PRIVATE_KEY}" ]]; then
+NIMINO_RELAY_PRIVATE_KEY="$(echo "${SIGNER_OUT}" | awk '/Secret key:/ {print $3}')"
+if [[ -z "${RELAY_OWNER_PUBKEY}" || -z "${NIMINO_RELAY_PRIVATE_KEY}" ]]; then
   err "Failed to generate relay identities via buzz-admin generate-key"
   exit 1
 fi
-export BUZZ_REQUIRE_RELAY_MEMBERSHIP=true
+export NIMINO_REQUIRE_RELAY_MEMBERSHIP=true
 export RELAY_OWNER_PUBKEY
-export BUZZ_RELAY_PRIVATE_KEY
+export NIMINO_RELAY_PRIVATE_KEY
 
 # ── Start the membership-gated relay ─────────────────────────────────────────
 # A stale relay on :3000 would pass the readiness poll while silently running
@@ -93,8 +93,8 @@ CARGO_PROFILE="${CARGO_PROFILE}" ./scripts/start-relay-for-tests.sh --no-build
 
 cleanup() {
   log "Stopping relay..."
-  if [[ -f /tmp/buzz-relay.pid ]]; then
-    kill "$(cat /tmp/buzz-relay.pid)" 2>/dev/null || true
+  if [[ -f /tmp/nimino-relay.pid ]]; then
+    kill "$(cat /tmp/nimino-relay.pid)" 2>/dev/null || true
   fi
   # The harness kills its own children; sweep any stragglers from a hard fail.
   pkill -f mesh_relay_lifecycle_smoke 2>/dev/null || true
@@ -105,9 +105,9 @@ trap cleanup EXIT
 
 log "Running relay-driven mesh lifecycle smoke..."
 RELAY_URL=ws://localhost:3000 \
-DATABASE_URL=postgres://buzz:buzz_dev@localhost:5432/buzz \
+DATABASE_URL=postgres://nimino:nimino_dev@localhost:5432/nimino \
 REDIS_URL=redis://localhost:6379 \
-BUZZ_ADMIN_BIN="${ADMIN_BIN}" \
+NIMINO_ADMIN_BIN="${ADMIN_BIN}" \
   "${HARNESS_BIN}"
 
 ok "Relay-driven mesh lifecycle smoke passed"

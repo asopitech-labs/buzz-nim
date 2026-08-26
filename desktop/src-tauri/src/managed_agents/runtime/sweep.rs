@@ -2,7 +2,7 @@
 //! process-tree helpers shared with the periodic orphan sweeps in `runtime.rs`.
 //!
 //! The env-var and PID-file sweeps cannot see a harness whose receipt is gone
-//! or that predates `BUZZ_MANAGED_AGENT` injection. This sweep derives the
+//! or that predates `NIMINO_MANAGED_AGENT` injection. This sweep derives the
 //! expected `buzz-acp` path from the running executable and kills any process
 //! whose exe matches exactly, minus the tracked set. The PID enumeration,
 //! procargs, parent/PGID lookups, and live-descendant classification helpers
@@ -459,7 +459,7 @@ fn collect_process_snapshots(harness_name: &str) -> Vec<ProcessSnapshot> {
 /// incorrectly killed. Similarly, an orphan spawned by an older install of
 /// the same app (different bundle path, e.g. a prior DMG) will not match
 /// this path — that class is handled by `sweep_system_agent_processes`, which
-/// scopes by `BUZZ_MANAGED_AGENT` instance ID rather than exe path.
+/// scopes by `NIMINO_MANAGED_AGENT` instance ID rather than exe path.
 pub fn expected_harness_exe_path() -> Option<PathBuf> {
     let exe = std::env::current_exe().ok()?;
     let dir = exe.parent()?;
@@ -478,7 +478,7 @@ const HARNESS_BINARY_NAME: &str = "buzz-acp";
 /// executable path but are not in `skip_pids`.
 ///
 /// Complements the env-var-based `sweep_system_agent_processes`: this sweep
-/// catches orphans that predate the `BUZZ_MANAGED_AGENT` env var injection
+/// catches orphans that predate the `NIMINO_MANAGED_AGENT` env var injection
 /// and any that lost their PID-file receipt.
 ///
 /// **Boot-time only.** This function is called once, under the store lock,
@@ -505,7 +505,7 @@ pub(crate) fn sweep_untracked_bundle_harnesses(skip_pids: &[u32]) {
         return;
     }
     eprintln!(
-        "buzz-desktop: sweep_untracked_bundle_harnesses: reaping {} stale harness process(es) {:?} (exe: {})",
+        "nimino-desktop: sweep_untracked_bundle_harnesses: reaping {} stale harness process(es) {:?} (exe: {})",
         to_kill.len(),
         to_kill,
         harness_exe.display(),

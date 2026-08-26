@@ -6,7 +6,7 @@
  * with provenance cited inline. No feature inventories, no marketing
  * superlatives, no volatile model/provider claims. Operational setup copy
  * (status, hints) stays generated from runtime state, never hand-authored
- * here. Research: ~/.buzz/RESEARCH/BYOH_CATALOG_IA.md.
+ * here. Research: ~/.nimino/RESEARCH/BYOH_CATALOG_IA.md.
  */
 
 const HARNESS_DESCRIPTIONS: Record<string, string> = {

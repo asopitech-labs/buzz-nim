@@ -12,7 +12,7 @@ import { ONBOARDING_INK_ICON_CLASS } from "./OnboardingChrome";
 import { OnboardingFooter } from "./OnboardingFooter";
 
 const IDENTITY_KEY_HELP_SEEN_STORAGE_KEY =
-  "buzz.machine-onboarding.identity-key-help-seen.v1";
+  "nimino.machine-onboarding.identity-key-help-seen.v1";
 const IDENTITY_KEY_HELP_DELAY_MS = 2_000;
 
 function hasSeenIdentityKeyHelp(): boolean {

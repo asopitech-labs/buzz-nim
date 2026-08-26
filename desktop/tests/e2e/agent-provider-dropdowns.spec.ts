@@ -5,7 +5,7 @@
  *
  *  01 – Global agent config provider select renders both Databricks v1 and v2
  *       options (they are always shown on OSS builds; the mock bridge returns an
- *       empty baked env, simulating an OSS install with no BUZZ_AGENT_PROVIDER).
+ *       empty baked env, simulating an OSS install with no NIMINO_AGENT_PROVIDER).
  *
  *  02 – Effort dropdown shows "Default (medium)" instead of bare "Inherit" when
  *       no effort is baked and the provider uses a known default effort level.
@@ -59,7 +59,7 @@ test.describe("agent provider dropdown screenshots", () => {
   // Shot 01: OSS provider dropdown includes both Databricks v1 and v2.
   //
   // The mock bridge returns get_baked_build_env_keys = [] (OSS), so no
-  // BUZZ_AGENT_PROVIDER is baked and hideProviderIds is empty → v1 appears.
+  // NIMINO_AGENT_PROVIDER is baked and hideProviderIds is empty → v1 appears.
   test("01-provider-dropdown-oss", async ({ page }) => {
     await installMockBridge(page);
     await openAiDefaultsSettings(page);

@@ -240,7 +240,7 @@ pub(crate) async fn connect_audio_relay(
         })
         .await
         {
-            eprintln!("buzz-desktop: audio relay pipeline exited: {e}");
+            eprintln!("nimino-desktop: audio relay pipeline exited: {e}");
         }
 
         // Only emit the disconnect event for UNEXPECTED exits.
@@ -297,7 +297,7 @@ fn queue_tts_broadcast_packet(
     let samples_48k = upsample_tts_24k_to_48k(&packet.samples_24k);
     for chunk in samples_48k.chunks(960) {
         if queue.len() >= TTS_BROADCAST_MAX_FRAMES {
-            eprintln!("buzz-desktop: tts broadcast status=dropped reason=queue_duration_limit");
+            eprintln!("nimino-desktop: tts broadcast status=dropped reason=queue_duration_limit");
             break;
         }
         let mut frame = chunk.to_vec();
@@ -349,7 +349,7 @@ pub(crate) async fn connect_tts_audio_publisher(
         )
         .await
         {
-            eprintln!("buzz-desktop: tts broadcast status=disconnected error={error}");
+            eprintln!("nimino-desktop: tts broadcast status=disconnected error={error}");
         }
         publisher_cancel.cancel();
     });
@@ -544,7 +544,7 @@ async fn audio_relay_pipeline(args: AudioRelayPipelineArgs) -> Result<(), String
                 let n = match encode_result {
                     Ok(n) => n,
                     Err(e) => {
-                        eprintln!("buzz-desktop: opus encode error: {e}");
+                        eprintln!("nimino-desktop: opus encode error: {e}");
                         continue;
                     }
                 };
@@ -619,7 +619,7 @@ pub(crate) async fn fetch_channel_members_with_roles(
     let events = query_relay(state, std::slice::from_ref(&filter))
         .await
         .map_err(|e| {
-            eprintln!("buzz-desktop: fetch channel members failed: {e}");
+            eprintln!("nimino-desktop: fetch channel members failed: {e}");
             e
         })?;
 

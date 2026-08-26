@@ -166,7 +166,7 @@ test("extractToolIdentity ignores Buzz tool names that only appear in file conte
       path: "desktop/src/features/agents/ui/agentSessionToolCatalog.ts",
     },
     content: {
-      text: 'const BUZZ_READ_TOOLS = new Set(["get_feed", "get_event"]);',
+      text: 'const NIMINO_READ_TOOLS = new Set(["get_feed", "get_event"]);',
     },
   });
 

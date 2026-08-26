@@ -15,13 +15,13 @@ use std::io::Read;
 /// rather than imported because this crate deliberately has no dependency
 /// on the Tauri crate. `reserved_keys_are_covered` keeps the two in step.
 const SECRET_KEYS: &[&str] = &[
-    "BUZZ_PRIVATE_KEY",
+    "NIMINO_PRIVATE_KEY",
     "NOSTR_PRIVATE_KEY",
-    "BUZZ_AUTH_TAG",
-    "BUZZ_API_TOKEN",
-    "BUZZ_ACP_PRIVATE_KEY",
-    "BUZZ_ACP_API_TOKEN",
-    "BUZZ_RELAY_URL",
+    "NIMINO_AUTH_TAG",
+    "NIMINO_API_TOKEN",
+    "NIMINO_ACP_PRIVATE_KEY",
+    "NIMINO_ACP_API_TOKEN",
+    "NIMINO_RELAY_URL",
 ];
 
 const CANARY: &str = "SAMI_CANARY_MUST_NOT_LEAK";
@@ -95,7 +95,7 @@ fn child_command(build: impl FnOnce(&mut CommandBuilder), script: &str) -> Strin
 /// Seeds this process with secrets so the fence has something to leak.
 ///
 /// Note these are process-global; the tests that rely on them assert on a
-/// canary value they set themselves, so a real `BUZZ_PRIVATE_KEY` in the
+/// canary value they set themselves, so a real `NIMINO_PRIVATE_KEY` in the
 /// developer's environment neither masks a failure nor causes one.
 fn seed_secrets() {
     for key in SECRET_KEYS {
@@ -146,11 +146,11 @@ fn fence_still_delivers_the_terminal_contract() {
 /// `feat/terminal` denylist could not offer.
 #[test]
 fn fence_excludes_keys_it_has_never_heard_of() {
-    std::env::set_var("BUZZ_SOME_FUTURE_CREDENTIAL", CANARY);
+    std::env::set_var("NIMINO_SOME_FUTURE_CREDENTIAL", CANARY);
     let out = fenced_child_environment();
 
     assert!(
-        !out.contains("BUZZ_SOME_FUTURE_CREDENTIAL"),
+        !out.contains("NIMINO_SOME_FUTURE_CREDENTIAL"),
         "an unknown key reached the child:\n{out}"
     );
 }

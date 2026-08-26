@@ -14,7 +14,7 @@ fn base() -> SpawnConfigSnapshot {
         mcp_command: "goose-mcp".into(),
         env: BTreeMap::from([
             ("OPENAI_API_KEY".to_string(), SECRET.to_string()),
-            ("BUZZ_LOG".to_string(), "info".to_string()),
+            ("NIMINO_LOG".to_string(), "info".to_string()),
         ]),
         relay_url: "wss://relay.example".into(),
         team_instructions: Some("Team says hello.".into()),
@@ -160,9 +160,9 @@ fn env_key_insertion_is_added_without_a_payload() {
 #[test]
 fn env_key_removal_is_removed_without_a_payload() {
     let mut after = base();
-    after.env.remove("BUZZ_LOG");
+    after.env.remove("NIMINO_LOG");
     assert_eq!(
-        change_at(&diff(&base(), &after), "env.BUZZ_LOG"),
+        change_at(&diff(&base(), &after), "env.NIMINO_LOG"),
         &RestartChange::Removed
     );
 }
@@ -194,18 +194,18 @@ fn array_field_changes_as_one_atomic_leaf() {
 
 #[test]
 fn allowlisted_env_key_shows_plain_value() {
-    // BUZZ_AGENT_THINKING_EFFORT is on the safe-to-reveal allowlist — the user
+    // NIMINO_AGENT_THINKING_EFFORT is on the safe-to-reveal allowlist — the user
     // must be able to see actual enum values like "medium → high".
     let mut before = base();
     before
         .env
-        .insert("BUZZ_AGENT_THINKING_EFFORT".into(), "medium".into());
+        .insert("NIMINO_AGENT_THINKING_EFFORT".into(), "medium".into());
     let mut after = before.clone();
     after
         .env
-        .insert("BUZZ_AGENT_THINKING_EFFORT".into(), "high".into());
+        .insert("NIMINO_AGENT_THINKING_EFFORT".into(), "high".into());
     assert_eq!(
-        change_at(&diff(&before, &after), "env.BUZZ_AGENT_THINKING_EFFORT"),
+        change_at(&diff(&before, &after), "env.NIMINO_AGENT_THINKING_EFFORT"),
         &RestartChange::Value {
             before: Value::String("medium".into()),
             after: Value::String("high".into()),

@@ -16,7 +16,7 @@ import { BuzzMark } from "@/shared/ui/buzz-logo/BuzzMark";
 import { useSmoothCorners } from "@/shared/ui/smoothCorners";
 
 function getHostname(preview: ResolvedLinkPreview): string {
-  if (preview.href.startsWith("buzz://")) return preview.provider;
+  if (preview.href.startsWith("nimino://")) return preview.provider;
   try {
     return new URL(preview.href).hostname.replace(/^www\./, "");
   } catch {

@@ -33,19 +33,19 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].env
           content:
-            name: BUZZ_S3_REGION
+            name: NIMINO_S3_REGION
             value: "us-east-1"
         template: templates/deployment.yaml
       - contains:
           path: spec.template.spec.containers[0].env
           content:
-            name: BUZZ_S3_ADDRESSING_STYLE
+            name: NIMINO_S3_ADDRESSING_STYLE
             value: "path"
         template: templates/deployment.yaml
       - contains:
           path: spec.template.spec.containers[0].env
           content:
-            name: BUZZ_HUDDLE_AUDIO_AVAILABLE
+            name: NIMINO_HUDDLE_AUDIO_AVAILABLE
             value: "true"
         template: templates/deployment.yaml
   - it: renders virtual-hosted S3 addressing for providers that require it
@@ -64,13 +64,13 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].env
           content:
-            name: BUZZ_S3_REGION
+            name: NIMINO_S3_REGION
             value: "auto"
         template: templates/deployment.yaml
       - contains:
           path: spec.template.spec.containers[0].env
           content:
-            name: BUZZ_S3_ADDRESSING_STYLE
+            name: NIMINO_S3_ADDRESSING_STYLE
             value: "virtual"
         template: templates/deployment.yaml
 
@@ -88,7 +88,7 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].env
           content:
-            name: BUZZ_HUDDLE_AUDIO_AVAILABLE
+            name: NIMINO_HUDDLE_AUDIO_AVAILABLE
             value: "false"
         template: templates/deployment.yaml
 
@@ -108,7 +108,7 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].env
           content:
-            name: BUZZ_HUDDLE_AUDIO_AVAILABLE
+            name: NIMINO_HUDDLE_AUDIO_AVAILABLE
             value: "true"
         template: templates/deployment.yaml
 
@@ -135,7 +135,7 @@ tests:
       - contains:
           path: spec.template.spec.containers[0].env
           content:
-            name: BUZZ_HUDDLE_AUDIO_AVAILABLE
+            name: NIMINO_HUDDLE_AUDIO_AVAILABLE
             value: "false"
         template: templates/deployment.yaml
 
@@ -155,7 +155,7 @@ tests:
           path: spec.replicas
           value: 5
         template: templates/deployment.yaml
-      # git-repos is still mounted (BUZZ_GIT_REPO_PATH must be a real dir)…
+      # git-repos is still mounted (NIMINO_GIT_REPO_PATH must be a real dir)…
       - contains:
           path: spec.template.spec.containers[0].volumeMounts
           content:
@@ -207,7 +207,7 @@ tests:
       relay.command:
         - /opt/wrapper/wrapper
       relay.args:
-        - /usr/local/bin/buzz-relay
+        - /usr/local/bin/nimino-relay
       relay.extraVolumeMounts:
         - name: wrapper
           mountPath: /opt/wrapper
@@ -253,7 +253,7 @@ tests:
       - equal:
           path: spec.template.spec.containers[0].args
           value:
-            - /usr/local/bin/buzz-relay
+            - /usr/local/bin/nimino-relay
         template: templates/deployment.yaml
       - contains:
           path: spec.template.spec.containers[0].volumeMounts

@@ -5,10 +5,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "${SCRIPT_DIR}"
 
 COMPOSE_FILES=(-f compose.yml)
-if [[ "${BUZZ_COMPOSE_TLS:-false}" == "true" ]]; then
+if [[ "${NIMINO_COMPOSE_TLS:-false}" == "true" ]]; then
   COMPOSE_FILES+=(-f compose.caddy.yml)
 fi
-if [[ "${BUZZ_COMPOSE_DEV:-false}" == "true" ]]; then
+if [[ "${NIMINO_COMPOSE_DEV:-false}" == "true" ]]; then
   COMPOSE_FILES+=(-f compose.dev.yml)
 fi
 
@@ -39,11 +39,11 @@ backup_hint() {
   cat <<'MSG'
 Back up these before upgrades and on a regular schedule:
 
-- deploy/compose/.env, especially BUZZ_RELAY_PRIVATE_KEY, DB/Redis/S3 secrets, and BUZZ_GIT_HOOK_HMAC_SECRET
+- deploy/compose/.env, especially NIMINO_RELAY_PRIVATE_KEY, DB/Redis/S3 secrets, and NIMINO_GIT_HOOK_HMAC_SECRET
 - The owner private key if bootstrap generated one for RELAY_OWNER_PUBKEY
 - Postgres data (prefer pg_dump or a quiesced volume snapshot)
 - MinIO/S3 bucket contents for media and git objects
-- buzz-git-data volume (BUZZ_GIT_REPO_PATH=/data/git)
+- buzz-git-data volume (NIMINO_GIT_REPO_PATH=/data/git)
 - Caddy data/config volumes if using compose.caddy.yml
 
 Keep Postgres + object/git state snapshots from the same maintenance window.
@@ -121,8 +121,8 @@ Commands:
   roster event. Do not use parallel adds (e.g. xargs -P).
 
 Environment switches:
-  BUZZ_COMPOSE_TLS=true   Include compose.caddy.yml for automatic HTTPS
-  BUZZ_COMPOSE_DEV=true   Include compose.dev.yml for local admin ports/tools
+  NIMINO_COMPOSE_TLS=true   Include compose.caddy.yml for automatic HTTPS
+  NIMINO_COMPOSE_DEV=true   Include compose.dev.yml for local admin ports/tools
 MSG
     ;;
   *)

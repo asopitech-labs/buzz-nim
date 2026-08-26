@@ -133,22 +133,22 @@ fn emit_runtime_lifecycle(
 /// Resolve the agent's owner pubkey at startup.
 ///
 /// Priority:
-/// 1. `BUZZ_AUTH_TAG` env var — NIP-OA attestation signed by the owner.
+/// 1. `NIMINO_AUTH_TAG` env var — NIP-OA attestation signed by the owner.
 ///    Verified against the agent's own pubkey to extract the owner pubkey.
-/// 2. `--agent-owner` CLI flag / `BUZZ_ACP_AGENT_OWNER` env var.
+/// 2. `--agent-owner` CLI flag / `NIMINO_ACP_AGENT_OWNER` env var.
 fn resolve_agent_owner(config: &Config) -> Option<String> {
-    // Try BUZZ_AUTH_TAG first (NIP-OA attestation).
-    if let Ok(auth_tag) = std::env::var("BUZZ_AUTH_TAG") {
+    // Try NIMINO_AUTH_TAG first (NIP-OA attestation).
+    if let Ok(auth_tag) = std::env::var("NIMINO_AUTH_TAG") {
         if !auth_tag.is_empty() {
             let agent_pk = config.keys.public_key();
             match buzz_sdk::nip_oa::verify_auth_tag(&auth_tag, &agent_pk) {
                 Ok(owner_pk) => {
                     let owner_hex = owner_pk.to_hex().to_ascii_lowercase();
-                    tracing::info!("owner resolved from BUZZ_AUTH_TAG: {owner_hex}");
+                    tracing::info!("owner resolved from NIMINO_AUTH_TAG: {owner_hex}");
                     return Some(owner_hex);
                 }
                 Err(e) => {
-                    tracing::warn!("BUZZ_AUTH_TAG verification failed: {e} — falling back");
+                    tracing::warn!("NIMINO_AUTH_TAG verification failed: {e} — falling back");
                 }
             }
         }
@@ -1947,7 +1947,7 @@ async fn tokio_main() -> Result<()> {
     // ── Setup-mode early branch ───────────────────────────────────────────────
     //
     // When the desktop determines an agent is not ready (missing credentials,
-    // model, or provider), it spawns buzz-acp with BUZZ_ACP_SETUP_PAYLOAD set.
+    // model, or provider), it spawns buzz-acp with NIMINO_ACP_SETUP_PAYLOAD set.
     // We enter the minimal setup-listener path and never start the agent pool.
     if let Some(payload) = setup_mode::SetupPayload::from_env()
         .map_err(|e| anyhow::anyhow!("setup payload error: {e}"))?
@@ -1996,8 +1996,8 @@ async fn tokio_main() -> Result<()> {
 
     let pubkey_hex = config.keys.public_key().to_hex();
 
-    // Parse BUZZ_AUTH_TAG into a nostr::Tag for NIP-OA relay membership delegation.
-    let relay_auth_tag: Option<nostr::Tag> = std::env::var("BUZZ_AUTH_TAG")
+    // Parse NIMINO_AUTH_TAG into a nostr::Tag for NIP-OA relay membership delegation.
+    let relay_auth_tag: Option<nostr::Tag> = std::env::var("NIMINO_AUTH_TAG")
         .ok()
         .filter(|s| !s.is_empty())
         .and_then(|s| buzz_sdk::nip_oa::parse_auth_tag(&s).ok());
@@ -2026,7 +2026,7 @@ async fn tokio_main() -> Result<()> {
     let presence_publisher = relay.event_publisher();
     let presence_keys = config.keys.clone();
 
-    // Priority: BUZZ_AUTH_TAG (NIP-OA attestation) → --agent-owner flag.
+    // Priority: NIMINO_AUTH_TAG (NIP-OA attestation) → --agent-owner flag.
     let startup_owner: Option<String> = resolve_agent_owner(&config);
     if let Some(ref owner) = startup_owner {
         tracing::info!("agent owner: {owner}");
@@ -2039,7 +2039,7 @@ async fn tokio_main() -> Result<()> {
             RespondTo::OwnerOnly => {
                 tracing::warn!(
                     "respond-to=owner-only but no owner is set — all events will be \
-                     dropped. Set BUZZ_AUTH_TAG or --agent-owner, or use --respond-to=anyone."
+                     dropped. Set NIMINO_AUTH_TAG or --agent-owner, or use --respond-to=anyone."
                 );
             }
             RespondTo::Allowlist => {
@@ -2162,7 +2162,7 @@ async fn tokio_main() -> Result<()> {
         ));
     }
 
-    let runtime_start_nonce = std::env::var("BUZZ_MANAGED_AGENT_START_NONCE").unwrap_or_default();
+    let runtime_start_nonce = std::env::var("NIMINO_MANAGED_AGENT_START_NONCE").unwrap_or_default();
     let dedup_mode = config.dedup_mode;
     let mut queue =
         EventQueue::new(dedup_mode).with_in_flight_deadline(config.max_turn_duration_secs);
@@ -2226,7 +2226,7 @@ async fn tokio_main() -> Result<()> {
     if !config.memory_enabled {
         tracing::info!(
             target: "engram::core",
-            "NIP-AE core memory injection disabled (re-enable by removing --no-memory / BUZZ_ACP_NO_MEMORY)"
+            "NIP-AE core memory injection disabled (re-enable by removing --no-memory / NIMINO_ACP_NO_MEMORY)"
         );
     }
 
@@ -4447,7 +4447,7 @@ mod agent_draft_prompt_tests {
     #[test]
     fn shared_base_prompt_teaches_portable_agent_drafts() {
         let prompt = include_str!("base_prompt.md");
-        assert!(prompt.contains("buzz agents draft-create"));
+        assert!(prompt.contains("nimino agents draft-create"));
         assert!(prompt.contains("ask for at most two things"));
         assert!(prompt.contains("what it should do day-to-day"));
         assert!(prompt.contains("owner saves it"));
@@ -4459,7 +4459,7 @@ mod agent_draft_prompt_tests {
         let prompt = include_str!("base_prompt.md");
         assert!(prompt.contains("pass real newline bytes through stdin"));
         assert!(prompt.contains("single-quoted shell strings preserve `\\n` literally"));
-        assert!(prompt.contains("buzz messages send ... --content -"));
+        assert!(prompt.contains("nimino messages send ... --content -"));
     }
 
     #[test]
@@ -4489,8 +4489,9 @@ mod agent_draft_prompt_tests {
         assert!(prompt.contains("success JSON's `mention_pubkeys`"));
         assert!(prompt.contains("no follow-up verification command is needed"));
         assert!(prompt.contains("stops before sending"));
-        assert!(prompt
-            .contains("add them explicitly with `buzz channels add-member` only when authorized"));
+        assert!(prompt.contains(
+            "add them explicitly with `nimino channels add-member` only when authorized"
+        ));
         assert!(prompt.contains("never changes membership automatically"));
     }
 }
@@ -4502,14 +4503,14 @@ fn default_heartbeat_prompt() -> String {
          You have been awakened for a routine heartbeat. You have NO incoming messages or\n\
          active channel context for this turn.\n\n\
          Your tasks:\n\
-         1. Run `buzz feed get --types needs_action` to check for pending workflow approvals or\n\
+         1. Run `nimino feed get --types needs_action` to check for pending workflow approvals or\n\
             high-priority requests addressed to you.\n\
-         2. Run `buzz feed get --types mentions` to check for unanswered @mentions.\n\
+         2. Run `nimino feed get --types mentions` to check for unanswered @mentions.\n\
          3. If you find actionable items, address them using the appropriate CLI commands\n\
-            (e.g., `buzz workflows approve --token <UUID>`, `buzz messages send`,\n\
-            `buzz messages send --reply-to <event-id>`).\n\
+            (e.g., `nimino workflows approve --token <UUID>`, `nimino messages send`,\n\
+            `nimino messages send --reply-to <event-id>`).\n\
          4. If there are no pending actions or mentions, end your turn immediately.\n\n\
-         Do not run `buzz channels list` or `buzz messages search` unless you have a specific reason.\n\
+         Do not run `nimino channels list` or `nimino messages search` unless you have a specific reason.\n\
          Do not invent work — only act on items surfaced by the feed commands."
     )
 }
@@ -5045,11 +5046,11 @@ fn build_mcp_servers(config: &Config) -> Vec<McpServer> {
         env: {
             let mut env = vec![
                 EnvVar {
-                    name: "BUZZ_RELAY_URL".into(),
+                    name: "NIMINO_RELAY_URL".into(),
                     value: config.relay_url.clone(),
                 },
                 EnvVar {
-                    name: "BUZZ_PRIVATE_KEY".into(),
+                    name: "NIMINO_PRIVATE_KEY".into(),
                     // bech32 encoding of a valid secret key is infallible.
                     // Panic here is correct: injecting a bogus secret would cause
                     // delayed, hard-to-diagnose agent failures downstream.
@@ -5060,12 +5061,12 @@ fn build_mcp_servers(config: &Config) -> Vec<McpServer> {
                         .expect("secret key bech32 encoding should never fail"),
                 },
             ];
-            // Forward BUZZ_AUTH_TAG (NIP-OA owner attestation credential)
+            // Forward NIMINO_AUTH_TAG (NIP-OA owner attestation credential)
             // so the MCP server can attach it to every signed event.
-            if let Ok(auth_tag) = std::env::var("BUZZ_AUTH_TAG") {
+            if let Ok(auth_tag) = std::env::var("NIMINO_AUTH_TAG") {
                 if !auth_tag.is_empty() {
                     env.push(EnvVar {
-                        name: "BUZZ_AUTH_TAG".into(),
+                        name: "NIMINO_AUTH_TAG".into(),
                         value: auth_tag,
                     });
                 }
@@ -5074,10 +5075,10 @@ fn build_mcp_servers(config: &Config) -> Vec<McpServer> {
             // author name instead of the raw npub. Read from the process env
             // rather than Config: this is a pass-through of a contract owned
             // upstream, and absent simply means dev-mcp falls back to the npub.
-            if let Ok(display_name) = std::env::var("BUZZ_ACP_DISPLAY_NAME") {
+            if let Ok(display_name) = std::env::var("NIMINO_ACP_DISPLAY_NAME") {
                 if !display_name.is_empty() {
                     env.push(EnvVar {
-                        name: "BUZZ_ACP_DISPLAY_NAME".into(),
+                        name: "NIMINO_ACP_DISPLAY_NAME".into(),
                         value: display_name,
                     });
                 }
@@ -6811,28 +6812,28 @@ mod build_mcp_servers_tests {
 
         let names: Vec<&str> = server.env.iter().map(|e| e.name.as_str()).collect();
         assert!(
-            names.contains(&"BUZZ_RELAY_URL"),
-            "missing BUZZ_RELAY_URL; got {names:?}"
+            names.contains(&"NIMINO_RELAY_URL"),
+            "missing NIMINO_RELAY_URL; got {names:?}"
         );
         assert!(
-            names.contains(&"BUZZ_PRIVATE_KEY"),
-            "missing BUZZ_PRIVATE_KEY; got {names:?}"
+            names.contains(&"NIMINO_PRIVATE_KEY"),
+            "missing NIMINO_PRIVATE_KEY; got {names:?}"
         );
     }
 
     #[test]
     fn session_new_mcp_server_forwards_buzz_auth_tag() {
         let _guard = ENV_LOCK.lock().unwrap();
-        std::env::set_var("BUZZ_AUTH_TAG", "test-attestation-tag");
+        std::env::set_var("NIMINO_AUTH_TAG", "test-attestation-tag");
         let config = test_config();
         let servers = build_mcp_servers(&config);
-        std::env::remove_var("BUZZ_AUTH_TAG");
+        std::env::remove_var("NIMINO_AUTH_TAG");
 
         let server = &servers[0];
-        let auth_tag_env = server.env.iter().find(|e| e.name == "BUZZ_AUTH_TAG");
+        let auth_tag_env = server.env.iter().find(|e| e.name == "NIMINO_AUTH_TAG");
         assert!(
             auth_tag_env.is_some(),
-            "BUZZ_AUTH_TAG should be forwarded when set"
+            "NIMINO_AUTH_TAG should be forwarded when set"
         );
         assert_eq!(auth_tag_env.unwrap().value, "test-attestation-tag");
     }
@@ -6840,28 +6841,31 @@ mod build_mcp_servers_tests {
     #[test]
     fn session_new_mcp_server_skips_empty_buzz_auth_tag() {
         let _guard = ENV_LOCK.lock().unwrap();
-        std::env::set_var("BUZZ_AUTH_TAG", "");
+        std::env::set_var("NIMINO_AUTH_TAG", "");
         let config = test_config();
         let servers = build_mcp_servers(&config);
-        std::env::remove_var("BUZZ_AUTH_TAG");
+        std::env::remove_var("NIMINO_AUTH_TAG");
 
         let server = &servers[0];
-        let has_auth_tag = server.env.iter().any(|e| e.name == "BUZZ_AUTH_TAG");
-        assert!(!has_auth_tag, "empty BUZZ_AUTH_TAG should not be forwarded");
+        let has_auth_tag = server.env.iter().any(|e| e.name == "NIMINO_AUTH_TAG");
+        assert!(
+            !has_auth_tag,
+            "empty NIMINO_AUTH_TAG should not be forwarded"
+        );
     }
 
     #[test]
     fn test_display_name_set_is_forwarded_to_mcp_server() {
         let _guard = ENV_LOCK.lock().unwrap();
-        std::env::set_var("BUZZ_ACP_DISPLAY_NAME", "Duncan");
+        std::env::set_var("NIMINO_ACP_DISPLAY_NAME", "Duncan");
         let config = test_config();
         let servers = build_mcp_servers(&config);
-        std::env::remove_var("BUZZ_ACP_DISPLAY_NAME");
+        std::env::remove_var("NIMINO_ACP_DISPLAY_NAME");
 
         let entry = servers[0]
             .env
             .iter()
-            .find(|e| e.name == "BUZZ_ACP_DISPLAY_NAME");
+            .find(|e| e.name == "NIMINO_ACP_DISPLAY_NAME");
         assert_eq!(
             entry.map(|e| e.value.as_str()),
             Some("Duncan"),
@@ -6872,7 +6876,7 @@ mod build_mcp_servers_tests {
     #[test]
     fn test_display_name_unset_omits_the_key_entirely() {
         let _guard = ENV_LOCK.lock().unwrap();
-        std::env::remove_var("BUZZ_ACP_DISPLAY_NAME");
+        std::env::remove_var("NIMINO_ACP_DISPLAY_NAME");
         let config = test_config();
         let servers = build_mcp_servers(&config);
 
@@ -6882,7 +6886,7 @@ mod build_mcp_servers_tests {
             !servers[0]
                 .env
                 .iter()
-                .any(|e| e.name == "BUZZ_ACP_DISPLAY_NAME"),
+                .any(|e| e.name == "NIMINO_ACP_DISPLAY_NAME"),
             "unset display name should not add the key"
         );
     }
@@ -6890,16 +6894,16 @@ mod build_mcp_servers_tests {
     #[test]
     fn test_display_name_empty_omits_the_key_entirely() {
         let _guard = ENV_LOCK.lock().unwrap();
-        std::env::set_var("BUZZ_ACP_DISPLAY_NAME", "");
+        std::env::set_var("NIMINO_ACP_DISPLAY_NAME", "");
         let config = test_config();
         let servers = build_mcp_servers(&config);
-        std::env::remove_var("BUZZ_ACP_DISPLAY_NAME");
+        std::env::remove_var("NIMINO_ACP_DISPLAY_NAME");
 
         assert!(
             !servers[0]
                 .env
                 .iter()
-                .any(|e| e.name == "BUZZ_ACP_DISPLAY_NAME"),
+                .any(|e| e.name == "NIMINO_ACP_DISPLAY_NAME"),
             "empty display name should not be forwarded"
         );
     }

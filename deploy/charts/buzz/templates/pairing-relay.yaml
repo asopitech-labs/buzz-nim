@@ -34,7 +34,7 @@ spec:
           securityContext:
             {{- toYaml .Values.relay.containerSecurityContext | nindent 12 }}
           env:
-            - name: BUZZ_PAIR_RELAY_BIND_ADDR
+            - name: NIMINO_PAIR_RELAY_BIND_ADDR
               value: "0.0.0.0:{{ .Values.pairingRelay.service.port }}"
           ports:
             - name: websocket

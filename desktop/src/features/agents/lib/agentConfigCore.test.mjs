@@ -9,7 +9,7 @@ import {
 import { NUMERIC_KIND_MIN } from "../ui/buzzAgentModelTuningFields.tsx";
 
 const config = {
-  env_vars: { BUZZ_AGENT_THINKING_EFFORT: "high" },
+  env_vars: { NIMINO_AGENT_THINKING_EFFORT: "high" },
   model: "test-model",
   preferred_runtime: null,
   provider: "anthropic",
@@ -50,9 +50,9 @@ test("Buzz Agent exposes provider, model, and Buzz-owned effort", () => {
   const model = deriveAgentConfigFieldModel({
     config,
     runtime: runtime("buzz-agent", {
-      modelEnvVar: "BUZZ_AGENT_MODEL",
-      providerEnvVar: "BUZZ_AGENT_PROVIDER",
-      thinkingEnvVar: "BUZZ_AGENT_THINKING_EFFORT",
+      modelEnvVar: "NIMINO_AGENT_MODEL",
+      providerEnvVar: "NIMINO_AGENT_PROVIDER",
+      thinkingEnvVar: "NIMINO_AGENT_THINKING_EFFORT",
     }),
     scope: "global",
   });
@@ -64,7 +64,7 @@ test("Buzz Agent exposes provider, model, and Buzz-owned effort", () => {
   assert.equal(field(model, "effort").optionSource, "buzzAgentCatalog");
   assert.deepEqual(field(model, "effort").targetApplication, {
     kind: "envVar",
-    key: "BUZZ_AGENT_THINKING_EFFORT",
+    key: "NIMINO_AGENT_THINKING_EFFORT",
   });
 });
 
@@ -85,7 +85,7 @@ test("Goose exposes provider, model, and its real effort application key", () =>
   );
   assert.deepEqual(field(model, "effort").currentPersistence, {
     kind: "envVar",
-    key: "BUZZ_AGENT_THINKING_EFFORT",
+    key: "NIMINO_AGENT_THINKING_EFFORT",
   });
   assert.deepEqual(field(model, "effort").targetApplication, {
     kind: "envVar",
@@ -136,9 +136,9 @@ test("Codex omits separate effort because model IDs own it", () => {
 
 test("catalog mismatch cleanup is named and restricted to onboarding", () => {
   const selectedRuntime = runtime("buzz-agent", {
-    modelEnvVar: "BUZZ_AGENT_MODEL",
-    providerEnvVar: "BUZZ_AGENT_PROVIDER",
-    thinkingEnvVar: "BUZZ_AGENT_THINKING_EFFORT",
+    modelEnvVar: "NIMINO_AGENT_MODEL",
+    providerEnvVar: "NIMINO_AGENT_PROVIDER",
+    thinkingEnvVar: "NIMINO_AGENT_THINKING_EFFORT",
   });
   const onboarding = deriveAgentConfigFieldModel({
     config,
@@ -172,12 +172,12 @@ test("buzz-agent derives three numeric descriptors from catalog fields", () => {
   const model = deriveAgentConfigFieldModel({
     config,
     runtime: runtime("buzz-agent", {
-      modelEnvVar: "BUZZ_AGENT_MODEL",
-      providerEnvVar: "BUZZ_AGENT_PROVIDER",
-      thinkingEnvVar: "BUZZ_AGENT_THINKING_EFFORT",
-      maxTokensEnvVar: "BUZZ_AGENT_MAX_OUTPUT_TOKENS",
-      contextLimitEnvVar: "BUZZ_AGENT_MAX_CONTEXT_TOKENS",
-      maxRoundsEnvVar: "BUZZ_AGENT_MAX_ROUNDS",
+      modelEnvVar: "NIMINO_AGENT_MODEL",
+      providerEnvVar: "NIMINO_AGENT_PROVIDER",
+      thinkingEnvVar: "NIMINO_AGENT_THINKING_EFFORT",
+      maxTokensEnvVar: "NIMINO_AGENT_MAX_OUTPUT_TOKENS",
+      contextLimitEnvVar: "NIMINO_AGENT_MAX_CONTEXT_TOKENS",
+      maxRoundsEnvVar: "NIMINO_AGENT_MAX_ROUNDS",
     }),
     scope: "global",
   });
@@ -197,23 +197,23 @@ test("buzz-agent derives three numeric descriptors from catalog fields", () => {
   assert.equal(maxOutput.render, "control");
   assert.deepEqual(maxOutput.currentPersistence, {
     kind: "envVar",
-    key: "BUZZ_AGENT_MAX_OUTPUT_TOKENS",
+    key: "NIMINO_AGENT_MAX_OUTPUT_TOKENS",
   });
   assert.deepEqual(maxOutput.targetApplication, {
     kind: "envVar",
-    key: "BUZZ_AGENT_MAX_OUTPUT_TOKENS",
+    key: "NIMINO_AGENT_MAX_OUTPUT_TOKENS",
   });
 
   const ctx = field(model, "contextLimit");
   assert.deepEqual(ctx.currentPersistence, {
     kind: "envVar",
-    key: "BUZZ_AGENT_MAX_CONTEXT_TOKENS",
+    key: "NIMINO_AGENT_MAX_CONTEXT_TOKENS",
   });
 
   const rounds = field(model, "maxRounds");
   assert.deepEqual(rounds.currentPersistence, {
     kind: "envVar",
-    key: "BUZZ_AGENT_MAX_ROUNDS",
+    key: "NIMINO_AGENT_MAX_ROUNDS",
   });
 });
 
@@ -282,9 +282,9 @@ test("Codex derives no numeric descriptors", () => {
 test("numeric descriptor value is read from env_vars when set", () => {
   const cfgWithTuning = {
     env_vars: {
-      BUZZ_AGENT_MAX_OUTPUT_TOKENS: "8192",
-      BUZZ_AGENT_MAX_CONTEXT_TOKENS: "100000",
-      BUZZ_AGENT_MAX_ROUNDS: "25",
+      NIMINO_AGENT_MAX_OUTPUT_TOKENS: "8192",
+      NIMINO_AGENT_MAX_CONTEXT_TOKENS: "100000",
+      NIMINO_AGENT_MAX_ROUNDS: "25",
     },
     model: "test-model",
     preferred_runtime: null,
@@ -293,9 +293,9 @@ test("numeric descriptor value is read from env_vars when set", () => {
   const model = deriveAgentConfigFieldModel({
     config: cfgWithTuning,
     runtime: runtime("buzz-agent", {
-      maxTokensEnvVar: "BUZZ_AGENT_MAX_OUTPUT_TOKENS",
-      contextLimitEnvVar: "BUZZ_AGENT_MAX_CONTEXT_TOKENS",
-      maxRoundsEnvVar: "BUZZ_AGENT_MAX_ROUNDS",
+      maxTokensEnvVar: "NIMINO_AGENT_MAX_OUTPUT_TOKENS",
+      contextLimitEnvVar: "NIMINO_AGENT_MAX_CONTEXT_TOKENS",
+      maxRoundsEnvVar: "NIMINO_AGENT_MAX_ROUNDS",
     }),
     scope: "global",
   });
@@ -315,9 +315,9 @@ test("numeric descriptor value is null when env var is absent", () => {
   const model = deriveAgentConfigFieldModel({
     config: cfgEmpty,
     runtime: runtime("buzz-agent", {
-      maxTokensEnvVar: "BUZZ_AGENT_MAX_OUTPUT_TOKENS",
-      contextLimitEnvVar: "BUZZ_AGENT_MAX_CONTEXT_TOKENS",
-      maxRoundsEnvVar: "BUZZ_AGENT_MAX_ROUNDS",
+      maxTokensEnvVar: "NIMINO_AGENT_MAX_OUTPUT_TOKENS",
+      contextLimitEnvVar: "NIMINO_AGENT_MAX_CONTEXT_TOKENS",
+      maxRoundsEnvVar: "NIMINO_AGENT_MAX_ROUNDS",
     }),
     scope: "global",
   });
@@ -336,7 +336,7 @@ test("numeric descriptor value is null when env var is absent", () => {
 //
 // Critical invariant: per-agent Goose passes only its two numeric descriptors
 // (no effort descriptor, because no effort control renders there). The effort
-// key (BUZZ_AGENT_THINKING_EFFORT) must NOT appear in the output — it must
+// key (NIMINO_AGENT_THINKING_EFFORT) must NOT appear in the output — it must
 // stay a visible generic env row where any saved value can be edited.
 
 test("structuredEnvKeys_global_includes_effort_key_and_numeric_keys", () => {
@@ -344,12 +344,12 @@ test("structuredEnvKeys_global_includes_effort_key_and_numeric_keys", () => {
   const buzzAgentModel = deriveAgentConfigFieldModel({
     config,
     runtime: runtime("buzz-agent", {
-      modelEnvVar: "BUZZ_AGENT_MODEL",
-      providerEnvVar: "BUZZ_AGENT_PROVIDER",
-      thinkingEnvVar: "BUZZ_AGENT_THINKING_EFFORT",
-      maxTokensEnvVar: "BUZZ_AGENT_MAX_OUTPUT_TOKENS",
-      contextLimitEnvVar: "BUZZ_AGENT_MAX_CONTEXT_TOKENS",
-      maxRoundsEnvVar: "BUZZ_AGENT_MAX_ROUNDS",
+      modelEnvVar: "NIMINO_AGENT_MODEL",
+      providerEnvVar: "NIMINO_AGENT_PROVIDER",
+      thinkingEnvVar: "NIMINO_AGENT_THINKING_EFFORT",
+      maxTokensEnvVar: "NIMINO_AGENT_MAX_OUTPUT_TOKENS",
+      contextLimitEnvVar: "NIMINO_AGENT_MAX_CONTEXT_TOKENS",
+      maxRoundsEnvVar: "NIMINO_AGENT_MAX_ROUNDS",
     }),
     scope: "global",
   });
@@ -361,19 +361,19 @@ test("structuredEnvKeys_global_includes_effort_key_and_numeric_keys", () => {
   const keys = structuredEnvKeys(renderedDescriptors);
 
   assert.ok(
-    keys.includes("BUZZ_AGENT_THINKING_EFFORT"),
+    keys.includes("NIMINO_AGENT_THINKING_EFFORT"),
     "effort key must be hidden on global (effort control renders)",
   );
   assert.ok(
-    keys.includes("BUZZ_AGENT_MAX_OUTPUT_TOKENS"),
+    keys.includes("NIMINO_AGENT_MAX_OUTPUT_TOKENS"),
     "maxOutputTokens key must be hidden on global",
   );
   assert.ok(
-    keys.includes("BUZZ_AGENT_MAX_CONTEXT_TOKENS"),
+    keys.includes("NIMINO_AGENT_MAX_CONTEXT_TOKENS"),
     "contextLimit key must be hidden on global",
   );
   assert.ok(
-    keys.includes("BUZZ_AGENT_MAX_ROUNDS"),
+    keys.includes("NIMINO_AGENT_MAX_ROUNDS"),
     "maxRounds key must be hidden on global",
   );
 });
@@ -383,10 +383,10 @@ test("structuredEnvKeys_per_agent_buzz_agent_includes_effort_and_numeric_keys", 
   const buzzAgentModel = deriveAgentConfigFieldModel({
     config,
     runtime: runtime("buzz-agent", {
-      thinkingEnvVar: "BUZZ_AGENT_THINKING_EFFORT",
-      maxTokensEnvVar: "BUZZ_AGENT_MAX_OUTPUT_TOKENS",
-      contextLimitEnvVar: "BUZZ_AGENT_MAX_CONTEXT_TOKENS",
-      maxRoundsEnvVar: "BUZZ_AGENT_MAX_ROUNDS",
+      thinkingEnvVar: "NIMINO_AGENT_THINKING_EFFORT",
+      maxTokensEnvVar: "NIMINO_AGENT_MAX_OUTPUT_TOKENS",
+      contextLimitEnvVar: "NIMINO_AGENT_MAX_CONTEXT_TOKENS",
+      maxRoundsEnvVar: "NIMINO_AGENT_MAX_ROUNDS",
     }),
     scope: "definition",
   });
@@ -396,20 +396,26 @@ test("structuredEnvKeys_per_agent_buzz_agent_includes_effort_and_numeric_keys", 
   );
   const keys = structuredEnvKeys(renderedDescriptors);
 
-  assert.ok(keys.includes("BUZZ_AGENT_THINKING_EFFORT"), "effort key present");
-  assert.ok(keys.includes("BUZZ_AGENT_MAX_OUTPUT_TOKENS"), "maxTokens present");
   assert.ok(
-    keys.includes("BUZZ_AGENT_MAX_CONTEXT_TOKENS"),
+    keys.includes("NIMINO_AGENT_THINKING_EFFORT"),
+    "effort key present",
+  );
+  assert.ok(
+    keys.includes("NIMINO_AGENT_MAX_OUTPUT_TOKENS"),
+    "maxTokens present",
+  );
+  assert.ok(
+    keys.includes("NIMINO_AGENT_MAX_CONTEXT_TOKENS"),
     "contextLimit present",
   );
-  assert.ok(keys.includes("BUZZ_AGENT_MAX_ROUNDS"), "maxRounds present");
+  assert.ok(keys.includes("NIMINO_AGENT_MAX_ROUNDS"), "maxRounds present");
 });
 
 test("structuredEnvKeys_per_agent_goose_excludes_effort_key_discriminating_invariant", () => {
   // Per-agent Goose: effort migration is out of scope, so no effort control
   // renders on the per-agent surface for Goose. Only the 2 numeric descriptors
   // are passed as the rendered set. The effort persistence key
-  // (BUZZ_AGENT_THINKING_EFFORT) must NOT appear in the output — any saved
+  // (NIMINO_AGENT_THINKING_EFFORT) must NOT appear in the output — any saved
   // value must remain visible and editable as a generic env row.
   const gooseModel = deriveAgentConfigFieldModel({
     config,
@@ -430,7 +436,7 @@ test("structuredEnvKeys_per_agent_goose_excludes_effort_key_discriminating_invar
   const keys = structuredEnvKeys(numericDescriptorsOnly);
 
   assert.equal(
-    keys.includes("BUZZ_AGENT_THINKING_EFFORT"),
+    keys.includes("NIMINO_AGENT_THINKING_EFFORT"),
     false,
     "effort persistence key must NOT be hidden for Goose per-agent — no editor would replace it",
   );
@@ -479,9 +485,9 @@ test("deriveNumericDescriptors_undefined_runtime_returns_empty", () => {
 test("deriveNumericDescriptors_runtime_with_all_three_fields", () => {
   const ds = deriveNumericDescriptors(
     runtime("buzz-agent", {
-      maxTokensEnvVar: "BUZZ_AGENT_MAX_OUTPUT_TOKENS",
-      contextLimitEnvVar: "BUZZ_AGENT_MAX_CONTEXT_TOKENS",
-      maxRoundsEnvVar: "BUZZ_AGENT_MAX_ROUNDS",
+      maxTokensEnvVar: "NIMINO_AGENT_MAX_OUTPUT_TOKENS",
+      contextLimitEnvVar: "NIMINO_AGENT_MAX_CONTEXT_TOKENS",
+      maxRoundsEnvVar: "NIMINO_AGENT_MAX_ROUNDS",
     }),
   );
   assert.deepEqual(
@@ -515,9 +521,9 @@ test("deriveNumericDescriptors_matches_deriveAgentConfigFieldModel_numeric_subse
   // that deriveAgentConfigFieldModel embeds, so surfaces that call the helper
   // directly get a consistent policy with the full field model.
   const runtimeEntry = runtime("buzz-agent", {
-    maxTokensEnvVar: "BUZZ_AGENT_MAX_OUTPUT_TOKENS",
-    contextLimitEnvVar: "BUZZ_AGENT_MAX_CONTEXT_TOKENS",
-    maxRoundsEnvVar: "BUZZ_AGENT_MAX_ROUNDS",
+    maxTokensEnvVar: "NIMINO_AGENT_MAX_OUTPUT_TOKENS",
+    contextLimitEnvVar: "NIMINO_AGENT_MAX_CONTEXT_TOKENS",
+    maxRoundsEnvVar: "NIMINO_AGENT_MAX_ROUNDS",
   });
 
   const standalone = deriveNumericDescriptors(runtimeEntry);

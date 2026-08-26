@@ -6,8 +6,8 @@
 // never clamped at persistence. The cap is applied only where the value
 // becomes a running worker-pool size:
 //
-//   * local spawn  — `BUZZ_ACP_AGENTS` in the child environment
-//   * remote deploy — `launch.policy_env["BUZZ_ACP_AGENTS"]` + legacy field
+//   * local spawn  — `NIMINO_ACP_AGENTS` in the child environment
+//   * remote deploy — `launch.policy_env["NIMINO_ACP_AGENTS"]` + legacy field
 //   * restart hash  — `SpawnConfigSnapshot` stores the effective value
 //   * display copy  — the UI derives effective for explanatory hints only
 //
@@ -45,12 +45,12 @@ pub fn effective_parallelism(command: &str, value: u32) -> u32 {
     }
 }
 
-/// Return the value to emit as `BUZZ_ACP_AGENTS` for a spawn command.
+/// Return the value to emit as `NIMINO_ACP_AGENTS` for a spawn command.
 ///
 /// Pure helper extracted from `spawn_agent_child` so both the production path
 /// and tests can call it without spawning a process. The result is
 /// `effective_parallelism(effective_command, record_parallelism)` formatted as
-/// a decimal string ready for `command.env("BUZZ_ACP_AGENTS", …)`.
+/// a decimal string ready for `command.env("NIMINO_ACP_AGENTS", …)`.
 ///
 /// `effective_command` must be the already-resolved harness command (override →
 /// runtime → persona runtime → default).
@@ -185,13 +185,13 @@ mod tests {
     // Drives the pure helper extracted from spawn_agent_child.
     // Deleting or changing it breaks this test AND the production spawn env.
 
-    /// Legacy OpenClaw record (parallelism 10, above cap): BUZZ_ACP_AGENTS must be "5".
+    /// Legacy OpenClaw record (parallelism 10, above cap): NIMINO_ACP_AGENTS must be "5".
     #[test]
     fn acp_agents_value_openclaw_above_cap_is_capped() {
         assert_eq!(
             super::acp_agents_value("openclaw", 10),
             "5",
-            "BUZZ_ACP_AGENTS for openclaw with parallelism 10 must be \"5\""
+            "NIMINO_ACP_AGENTS for openclaw with parallelism 10 must be \"5\""
         );
         assert_eq!(super::acp_agents_value("goose", 10), "10");
     }

@@ -117,7 +117,7 @@ fn resolve_linked(
 const LEGACY_MESH_API_KEY_PLACEHOLDER: &str = "sprout-mesh-local";
 
 /// The provider key the preset wrote before #971 (`8c8312932`) renamed it to
-/// `BUZZ_AGENT_PROVIDER`. That commit changed source literals only — persisted
+/// `NIMINO_AGENT_PROVIDER`. That commit changed source literals only — persisted
 /// `env_vars` keys were never migrated.
 const LEGACY_MESH_PROVIDER_ENV_KEY: &str = "SPROUT_AGENT_PROVIDER";
 
@@ -145,7 +145,7 @@ fn mesh_preset_env_model_id(env_vars: &BTreeMap<String, String>) -> Option<Strin
         return None;
     }
     let provider = env_vars
-        .get("BUZZ_AGENT_PROVIDER")
+        .get("NIMINO_AGENT_PROVIDER")
         .or_else(|| env_vars.get(LEGACY_MESH_PROVIDER_ENV_KEY))?
         .trim();
     if provider != "openai" {

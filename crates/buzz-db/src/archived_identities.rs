@@ -128,7 +128,7 @@ fn row_to_archived_identity(
 mod tests {
     use super::*;
 
-    const TEST_DB_URL: &str = "postgres://buzz:buzz_dev@localhost:5432/buzz";
+    const TEST_DB_URL: &str = "postgres://nimino:nimino_dev@localhost:5432/nimino";
 
     async fn setup_pool() -> PgPool {
         PgPool::connect(TEST_DB_URL)

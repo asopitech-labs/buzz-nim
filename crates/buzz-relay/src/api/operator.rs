@@ -533,7 +533,7 @@ mod tests {
         }
     }
 
-    const TEST_DB_URL: &str = "postgres://buzz:buzz_dev@localhost:5432/buzz"; // sadscan:disable np.postgres.1
+    const TEST_DB_URL: &str = "postgres://nimino:nimino_dev@localhost:5432/nimino"; // sadscan:disable np.postgres.1
     const INGRESS_HOST: &str = "operator-ingress.example";
 
     fn nip98_auth_header(keys: &Keys, url: &str, method: &str, body: Option<&[u8]>) -> String {

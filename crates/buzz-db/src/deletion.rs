@@ -3123,9 +3123,9 @@ mod postgres_tests {
     use crate::{CreateCommunityWithOwnerResult, Db, DbConfig};
 
     async fn store() -> (Db, DeletionStore) {
-        let database_url = std::env::var("BUZZ_TEST_DATABASE_URL")
+        let database_url = std::env::var("NIMINO_TEST_DATABASE_URL")
             .or_else(|_| std::env::var("DATABASE_URL"))
-            .unwrap_or_else(|_| "postgres://buzz:buzz_dev@localhost:5432/buzz".to_string());
+            .unwrap_or_else(|_| "postgres://nimino:nimino_dev@localhost:5432/nimino".to_string());
         let db = Db::new(&DbConfig {
             database_url,
             max_connections: 5,
@@ -3607,18 +3607,18 @@ mod postgres_tests {
             .block_preclaim_setup(
                 request.id,
                 "pre_claim:service_setup",
-                "BUZZ_S3_ENDPOINT is required",
+                "NIMINO_S3_ENDPOINT is required",
             )
             .await
             .expect("record setup failure");
         assert_eq!(blocked.stage, DeletionStage::Approved);
         assert_eq!(
             blocked.blocked_reason.as_deref(),
-            Some("BUZZ_S3_ENDPOINT is required")
+            Some("NIMINO_S3_ENDPOINT is required")
         );
         assert_eq!(
             blocked.last_error.as_deref(),
-            Some("BUZZ_S3_ENDPOINT is required")
+            Some("NIMINO_S3_ENDPOINT is required")
         );
         assert!(blocked.lease_owner.is_none());
         let inspection = store.inspect(request.id).await.expect("inspect failure");
@@ -3630,7 +3630,7 @@ mod postgres_tests {
         assert_eq!(checkpoint.status, "failed");
         assert_eq!(
             checkpoint.error.as_deref(),
-            Some("BUZZ_S3_ENDPOINT is required")
+            Some("NIMINO_S3_ENDPOINT is required")
         );
         assert_eq!(checkpoint.attempts, 1);
         assert!(checkpoint.completed_at.is_none());
@@ -3643,17 +3643,17 @@ mod postgres_tests {
             .block_preclaim_setup(
                 request.id,
                 "pre_claim:service_setup",
-                "BUZZ_REDIS_URL is required",
+                "NIMINO_REDIS_URL is required",
             )
             .await
             .expect("record repeated setup failure");
         assert_eq!(
             blocked_again.blocked_reason.as_deref(),
-            Some("BUZZ_REDIS_URL is required")
+            Some("NIMINO_REDIS_URL is required")
         );
         assert_eq!(
             blocked_again.last_error.as_deref(),
-            Some("BUZZ_REDIS_URL is required")
+            Some("NIMINO_REDIS_URL is required")
         );
         let repeated = store
             .inspect(request.id)
@@ -3668,14 +3668,14 @@ mod postgres_tests {
         assert_eq!(checkpoint.attempts, 2);
         assert_eq!(
             checkpoint.error.as_deref(),
-            Some("BUZZ_REDIS_URL is required")
+            Some("NIMINO_REDIS_URL is required")
         );
         assert_eq!(
             checkpoint
                 .detail
                 .get("error")
                 .and_then(|value| value.as_str()),
-            Some("BUZZ_REDIS_URL is required")
+            Some("NIMINO_REDIS_URL is required")
         );
         assert!(checkpoint.completed_at.is_none());
     }
@@ -4401,9 +4401,9 @@ mod postgres_tests {
         // scenario in a dedicated database so concurrent purge/verify tests
         // never observe the drifted surface; advisory locks are also
         // per-database, so the parked migration lock cannot stall them.
-        let base_url = std::env::var("BUZZ_TEST_DATABASE_URL")
+        let base_url = std::env::var("NIMINO_TEST_DATABASE_URL")
             .or_else(|_| std::env::var("DATABASE_URL"))
-            .unwrap_or_else(|_| "postgres://buzz:buzz_dev@localhost:5432/buzz".to_string());
+            .unwrap_or_else(|_| "postgres://nimino:nimino_dev@localhost:5432/nimino".to_string());
         let admin = PgPool::connect(&base_url)
             .await
             .expect("connect admin database");
@@ -4586,9 +4586,9 @@ mod postgres_tests {
     #[tokio::test]
     #[ignore = "requires Postgres"]
     async fn desired_state_schema_bootstrap_progresses_beyond_fencing() {
-        let base_url = std::env::var("BUZZ_TEST_DATABASE_URL")
+        let base_url = std::env::var("NIMINO_TEST_DATABASE_URL")
             .or_else(|_| std::env::var("DATABASE_URL"))
-            .unwrap_or_else(|_| "postgres://buzz:buzz_dev@localhost:5432/buzz".to_string());
+            .unwrap_or_else(|_| "postgres://nimino:nimino_dev@localhost:5432/nimino".to_string());
         let admin = PgPool::connect(&base_url)
             .await
             .expect("connect admin database");

@@ -78,31 +78,34 @@ fn over_long_channel_names_are_replaced() {
     assert_eq!(channel_display(&ok), "a".repeat(64));
 }
 
-/// `BUZZ_CHANNEL_ID` is always the UUID, so a script has an identifier that no
+/// `NIMINO_CHANNEL_ID` is always the UUID, so a script has an identifier that no
 /// channel name can spoof — including a channel *named* like a UUID.
 #[test]
 fn channel_id_is_never_the_name() {
     let context = context_named("11111111-2222-3333-4444-555555555555");
     let vars = context_vars(&context);
-    let id = vars.iter().find(|(k, _)| *k == "BUZZ_CHANNEL_ID").unwrap();
+    let id = vars
+        .iter()
+        .find(|(k, _)| *k == "NIMINO_CHANNEL_ID")
+        .unwrap();
     assert_eq!(
         id.1, UUID,
         "a UUID-shaped channel name displaced the real id"
     );
 }
 
-/// Absent rather than empty: `${BUZZ_THREAD_ID+set}` and `-n` must agree.
+/// Absent rather than empty: `${NIMINO_THREAD_ID+set}` and `-n` must agree.
 #[test]
 fn thread_id_is_absent_when_there_is_no_thread() {
     let vars = context_vars(&context_named("buzz-tui"));
-    assert!(!vars.iter().any(|(k, _)| *k == "BUZZ_THREAD_ID"));
+    assert!(!vars.iter().any(|(k, _)| *k == "NIMINO_THREAD_ID"));
 
     let mut context = context_named("buzz-tui");
     context.thread_id = Some("thread-1".to_owned());
     let vars = context_vars(&context);
     assert_eq!(
         vars.iter()
-            .find(|(k, _)| *k == "BUZZ_THREAD_ID")
+            .find(|(k, _)| *k == "NIMINO_THREAD_ID")
             .map(|(_, v)| v.as_str()),
         Some("thread-1")
     );
@@ -123,11 +126,11 @@ fn every_injected_key_is_well_formed() {
 /// The guard itself, including the bypass shape it exists for.
 #[test]
 fn well_formed_key_rejects_the_equals_bypass() {
-    for good in ["BUZZ_CHANNEL", "_UNDERSCORE", "A1"] {
+    for good in ["NIMINO_CHANNEL", "_UNDERSCORE", "A1"] {
         assert!(is_well_formed_env_key(good), "rejected {good:?}");
     }
     for bad in [
-        "BUZZ_CHANNEL=x",
+        "NIMINO_CHANNEL=x",
         "",
         "1LEADING_DIGIT",
         "HAS SPACE",

@@ -210,11 +210,11 @@ host's Wayland/GStreamer/graphics stack and requires GLib >= 2.72
 
   | Name | Kind | Purpose |
   |------|------|---------|
-  | `BUZZ_RELEASE_TAGGER_CLIENT_ID` | Variable | GitHub App client ID used to create protected release tags |
-  | `BUZZ_RELEASE_TAGGER_PRIVATE_KEY` | Secret | GitHub App private key |
+  | `NIMINO_RELEASE_TAGGER_CLIENT_ID` | Variable | GitHub App client ID used to create protected release tags |
+  | `NIMINO_RELEASE_TAGGER_PRIVATE_KEY` | Secret | GitHub App private key |
   | `OSX_CODESIGN_ROLE` | Secret | macOS signing role used by `block/apple-codesign-action` |
   | `CODESIGN_S3_BUCKET` | Secret | macOS signing exchange bucket |
-  | `BUZZ_UPDATER_PUBLIC_KEY` or `SPROUT_UPDATER_PUBLIC_KEY` | Secret | Tauri updater public key |
+  | `NIMINO_UPDATER_PUBLIC_KEY` or `SPROUT_UPDATER_PUBLIC_KEY` | Secret | Tauri updater public key |
   | `TAURI_SIGNING_PRIVATE_KEY` | Secret | Tauri updater private key |
   | `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | Secret | Password for the private key |
 

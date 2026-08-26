@@ -4,7 +4,7 @@ import { installMockBridge } from "../helpers/bridge";
 import { waitForAnimations } from "../helpers/animations";
 
 const SHOTS = "test-results/sidebar-offcanvas-rail";
-const THEME_STORAGE_KEY = "buzz-theme";
+const THEME_STORAGE_KEY = "nimino-theme";
 const RELAY_URL = "ws://localhost:3000";
 
 const COMMUNITY_A = {
@@ -31,8 +31,8 @@ async function setup(page: Page, theme: string) {
   await installMockBridge(page, undefined, { skipCommunitySeed: true });
   await page.addInitScript(
     ({ list, active }) => {
-      window.localStorage.setItem("buzz-communities", JSON.stringify(list));
-      window.localStorage.setItem("buzz-active-community-id", active);
+      window.localStorage.setItem("nimino-communities", JSON.stringify(list));
+      window.localStorage.setItem("nimino-active-community-id", active);
     },
     { list: [COMMUNITY_A, COMMUNITY_B], active: COMMUNITY_A.id },
   );

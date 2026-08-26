@@ -809,7 +809,7 @@ export function AgentInstanceEditDialog({
   const trimmedProvider = provider.trim();
   const hideProviderIds = React.useMemo(
     () =>
-      (bakedEnvKeys ?? []).includes("BUZZ_AGENT_PROVIDER")
+      (bakedEnvKeys ?? []).includes("NIMINO_AGENT_PROVIDER")
         ? BLOCK_BUILD_HIDDEN_PROVIDER_IDS
         : new Set<string>(),
     [bakedEnvKeys],

@@ -98,7 +98,7 @@ helm_rc=${PIPESTATUS[0]}
 if [ "$helm_rc" != 0 ]; then
   kubectl -n "$NS" get pods -o wide | tee "$EVID/pods-onfail.txt"
   kubectl -n "$NS" describe pods -l app.kubernetes.io/name=buzz | tee "$EVID/describe-onfail.txt"
-  kubectl -n "$NS" logs -l app.kubernetes.io/name=buzz --tail=100 --all-containers | tee "$EVID/logs-onfail.txt"
+  kubectl -n "$NS" logs -l app.kubernetes.io/name=nimino --tail=100 --all-containers | tee "$EVID/logs-onfail.txt"
   die "helm install returned rc=$helm_rc"
 fi
 

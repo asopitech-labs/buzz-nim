@@ -90,7 +90,7 @@ struct PopulationPermit<'a> {
 
 impl Drop for PopulationPermit<'_> {
     fn drop(&mut self) {
-        metrics::gauge!("buzz_git_pack_cache_populations_active").decrement(1.0);
+        metrics::gauge!("nimino_git_pack_cache_populations_active").decrement(1.0);
     }
 }
 
@@ -170,7 +170,8 @@ impl GitPackCache {
     ) -> Result<u64, HydrateError> {
         validate_digest(digest)?;
         if let Some(entry) = self.lookup(digest) {
-            metrics::counter!("buzz_git_pack_cache_lookups_total", "result" => "hit").increment(1);
+            metrics::counter!("nimino_git_pack_cache_lookups_total", "result" => "hit")
+                .increment(1);
             let pack_bytes = entry.pack_bytes;
             if let Ok(()) = install_entry(&entry, digest, destination).await {
                 drop(entry);
@@ -195,7 +196,7 @@ impl GitPackCache {
             }
         };
         metrics::counter!(
-            "buzz_git_pack_cache_lookups_total",
+            "nimino_git_pack_cache_lookups_total",
             "result" => if joined { "coalesced" } else { "miss" }
         )
         .increment(1);
@@ -221,7 +222,7 @@ impl GitPackCache {
                 Err(_) => "error",
             };
             metrics::histogram!(
-                "buzz_git_pack_cache_populate_seconds",
+                "nimino_git_pack_cache_populate_seconds",
                 "outcome" => outcome
             )
             .record(started_at.elapsed().as_secs_f64());
@@ -263,9 +264,9 @@ impl GitPackCache {
             .acquire()
             .await
             .map_err(|_| HydrateError::Hydrate("pack cache population closed".to_string()))?;
-        metrics::histogram!("buzz_git_pack_cache_population_wait_seconds")
+        metrics::histogram!("nimino_git_pack_cache_population_wait_seconds")
             .record(wait_started_at.elapsed().as_secs_f64());
-        metrics::gauge!("buzz_git_pack_cache_populations_active").increment(1.0);
+        metrics::gauge!("nimino_git_pack_cache_populations_active").increment(1.0);
         let _population_permit = PopulationPermit { _permit: permit };
         let shard = self.root.join(&digest[..2]);
         tokio::fs::create_dir_all(&shard)
@@ -292,7 +293,7 @@ impl GitPackCache {
         let total_bytes = pack_bytes.saturating_add(idx_bytes);
 
         if self.max_bytes == 0 || total_bytes > self.max_bytes {
-            metrics::counter!("buzz_git_pack_cache_bypasses_total").increment(1);
+            metrics::counter!("nimino_git_pack_cache_bypasses_total").increment(1);
             return Ok(Arc::new(CachedPack {
                 dir: staging.path().to_path_buf(),
                 pack_path,
@@ -379,7 +380,7 @@ impl GitPackCache {
                 if let Some(record) = state.entries.remove(&digest) {
                     state.total_bytes = state.total_bytes.saturating_sub(record.entry.total_bytes);
                     removed.push(record.entry.dir.clone());
-                    metrics::counter!("buzz_git_pack_cache_evictions_total").increment(1);
+                    metrics::counter!("nimino_git_pack_cache_evictions_total").increment(1);
                 }
             }
             emit_size_metrics(&state);
@@ -451,7 +452,7 @@ async fn install_entry(
         let _ = tokio::fs::remove_file(&destination_pack).await;
         return Err(HydrateError::Hydrate(format!("copy cached idx: {error}")));
     }
-    metrics::counter!("buzz_git_pack_cache_copy_fallbacks_total").increment(1);
+    metrics::counter!("nimino_git_pack_cache_copy_fallbacks_total").increment(1);
     Ok(())
 }
 
@@ -475,8 +476,8 @@ fn regular_file_len(path: &Path) -> Option<u64> {
 }
 
 fn emit_size_metrics(state: &CacheState) {
-    metrics::gauge!("buzz_git_pack_cache_bytes").set(state.total_bytes as f64);
-    metrics::gauge!("buzz_git_pack_cache_entries").set(state.entries.len() as f64);
+    metrics::gauge!("nimino_git_pack_cache_bytes").set(state.total_bytes as f64);
+    metrics::gauge!("nimino_git_pack_cache_entries").set(state.entries.len() as f64);
 }
 
 fn cleanup_stale_sessions(cache_parent: &Path) {

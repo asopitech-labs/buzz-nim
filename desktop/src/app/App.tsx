@@ -100,13 +100,13 @@ function useInitialRenderReady() {
 }
 
 // E2E runs skip the hold (it would slow every spec's boot and block pointer
-// actionability); a spec can opt back in via __BUZZ_E2E__.bootSplashHoldMs.
+// actionability); a spec can opt back in via __NIMINO_E2E__.bootSplashHoldMs.
 function bootSplashHoldMs(): number {
   const e2e = (
     window as Window & {
-      __BUZZ_E2E__?: { bootSplashHoldMs?: number };
+      __NIMINO_E2E__?: { bootSplashHoldMs?: number };
     }
-  ).__BUZZ_E2E__;
+  ).__NIMINO_E2E__;
   if (e2e) {
     return e2e.bootSplashHoldMs ?? 0;
   }
@@ -220,17 +220,17 @@ function CommunityQueryProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const e2eWindow = window as Window & {
-      __BUZZ_E2E__?: unknown;
-      __BUZZ_E2E_QUERY_CLIENT__?: typeof queryClient;
+      __NIMINO_E2E__?: unknown;
+      __NIMINO_E2E_QUERY_CLIENT__?: typeof queryClient;
     };
-    if (!e2eWindow.__BUZZ_E2E__) {
+    if (!e2eWindow.__NIMINO_E2E__) {
       return;
     }
 
-    e2eWindow.__BUZZ_E2E_QUERY_CLIENT__ = queryClient;
+    e2eWindow.__NIMINO_E2E_QUERY_CLIENT__ = queryClient;
     return () => {
-      if (e2eWindow.__BUZZ_E2E_QUERY_CLIENT__ === queryClient) {
-        delete e2eWindow.__BUZZ_E2E_QUERY_CLIENT__;
+      if (e2eWindow.__NIMINO_E2E_QUERY_CLIENT__ === queryClient) {
+        delete e2eWindow.__NIMINO_E2E_QUERY_CLIENT__;
       }
     };
   }, [queryClient]);

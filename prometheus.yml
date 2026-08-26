@@ -1,6 +1,6 @@
 # Local dev Prometheus config — scrapes buzz-relay metrics.
 # The relay runs on the host (not in Docker), so we use host.docker.internal.
-# Default metrics port is 9102; override with BUZZ_METRICS_PORT.
+# Default metrics port is 9102; override with NIMINO_METRICS_PORT.
 global:
   scrape_interval: 5s
 

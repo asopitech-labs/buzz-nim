@@ -38,7 +38,7 @@ fn dispatch() -> Result<(), String> {
         },
         // buzz-dev-mcp also handles its own multicall names: rg, tree,
         // buzz, git-credential-nostr, and git-sign-nostr.
-        _ => buzz_dev_mcp::run().map_err(|e| e.to_string()),
+        _ => nimino_dev_mcp::run().map_err(|e| e.to_string()),
     }
 }
 

@@ -6,35 +6,35 @@
 //! exists to prove that adding the IRSA/credential-chain fallback did **not**
 //! regress hardcoded credentials.
 //!
-//! Run it against the docker-compose MinIO (creds `buzz_dev`/`buzz_dev_secret`,
-//! bucket `buzz-media`, endpoint `http://localhost:9000`):
+//! Run it against the docker-compose MinIO (creds `nimino_dev`/`nimino_dev_secret`,
+//! bucket `nimino-media`, endpoint `http://localhost:9000`):
 //!
 //! ```bash
 //! docker compose up -d minio minio-init
 //! cargo test -p buzz-media --test static_creds_minio -- --ignored
 //! ```
 //!
-//! Overridable via `BUZZ_S3_ENDPOINT` / `BUZZ_S3_ACCESS_KEY` /
-//! `BUZZ_S3_SECRET_KEY` / `BUZZ_S3_BUCKET` / `BUZZ_S3_REGION` /
-//! `BUZZ_S3_ADDRESSING_STYLE`. The default remains `path` for MinIO.
+//! Overridable via `NIMINO_S3_ENDPOINT` / `NIMINO_S3_ACCESS_KEY` /
+//! `NIMINO_S3_SECRET_KEY` / `NIMINO_S3_BUCKET` / `NIMINO_S3_REGION` /
+//! `NIMINO_S3_ADDRESSING_STYLE`. The default remains `path` for MinIO.
 
 use buzz_media::config::MediaConfig;
 use buzz_media::storage::MediaStorage;
 
 fn minio_config() -> MediaConfig {
     MediaConfig {
-        s3_endpoint: std::env::var("BUZZ_S3_ENDPOINT")
+        s3_endpoint: std::env::var("NIMINO_S3_ENDPOINT")
             .unwrap_or_else(|_| "http://localhost:9000".to_string()),
-        s3_access_key: std::env::var("BUZZ_S3_ACCESS_KEY")
-            .unwrap_or_else(|_| "buzz_dev".to_string()),
-        s3_secret_key: std::env::var("BUZZ_S3_SECRET_KEY")
-            .unwrap_or_else(|_| "buzz_dev_secret".to_string()),
-        s3_bucket: std::env::var("BUZZ_S3_BUCKET").unwrap_or_else(|_| "buzz-media".to_string()),
-        s3_region: std::env::var("BUZZ_S3_REGION").unwrap_or_else(|_| "us-east-1".to_string()),
-        s3_addressing_style: std::env::var("BUZZ_S3_ADDRESSING_STYLE")
+        s3_access_key: std::env::var("NIMINO_S3_ACCESS_KEY")
+            .unwrap_or_else(|_| "nimino_dev".to_string()),
+        s3_secret_key: std::env::var("NIMINO_S3_SECRET_KEY")
+            .unwrap_or_else(|_| "nimino_dev_secret".to_string()),
+        s3_bucket: std::env::var("NIMINO_S3_BUCKET").unwrap_or_else(|_| "nimino-media".to_string()),
+        s3_region: std::env::var("NIMINO_S3_REGION").unwrap_or_else(|_| "us-east-1".to_string()),
+        s3_addressing_style: std::env::var("NIMINO_S3_ADDRESSING_STYLE")
             .unwrap_or_else(|_| "path".to_string())
             .parse()
-            .expect("BUZZ_S3_ADDRESSING_STYLE must be path or virtual"),
+            .expect("NIMINO_S3_ADDRESSING_STYLE must be path or virtual"),
         max_image_bytes: 50 * 1024 * 1024,
         max_gif_bytes: 10 * 1024 * 1024,
         max_video_bytes: 524_288_000,

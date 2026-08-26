@@ -31,11 +31,11 @@ async function waitForMockLiveSubscription(
         ({ ch }) =>
           (
             window as Window & {
-              __BUZZ_E2E_HAS_MOCK_LIVE_SUBSCRIPTION__?: (input: {
+              __NIMINO_E2E_HAS_MOCK_LIVE_SUBSCRIPTION__?: (input: {
                 channelName: string;
               }) => boolean;
             }
-          ).__BUZZ_E2E_HAS_MOCK_LIVE_SUBSCRIPTION__?.({ channelName: ch }) ??
+          ).__NIMINO_E2E_HAS_MOCK_LIVE_SUBSCRIPTION__?.({ channelName: ch }) ??
           false,
         { ch: channelName },
       ),
@@ -244,7 +244,7 @@ test("native emoji-only messages leave space below the author metadata", async (
 // `:react:` is a relay-hosted fixture emoji (URL on the relay origin matching
 // rewriteRelayUrl()'s /media/{64-hex}.{ext} pattern), and the mock bridge
 // answers get_media_proxy_port with port 54321 so the rewrite resolves to a
-// real 127.0.0.1 URL rather than the buzz-media:// fallback.
+// real 127.0.0.1 URL rather than the nimino-media:// fallback.
 
 const REACTION_SHORTCODE = "react";
 const SELECTED_ACTION_CLASS = /(^|\s)bg-secondary(\s|$)/;
@@ -276,7 +276,7 @@ async function quickReactionStorageContains(
   return page.evaluate((selectedEmoji) => {
     for (let index = 0; index < window.localStorage.length; index += 1) {
       const key = window.localStorage.key(index);
-      if (!key?.startsWith("buzz.quick-reaction-emojis.v1")) continue;
+      if (!key?.startsWith("nimino.quick-reaction-emojis.v1")) continue;
       if (window.localStorage.getItem(key)?.includes(selectedEmoji)) {
         return true;
       }

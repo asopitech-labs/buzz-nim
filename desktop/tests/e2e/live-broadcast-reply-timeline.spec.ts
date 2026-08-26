@@ -43,7 +43,7 @@ async function waitForMockLiveSubscription(
     .poll(() =>
       page.evaluate(
         (ch) =>
-          window.__BUZZ_E2E_HAS_MOCK_LIVE_SUBSCRIPTION__?.({
+          window.__NIMINO_E2E_HAS_MOCK_LIVE_SUBSCRIPTION__?.({
             channelName: ch,
           }) ?? false,
         channelName,
@@ -63,7 +63,7 @@ async function emit(
 ) {
   const event = await page.evaluate(
     (payload) =>
-      window.__BUZZ_E2E_EMIT_MOCK_MESSAGE__?.({
+      window.__NIMINO_E2E_EMIT_MOCK_MESSAGE__?.({
         channelName: payload.channel,
         content: payload.content,
         parentEventId: payload.parentEventId,
@@ -84,7 +84,7 @@ async function emit(
 
 async function liveOverlayContents(page: import("@playwright/test").Page) {
   return page.evaluate(() => {
-    const qc = window.__BUZZ_E2E_QUERY_CLIENT__ as unknown as {
+    const qc = window.__NIMINO_E2E_QUERY_CLIENT__ as unknown as {
       getQueriesData: (f: unknown) => Array<[readonly unknown[], unknown]>;
     };
     const win = qc
@@ -103,7 +103,7 @@ test("a live broadcast depth-1 reply enters the authoritative channel window sto
   await installMockBridge(page);
   await page.goto("/");
   await page.waitForFunction(
-    () => typeof window.__BUZZ_E2E_EMIT_MOCK_MESSAGE__ === "function",
+    () => typeof window.__NIMINO_E2E_EMIT_MOCK_MESSAGE__ === "function",
   );
 
   // Seed a top-level root into the cold window before opening the channel, so

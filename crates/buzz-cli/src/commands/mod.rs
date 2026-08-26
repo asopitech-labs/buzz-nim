@@ -23,8 +23,8 @@ pub mod workflows;
 use crate::{client::normalize_write_response, error::CliError};
 use nostr::{EventBuilder, Tag};
 
-const GIT_ORIGIN_CHANNEL_ENV: &str = "BUZZ_GIT_ORIGIN_CHANNEL_ID";
-const GIT_ORIGIN_AGENT_ENV: &str = "BUZZ_GIT_ORIGIN_AGENT_NAME";
+const GIT_ORIGIN_CHANNEL_ENV: &str = "NIMINO_GIT_ORIGIN_CHANNEL_ID";
+const GIT_ORIGIN_AGENT_ENV: &str = "NIMINO_GIT_ORIGIN_AGENT_NAME";
 
 /// Add trusted, session-scoped provenance supplied by the ACP harness.
 ///

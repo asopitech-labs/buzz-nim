@@ -20,10 +20,10 @@ import {
  * applied by {@link ThemeProvider} toggling a `data-buzz-sidebar` attribute
  * on the document root; the CSS lives in `shared/styles/globals/theme.css`.
  */
-export const BUZZ_THEME_NAME = "buzz";
+export const NIMINO_THEME_NAME = "buzz";
 
 /**
- * Buzz Dark theme name. The dark-mode counterpart to {@link BUZZ_THEME_NAME}:
+ * Buzz Dark theme name. The dark-mode counterpart to {@link NIMINO_THEME_NAME}:
  * reuses the GitHub Dark palette for every base color, with the same branded
  * sidebar gradient (dark-tuned colors, see `shared/styles/globals/theme.css`).
  * {@link ThemeProvider} toggles the shared `data-buzz-sidebar` attribute for
@@ -33,13 +33,13 @@ export const BUZZ_THEME_NAME = "buzz";
  * combined "Buzz" tile under System mode (follow-OS) plus a single "Buzz" tile
  * under Light and a "Buzz Dark" tile under Dark.
  */
-export const BUZZ_DARK_THEME_NAME = "buzz-dark";
+export const NIMINO_DARK_THEME_NAME = "buzz-dark";
 
 /** The Shiki bundle Buzz borrows its base palette from. */
-export const BUZZ_BASE_THEME: SyntaxThemeName = "github-light";
+export const NIMINO_BASE_THEME: SyntaxThemeName = "github-light";
 
 /** The Shiki bundle Buzz Dark borrows its base palette from. */
-export const BUZZ_DARK_BASE_THEME: SyntaxThemeName = "github-dark";
+export const NIMINO_DARK_BASE_THEME: SyntaxThemeName = "github-dark";
 
 /**
  * Resolve a theme name to the real Shiki bundled theme it maps to.
@@ -53,8 +53,8 @@ export const BUZZ_DARK_BASE_THEME: SyntaxThemeName = "github-dark";
  * back to unhighlighted plain text.
  */
 export function resolveShikiThemeName(name: string): SyntaxThemeName {
-  if (name === BUZZ_THEME_NAME) return BUZZ_BASE_THEME;
-  if (name === BUZZ_DARK_THEME_NAME) return BUZZ_DARK_BASE_THEME;
+  if (name === NIMINO_THEME_NAME) return NIMINO_BASE_THEME;
+  if (name === NIMINO_DARK_THEME_NAME) return NIMINO_DARK_BASE_THEME;
   return name as SyntaxThemeName;
 }
 

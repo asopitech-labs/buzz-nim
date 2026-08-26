@@ -688,7 +688,7 @@ mod tests {
     }
 
     fn env() -> BTreeMap<String, String> {
-        [("BUZZ_RELAY_URL".to_string(), "wss://r".to_string())]
+        [("NIMINO_RELAY_URL".to_string(), "wss://r".to_string())]
             .into_iter()
             .collect()
     }

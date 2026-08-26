@@ -80,7 +80,7 @@ test("localMode_custom_doesNotSupportProviderSelection", () => {
 
 test("localMode_buzzAgent_emptyProvider_notSatisfied", () => {
   // Scenario: user selects buzz-agent but leaves provider empty.
-  // Rust readiness requires BUZZ_AGENT_PROVIDER — empty = NotReady.
+  // Rust readiness requires NIMINO_AGENT_PROVIDER — empty = NotReady.
   // The gate must report not-satisfied and surface the missing field marker,
   // but does NOT block the save button.
   const result = computeLocalModeGate({
@@ -104,7 +104,7 @@ test("localMode_buzzAgent_emptyProvider_notSatisfied", () => {
 
 test("localMode_buzzAgent_emptyModel_notSatisfied", () => {
   // Scenario: buzz-agent + anthropic + API key present, but model left empty.
-  // Rust readiness requires BUZZ_AGENT_MODEL — empty = NotReady.
+  // Rust readiness requires NIMINO_AGENT_MODEL — empty = NotReady.
   // The gate surfaces the missing field marker; save button is still enabled.
   const result = computeLocalModeGate({
     envVars: { ANTHROPIC_API_KEY: "sk-ant-test" },
@@ -868,24 +868,24 @@ test("providerDefaultLabel_sharedCompute_neverLeaksInternalId", () => {
 
 test("bakedDefaults_emptyGlobal_usesBuildValuesForCreateAndEditLabels", () => {
   const bakedEnv = [
-    { key: "BUZZ_AGENT_PROVIDER", value: "databricks_v2", masked: false },
+    { key: "NIMINO_AGENT_PROVIDER", value: "databricks_v2", masked: false },
     {
-      key: "BUZZ_AGENT_MODEL",
+      key: "NIMINO_AGENT_MODEL",
       value: "goose-claude-opus-4-8",
       masked: false,
     },
-    { key: "BUZZ_AGENT_THINKING_EFFORT", value: "high", masked: false },
+    { key: "NIMINO_AGENT_THINKING_EFFORT", value: "high", masked: false },
   ];
   const provider = resolveInheritedDefault(
     null,
     bakedEnv,
-    "BUZZ_AGENT_PROVIDER",
+    "NIMINO_AGENT_PROVIDER",
   );
-  const model = resolveInheritedDefault(null, bakedEnv, "BUZZ_AGENT_MODEL");
+  const model = resolveInheritedDefault(null, bakedEnv, "NIMINO_AGENT_MODEL");
   const effort = resolveInheritedDefault(
     null,
     bakedEnv,
-    "BUZZ_AGENT_THINKING_EFFORT",
+    "NIMINO_AGENT_THINKING_EFFORT",
   );
   const providerOptions = getPersonaProviderOptions("", "buzz-agent");
 
@@ -907,21 +907,21 @@ test("bakedDefaults_emptyGlobal_usesBuildValuesForCreateAndEditLabels", () => {
 
 test("bakedDefaults_explicitGlobalsOverrideBuildValues", () => {
   const bakedEnv = [
-    { key: "BUZZ_AGENT_PROVIDER", value: "databricks_v2", masked: false },
-    { key: "BUZZ_AGENT_MODEL", value: "build-model", masked: false },
-    { key: "BUZZ_AGENT_THINKING_EFFORT", value: "high", masked: false },
+    { key: "NIMINO_AGENT_PROVIDER", value: "databricks_v2", masked: false },
+    { key: "NIMINO_AGENT_MODEL", value: "build-model", masked: false },
+    { key: "NIMINO_AGENT_THINKING_EFFORT", value: "high", masked: false },
   ];
 
   assert.deepEqual(
-    resolveInheritedDefault("anthropic", bakedEnv, "BUZZ_AGENT_PROVIDER"),
+    resolveInheritedDefault("anthropic", bakedEnv, "NIMINO_AGENT_PROVIDER"),
     { source: "global", value: "anthropic" },
   );
   assert.deepEqual(
-    resolveInheritedDefault("global-model", bakedEnv, "BUZZ_AGENT_MODEL"),
+    resolveInheritedDefault("global-model", bakedEnv, "NIMINO_AGENT_MODEL"),
     { source: "global", value: "global-model" },
   );
   assert.deepEqual(
-    resolveInheritedDefault("low", bakedEnv, "BUZZ_AGENT_THINKING_EFFORT"),
+    resolveInheritedDefault("low", bakedEnv, "NIMINO_AGENT_THINKING_EFFORT"),
     { source: "global", value: "low" },
   );
 });

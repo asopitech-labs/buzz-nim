@@ -50,7 +50,7 @@ pub async fn handle_command(
     {
         Ok(true) => {
             metrics::counter!(
-                "buzz_users_created_total",
+                "nimino_users_created_total",
                 "community" => tenant.host().to_owned()
             )
             .increment(1);
@@ -433,7 +433,7 @@ async fn handle_dm_open(
     // 5. Side effects if newly created (post-commit, best-effort)
     if was_created {
         metrics::counter!(
-            "buzz_channels_created_total",
+            "nimino_channels_created_total",
             "community" => tenant.host().to_owned(),
             "type" => "dm"
         )
@@ -594,7 +594,7 @@ async fn handle_dm_add_member(
     // 7. Cache invalidation + notifications for new DM (post-commit, best-effort)
     if was_created {
         metrics::counter!(
-            "buzz_channels_created_total",
+            "nimino_channels_created_total",
             "community" => tenant.host().to_owned(),
             "type" => "dm"
         )
@@ -1444,9 +1444,9 @@ mod tests {
     use nostr::{EventBuilder, Keys, Kind, Tag, Timestamp};
 
     async fn persistence_test_context() -> (buzz_db::Db, TenantContext) {
-        let url = std::env::var("BUZZ_TEST_DATABASE_URL")
+        let url = std::env::var("NIMINO_TEST_DATABASE_URL")
             .or_else(|_| std::env::var("DATABASE_URL"))
-            .unwrap_or_else(|_| "postgres://buzz:buzz_dev@localhost:5432/buzz".to_string());
+            .unwrap_or_else(|_| "postgres://nimino:nimino_dev@localhost:5432/nimino".to_string());
         let pool = sqlx::PgPool::connect(&url)
             .await
             .expect("connect workflow persistence test database");

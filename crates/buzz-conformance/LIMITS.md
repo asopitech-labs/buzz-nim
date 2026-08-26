@@ -104,7 +104,7 @@ cargo test -p buzz-conformance --lib
 #    - bad_coverage_breach.jsonl        → CoverageBreach
 #
 #    To intentionally refresh fixtures after a schema bump:
-#    BUZZ_CONFORMANCE_UPDATE=1 cargo test -p buzz-conformance --test replay_fixtures
+#    NIMINO_CONFORMANCE_UPDATE=1 cargo test -p buzz-conformance --test replay_fixtures
 cargo test -p buzz-conformance --test replay_fixtures
 
 # 3. EmitGuard coverage-breach self-test (2 tests in

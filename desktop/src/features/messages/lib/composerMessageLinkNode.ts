@@ -30,9 +30,9 @@ export type ComposerMessageLinkAttributes = {
   href: string;
 };
 
-const BARE_BUZZ_LINK_AT_START =
-  /^buzz:\/\/(?:message\?|channel\/|(?:pr|issue|repo|project)\?)[^\s<>"')\]}*]+/i;
-const BUZZ_LINK_SUFFIX_AT_START =
+const BARE_NIMINO_LINK_AT_START =
+  /^nimino:\/\/(?:message\?|channel\/|(?:pr|issue|repo|project)\?)[^\s<>"')\]}*]+/i;
+const NIMINO_LINK_SUFFIX_AT_START =
   /^:\/\/(?:message\?|channel\/|(?:pr|issue|repo|project)\?)[^\s<>"')\]}*]+/i;
 const TRAILING_PUNCTUATION = /[.,;:!?]+$/;
 
@@ -176,12 +176,12 @@ export function registerComposerMessageLinkMarkdownIt(
   // biome-ignore lint/suspicious/noExplicitAny: markdown-it state/silent
   const rule = (state: any, silent: boolean): boolean => {
     const remaining = state.src.slice(state.pos);
-    const fullMatch = BARE_BUZZ_LINK_AT_START.exec(remaining);
-    const suffixMatch = BUZZ_LINK_SUFFIX_AT_START.exec(remaining);
+    const fullMatch = BARE_NIMINO_LINK_AT_START.exec(remaining);
+    const suffixMatch = NIMINO_LINK_SUFFIX_AT_START.exec(remaining);
     const resumesTextToken =
-      !fullMatch && suffixMatch && /buzz$/i.test(state.pending ?? "");
+      !fullMatch && suffixMatch && /nimino$/i.test(state.pending ?? "");
     const rawHref =
-      fullMatch?.[0] ?? (resumesTextToken ? `buzz${suffixMatch[0]}` : null);
+      fullMatch?.[0] ?? (resumesTextToken ? `nimino${suffixMatch[0]}` : null);
     if (!rawHref) return false;
     const href = trimBareBuzzLink(rawHref);
     const attrs = resolveComposerMessageLinkAttributes(
@@ -190,11 +190,11 @@ export function registerComposerMessageLinkMarkdownIt(
     );
     if (!attrs) return false;
     if (!silent) {
-      if (resumesTextToken) state.pending = state.pending.slice(0, -4);
+      if (resumesTextToken) state.pending = state.pending.slice(0, -6);
       const token = state.push(tokenType, "span", 0);
       token.meta = attrs;
     }
-    state.pos += href.length - (resumesTextToken ? 4 : 0);
+    state.pos += href.length - (resumesTextToken ? 6 : 0);
     return true;
   };
 

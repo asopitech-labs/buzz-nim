@@ -599,12 +599,12 @@ async fn restart_single_agent_after_install(
     let runtime_keys = match stop_result {
         Ok(Ok(runtime_keys)) => runtime_keys,
         Ok(Err(e)) => {
-            eprintln!("buzz-desktop: install_acp_runtime: skipping restart of {pubkey}: {e}");
+            eprintln!("nimino-desktop: install_acp_runtime: skipping restart of {pubkey}: {e}");
             return InstallRestartOutcome::Skipped;
         }
         Err(e) => {
             eprintln!(
-                "buzz-desktop: install_acp_runtime: spawn_blocking failed for stop of {pubkey}: {e}"
+                "nimino-desktop: install_acp_runtime: spawn_blocking failed for stop of {pubkey}: {e}"
             );
             return InstallRestartOutcome::Skipped;
         }
@@ -617,17 +617,17 @@ async fn restart_single_agent_after_install(
     {
         Ok(_) => {
             eprintln!(
-                "buzz-desktop: install_acp_runtime: restarted setup-mode agent {pubkey} after install"
+                "nimino-desktop: install_acp_runtime: restarted setup-mode agent {pubkey} after install"
             );
             InstallRestartOutcome::Restarted
         }
         Err(e) => {
             eprintln!(
-                "buzz-desktop: install_acp_runtime: failed to start {pubkey} after install: {e}"
+                "nimino-desktop: install_acp_runtime: failed to start {pubkey} after install: {e}"
             );
             if let Err(save_err) = persist_last_error_on_install(app, pubkey, &e) {
                 eprintln!(
-                    "buzz-desktop: install_acp_runtime: failed to persist last_error for {pubkey}: {save_err}"
+                    "nimino-desktop: install_acp_runtime: failed to persist last_error for {pubkey}: {save_err}"
                 );
             }
             InstallRestartOutcome::FailedAfterStop
@@ -722,7 +722,7 @@ fn install_shell_args(
 /// and managed npm install path — keeping them in sync so the hermit-strip list
 /// can't drift between command execution paths.
 ///
-/// On Windows, resolves Git Bash via `resolve_bash_path` (skips `BUZZ_SHELL`
+/// On Windows, resolves Git Bash via `resolve_bash_path` (skips `NIMINO_SHELL`
 /// since install commands require bash syntax). Returns `Err` when no shell
 /// can be found.
 fn install_shell_command(command: &str) -> Result<std::process::Command, String> {
@@ -802,8 +802,8 @@ fn install_shell_command(command: &str) -> Result<std::process::Command, String>
 /// Resolve the shell binary for install commands.
 ///
 /// Unix: `/bin/zsh` if present, else `/bin/bash`.
-/// Windows: Git Bash via `resolve_bash_path` — skips `BUZZ_SHELL` because install
-/// commands use bash-only `-l -c` syntax. A `BUZZ_SHELL=pwsh` user gets a green
+/// Windows: Git Bash via `resolve_bash_path` — skips `NIMINO_SHELL` because install
+/// commands use bash-only `-l -c` syntax. A `NIMINO_SHELL=pwsh` user gets a green
 /// Doctor prereq (their agents work) but installs use the Git Bash fallback chain.
 fn resolve_install_shell() -> Result<std::path::PathBuf, String> {
     #[cfg(not(windows))]

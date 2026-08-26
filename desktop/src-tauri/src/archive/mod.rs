@@ -57,7 +57,7 @@ pub fn spawn_warm_init(app: tauri::AppHandle) {
     tauri::async_runtime::spawn(async move {
         use tauri::Manager;
         if let Err(error) = app.state::<AppState>().archive_db.warm_init().await {
-            eprintln!("buzz-desktop: archive DB init deferred: {error}");
+            eprintln!("nimino-desktop: archive DB init deferred: {error}");
         }
     });
 }

@@ -19,9 +19,9 @@ fi
 
 export PGHOST="${PGHOST:-localhost}"
 export PGPORT="${PGPORT:-5432}"
-export PGUSER="${PGUSER:-buzz}"
-export PGPASSWORD="${PGPASSWORD:-buzz_dev}"
-export PGDATABASE="${PGDATABASE:-buzz}"
+export PGUSER="${PGUSER:-nimino}"
+export PGPASSWORD="${PGPASSWORD:-nimino_dev}"
+export PGDATABASE="${PGDATABASE:-nimino}"
 export RELAY_URL="${RELAY_URL:-ws://localhost:3000}"
 
 hosts_sql=$(python3 - <<'PY'

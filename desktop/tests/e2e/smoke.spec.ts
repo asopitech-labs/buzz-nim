@@ -130,11 +130,11 @@ test("Buzz shared compute explains automatic model selection", async ({
   await page.evaluate(() => {
     (
       window as Window & {
-        __BUZZ_E2E_SET_MESH__?: (mesh: {
+        __NIMINO_E2E_SET_MESH__?: (mesh: {
           models?: Array<{ id: string; name: string | null }>;
         }) => void;
       }
-    ).__BUZZ_E2E_SET_MESH__?.({ models: [] });
+    ).__NIMINO_E2E_SET_MESH__?.({ models: [] });
   });
   await page.getByTestId("open-agents-view").click();
   await page.getByTestId("new-agent-card").click();
@@ -144,8 +144,8 @@ test("Buzz shared compute explains automatic model selection", async ({
     .poll(() =>
       page.evaluate(
         () =>
-          (window as Window & { __BUZZ_E2E_COMMANDS__?: string[] })
-            .__BUZZ_E2E_COMMANDS__ ?? [],
+          (window as Window & { __NIMINO_E2E_COMMANDS__?: string[] })
+            .__NIMINO_E2E_COMMANDS__ ?? [],
       ),
     )
     .toContain("discover_agent_models");
@@ -183,12 +183,12 @@ test("create agent persists Buzz shared compute with auto model", async ({
   const createPayload = await page.evaluate((name) => {
     const log = (
       window as Window & {
-        __BUZZ_E2E_COMMAND_LOG__?: Array<{
+        __NIMINO_E2E_COMMAND_LOG__?: Array<{
           command: string;
           payload: unknown;
         }>;
       }
-    ).__BUZZ_E2E_COMMAND_LOG__;
+    ).__NIMINO_E2E_COMMAND_LOG__;
     return log
       ?.filter((entry) => entry.command === "create_managed_agent")
       .map((entry) => entry.payload as { input?: Record<string, unknown> })
@@ -525,12 +525,12 @@ test("global search offers a conversation-specific scope in direct messages", as
         const calls =
           (
             window as Window & {
-              __BUZZ_E2E_COMMAND_LOG__?: Array<{
+              __NIMINO_E2E_COMMAND_LOG__?: Array<{
                 command: string;
                 payload: unknown;
               }>;
             }
-          ).__BUZZ_E2E_COMMAND_LOG__ ?? [];
+          ).__NIMINO_E2E_COMMAND_LOG__ ?? [];
 
         return calls.findLast((entry) => entry.command === "search_messages")
           ?.payload;
@@ -600,9 +600,9 @@ test("global one-character search does not query the relay", async ({
     const calls =
       (
         window as Window & {
-          __BUZZ_E2E_COMMAND_LOG__?: Array<{ command: string }>;
+          __NIMINO_E2E_COMMAND_LOG__?: Array<{ command: string }>;
         }
-      ).__BUZZ_E2E_COMMAND_LOG__ ?? [];
+      ).__NIMINO_E2E_COMMAND_LOG__ ?? [];
     return calls.filter((entry) => entry.command === "search_messages").length;
   });
   expect(messageSearchCalls).toBe(0);

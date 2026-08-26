@@ -153,7 +153,7 @@ mod tests {
             &image('a'),
             &Resources::default(),
             None,
-            ["BUZZ_RELAY_URL".to_string(), "GOOSE_MODE".to_string()],
+            ["NIMINO_RELAY_URL".to_string(), "GOOSE_MODE".to_string()],
         )
     }
 

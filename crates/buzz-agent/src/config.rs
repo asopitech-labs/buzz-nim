@@ -4,7 +4,7 @@ pub const PROTOCOL_VERSION: u32 = 2;
 
 /// Reasoning/thinking effort level for providers that support it.
 ///
-/// Set via `BUZZ_AGENT_THINKING_EFFORT` (`none|minimal|low|medium|high|xhigh|max`).
+/// Set via `NIMINO_AGENT_THINKING_EFFORT` (`none|minimal|low|medium|high|xhigh|max`).
 /// When unset the provider's default behaviour is preserved — no thinking
 /// config is sent in the request body.
 ///
@@ -136,7 +136,7 @@ fn resolve_openai_effort(
         %model,
         requested = requested.openai_effort_str(),
         resolved = resolved.openai_effort_str(),
-        "BUZZ_AGENT_THINKING_EFFORT={} is not supported by this OpenAI model; using nearest supported level",
+        "NIMINO_AGENT_THINKING_EFFORT={} is not supported by this OpenAI model; using nearest supported level",
         requested.openai_effort_str(),
     );
     resolved
@@ -157,7 +157,7 @@ pub fn normalize_effort_for_anthropic_route(effort: ThinkingEffort) -> Option<Th
         ThinkingEffort::None | ThinkingEffort::Minimal => {
             tracing::warn!(
                 requested = effort.openai_effort_str(),
-                "BUZZ_AGENT_THINKING_EFFORT={} is not expressible as an Anthropic thinking level; \
+                "NIMINO_AGENT_THINKING_EFFORT={} is not expressible as an Anthropic thinking level; \
                  omitting thinking fields (provider default; default-on/always-on adaptive models may still think)",
                 effort.openai_effort_str()
             );
@@ -216,7 +216,7 @@ pub fn normalize_effort_for_databricks_v2(
                     requested = "max",
                     resolved = "xhigh",
                     model = raw_model,
-                    "BUZZ_AGENT_THINKING_EFFORT=max not confirmed for this DatabricksV2 model; clamping to xhigh"
+                    "NIMINO_AGENT_THINKING_EFFORT=max not confirmed for this DatabricksV2 model; clamping to xhigh"
                 );
                 ThinkingEffort::XHigh
             } else {
@@ -266,7 +266,7 @@ pub fn anthropic_thinking_config(
                     level_budget,
                     headroom,
                     model = effective_model,
-                    "BUZZ_AGENT_THINKING_EFFORT: max_output_tokens too small to fit thinking budget + answer headroom; omitting thinking fields"
+                    "NIMINO_AGENT_THINKING_EFFORT: max_output_tokens too small to fit thinking budget + answer headroom; omitting thinking fields"
                 );
                 return (None, None);
             }
@@ -292,7 +292,7 @@ pub fn anthropic_thinking_config(
                     model = effective_model,
                     requested = effort.openai_effort_str(),
                     clamped = clamped.openai_effort_str(),
-                    "BUZZ_AGENT_THINKING_EFFORT is not available for this model; clamping to highest supported level"
+                    "NIMINO_AGENT_THINKING_EFFORT is not available for this model; clamping to highest supported level"
                 );
             }
             (
@@ -319,7 +319,7 @@ pub fn anthropic_thinking_config(
 /// full reasoning text directly (no summary concept); this field is ignored there.
 /// On Chat Completions and OpenRouter paths the field is also ignored.
 ///
-/// Set via `BUZZ_AGENT_THINKING_SUMMARY` (`auto|concise|detailed`).
+/// Set via `NIMINO_AGENT_THINKING_SUMMARY` (`auto|concise|detailed`).
 /// Unset/empty → `auto` (the provider chooses the best available summary for the
 /// model). Use `detailed` for maximum reasoning visibility in the observer feed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -343,7 +343,7 @@ impl ThinkingSummary {
     }
 }
 
-/// Parse `BUZZ_AGENT_THINKING_SUMMARY`. Pure (env-free) for testability.
+/// Parse `NIMINO_AGENT_THINKING_SUMMARY`. Pure (env-free) for testability.
 ///
 /// Unset or empty → `Auto` (the safe default that works for all Responses-capable models).
 /// Invalid value → startup error.
@@ -354,12 +354,12 @@ pub fn parse_thinking_summary(raw: Option<&str>) -> Result<ThinkingSummary, Stri
         Some("concise") => Ok(ThinkingSummary::Concise),
         Some("detailed") => Ok(ThinkingSummary::Detailed),
         Some(other) => Err(format!(
-            "config: BUZZ_AGENT_THINKING_SUMMARY={other} not supported (use auto|concise|detailed)"
+            "config: NIMINO_AGENT_THINKING_SUMMARY={other} not supported (use auto|concise|detailed)"
         )),
     }
 }
 
-/// Parse `BUZZ_AGENT_THINKING_EFFORT`. Pure (env-free) for testability.
+/// Parse `NIMINO_AGENT_THINKING_EFFORT`. Pure (env-free) for testability.
 pub fn parse_thinking_effort(raw: Option<&str>) -> Result<Option<ThinkingEffort>, String> {
     match raw.map(|s| s.trim().to_ascii_lowercase()).as_deref() {
         None | Some("") => Ok(None),
@@ -371,7 +371,7 @@ pub fn parse_thinking_effort(raw: Option<&str>) -> Result<Option<ThinkingEffort>
         Some("xhigh") => Ok(Some(ThinkingEffort::XHigh)),
         Some("max") => Ok(Some(ThinkingEffort::Max)),
         Some(other) => Err(format!(
-            "config: BUZZ_AGENT_THINKING_EFFORT={other} not supported (use none|minimal|low|medium|high|xhigh|max)"
+            "config: NIMINO_AGENT_THINKING_EFFORT={other} not supported (use none|minimal|low|medium|high|xhigh|max)"
         )),
     }
 }
@@ -380,13 +380,13 @@ pub const MAX_PROMPT_BYTES: usize = 1024 * 1024;
 pub const MAX_SYSTEM_PROMPT_BYTES: usize = 512 * 1024;
 /// Total per-result byte ceiling (text + images). Sized for image-bearing
 /// results — view_image can legitimately return multi-MiB base64 payloads.
-/// Text is governed by the much smaller `BUZZ_AGENT_MAX_TOOL_RESULT_TEXT_BYTES`.
+/// Text is governed by the much smaller `NIMINO_AGENT_MAX_TOOL_RESULT_TEXT_BYTES`.
 pub const MAX_TOOL_RESULT_BYTES: usize = 8 * 1024 * 1024;
 /// Default cap on the *text* portion of a single tool result. Oversized text
 /// is middle-elided before it enters history; without this, one fat `cat`
 /// burns the context window and forces a lossy handoff. 50 KiB matches the
 /// shell-output caps in sprout-dev-mcp, goose, and pi; codex defaults to
-/// 10 KB. Tunable via `BUZZ_AGENT_MAX_TOOL_RESULT_TEXT_BYTES`.
+/// 10 KB. Tunable via `NIMINO_AGENT_MAX_TOOL_RESULT_TEXT_BYTES`.
 pub const DEFAULT_TOOL_RESULT_TEXT_BYTES: usize = 50 * 1024;
 pub const MAX_TOOL_CALLS_PER_TURN: usize = 64;
 
@@ -463,20 +463,20 @@ pub struct Config {
     /// Per-tool-result cap on text content. Oversized text is middle-elided
     /// (head + tail kept) before entering history. Images are exempt — they
     /// are bounded by [`MAX_TOOL_RESULT_BYTES`] and accounted separately.
-    /// Set via `BUZZ_AGENT_MAX_TOOL_RESULT_TEXT_BYTES`.
+    /// Set via `NIMINO_AGENT_MAX_TOOL_RESULT_TEXT_BYTES`.
     pub max_tool_result_text_bytes: usize,
     /// Provider context window in tokens used to gate handoff. The handoff
     /// fires when the previous request's (cache-summed) input tokens cross the
     /// handoff threshold for this budget, before the next request can exceed
     /// the window and 400. Default 200_000 — matching Claude 4.x windows;
     /// operators lower/raise it for other models. Set via
-    /// `BUZZ_AGENT_MAX_CONTEXT_TOKENS`.
+    /// `NIMINO_AGENT_MAX_CONTEXT_TOKENS`.
     pub max_context_tokens: u64,
     /// Maximum context-handoff attempts permitted within a single
     /// `session/prompt` turn. Caps runaway compaction loops inside one turn;
     /// does NOT limit handoffs across a session's lifetime — a long-lived
     /// session can compact on every successive turn without hitting this bound.
-    /// Set via `BUZZ_AGENT_MAX_HANDOFFS`. Default 10.
+    /// Set via `NIMINO_AGENT_MAX_HANDOFFS`. Default 10.
     pub max_handoffs: usize,
     pub max_parallel_tools: usize,
     pub hook_timeout: Duration,
@@ -485,7 +485,7 @@ pub struct Config {
     pub stop_max_rejections: u32,
     /// Remind the model to publish when a turn is about to end without any
     /// recognized attempt to post to Buzz. Default off; opt in per agent with
-    /// `BUZZ_AGENT_REQUIRE_REPLY=1`.
+    /// `NIMINO_AGENT_REQUIRE_REPLY=1`.
     ///
     /// Advisory only: at most `MAX_REPLY_NAGS` reminders (see `agent.rs`),
     /// then the turn ends regardless. Bounded by the same
@@ -505,17 +505,17 @@ pub struct Config {
     pub openai_api: OpenAiApi,
     pub hints_enabled: bool,
     /// Thinking/reasoning effort level. `None` = use provider default (no
-    /// thinking config sent). Set via `BUZZ_AGENT_THINKING_EFFORT`.
+    /// thinking config sent). Set via `NIMINO_AGENT_THINKING_EFFORT`.
     pub thinking_effort: Option<ThinkingEffort>,
     /// Reasoning summary mode for the OpenAI Responses route. Controls the
     /// `reasoning.summary` field emitted alongside `reasoning.effort`; only
     /// takes effect when `thinking_effort` is also set. Default `Auto`.
-    /// Set via `BUZZ_AGENT_THINKING_SUMMARY`. Ignored on Anthropic, Chat
+    /// Set via `NIMINO_AGENT_THINKING_SUMMARY`. Ignored on Anthropic, Chat
     /// Completions, and OpenRouter routes.
     pub thinking_summary: ThinkingSummary,
     /// Emit Anthropic `cache_control` breakpoints on the stable prefix
     /// (tools + system prompt) and the rolling conversation tail. Default on;
-    /// disable with `BUZZ_AGENT_PROMPT_CACHING=0`. Consulted on every route that
+    /// disable with `NIMINO_AGENT_PROMPT_CACHING=0`. Consulted on every route that
     /// speaks the Anthropic caching dialect: first-party Anthropic, the
     /// DatabricksV2 Claude route, and OpenRouter's `anthropic/*` models. The
     /// Databricks gateway does not auto-cache, so without this the surfaced
@@ -528,7 +528,7 @@ impl Config {
         let databricks_host = env("DATABRICKS_HOST");
         let databricks_model = env("DATABRICKS_MODEL");
         let provider = resolve_provider(
-            env("BUZZ_AGENT_PROVIDER").as_deref(),
+            env("NIMINO_AGENT_PROVIDER").as_deref(),
             env("ANTHROPIC_API_KEY").as_deref(),
             env("OPENAI_COMPAT_API_KEY").as_deref(),
             env("OPENROUTER_API_KEY").as_deref(),
@@ -538,7 +538,7 @@ impl Config {
         // env vars (ANTHROPIC_MODEL, OPENAI_COMPAT_MODEL, DATABRICKS_MODEL) when
         // present. Set by the desktop from the persona/record to express explicit
         // user intent; provider-specific vars serve as defaults for CLI/standalone use.
-        let buzz_agent_model = env("BUZZ_AGENT_MODEL");
+        let buzz_agent_model = env("NIMINO_AGENT_MODEL");
 
         // OPENAI_COMPAT_API is only read when provider=openai, so a stray
         // bad value can't break an Anthropic-only deployment.
@@ -585,9 +585,9 @@ impl Config {
                 OpenAiApi::Chat, // OpenRouter uses Chat Completions only
             ),
         };
-        let system_prompt = match (env("BUZZ_AGENT_SYSTEM_PROMPT"), env("BUZZ_AGENT_SYSTEM_PROMPT_FILE")) {
+        let system_prompt = match (env("NIMINO_AGENT_SYSTEM_PROMPT"), env("NIMINO_AGENT_SYSTEM_PROMPT_FILE")) {
             (Some(_), Some(_)) => return Err(
-                "config: BUZZ_AGENT_SYSTEM_PROMPT and BUZZ_AGENT_SYSTEM_PROMPT_FILE are mutually exclusive".into()),
+                "config: NIMINO_AGENT_SYSTEM_PROMPT and NIMINO_AGENT_SYSTEM_PROMPT_FILE are mutually exclusive".into()),
             (Some(s), _) => s,
             (_, Some(p)) => std::fs::read_to_string(&p).map_err(|e| format!("config: read {p}: {e}"))?,
             _ => DEFAULT_SYSTEM_PROMPT.to_owned(),
@@ -600,38 +600,41 @@ impl Config {
             base_url,
             anthropic_api_version: env_or("ANTHROPIC_API_VERSION", "2023-06-01"),
             openai_api,
-            max_rounds: parse_env("BUZZ_AGENT_MAX_ROUNDS", 0)?,
-            max_output_tokens: parse_env("BUZZ_AGENT_MAX_OUTPUT_TOKENS", 65_536)?,
-            max_token_recoveries: parse_env("BUZZ_AGENT_MAX_TOKEN_RECOVERIES", 3u32)?,
-            llm_timeout: Duration::from_secs(parse_env("BUZZ_AGENT_LLM_TIMEOUT_SECS", 240)?),
-            tool_timeout: Duration::from_secs(parse_env("BUZZ_AGENT_TOOL_TIMEOUT_SECS", 660)?),
+            max_rounds: parse_env("NIMINO_AGENT_MAX_ROUNDS", 0)?,
+            max_output_tokens: parse_env("NIMINO_AGENT_MAX_OUTPUT_TOKENS", 65_536)?,
+            max_token_recoveries: parse_env("NIMINO_AGENT_MAX_TOKEN_RECOVERIES", 3u32)?,
+            llm_timeout: Duration::from_secs(parse_env("NIMINO_AGENT_LLM_TIMEOUT_SECS", 240)?),
+            tool_timeout: Duration::from_secs(parse_env("NIMINO_AGENT_TOOL_TIMEOUT_SECS", 660)?),
             mcp_init_timeout: Duration::from_secs(parse_env(
-                "BUZZ_AGENT_MCP_INIT_TIMEOUT_SECS",
+                "NIMINO_AGENT_MCP_INIT_TIMEOUT_SECS",
                 30,
             )?),
-            mcp_max_restart_attempts: parse_env("BUZZ_AGENT_MCP_RESTART_MAX_ATTEMPTS", 3u32)?,
-            mcp_restart_base_ms: parse_env("BUZZ_AGENT_MCP_RESTART_BASE_MS", 500u64)?,
-            mcp_restart_max_ms: parse_env("BUZZ_AGENT_MCP_RESTART_MAX_MS", 30_000u64)?,
-            max_sessions: parse_env("BUZZ_AGENT_MAX_SESSIONS", usize::MAX)?,
-            max_line_bytes: parse_env("BUZZ_AGENT_MAX_LINE_BYTES", 4 * 1024 * 1024)?,
-            max_history_bytes: parse_env("BUZZ_AGENT_MAX_HISTORY_BYTES", 16 * 1024 * 1024)?,
+            mcp_max_restart_attempts: parse_env("NIMINO_AGENT_MCP_RESTART_MAX_ATTEMPTS", 3u32)?,
+            mcp_restart_base_ms: parse_env("NIMINO_AGENT_MCP_RESTART_BASE_MS", 500u64)?,
+            mcp_restart_max_ms: parse_env("NIMINO_AGENT_MCP_RESTART_MAX_MS", 30_000u64)?,
+            max_sessions: parse_env("NIMINO_AGENT_MAX_SESSIONS", usize::MAX)?,
+            max_line_bytes: parse_env("NIMINO_AGENT_MAX_LINE_BYTES", 4 * 1024 * 1024)?,
+            max_history_bytes: parse_env("NIMINO_AGENT_MAX_HISTORY_BYTES", 16 * 1024 * 1024)?,
             max_tool_result_text_bytes: parse_env(
-                "BUZZ_AGENT_MAX_TOOL_RESULT_TEXT_BYTES",
+                "NIMINO_AGENT_MAX_TOOL_RESULT_TEXT_BYTES",
                 DEFAULT_TOOL_RESULT_TEXT_BYTES,
             )?,
-            max_context_tokens: parse_env("BUZZ_AGENT_MAX_CONTEXT_TOKENS", 200_000u64)?,
-            max_handoffs: parse_env("BUZZ_AGENT_MAX_HANDOFFS", 10)?,
-            max_parallel_tools: parse_env("BUZZ_AGENT_MAX_PARALLEL_TOOLS", 8usize)?,
-            hook_timeout: Duration::from_millis(parse_env("BUZZ_AGENT_HOOK_TIMEOUT_MS", 2500u64)?),
-            stop_max_rejections: parse_env("BUZZ_AGENT_STOP_MAX_REJECTIONS", 3u32)?,
-            require_reply: parse_env("BUZZ_AGENT_REQUIRE_REPLY", 0u8)? != 0,
+            max_context_tokens: parse_env("NIMINO_AGENT_MAX_CONTEXT_TOKENS", 200_000u64)?,
+            max_handoffs: parse_env("NIMINO_AGENT_MAX_HANDOFFS", 10)?,
+            max_parallel_tools: parse_env("NIMINO_AGENT_MAX_PARALLEL_TOOLS", 8usize)?,
+            hook_timeout: Duration::from_millis(parse_env(
+                "NIMINO_AGENT_HOOK_TIMEOUT_MS",
+                2500u64,
+            )?),
+            stop_max_rejections: parse_env("NIMINO_AGENT_STOP_MAX_REJECTIONS", 3u32)?,
+            require_reply: parse_env("NIMINO_AGENT_REQUIRE_REPLY", 0u8)? != 0,
             hook_servers: parse_hook_servers_env("MCP_HOOK_SERVERS"),
-            hints_enabled: parse_env("BUZZ_AGENT_NO_HINTS", 0u8)? == 0,
-            thinking_effort: parse_thinking_effort(env("BUZZ_AGENT_THINKING_EFFORT").as_deref())?,
+            hints_enabled: parse_env("NIMINO_AGENT_NO_HINTS", 0u8)? == 0,
+            thinking_effort: parse_thinking_effort(env("NIMINO_AGENT_THINKING_EFFORT").as_deref())?,
             thinking_summary: parse_thinking_summary(
-                env("BUZZ_AGENT_THINKING_SUMMARY").as_deref(),
+                env("NIMINO_AGENT_THINKING_SUMMARY").as_deref(),
             )?,
-            prompt_caching: parse_env("BUZZ_AGENT_PROMPT_CACHING", 1u8)? != 0,
+            prompt_caching: parse_env("NIMINO_AGENT_PROMPT_CACHING", 1u8)? != 0,
         };
         cfg.validate()?;
         Ok(cfg)
@@ -686,58 +689,58 @@ impl Config {
         const MIN_TIMEOUT: Duration = Duration::from_secs(1);
 
         if self.max_output_tokens < 1 {
-            return Err("config: BUZZ_AGENT_MAX_OUTPUT_TOKENS must be >= 1".into());
+            return Err("config: NIMINO_AGENT_MAX_OUTPUT_TOKENS must be >= 1".into());
         }
         if self.max_context_tokens <= u64::from(self.max_output_tokens) {
             return Err(format!(
-                "config: BUZZ_AGENT_MAX_CONTEXT_TOKENS ({}) must be > BUZZ_AGENT_MAX_OUTPUT_TOKENS ({}) — the context window must leave room for the response",
+                "config: NIMINO_AGENT_MAX_CONTEXT_TOKENS ({}) must be > NIMINO_AGENT_MAX_OUTPUT_TOKENS ({}) — the context window must leave room for the response",
                 self.max_context_tokens, self.max_output_tokens
             ));
         }
         if self.max_history_bytes < MIN_HISTORY_BYTES {
             return Err(format!(
-                "config: BUZZ_AGENT_MAX_HISTORY_BYTES must be >= {MIN_HISTORY_BYTES}"
+                "config: NIMINO_AGENT_MAX_HISTORY_BYTES must be >= {MIN_HISTORY_BYTES}"
             ));
         }
         if self.max_history_bytes < MAX_PROMPT_BYTES {
             return Err(format!(
-                "config: BUZZ_AGENT_MAX_HISTORY_BYTES ({}) must be >= MAX_PROMPT_BYTES ({MAX_PROMPT_BYTES})",
+                "config: NIMINO_AGENT_MAX_HISTORY_BYTES ({}) must be >= MAX_PROMPT_BYTES ({MAX_PROMPT_BYTES})",
                 self.max_history_bytes
             ));
         }
         if self.max_line_bytes < MIN_LINE_BYTES {
             return Err(format!(
-                "config: BUZZ_AGENT_MAX_LINE_BYTES must be >= {MIN_LINE_BYTES}"
+                "config: NIMINO_AGENT_MAX_LINE_BYTES must be >= {MIN_LINE_BYTES}"
             ));
         }
         if self.max_tool_result_text_bytes < MIN_TOOL_RESULT_TEXT_BYTES
             || self.max_tool_result_text_bytes > MAX_TOOL_RESULT_BYTES
         {
             return Err(format!(
-                "config: BUZZ_AGENT_MAX_TOOL_RESULT_TEXT_BYTES must be in {MIN_TOOL_RESULT_TEXT_BYTES}..={MAX_TOOL_RESULT_BYTES}"
+                "config: NIMINO_AGENT_MAX_TOOL_RESULT_TEXT_BYTES must be in {MIN_TOOL_RESULT_TEXT_BYTES}..={MAX_TOOL_RESULT_BYTES}"
             ));
         }
         if self.llm_timeout < MIN_TIMEOUT {
-            return Err("config: BUZZ_AGENT_LLM_TIMEOUT_SECS must be >= 1".into());
+            return Err("config: NIMINO_AGENT_LLM_TIMEOUT_SECS must be >= 1".into());
         }
         if self.tool_timeout < MIN_TIMEOUT {
-            return Err("config: BUZZ_AGENT_TOOL_TIMEOUT_SECS must be >= 1".into());
+            return Err("config: NIMINO_AGENT_TOOL_TIMEOUT_SECS must be >= 1".into());
         }
         if self.mcp_init_timeout < MIN_TIMEOUT {
-            return Err("config: BUZZ_AGENT_MCP_INIT_TIMEOUT_SECS must be >= 1".into());
+            return Err("config: NIMINO_AGENT_MCP_INIT_TIMEOUT_SECS must be >= 1".into());
         }
         if self.max_parallel_tools < 1 {
-            return Err("config: BUZZ_AGENT_MAX_PARALLEL_TOOLS must be >= 1".into());
+            return Err("config: NIMINO_AGENT_MAX_PARALLEL_TOOLS must be >= 1".into());
         }
         if self.mcp_max_restart_attempts < 1 {
-            return Err("config: BUZZ_AGENT_MCP_RESTART_MAX_ATTEMPTS must be >= 1".into());
+            return Err("config: NIMINO_AGENT_MCP_RESTART_MAX_ATTEMPTS must be >= 1".into());
         }
         if self.mcp_restart_base_ms < 1 {
-            return Err("config: BUZZ_AGENT_MCP_RESTART_BASE_MS must be >= 1".into());
+            return Err("config: NIMINO_AGENT_MCP_RESTART_BASE_MS must be >= 1".into());
         }
         if self.mcp_restart_max_ms < self.mcp_restart_base_ms {
             return Err(
-                "config: BUZZ_AGENT_MCP_RESTART_MAX_MS must be >= BUZZ_AGENT_MCP_RESTART_BASE_MS"
+                "config: NIMINO_AGENT_MCP_RESTART_MAX_MS must be >= NIMINO_AGENT_MCP_RESTART_BASE_MS"
                     .into(),
             );
         }
@@ -754,7 +757,7 @@ impl Config {
             if is_pure_anthropic && matches!(effort, ThinkingEffort::None | ThinkingEffort::Minimal)
             {
                 return Err(format!(
-                    "config: BUZZ_AGENT_THINKING_EFFORT={} is not valid for Anthropic providers \
+                    "config: NIMINO_AGENT_THINKING_EFFORT={} is not valid for Anthropic providers \
                      (allowed: low|medium|high|xhigh|max)",
                     effort.openai_effort_str()
                 ));
@@ -776,7 +779,7 @@ fn req(k: &str) -> Result<String, String> {
     env(k).ok_or_else(|| format!("config: {k} required"))
 }
 
-/// Returns the first present value. `explicit_override` (BUZZ_AGENT_MODEL,
+/// Returns the first present value. `explicit_override` (NIMINO_AGENT_MODEL,
 /// set by the desktop from the persona/record) wins over `provider_default`
 /// (provider-specific env var that may be inherited from the shell).
 /// Returns `None` when both are absent so the caller can supply a
@@ -815,12 +818,12 @@ fn resolve_provider(
                 "openrouter" if present_nonempty(openrouter_key) => Ok(Provider::OpenRouter),
                 "openrouter" => Err("config: OPENROUTER_API_KEY required".into()),
                 _ => Err(format!(
-                    "config: BUZZ_AGENT_PROVIDER={raw} not supported"
+                    "config: NIMINO_AGENT_PROVIDER={raw} not supported"
                 )),
             }
         }
         None => Err(
-            "config: BUZZ_AGENT_PROVIDER is required — set it to your provider (e.g. anthropic, openai, databricks)".into(),
+            "config: NIMINO_AGENT_PROVIDER is required — set it to your provider (e.g. anthropic, openai, databricks)".into(),
         ),
     }
 }
@@ -1128,15 +1131,15 @@ mod tests {
 
     #[test]
     fn resolve_provider_errors_when_provider_env_absent() {
-        // No implicit inference — absent BUZZ_AGENT_PROVIDER is an error.
+        // No implicit inference — absent NIMINO_AGENT_PROVIDER is an error.
         let err = resolve_provider(None, None, None, None).unwrap_err();
-        assert!(err.contains("BUZZ_AGENT_PROVIDER is required"), "{err}");
+        assert!(err.contains("NIMINO_AGENT_PROVIDER is required"), "{err}");
     }
 
     #[test]
     fn resolve_provider_requires_databricks_host_and_model_for_fallback() {
         // Renamed: verify the explicit databricks provider path works correctly.
-        // When BUZZ_AGENT_PROVIDER=databricks, resolve_provider succeeds regardless
+        // When NIMINO_AGENT_PROVIDER=databricks, resolve_provider succeeds regardless
         // of DATABRICKS_HOST/MODEL (those are validated later in from_env()).
         assert_eq!(
             resolve_provider(Some("databricks"), None, None, None).unwrap(),
@@ -1146,13 +1149,13 @@ mod tests {
         let err = resolve_provider(Some("openai"), None, None, None).unwrap_err();
         assert!(err.contains("OPENAI_COMPAT_API_KEY required"), "{err}");
         let err = resolve_provider(None, None, None, None).unwrap_err();
-        assert!(err.contains("BUZZ_AGENT_PROVIDER is required"), "{err}");
+        assert!(err.contains("NIMINO_AGENT_PROVIDER is required"), "{err}");
     }
 
     #[test]
     fn resolve_provider_unsupported_error_preserves_user_casing() {
         let err = resolve_provider(Some("OpenAIish"), None, None, None).unwrap_err();
-        assert!(err.contains("BUZZ_AGENT_PROVIDER=OpenAIish"));
+        assert!(err.contains("NIMINO_AGENT_PROVIDER=OpenAIish"));
     }
 
     #[test]
@@ -1232,7 +1235,10 @@ mod tests {
     #[test]
     fn parse_thinking_effort_rejects_unknown_value() {
         let err = parse_thinking_effort(Some("extreme")).unwrap_err();
-        assert!(err.contains("BUZZ_AGENT_THINKING_EFFORT=extreme"), "{err}");
+        assert!(
+            err.contains("NIMINO_AGENT_THINKING_EFFORT=extreme"),
+            "{err}"
+        );
         assert!(
             err.contains("none|minimal|low|medium|high|xhigh|max"),
             "{err}"
@@ -1282,7 +1288,10 @@ mod tests {
     #[test]
     fn parse_thinking_summary_rejects_unknown_value() {
         let err = parse_thinking_summary(Some("verbose")).unwrap_err();
-        assert!(err.contains("BUZZ_AGENT_THINKING_SUMMARY=verbose"), "{err}");
+        assert!(
+            err.contains("NIMINO_AGENT_THINKING_SUMMARY=verbose"),
+            "{err}"
+        );
         assert!(err.contains("auto|concise|detailed"), "{err}");
     }
 
@@ -1832,7 +1841,7 @@ mod tests {
         let cfg = make_config_for_validation(Provider::Anthropic, Some(ThinkingEffort::None));
         let err = cfg.validate().unwrap_err();
         assert!(
-            err.contains("BUZZ_AGENT_THINKING_EFFORT=none"),
+            err.contains("NIMINO_AGENT_THINKING_EFFORT=none"),
             "error must name the value: {err}"
         );
         assert!(
@@ -1849,7 +1858,10 @@ mod tests {
     fn validate_rejects_minimal_effort_for_anthropic() {
         let cfg = make_config_for_validation(Provider::Anthropic, Some(ThinkingEffort::Minimal));
         let err = cfg.validate().unwrap_err();
-        assert!(err.contains("BUZZ_AGENT_THINKING_EFFORT=minimal"), "{err}");
+        assert!(
+            err.contains("NIMINO_AGENT_THINKING_EFFORT=minimal"),
+            "{err}"
+        );
         assert!(err.contains("not valid for Anthropic"), "{err}");
     }
 

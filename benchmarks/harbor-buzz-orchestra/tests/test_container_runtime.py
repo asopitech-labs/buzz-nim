@@ -166,7 +166,7 @@ def test_prompt_hash_and_identity_override_are_fail_closed(tmp_path):
         )
 
     endpoint = EndpointLaunchConfig(
-        "anthropic", "ANTHROPIC_API_KEY", {"BUZZ_ACP_MCP_COMMAND": "evil"}
+        "anthropic", "ANTHROPIC_API_KEY", {"NIMINO_ACP_MCP_COMMAND": "evil"}
     )
     with pytest.raises(RuntimeLaunchError, match="identity"):
         runtime(tmp_path)._reject_identity_overrides(endpoint)
@@ -240,7 +240,7 @@ async def test_install_stack_uploads_the_pinned_stack(tmp_path):
         tmp_path,
         buzz_acp_binary=binaries["buzz-acp"],
         buzz_agent_binary=binaries["buzz-agent"],
-        buzz_dev_mcp_binary=binaries["buzz-dev-mcp"],
+        nimino_dev_mcp_binary=binaries["buzz-dev-mcp"],
     )
     environment = Environment()
     await rt._install_stack(environment)
@@ -328,23 +328,23 @@ async def test_launch_wires_the_desktop_environment(tmp_path, configured, expect
     command, env = environment.commands[-1]
     assert f"{REMOTE_BIN}/buzz-acp" in command
     # The real product wiring: acp spawns buzz-agent, which gets buzz-dev-mcp.
-    assert env["BUZZ_ACP_AGENT_COMMAND"] == f"{REMOTE_BIN}/buzz-agent"
-    assert env["BUZZ_ACP_MCP_COMMAND"] == f"{REMOTE_BIN}/buzz-dev-mcp"
-    assert env["BUZZ_RELAY_URL"] == trial.relay_ws_url
-    assert env["BUZZ_PRIVATE_KEY"] == orch.nostr_secret_key
+    assert env["NIMINO_ACP_AGENT_COMMAND"] == f"{REMOTE_BIN}/buzz-agent"
+    assert env["NIMINO_ACP_MCP_COMMAND"] == f"{REMOTE_BIN}/buzz-dev-mcp"
+    assert env["NIMINO_RELAY_URL"] == trial.relay_ws_url
+    assert env["NIMINO_PRIVATE_KEY"] == orch.nostr_secret_key
     assert env["NOSTR_PRIVATE_KEY"] == orch.nostr_secret_key
-    assert env["BUZZ_AGENT_NO_HINTS"] == "1"
-    assert env["BUZZ_AGENT_MAX_ROUNDS"] == expected
-    assert env["BUZZ_ACP_SYSTEM_PROMPT_FILE"].endswith("orch-1.system-prompt.md")
+    assert env["NIMINO_AGENT_NO_HINTS"] == "1"
+    assert env["NIMINO_AGENT_MAX_ROUNDS"] == expected
+    assert env["NIMINO_ACP_SYSTEM_PROMPT_FILE"].endswith("orch-1.system-prompt.md")
     # The composed prompt was uploaded into the container.
     assert any(
-        target == env["BUZZ_ACP_SYSTEM_PROMPT_FILE"]
+        target == env["NIMINO_ACP_SYSTEM_PROMPT_FILE"]
         for _, target in environment.uploads
     )
 
 
 def test_runtime_validates_construction_bounds(tmp_path):
-    # 0 is legal and means unbounded (BUZZ_AGENT_MAX_ROUNDS=0); the trial
+    # 0 is legal and means unbounded (NIMINO_AGENT_MAX_ROUNDS=0); the trial
     # budget is the clock. Only negatives are rejected.
     runtime(tmp_path, max_agent_rounds=0)
     with pytest.raises(ValueError, match="unbounded"):
@@ -829,4 +829,4 @@ async def test_thinking_effort_reaches_the_agent(tmp_path, pinned, expected):
         trial_dir=tmp_path,
     )
     _, env = environment.commands[-1]
-    assert env["BUZZ_AGENT_THINKING_EFFORT"] == expected
+    assert env["NIMINO_AGENT_THINKING_EFFORT"] == expected

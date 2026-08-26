@@ -168,17 +168,17 @@ export function isInsideHiddenSpoiler(element: Element): boolean {
 }
 
 /**
- * `urlTransform` for `<ReactMarkdown>` that preserves `buzz://` deep links
- * used by Buzz — both `buzz://message?…` links and `buzz://pr|issue|repo?…`
+ * `urlTransform` for `<ReactMarkdown>` that preserves `nimino://` deep links
+ * used by Buzz — both `nimino://message?…` links and `nimino://pr|issue|repo?…`
  * entity links. The default transform strips unknown schemes (returns `""`)
  * before the `a` component override can see them, which would break copy →
  * paste → click end-to-end.
  *
  * Policy:
- * - `buzz://message` hrefs — preserved unconditionally (handled by the
+ * - `nimino://message` hrefs — preserved unconditionally (handled by the
  *   message-link pill renderer).
- * - `buzz://pr|issue|repo` hrefs — preserved only when `parseEntityLink`
- *   succeeds, keeping the sanitizer active against arbitrary `buzz://` URIs.
+ * - `nimino://pr|issue|repo` hrefs — preserved only when `parseEntityLink`
+ *   succeeds, keeping the sanitizer active against arbitrary `nimino://` URIs.
  * - Everything else delegates to `defaultUrlTransform`.
  */
 export function buzzDeepLinkUrlTransform(value: string, key: string): string {
@@ -190,7 +190,7 @@ export function buzzDeepLinkUrlTransform(value: string, key: string): string {
 
 /**
  * @deprecated Preserved for external callers; use `buzzDeepLinkUrlTransform`
- * which also handles `buzz://pr|issue|repo` entity links.
+ * which also handles `nimino://pr|issue|repo` entity links.
  */
 export function messageLinkUrlTransform(value: string, key: string): string {
   return buzzDeepLinkUrlTransform(value, key);

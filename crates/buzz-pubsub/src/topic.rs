@@ -10,7 +10,7 @@ use uuid::Uuid;
 use crate::error::PubSubError;
 
 /// Redis key prefix for Buzz-scoped pub/sub topics and keys.
-pub const BUZZ_PREFIX: &str = "buzz";
+pub const NIMINO_PREFIX: &str = "buzz";
 
 /// A tenant-local event routing scope.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -43,9 +43,9 @@ impl EventTopicKey {
     pub fn redis_channel(&self) -> String {
         match self.topic {
             EventTopic::Channel(channel_id) => {
-                format!("{BUZZ_PREFIX}:{}:channel:{channel_id}", self.community_id)
+                format!("{NIMINO_PREFIX}:{}:channel:{channel_id}", self.community_id)
             }
-            EventTopic::Global => format!("{BUZZ_PREFIX}:{}:global", self.community_id),
+            EventTopic::Global => format!("{NIMINO_PREFIX}:{}:global", self.community_id),
         }
     }
 
@@ -55,7 +55,7 @@ impl EventTopicKey {
         let Some(prefix) = parts.next() else {
             return Err(PubSubError::InvalidChannelKey(channel.to_string()));
         };
-        if prefix != BUZZ_PREFIX {
+        if prefix != NIMINO_PREFIX {
             return Err(PubSubError::InvalidChannelKey(channel.to_string()));
         }
 

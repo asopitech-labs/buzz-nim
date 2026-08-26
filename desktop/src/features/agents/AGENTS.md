@@ -44,7 +44,7 @@ with a TypeScript lookup table or an id comparison in a component.
    (`hasRenderableAgentConfigField`, `getRenderableEffortField`).
 2. **Effort reads/writes go through the descriptor.** Use the effort
    descriptor's `currentPersistence` key — never a raw
-   `BUZZ_AGENT_THINKING_EFFORT` literal in UI code. `currentPersistence` is
+   `NIMINO_AGENT_THINKING_EFFORT` literal in UI code. `currentPersistence` is
    where the value lives *today*; `targetApplication` is how the harness
    *should* receive it. They intentionally differ until PR 2.7 migrates
    Goose/Claude — do not "fix" one to match the other without doing the
@@ -229,7 +229,7 @@ with a TypeScript lookup table or an id comparison in a component.
 
    **Cut invariant — live mid-conversation effort machinery was deliberately
    removed.** Effort is spawn-scoped only: the worker holds one `startup_effort`
-   read from `BUZZ_ACP_EFFORT_LEVEL` and applies it once at session creation
+   read from `NIMINO_ACP_EFFORT_LEVEL` and applies it once at session creation
    (`apply_startup_effort` in `buzz-acp/src/pool.rs`); there is no pool-level
    effort authority, no live effort switching, and no effort-ack frame. Do not
    reintroduce a live effort-switch RPC, a pool effort field, or a

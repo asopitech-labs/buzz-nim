@@ -18,10 +18,10 @@ pub(super) fn is_desktop_binary(name: &str) -> bool {
 
 /// Check whether `buf` contains `id` as a complete identifier — not as a
 /// prefix of a longer dotted name. The identifier appears in the Tauri config
-/// JSON as `"identifier":"xyz.block.buzz.app.dev"` and in environment entries
+/// JSON as `"identifier":"com.asopitech.nimino.dev"` and in environment entries
 /// as `KEY=...app.dev\0`, so a valid match is followed by a non-identifier byte
 /// (not `[A-Za-z0-9._-]`) or sits at the end of the buffer. This prevents
-/// `xyz.block.buzz.app` from matching inside `xyz.block.buzz.app.dev`.
+/// `com.asopitech.nimino` from matching inside `com.asopitech.nimino.dev`.
 pub(super) fn buffer_contains_identifier(buf: &[u8], id: &[u8]) -> bool {
     if id.is_empty() {
         return false;
@@ -41,11 +41,11 @@ pub(super) fn buffer_contains_identifier(buf: &[u8], id: &[u8]) -> bool {
     })
 }
 
-/// Extract the `BUZZ_MANAGED_AGENT` value from a process's environment.
+/// Extract the `NIMINO_MANAGED_AGENT` value from a process's environment.
 /// Returns `None` if the process doesn't have the marker or can't be read.
 #[cfg(target_os = "macos")]
 fn extract_buzz_marker_value(pid: u32) -> Option<String> {
-    let prefix = b"BUZZ_MANAGED_AGENT=";
+    let prefix = b"NIMINO_MANAGED_AGENT=";
     let buf = sweep::procargs2_buffer(pid)?;
 
     if buf.len() < std::mem::size_of::<libc::c_int>() {
@@ -90,7 +90,7 @@ fn extract_buzz_marker_value(pid: u32) -> Option<String> {
 
 #[cfg(all(unix, not(target_os = "macos")))]
 fn extract_buzz_marker_value(pid: u32) -> Option<String> {
-    let prefix = b"BUZZ_MANAGED_AGENT=";
+    let prefix = b"NIMINO_MANAGED_AGENT=";
     let data = std::fs::read(format!("/proc/{pid}/environ")).ok()?;
     for entry in data.split(|&b| b == 0) {
         if entry.starts_with(prefix) {
@@ -224,7 +224,7 @@ fn desktop_is_alive_for_instance(_instance_id: &str) -> bool {
 
 /// Reap agent processes belonging to dead Buzz desktop instances.
 ///
-/// Scans all user processes for `BUZZ_MANAGED_AGENT=*`, groups them by
+/// Scans all user processes for `NIMINO_MANAGED_AGENT=*`, groups them by
 /// instance ID, and for each foreign instance (≠ `our_instance_id`) checks
 /// whether a Buzz desktop binary is still alive for that instance. If not,
 /// all agents from that dead instance are reaped.
@@ -269,7 +269,7 @@ pub(crate) fn reap_dead_instance_agents(our_instance_id: &str, skip_pids: &[u32]
         }
         // Extract the instance ID from this agent's env.
         // Do NOT name-gate via process_belongs_to_us — custom harnesses use
-        // arbitrary binary names and BUZZ_MANAGED_AGENT is the authoritative
+        // arbitrary binary names and NIMINO_MANAGED_AGENT is the authoritative
         // ownership proof.
         let Some(agent_instance_id) = extract_buzz_marker_value(upid) else {
             continue;
@@ -290,7 +290,7 @@ pub(crate) fn reap_dead_instance_agents(our_instance_id: &str, skip_pids: &[u32]
             continue;
         }
         eprintln!(
-            "buzz-desktop: reaping {} orphaned agent(s) from dead instance '{instance_id}'",
+            "nimino-desktop: reaping {} orphaned agent(s) from dead instance '{instance_id}'",
             agent_pids.len()
         );
         resolve_pgids_and_kill(agent_pids);
@@ -329,7 +329,7 @@ pub(crate) fn reap_dead_instance_agents(our_instance_id: &str, skip_pids: &[u32]
             continue;
         }
         // Do NOT name-gate via process_belongs_to_us — custom harnesses use
-        // arbitrary binary names and BUZZ_MANAGED_AGENT is the authoritative
+        // arbitrary binary names and NIMINO_MANAGED_AGENT is the authoritative
         // ownership proof.
         let Some(agent_instance_id) = extract_buzz_marker_value(upid) else {
             continue;
@@ -348,7 +348,7 @@ pub(crate) fn reap_dead_instance_agents(our_instance_id: &str, skip_pids: &[u32]
             continue;
         }
         eprintln!(
-            "buzz-desktop: reaping {} orphaned agent(s) from dead instance '{instance_id}'",
+            "nimino-desktop: reaping {} orphaned agent(s) from dead instance '{instance_id}'",
             agent_pids.len()
         );
         resolve_pgids_and_kill(agent_pids);
