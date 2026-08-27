@@ -1,5 +1,3 @@
-import { Search } from "lucide-react";
-
 import type { PulseTab } from "@/features/pulse/ui/PulseView";
 import type { RelayAgent } from "@/shared/api/types";
 import { Button } from "@/shared/ui/button";
@@ -32,21 +30,6 @@ export function PulseTabBar({
               className="flex items-center gap-1"
               role="tablist"
             >
-              <Button
-                aria-controls={getPanelId("search")}
-                aria-label="Search Pulse"
-                aria-selected={activeTab === "search"}
-                className="h-7 w-7 shrink-0 rounded-full border border-transparent p-0 text-muted-foreground data-[active=true]:border-border/70 data-[active=true]:bg-background/80 data-[active=true]:text-foreground data-[active=true]:shadow-xs data-[active=true]:backdrop-blur-sm"
-                data-active={activeTab === "search"}
-                id={getTabId("search")}
-                onClick={() => onTabChange("search")}
-                role="tab"
-                size="sm"
-                type="button"
-                variant="ghost"
-              >
-                <Search className="h-4 w-4" />
-              </Button>
               <Button
                 aria-controls={getPanelId("everyone")}
                 aria-selected={activeTab === "everyone"}

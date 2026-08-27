@@ -115,7 +115,10 @@ export function AppShellOverlays({
             channel={activeChannel}
             currentPubkey={currentPubkey}
             onDeleted={onDeleteActiveChannel}
-            onOpenMembers={() => setMembersChannel(activeChannel)}
+            onOpenMembers={() => {
+              setMembersChannel(activeChannel);
+              onChannelManagementOpenChange(false);
+            }}
             onOpenChange={onChannelManagementOpenChange}
             open={true}
           />

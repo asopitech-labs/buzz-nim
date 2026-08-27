@@ -64,34 +64,6 @@
           }
         },
         {
-          "path": "/pulse",
-          "action": "merge",
-          "surface": "desktop.pulse",
-          "replacement": {
-            "targetSurface": "desktop.home",
-            "dataContract": "Home receives human/agent note timelines, publishing, reactions, replies, and share actions; DM actions continue to Conversations and Pulse-only search is removed in favor of global Search."
-          },
-          "evidence": {
-            "path": "desktop/src/app/routes/pulse.tsx",
-            "symbol": "createFileRoute(\"/pulse\")",
-            "signal": "Registered route renders the multi-capability PulseScreen as a second top-level destination."
-          }
-        },
-        {
-          "path": "/reminders",
-          "action": "delete",
-          "surface": "desktop.home",
-          "replacement": {
-            "targetSurface": "desktop.home",
-            "dataContract": "Reminder due state remains available in Home; after alias removal the user selects the Reminders filter because the route does not encode filter state."
-          },
-          "evidence": {
-            "path": "desktop/src/app/routes/reminders.tsx",
-            "symbol": "throw redirect({ to: \"/\" })",
-            "signal": "The route redirects to Home without selecting the reminders filter."
-          }
-        },
-        {
           "path": "/settings",
           "action": "keep",
           "surface": "desktop.settings",
@@ -144,20 +116,6 @@
             "path": "desktop/src/app/routes/projects.$projectId.tsx",
             "symbol": "createFileRoute(\"/projects/$projectId\")",
             "signal": "Registered route renders project and repository detail."
-          }
-        },
-        {
-          "path": "/messages/new",
-          "action": "merge",
-          "surface": "desktop.conversations",
-          "replacement": {
-            "targetSurface": "desktop.conversations",
-            "dataContract": "DM creation remains a conversation action backed by participant-scoped channel state."
-          },
-          "evidence": {
-            "path": "desktop/src/app/routes/messages.new.tsx",
-            "symbol": "createFileRoute(\"/messages/new\")",
-            "signal": "A dedicated route currently renders NewMessageScreen."
           }
         },
         {
@@ -242,7 +200,13 @@
           "action": "keep",
           "owner": "desktop/src/features/channels",
           "implementationIssue": 34,
-          "featureRoots": ["channel-templates", "channels", "chat", "forum", "messages"],
+          "featureRoots": [
+            "channel-templates",
+            "channels",
+            "chat",
+            "forum",
+            "messages"
+          ],
           "dataContract": "NIP-29 channel membership scopes Stream, Forum, and DM events; NIP-22/NIP-10 scopes replies.",
           "replacement": null,
           "usageEvidence": [
@@ -383,17 +347,17 @@
               "dataOwner": "Permission-aware global Search query contract",
               "dataContract": "Delete the Pulse-only input, which has no query/result execution, after global Search includes public notes and its negative route test passes.",
               "evidence": {
-                "path": "desktop/src/features/pulse/ui/PulseView.tsx",
-                "symbol": "aria-label=\"Search Pulse\"",
-                "signal": "The Pulse search tab renders only local input state and a button without a search handler."
+                "path": "desktop/src-tauri/src/commands/messages.rs",
+                "symbol": "serde_json::json!([1, 9, 40002, 45001, 45003])",
+                "signal": "Global Search includes public kind-1 notes; the inert Pulse-only search control is gone."
               }
             }
           ],
           "usageEvidence": [
             {
-              "path": "desktop/src/features/pulse/ui/PulseScreen.tsx",
-              "symbol": "export function PulseScreen()",
-              "signal": "PulseScreen is a top-level destination outside the seven-surface vision."
+              "path": "desktop/src/app/routes/index.tsx",
+              "symbol": "<PulseScreen />",
+              "signal": "Human and agent note capabilities render as the Activity section of Home."
             }
           ]
         },

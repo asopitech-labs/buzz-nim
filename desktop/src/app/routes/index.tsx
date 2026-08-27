@@ -9,12 +9,20 @@ import {
   WELCOME_CHANNEL_READY_EVENT,
 } from "@/features/onboarding/welcome";
 import { useIdentityQuery } from "@/shared/api/hooks";
+import { useFeatureEnabled } from "@/shared/features";
+import { Button } from "@/shared/ui/button";
+
+const PulseScreen = React.lazy(async () => {
+  const module = await import("@/features/pulse/ui/PulseScreen");
+  return { default: module.PulseScreen };
+});
 
 type HomeRouteSearch = {
   item?: string;
   profile?: string;
   profileTab?: string;
   profileView?: string;
+  view?: "activity";
 };
 
 function validateHomeSearch(search: Record<string, unknown>): HomeRouteSearch {
@@ -35,6 +43,7 @@ function validateHomeSearch(search: Record<string, unknown>): HomeRouteSearch {
       typeof search.profileView === "string" && search.profileView.length > 0
         ? search.profileView
         : undefined,
+    view: search.view === "activity" ? "activity" : undefined,
   };
 }
 
@@ -44,7 +53,10 @@ export const Route = createFileRoute("/")({
 });
 
 function HomeRouteComponent() {
-  const { goChannel } = useAppNavigation();
+  const { goActivity, goChannel, goHome } = useAppNavigation();
+  const { view } = Route.useSearch();
+  const activityEnabled = useFeatureEnabled("pulse");
+  const showActivity = activityEnabled && view === "activity";
   const channelsQuery = useChannelsQuery();
   const identityQuery = useIdentityQuery();
   const channels = channelsQuery.data ?? [];
@@ -91,12 +103,51 @@ function HomeRouteComponent() {
   }, [availableChannelIds, openPendingWelcomeChannel]);
 
   return (
-    <HomeScreen
-      availableChannelIds={availableChannelIds}
-      currentPubkey={identityQuery.data?.pubkey}
-      onOpenContext={(channelId, messageId, threadRootId) => {
-        void goChannel(channelId, { messageId, threadRootId });
-      }}
-    />
+    <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <div
+        aria-label="Home sections"
+        className="flex shrink-0 items-center justify-center gap-1 border-b border-border/35 bg-background px-4 py-2"
+        data-testid="home-surface-tabs"
+        role="tablist"
+      >
+        <Button
+          aria-selected={!showActivity}
+          data-testid="home-inbox-tab"
+          onClick={() => void goHome()}
+          role="tab"
+          size="sm"
+          type="button"
+          variant={showActivity ? "ghost" : "secondary"}
+        >
+          Inbox
+        </Button>
+        {activityEnabled ? (
+          <Button
+            aria-selected={showActivity}
+            data-testid="home-activity-tab"
+            onClick={() => void goActivity()}
+            role="tab"
+            size="sm"
+            type="button"
+            variant={showActivity ? "secondary" : "ghost"}
+          >
+            Activity
+          </Button>
+        ) : null}
+      </div>
+      {showActivity ? (
+        <React.Suspense fallback={null}>
+          <PulseScreen />
+        </React.Suspense>
+      ) : (
+        <HomeScreen
+          availableChannelIds={availableChannelIds}
+          currentPubkey={identityQuery.data?.pubkey}
+          onOpenContext={(channelId, messageId, threadRootId) => {
+            void goChannel(channelId, { messageId, threadRootId });
+          }}
+        />
+      )}
+    </div>
   );
 }

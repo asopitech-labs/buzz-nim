@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { installMockBridge } from "../helpers/bridge";
+import { waitForAnimations } from "../helpers/animations";
 import { openSettings } from "../helpers/settings";
 
 const ENGINEERING_CHANNEL_ID = "1c7e1c02-87bb-5e88-b2da-5a7a9432d0c9";
@@ -10,6 +11,68 @@ const FORUM_REPLY_ID = "mock-forum-release-reply";
 
 test.beforeEach(async ({ page }) => {
   await installMockBridge(page);
+});
+
+test("Home owns Inbox and Activity with keyboard history", async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.goto("/");
+  const homeUrl = page.url();
+
+  const activity = page.getByTestId("home-activity-tab");
+  await activity.focus();
+  await page.keyboard.press("Enter");
+
+  await expect(page).toHaveURL(/#\/\?view=activity$/);
+  await expect(
+    page.getByRole("tablist", { name: "Pulse sections" }),
+  ).toBeVisible();
+  await expect(page.getByTestId("open-pulse-view")).toHaveCount(0);
+  await waitForAnimations(page);
+  await page.locator("[data-buzz-content-surface]").last().screenshot({
+    path: "test-results/navigation-consolidation/home-activity.png",
+  });
+
+  await page.keyboard.press(
+    process.platform === "darwin" ? "Meta+[" : "Alt+ArrowLeft",
+  );
+  await expect(page).toHaveURL(homeUrl);
+  await expect(page.getByTestId("home-inbox-list")).toBeVisible();
+});
+
+test("new DM compose stays in Conversations and closes from the keyboard", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await page.goto("/");
+  await expect(page.getByTestId("app-sidebar")).toBeVisible({
+    timeout: 20_000,
+  });
+  const homeUrl = page.url();
+
+  const isMacBrowser = await page.evaluate(() =>
+    /mac|iphone|ipad|ipod/i.test(navigator.platform),
+  );
+  await page.keyboard.press(isMacBrowser ? "Meta+Shift+K" : "Control+Shift+K");
+  await expect(page.getByTestId("new-message-page")).toBeVisible();
+  expect(page.url()).toBe(homeUrl);
+
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("new-message-recipient-popover")).toBeHidden();
+  await page.keyboard.press("Escape");
+  await expect(page.getByTestId("new-message-page")).toHaveCount(0);
+  await expect(page.getByTestId("home-inbox-list")).toBeVisible();
+  expect(page.url()).toBe(homeUrl);
+
+  await page.keyboard.press(isMacBrowser ? "Meta+Shift+K" : "Control+Shift+K");
+  await expect(page.getByTestId("new-message-page")).toBeVisible();
+  await page.evaluate(() => {
+    window.location.hash = "/?view=activity";
+  });
+  await expect(page.getByTestId("new-message-page")).toHaveCount(0);
+  await expect(page.getByTestId("home-activity-tab")).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
 });
 
 /**

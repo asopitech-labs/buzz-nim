@@ -40,7 +40,7 @@ test("opens a profile from a community member avatar", async ({ page }) => {
   await page.getByRole("button", { name: "Open profile for alice" }).click();
 
   await expect(page).toHaveURL(
-    new RegExp(`/pulse\\?profile=${TEST_IDENTITIES.alice.pubkey}$`),
+    new RegExp(`/#/\\?profile=${TEST_IDENTITIES.alice.pubkey}$`),
   );
   await expect(page.getByTestId("user-profile-panel")).toBeVisible();
 });

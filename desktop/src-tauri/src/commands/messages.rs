@@ -175,7 +175,7 @@ fn build_search_messages_filter(
     let mut filter = serde_json::Map::new();
     filter.insert(
         "kinds".to_string(),
-        serde_json::json!([9, 40002, 45001, 45003]),
+        serde_json::json!([1, 9, 40002, 45001, 45003]),
     );
     filter.insert("search".to_string(), serde_json::json!(q.trim()));
     // The desktop topbar is a typeahead surface. This bridge-only extension is

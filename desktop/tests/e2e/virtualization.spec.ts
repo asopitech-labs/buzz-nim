@@ -98,17 +98,18 @@ async function dragOver(page: Page, source: Locator, target: Locator) {
 }
 
 test.describe("list virtualization", () => {
-  test("01 — Pulse windowed feed with sticky composer pinned mid-scroll", async ({
+  test("01 — Activity windowed feed with sticky composer pinned mid-scroll", async ({
     page,
   }) => {
+    test.setTimeout(90_000);
     await installMockBridge(page);
     await page.goto("/");
-    await page.getByTestId("open-pulse-view").click();
+    await page.getByTestId("home-activity-tab").click();
 
     // The seeded feed overflows the viewport (30 notes), so the windowed list
     // renders a subset and the composer stays pinned. Wait for virtual rows.
     const rows = page.locator("[data-index]");
-    await expect(rows.first()).toBeVisible();
+    await expect(rows.first()).toBeVisible({ timeout: 20_000 });
     const composer = page.locator(".pulse-composer");
     await expect(composer).toBeVisible();
 

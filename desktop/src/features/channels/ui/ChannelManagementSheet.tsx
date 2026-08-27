@@ -29,7 +29,6 @@ import {
   formatTtlDuration,
 } from "@/features/channels/lib/ephemeralChannel";
 import type { Channel, ChannelMember, Workflow } from "@/shared/api/types";
-import { useWorkflowEditorOverlay } from "@/shared/context/WorkflowEditorOverlayContext";
 import { useFeatureEnabled } from "@/shared/features";
 import { cn } from "@/shared/lib/cn";
 import { useTheme } from "@/shared/theme/ThemeProvider";
@@ -108,10 +107,6 @@ export function ChannelManagementSheet({
 }: ChannelManagementSheetProps) {
   const { isDark } = useTheme();
   const { goNewWorkflowForChannel, goWorkflow } = useAppNavigation();
-  const {
-    openNewWorkflow: openNewWorkflowOverlay,
-    openWorkflow: openWorkflowOverlay,
-  } = useWorkflowEditorOverlay();
   const isSplitLayout = layout === "split";
   const auxiliaryPanelMode = getAuxiliaryPanelMode(
     isSplitLayout,
@@ -254,28 +249,13 @@ export function ChannelManagementSheet({
     onOpenChange(next);
   }
 
-  // Workflows open as a modal above the channel settings Workflows view. Keep
-  // that view mounted behind the editor so every completed close path (clean,
-  // dirty-discard, or create cancel) returns to the exact surface that opened
-  // it. The navigation fallbacks still close the sheet before changing routes;
-  // canonical /workflows deep links stay unchanged either way.
   function handleOpenWorkflow(workflow: Workflow) {
-    if (openWorkflowOverlay) {
-      openWorkflowOverlay(workflow.id, workflow);
-      return;
-    }
-
     handlePanelOpenChange(false);
     void goWorkflow(workflow.id);
   }
 
   function handleCreateWorkflow() {
     if (!channelId) return;
-
-    if (openNewWorkflowOverlay) {
-      openNewWorkflowOverlay(channelId);
-      return;
-    }
 
     handlePanelOpenChange(false);
     void goNewWorkflowForChannel(channelId);

@@ -69,11 +69,12 @@ export function useAppNavigation() {
     [commitNavigation],
   );
 
-  const goPulse = React.useCallback(
+  const goActivity = React.useCallback(
     (behavior?: NavigationBehavior) =>
       commitNavigation(
         {
-          to: "/pulse",
+          to: "/",
+          search: { view: "activity" },
         },
         behavior,
       ),
@@ -84,7 +85,7 @@ export function useAppNavigation() {
     (pubkey: string, behavior?: NavigationBehavior) =>
       commitNavigation(
         {
-          to: "/pulse",
+          to: "/",
           search: { profile: pubkey },
         },
         behavior,
@@ -286,17 +287,6 @@ export function useAppNavigation() {
     [commitNavigation],
   );
 
-  const goNewMessage = React.useCallback(
-    (behavior?: NavigationBehavior) =>
-      commitNavigation(
-        {
-          to: "/messages/new",
-        },
-        behavior,
-      ),
-    [commitNavigation],
-  );
-
   const goForumPost = React.useCallback(
     (
       channelId: string,
@@ -382,29 +372,29 @@ export function useAppNavigation() {
     ) =>
       openSearchHitWithNavigation(hit, {
         force: behavior?.force,
+        goActivity,
         goChannel,
         goForumPost,
         signal: behavior?.signal,
       }),
-    [goChannel, goForumPost],
+    [goActivity, goChannel, goForumPost],
   );
 
   return {
     closeForumPost,
     closeSettings,
     closeWorkflowDetail,
+    goActivity,
     goAgents,
     goChannel,
     goDuplicateWorkflow,
     goEditWorkflow,
     goForumPost,
     goHome,
-    goNewMessage,
     goNewWorkflow,
     goNewWorkflowForChannel,
     goProject,
     goProjects,
-    goPulse,
     goProfile,
     goSettings,
     goWorkflow,

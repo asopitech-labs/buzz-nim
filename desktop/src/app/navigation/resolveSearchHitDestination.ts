@@ -1,9 +1,16 @@
 import { getThreadReference } from "@/features/messages/lib/threading";
 import { getEventById } from "@/shared/api/tauri";
 import type { SearchHit } from "@/shared/api/types";
-import { KIND_FORUM_COMMENT, KIND_FORUM_POST } from "@/shared/constants/kinds";
+import {
+  KIND_FORUM_COMMENT,
+  KIND_FORUM_POST,
+  KIND_TEXT_NOTE,
+} from "@/shared/constants/kinds";
 
 export type SearchHitDestination =
+  | {
+      kind: "activity";
+    }
   | {
       kind: "channel";
       channelId: string;
@@ -20,6 +27,10 @@ export type SearchHitDestination =
 export async function resolveSearchHitDestination(
   hit: SearchHit,
 ): Promise<SearchHitDestination | null> {
+  if (hit.kind === KIND_TEXT_NOTE) {
+    return { kind: "activity" };
+  }
+
   if (!hit.channelId) {
     return null;
   }
