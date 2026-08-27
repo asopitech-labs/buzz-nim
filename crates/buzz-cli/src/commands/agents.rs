@@ -1056,7 +1056,7 @@ mod tests {
     fn archive_admin_flag_is_parsed() {
         use crate::Cli;
         use clap::Parser;
-        let cli = Cli::try_parse_from(["buzz", "agents", "archive", &hex64('a'), "--admin"])
+        let cli = Cli::try_parse_from(["nimino", "agents", "archive", &hex64('a'), "--admin"])
             .expect("--admin must be accepted by agents archive");
         match cli.command {
             crate::Cmd::Agents(crate::AgentsCmd::Archive { admin, .. }) => {
@@ -1070,7 +1070,7 @@ mod tests {
     fn unarchive_admin_flag_is_parsed() {
         use crate::Cli;
         use clap::Parser;
-        let cli = Cli::try_parse_from(["buzz", "agents", "unarchive", &hex64('a'), "--admin"])
+        let cli = Cli::try_parse_from(["nimino", "agents", "unarchive", &hex64('a'), "--admin"])
             .expect("--admin must be accepted by agents unarchive");
         match cli.command {
             crate::Cmd::Agents(crate::AgentsCmd::Unarchive { admin, .. }) => {

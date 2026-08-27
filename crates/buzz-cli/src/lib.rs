@@ -1080,7 +1080,7 @@ pub enum NotesCmd {
     /// title is carried forward when `--title` is omitted, and `--title ""`
     /// explicitly clears it.
     #[command(
-        after_help = "Examples:\n  echo '# Hello' | buzz notes set --name hello --title 'Hello' --content -\n  buzz notes set --name hello --tag onboarding --content - < draft.md"
+        after_help = "Examples:\n  echo '# Hello' | nimino notes set --name hello --title 'Hello' --content -\n  nimino notes set --name hello --tag onboarding --content - < draft.md"
     )]
     Set {
         /// Slug — becomes the `d` tag. `[a-z0-9._-]{1,80}`.
@@ -1387,7 +1387,7 @@ pub enum ProjectsCmd {
 pub enum PatchesCmd {
     /// Send a git patch (NIP-34 kind:1617)
     #[command(
-        after_help = "Examples:\n  git format-patch -1 HEAD --stdout | buzz patches send --repo-owner <hex> --repo-id myrepo --patch-file - --root\n  buzz patches send --repo-owner <hex> --repo-id myrepo --patch-file 0001-fix.patch --reply-to <prev-patch-id>"
+        after_help = "Examples:\n  git format-patch -1 HEAD --stdout | nimino patches send --repo-owner <hex> --repo-id myrepo --patch-file - --root\n  nimino patches send --repo-owner <hex> --repo-id myrepo --patch-file 0001-fix.patch --reply-to <prev-patch-id>"
     )]
     Send {
         /// Repo owner pubkey (64-char hex)
@@ -1854,7 +1854,7 @@ pub enum MemCmd {
     },
 }
 
-/// Subcommands for `buzz pack`.
+/// Subcommands for `nimino pack`.
 #[derive(Subcommand)]
 pub enum PackCmd {
     /// Validate a persona pack directory
@@ -1879,7 +1879,7 @@ pub enum PackCmd {
 pub enum ModerationCmd {
     /// List reports in the moderation queue (newest first)
     #[command(
-        after_help = "Examples:\n  buzz moderation reports\n  buzz moderation reports --status open --limit 20"
+        after_help = "Examples:\n  nimino moderation reports\n  nimino moderation reports --status open --limit 20"
     )]
     Reports {
         /// Filter by status: open | resolved | dismissed | escalated (default: all)
@@ -1891,7 +1891,7 @@ pub enum ModerationCmd {
     },
     /// Resolve or dismiss a report (kind 9044)
     #[command(
-        after_help = "Examples:\n  buzz moderation resolve --report <REPORT_EVENT_ID> --status dismissed --action dismiss\n  buzz moderation resolve --report <REPORT_EVENT_ID> --status resolved --action ban --reason \"rule 3\""
+        after_help = "Examples:\n  nimino moderation resolve --report <REPORT_EVENT_ID> --status dismissed --action dismiss\n  nimino moderation resolve --report <REPORT_EVENT_ID> --status resolved --action ban --reason \"rule 3\""
     )]
     Resolve {
         /// Hex event id of the kind:1984 report being resolved
@@ -1909,7 +1909,7 @@ pub enum ModerationCmd {
     },
     /// Ban a member from the community (kind 9040)
     #[command(
-        after_help = "Examples:\n  buzz moderation ban --pubkey <HEX>\n  buzz moderation ban --pubkey <HEX> --expires-in 604800 --reason \"repeated spam\""
+        after_help = "Examples:\n  nimino moderation ban --pubkey <HEX>\n  nimino moderation ban --pubkey <HEX> --expires-in 604800 --reason \"repeated spam\""
     )]
     Ban {
         /// Target member pubkey (hex)
@@ -1933,7 +1933,7 @@ pub enum ModerationCmd {
     },
     /// Time out a member — a write-block, not a disconnect (kind 9042)
     #[command(
-        after_help = "Examples:\n  buzz moderation timeout --pubkey <HEX> --expires-in 3600\n  buzz moderation timeout --pubkey <HEX> --expires-at 1783500000 --reason \"cool off\""
+        after_help = "Examples:\n  nimino moderation timeout --pubkey <HEX> --expires-in 3600\n  nimino moderation timeout --pubkey <HEX> --expires-at 1783500000 --reason \"cool off\""
     )]
     Timeout {
         /// Target member pubkey (hex)
@@ -2074,6 +2074,10 @@ async fn run(cli: Cli) -> Result<(), CliError> {
         Cmd::Pack(_) => unreachable!("handled above"),
     }
 }
+
+#[cfg(test)]
+#[path = "cli_contract_tests.rs"]
+mod cli_contract_tests;
 
 #[cfg(test)]
 mod tests {

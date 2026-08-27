@@ -1,12 +1,13 @@
 use nimino_boundary::{
-    BoundaryFault, BoundaryRequest, BoundaryResponse, BoundaryResult, ClusterLifecycleError,
-    ClusterLifecyclePolicyResult, ClusterNodeState, CommunityAction, CommunityPolicyError,
-    CommunityPolicyResult, DmPolicyError, DmPolicyResult, EchoPayload, EventDisposition,
-    EventPolicyError, EventPolicyResult, LifecycleEffect, MembershipAction, MembershipPolicyError,
-    MembershipPolicyResult, MembershipRole, ModerationAuditAction, ModerationAuthority,
-    ModerationEffect, ModerationPolicyError, ModerationPolicyResult, RemoteErrorCode,
-    RetryDisposition, WorkflowPolicyError, WorkflowPolicyResult, WorkflowPortEffect,
-    WorkflowRunState, WorkflowRunStatus, HOST_ERROR_CODES, PROTOCOL_NAME, PROTOCOL_VERSION,
+    BoundaryFault, BoundaryRequest, BoundaryResponse, BoundaryResult, CliCommandError, CliIoMode,
+    CliPolicyOperation, CliPolicyResult, ClusterLifecycleError, ClusterLifecyclePolicyResult,
+    ClusterNodeState, CommunityAction, CommunityPolicyError, CommunityPolicyResult, DmPolicyError,
+    DmPolicyResult, EchoPayload, EventDisposition, EventPolicyError, EventPolicyResult,
+    LifecycleEffect, MembershipAction, MembershipPolicyError, MembershipPolicyResult,
+    MembershipRole, ModerationAuditAction, ModerationAuthority, ModerationEffect,
+    ModerationPolicyError, ModerationPolicyResult, RemoteErrorCode, RetryDisposition,
+    WorkflowPolicyError, WorkflowPolicyResult, WorkflowPortEffect, WorkflowRunState,
+    WorkflowRunStatus, HOST_ERROR_CODES, PROTOCOL_NAME, PROTOCOL_VERSION,
 };
 use serde_json::json;
 
@@ -136,6 +137,31 @@ fn workflow_policy_fixtures_use_the_typed_operation_variant() {
                 revision: 4,
             },
             port_effect: WorkflowPortEffect::PersistTransition,
+        })
+    );
+}
+
+#[test]
+fn cli_policy_fixtures_use_the_typed_operation_variant() {
+    let request: BoundaryRequest = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/cli-policy.request.json"
+    ))
+    .expect("valid CLI policy request");
+    assert_eq!(request.operation_name(), "domain.cli.policy");
+
+    let response: BoundaryResponse = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/cli-policy.response.json"
+    ))
+    .expect("valid CLI policy response");
+    assert_eq!(
+        response.into_result().expect("policy success"),
+        BoundaryResult::CliPolicy(CliPolicyResult::Command {
+            accepted: true,
+            error: CliCommandError::None,
+            io_mode: CliIoMode::RelayWrite,
+            requires_auth: true,
+            output_contract: "nimino.cli-output/v1".to_owned(),
+            policy_operation: CliPolicyOperation::Workflow,
         })
     );
 }

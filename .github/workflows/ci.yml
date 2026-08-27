@@ -63,6 +63,7 @@ jobs:
               - 'nim/nimino_core/src/nimino_core/domain/dm_policy.nim'
               - 'nim/nimino_core/src/nimino_core/domain/moderation_policy.nim'
               - 'nim/nimino_core/src/nimino_core/domain/workflow_policy.nim'
+              - 'nim/nimino_core/src/nimino_core/domain/cli_policy.nim'
               - 'nim/nimino_core/src/nimino_core/domain/cluster_lifecycle.nim'
               - 'nim/nimino_core/tests/test_boundary_protocol.nim'
               - 'nim/nimino_core/tests/test_event_policy.nim'
@@ -71,6 +72,7 @@ jobs:
               - 'nim/nimino_core/tests/test_dm_policy.nim'
               - 'nim/nimino_core/tests/test_moderation_policy.nim'
               - 'nim/nimino_core/tests/test_workflow_policy.nim'
+              - 'nim/nimino_core/tests/test_cli_policy.nim'
               - 'nim/nimino_core/tests/test_cluster_lifecycle.nim'
               - 'hermit-packages/nim.hcl'
               - 'bin/hermit.hcl'
@@ -86,6 +88,7 @@ jobs:
               - 'scripts/test-nimino-dm-contract.mjs'
               - 'scripts/test-nimino-moderation-contract.mjs'
               - 'scripts/test-nimino-workflow-contract.mjs'
+              - 'scripts/test-nimino-cli-contract.mjs'
               - 'scripts/test-nimino-cluster-contract.mjs'
               - 'contracts/nim-rust-boundary/**'
               - 'contracts/nimino-event/**'
@@ -94,6 +97,7 @@ jobs:
               - 'contracts/nimino-dm/**'
               - 'contracts/nimino-moderation/**'
               - 'contracts/nimino-workflow/**'
+              - 'contracts/nimino-cli/**'
               - 'contracts/nimino-cluster/**'
               - 'contracts/nimino-cluster-scenarios/**'
               - 'crates/nimino-boundary/**'
@@ -180,6 +184,8 @@ jobs:
         run: node scripts/test-nimino-moderation-contract.mjs
       - name: Nimino workflow policy contract
         run: node scripts/test-nimino-workflow-contract.mjs
+      - name: Nimino CLI contract
+        run: just nimino-cli-contract
       - name: Nimino cluster lifecycle contract
         run: just nimino-cluster-contract
       - name: Nimino real-mesh scenario contract

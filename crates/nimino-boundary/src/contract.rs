@@ -2,6 +2,7 @@ use serde::{de::Error as _, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
 use uuid::Uuid;
 
+use crate::cli::{CliPolicyRequest, CliPolicyResult};
 use crate::cluster::{ClusterLifecyclePolicyRequest, ClusterLifecyclePolicyResult};
 use crate::community::{CommunityPolicyRequest, CommunityPolicyResult};
 use crate::dm::{DmPolicyRequest, DmPolicyResult};
@@ -14,7 +15,7 @@ pub const PROTOCOL_NAME: &str = "nimino.core.boundary";
 /// The only accepted boundary version. No downgrade path exists.
 pub const PROTOCOL_VERSION: u16 = 1;
 /// SHA-256 of the checked-in v1 contract bundle.
-pub const SCHEMA_HASH: &str = "448511ec424284413bdc7dd4cae017571edb71d1a9c74b5bd3913faaa47aa532";
+pub const SCHEMA_HASH: &str = "04c0ba01edd29711a1737ed76c85a082f2f6e3de48d04965eefd271105151113";
 /// Role required during the exact-match startup handshake.
 pub const WORKER_ROLE: &str = "nimino-core";
 /// Maximum JSON payload length accepted by the frame codec.
@@ -496,6 +497,8 @@ pub enum BoundaryResult {
     ModerationPolicy(ModerationPolicyResult),
     /// Definition, condition, planning, and transition decision owned by Nimino.
     WorkflowPolicy(WorkflowPolicyResult),
+    /// Command grammar, adapter route, output, and exit decision owned by Nimino.
+    CliPolicy(CliPolicyResult),
     /// Cluster admission, lifecycle, and lane decision owned by Nimino.
     ClusterLifecycle(ClusterLifecyclePolicyResult),
     /// Test-only operation result; never present in a production build.
@@ -534,6 +537,8 @@ pub(crate) enum BoundaryOperation {
     ModerationPolicy(ModerationPolicyRequest),
     /// Workflow definition, condition, planning, and transition policy.
     WorkflowPolicy(WorkflowPolicyRequest),
+    /// CLI command and failure policy.
+    CliPolicy(CliPolicyRequest),
     /// Cluster admission, lifecycle, and lane policy.
     ClusterLifecycle(ClusterLifecyclePolicyRequest),
     /// Deterministic blocking operation available only to boundary tests.
@@ -570,6 +575,7 @@ impl BoundaryOperation {
             Self::DmPolicy(_) => "domain.dm.policy",
             Self::ModerationPolicy(_) => "domain.moderation.policy",
             Self::WorkflowPolicy(_) => "domain.workflow.policy",
+            Self::CliPolicy(_) => "domain.cli.policy",
             Self::ClusterLifecycle(_) => "domain.cluster.lifecycle",
             #[cfg(feature = "test-hooks")]
             Self::TestSleep(_) => "boundary.test.sleep",
@@ -598,6 +604,7 @@ impl BoundaryOperation {
             Self::DmPolicy(payload) => serde_json::to_value(payload),
             Self::ModerationPolicy(payload) => serde_json::to_value(payload),
             Self::WorkflowPolicy(payload) => serde_json::to_value(payload),
+            Self::CliPolicy(payload) => serde_json::to_value(payload),
             Self::ClusterLifecycle(payload) => serde_json::to_value(payload),
             #[cfg(feature = "test-hooks")]
             Self::TestSleep(payload) => serde_json::to_value(payload),
@@ -625,6 +632,7 @@ impl BoundaryOperation {
                 serde_json::from_value(payload).map(Self::ModerationPolicy)
             }
             "domain.workflow.policy" => serde_json::from_value(payload).map(Self::WorkflowPolicy),
+            "domain.cli.policy" => serde_json::from_value(payload).map(Self::CliPolicy),
             "domain.cluster.lifecycle" => {
                 serde_json::from_value(payload).map(Self::ClusterLifecycle)
             }
@@ -769,6 +777,11 @@ impl BoundaryRequest {
     /// Constructs a typed workflow policy decision.
     pub fn workflow_policy(request: WorkflowPolicyRequest) -> Self {
         Self::from_operation(BoundaryOperation::WorkflowPolicy(request))
+    }
+
+    /// Constructs a typed CLI command or failure decision.
+    pub fn cli_policy(request: CliPolicyRequest) -> Self {
+        Self::from_operation(BoundaryOperation::CliPolicy(request))
     }
 
     /// Constructs a typed cluster admission, lifecycle, or lane decision.
@@ -930,6 +943,9 @@ impl<'de> Deserialize<'de> for BoundaryResponse {
                         .map_err(D::Error::custom)?,
                     "domain.workflow.policy" => serde_json::from_value(result)
                         .map(BoundaryResult::WorkflowPolicy)
+                        .map_err(D::Error::custom)?,
+                    "domain.cli.policy" => serde_json::from_value(result)
+                        .map(BoundaryResult::CliPolicy)
                         .map_err(D::Error::custom)?,
                     "domain.cluster.lifecycle" => serde_json::from_value(result)
                         .map(BoundaryResult::ClusterLifecycle)

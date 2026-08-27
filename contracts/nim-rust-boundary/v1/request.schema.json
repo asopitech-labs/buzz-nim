@@ -764,6 +764,34 @@
         }
       ]
     },
+    "cliFailureKind": {
+      "enum": [
+        "usage", "relay", "network", "auth", "key", "conflict",
+        "not_found", "delivery_unknown", "other"
+      ]
+    },
+    "cliPolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "path"],
+          "properties": {
+            "decision": { "const": "command" },
+            "path": { "type": "string", "minLength": 1, "maxLength": 128 }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "kind", "status", "transportRetryable"],
+          "properties": {
+            "decision": { "const": "failure" },
+            "kind": { "$ref": "#/$defs/cliFailureKind" },
+            "status": { "type": "integer", "minimum": 0, "maximum": 999 },
+            "transportRetryable": { "type": "boolean" }
+          }
+        }
+      ]
+    },
     "workflowValue": {
       "oneOf": [
         { "type": "null" },
@@ -1051,6 +1079,18 @@
         "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
         "operation": { "const": "domain.workflow.policy" },
         "payload": { "$ref": "#/$defs/workflowPolicyPayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.cli.policy" },
+        "payload": { "$ref": "#/$defs/cliPolicyPayload" }
       }
     },
     {

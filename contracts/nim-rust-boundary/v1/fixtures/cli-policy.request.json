@@ -1,0 +1,10 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "fixture-cli-1",
+  "operation": "domain.cli.policy",
+  "payload": {
+    "decision": "command",
+    "path": "workflows.create"
+  }
+}

@@ -6,6 +6,7 @@
 
 #![deny(missing_docs)]
 
+mod cli;
 mod cluster;
 mod codec;
 mod community;
@@ -17,6 +18,10 @@ mod moderation;
 mod runtime;
 mod workflow;
 
+pub use cli::{
+    CliCommandError, CliFailureCategory, CliFailureKind, CliIoMode, CliPolicyOperation,
+    CliPolicyRequest, CliPolicyResult,
+};
 pub use cluster::{
     ClusterLane, ClusterLaneRequest, ClusterLifecycleError, ClusterLifecyclePolicyRequest,
     ClusterLifecyclePolicyResult, ClusterNodeState, LifecycleCommand, LifecycleEffect,

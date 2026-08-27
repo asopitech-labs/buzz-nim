@@ -115,7 +115,9 @@ participant-set mutations and access are exposed as `domain.dm.policy`;
 moderation reports, restrictions, and resolutions are exposed as
 `domain.moderation.policy`; workflow definition validation, condition
 evaluation, step planning, effect selection, and versioned run transitions are
-exposed as `domain.workflow.policy`.
+exposed as `domain.workflow.policy`; canonical command paths, local/read/write
+classification, authentication requirements, downstream policy selection, and
+error/exit semantics are exposed as `domain.cli.policy`.
 `nimino-boundary` owns no product, DB, replication, sync, or cluster-authority rule. Timeout,
 cancellation, crash, or corrupt stdout recycles the stateless worker before
 another request. See
@@ -162,6 +164,14 @@ revisions, and terminal-state mutations fail closed. Rust retains YAML/JSON
 codec work, scoped fact reads, scheduler clocks, effect I/O, timeouts,
 cryptographic formatting, and atomic persistence of the exact returned state.
 The effect ledger is #57; all Rust workflow-policy branches are removed by #12.
+
+The [`Nimino CLI contract`](contracts/nimino-cli/README.md) fixes 115 canonical
+leaf commands under the sole `nimino` executable. Nim owns command routing,
+JSON output/error classes, retry decisions, and exit codes; Rust retains
+argument codecs, signing, HTTP/WebSocket, filesystem, and process I/O. Workflow
+commands select the existing Nim workflow/event policies rather than duplicating
+domain decisions. #66 deletes the registered Rust command-policy sites and #12
+performs the incompatible public cutover; there is no `buzz` alias.
 
 The [`Nimino effect ledger`](contracts/nimino-effect-ledger/README.md) closes
 that #57 lifecycle with replicated canonical `workflow_effect` records. A live

@@ -5,7 +5,7 @@ edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
-description = "Agent-first CLI for Buzz relay"
+description = "Agent-first CLI adapter for Nimino"
 
 [lib]
 name = "buzz_cli"
@@ -77,7 +77,7 @@ dirs = "6"
 buzz-ws-client = { path = "../buzz-ws-client" }
 
 # Explicit rustls dep with ring provider — required to install the process-level
-# CryptoProvider at startup. Without this the standalone `buzz` binary panics when
+# CryptoProvider at startup. Without this the standalone `nimino` binary panics when
 # a multi-package release build (buzz-acp + buzz-dev-mcp + buzz-cli in one cargo
 # invocation) unifies both ring and aws-lc-rs features, leaving rustls unable to
 # auto-select a provider. See crates/buzz-acp/Cargo.toml for the same dependency.

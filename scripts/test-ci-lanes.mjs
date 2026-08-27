@@ -140,6 +140,13 @@ check(
   "moderation policy changes must run Nim and real boundary golden tests",
 );
 check(
+  matches("nim", "nim/nimino_core/src/nimino_core/domain/cli_policy.nim") &&
+    matches("boundary", "nim/nimino_core/src/nimino_core/domain/cli_policy.nim") &&
+    matches("boundary", "contracts/nimino-cli/v1/contract.json") &&
+    matches("boundary", "scripts/test-nimino-cli-contract.mjs"),
+  "CLI policy changes must run Nim and real boundary golden tests",
+);
+check(
   matches("nim", "nim/nimino_core/src/nimino_core/domain/cluster_lifecycle.nim") &&
     matches("boundary", "nim/nimino_core/src/nimino_core/domain/cluster_lifecycle.nim"),
   "cluster lifecycle changes must run Nim and real boundary golden tests",
@@ -193,6 +200,10 @@ check(
 check(
   job("changes").includes("run: node scripts/test-nimino-moderation-contract.mjs"),
   "changed-path gate must verify the Nimino moderation policy contract",
+);
+check(
+  job("changes").includes("run: just nimino-cli-contract"),
+  "changed-path gate must verify the Nimino CLI contract",
 );
 check(
   job("changes").includes("run: just nimino-cluster-contract"),
@@ -343,6 +354,11 @@ check(
     rustTests.includes("cargo test -p buzz-dev-mcp") &&
     rustTests.includes("node scripts/test-nimino-mcp-framing.mjs target/debug/buzz-dev-mcp"),
   "MCP execution contract, framing, and unit tests must remain in CI",
+);
+check(
+  /^nimino-cli-contract:\n    node scripts\/test-nimino-cli-contract\.mjs$/m.test(justfile) &&
+    workflow.includes("run: just nimino-cli-contract"),
+  "CLI grammar and exit contract must remain in CI",
 );
 check(
   /^legacy-control-manifest-contract:\n    node scripts\/check-legacy-control-manifest\.mjs$/m.test(

@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.cli",
+  "version": 1,
+  "compatibilityMode": false,
+  "owner": "nim/nimino_core/src/nimino_core/domain/cli_policy.nim",
+  "boundaryOperation": "domain.cli.policy",
+  "binary": "nimino",
+  "forbiddenBinaries": ["buzz"],
+  "grammar": "contracts/nimino-cli/v1/commands.json",
+  "commandPathSeparator": ".",
+  "outputContract": "nimino.cli-output/v1",
+  "normalStdout": "json-only",
+  "errorStderr": {
+    "format": "json-only",
+    "fields": ["error", "message", "retryable"]
+  },
+  "exitCodes": {
+    "success": 0,
+    "userOrNotFound": 1,
+    "relayOrNetwork": 2,
+    "authOrKey": 3,
+    "other": 4,
+    "writeConflict": 5
+  },
+  "workflowAdapters": {
+    "workflows.list": "domain.workflow.policy",
+    "workflows.get": "domain.workflow.policy",
+    "workflows.create": "domain.workflow.policy",
+    "workflows.update": "domain.workflow.policy",
+    "workflows.delete": "domain.event.policy",
+    "workflows.trigger": "domain.workflow.policy",
+    "workflows.runs": "domain.workflow.policy",
+    "workflows.approve": "domain.workflow.policy"
+  },
+  "rustAdapter": "crates/buzz-cli",
+  "legacyRustPolicy": [
+    "crates/buzz-cli/src/lib.rs::Cli/Cmd/*Cmd",
+    "crates/buzz-cli/src/error.rs::exit_code/print_error/is_retryable_error"
+  ],
+  "physicalRemovalOwner": 66,
+  "cutoverOwner": 12
+}

@@ -141,6 +141,10 @@ nim-boundary-test-workers:
 nim-boundary-contract:
     ./scripts/test-nim-boundary-contract.sh
 
+# Verify the Nim-owned command, JSON output, and exit-code contract
+nimino-cli-contract:
+    node scripts/test-nimino-cli-contract.mjs
+
 # Run Rust unit contracts and real Rust↔Nim process lifecycle scenarios
 nim-boundary-test: nim-boundary-contract nim-boundary-build nim-boundary-test-workers
     cargo test -p nimino-boundary --lib --test contract
