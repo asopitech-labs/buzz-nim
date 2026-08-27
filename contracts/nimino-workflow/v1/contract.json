@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.workflow-policy",
+  "owner": "nim/nimino_core/src/nimino_core/domain/workflow_policy.nim",
+  "boundaryOperation": "domain.workflow.policy",
+  "compatibilityMode": false,
+  "cutoverOwner": 12,
+  "effectLedgerOwner": 57,
+  "decisions": ["definition", "condition", "plan", "transition"],
+  "actionKinds": [
+    "send_message",
+    "send_dm",
+    "set_channel_topic",
+    "add_reaction",
+    "call_webhook",
+    "request_approval",
+    "delay"
+  ],
+  "conditionLanguage": {
+    "operators": ["!", "&&", "||", "==", "!=", ">", ">=", "<", "<="],
+    "functions": ["str_contains", "str_starts_with", "str_ends_with", "str_len"],
+    "maxExpressionBytes": 4096
+  },
+  "transitionCommands": [
+    "start",
+    "skip_step",
+    "effect_completed",
+    "await_approval",
+    "resume",
+    "complete",
+    "fail",
+    "cancel"
+  ],
+  "rustAdapters": [
+    "crates/nimino-boundary/src/workflow.rs",
+    "crates/nimino-boundary/src/contract.rs",
+    "crates/nimino-boundary/src/runtime.rs"
+  ],
+  "rustPolicySitesToShrink": [
+    {
+      "path": "crates/buzz-workflow/src/schema.rs",
+      "symbols": ["pub fn validate", "parse_yaml"]
+    },
+    {
+      "path": "crates/buzz-workflow/src/executor.rs",
+      "symbols": [
+        "resolve_template",
+        "evaluate_condition",
+        "resolve_step_templates",
+        "resolve_send_message_channel",
+        "execute_run",
+        "execute_from_step",
+        "execute_steps"
+      ]
+    },
+    {
+      "path": "crates/buzz-workflow/src/lib.rs",
+      "symbols": ["finalize_run", "should_fire_workflow"]
+    },
+    {
+      "path": "crates/buzz-relay/src/handlers/command_executor.rs",
+      "symbols": ["resume_workflow_after_approval"]
+    },
+    {
+      "path": "crates/buzz-relay/src/api/bridge.rs",
+      "symbols": ["workflow_webhook"]
+    },
+    {
+      "path": "crates/buzz-db/src/workflow.rs",
+      "symbols": ["update_workflow_run"]
+    }
+  ],
+  "retainedRustResponsibilities": [
+    "YAML and JSON codec",
+    "trigger and durable-state fact loading",
+    "effect I/O and timeout enforcement",
+    "revision and transition-ID compare-and-swap persistence",
+    "cryptographic approval-token generation",
+    "scheduler clock and process supervision"
+  ],
+  "cutoverRule": "Issue #12 routes every workflow policy door through Nimino and removes Rust definition, condition, planning, and lifecycle decisions. Rust may only enforce the exact returned effect and CAS transition.",
+  "outOfScope": {
+    "effectLedgerPersistence": 57,
+    "cliInput": 38,
+    "publicCutover": 12
+  }
+}

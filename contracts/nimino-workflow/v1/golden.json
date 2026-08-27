@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "name": "definition_accepts_valid_webhook_and_marks_elevated",
+      "invariant": "Outbound webhook definitions require elevated authority.",
+      "input": {
+        "decision": "definition",
+        "definition": {
+          "name": "Notify", "description": "", "enabled": true,
+          "trigger": {"kind": "webhook", "filter": "", "emoji": "", "cron": "", "interval": ""},
+          "steps": [{
+            "id": "notify", "name": "", "condition": "", "timeoutSecs": 30,
+            "action": {"kind": "call_webhook", "text": "", "channel": "", "replyInThread": false, "recipient": "", "topic": "", "emoji": "", "url": "https://example.com/hook", "httpMethod": "POST", "headers": {}, "body": "{}", "approver": "", "message": "", "timeout": "", "duration": ""}
+          }]
+        }
+      },
+      "expected": {"decision": "definition", "valid": true, "error": "none", "requiresElevatedAuthority": true}
+    },
+    {
+      "name": "definition_rejects_duplicate_steps",
+      "invariant": "Step identifiers are unique inside a definition.",
+      "input": {
+        "decision": "definition",
+        "definition": {
+          "name": "Duplicate", "description": "", "enabled": true,
+          "trigger": {"kind": "message_posted", "filter": "", "emoji": "", "cron": "", "interval": ""},
+          "steps": [
+            {"id": "same", "name": "", "condition": "", "timeoutSecs": 0, "action": {"kind": "send_message", "text": "one", "channel": "", "replyInThread": false, "recipient": "", "topic": "", "emoji": "", "url": "", "httpMethod": "", "headers": {}, "body": "", "approver": "", "message": "", "timeout": "", "duration": ""}},
+            {"id": "same", "name": "", "condition": "", "timeoutSecs": 0, "action": {"kind": "send_message", "text": "two", "channel": "", "replyInThread": false, "recipient": "", "topic": "", "emoji": "", "url": "", "httpMethod": "", "headers": {}, "body": "", "approver": "", "message": "", "timeout": "", "duration": ""}}
+          ]
+        }
+      },
+      "expected": {"decision": "definition", "valid": false, "error": "duplicate_step", "requiresElevatedAuthority": false}
+    },
+    {
+      "name": "condition_supports_existing_helpers",
+      "invariant": "String helpers and boolean composition are evaluated by Nim.",
+      "input": {"decision": "condition", "expression": "str_contains(trigger_text, \"P1\") && trigger_is_reply == false", "values": {"trigger_text": "P1 incident", "trigger_is_reply": false}},
+      "expected": {"decision": "condition", "value": true, "error": "none"}
+    },
+    {
+      "name": "condition_supports_numeric_step_outputs",
+      "invariant": "Typed numeric step outputs remain numeric during comparison.",
+      "input": {"decision": "condition", "expression": "steps_count_output_total >= 3 && str_len(trigger_text) > 2", "values": {"steps_count_output_total": 3, "trigger_text": "P1 incident"}},
+      "expected": {"decision": "condition", "value": true, "error": "none"}
+    },
+    {
+      "name": "condition_rejects_unknown_variables",
+      "invariant": "Missing execution facts fail closed.",
+      "input": {"decision": "condition", "expression": "missing == true", "values": {}},
+      "expected": {"decision": "condition", "value": false, "error": "unknown_variable"}
+    },
+    {
+      "name": "plan_returns_resolved_effect",
+      "invariant": "Nim selects and resolves the effect; the adapter only executes it.",
+      "input": {
+        "decision": "plan",
+        "request": {
+          "definition": {
+            "name": "Alert", "description": "", "enabled": true,
+            "trigger": {"kind": "message_posted", "filter": "", "emoji": "", "cron": "", "interval": ""},
+            "steps": [{"id": "notify", "name": "", "condition": "str_contains(trigger_text, \"incident\")", "timeoutSecs": 30, "action": {"kind": "send_message", "text": "Alert: {{trigger.text}}", "channel": "", "replyInThread": true, "recipient": "", "topic": "", "emoji": "", "url": "", "httpMethod": "", "headers": {}, "body": "", "approver": "", "message": "", "timeout": "", "duration": ""}}]
+          },
+          "state": {"status": "running", "currentStep": 0, "revision": 1},
+          "boundChannel": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "trigger": {"text": "incident", "message_id": "event-1"},
+          "stepOutputs": {}
+        }
+      },
+      "expected": {
+        "decision": "plan", "directive": "execute_effect", "error": "none", "stepId": "notify",
+        "effect": {"kind": "send_message", "text": "Alert: incident", "channel": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001", "replyInThread": true, "recipient": "", "topic": "", "emoji": "", "url": "", "httpMethod": "", "headers": {}, "body": "", "approver": "", "message": "", "timeout": "", "duration": ""}
+      }
+    },
+    {
+      "name": "plan_skips_false_condition",
+      "invariant": "A false condition yields a state-only skip directive.",
+      "input": {
+        "decision": "plan",
+        "request": {
+          "definition": {
+            "name": "Skip", "description": "", "enabled": true,
+            "trigger": {"kind": "message_posted", "filter": "", "emoji": "", "cron": "", "interval": ""},
+            "steps": [{"id": "skip", "name": "", "condition": "false", "timeoutSecs": 0, "action": {"kind": "send_message", "text": "never", "channel": "", "replyInThread": false, "recipient": "", "topic": "", "emoji": "", "url": "", "httpMethod": "", "headers": {}, "body": "", "approver": "", "message": "", "timeout": "", "duration": ""}}]
+          },
+          "state": {"status": "running", "currentStep": 0, "revision": 2},
+          "boundChannel": "",
+          "trigger": {}, "stepOutputs": {}
+        }
+      },
+      "expected": {"decision": "plan", "directive": "skip_step", "error": "none", "stepId": "skip", "effect": null}
+    },
+    {
+      "name": "plan_completes_after_last_step",
+      "invariant": "No external effect is returned after the final step.",
+      "input": {
+        "decision": "plan",
+        "request": {
+          "definition": {
+            "name": "Done", "description": "", "enabled": true,
+            "trigger": {"kind": "webhook", "filter": "", "emoji": "", "cron": "", "interval": ""},
+            "steps": [{"id": "wait", "name": "", "condition": "", "timeoutSecs": 0, "action": {"kind": "delay", "text": "", "channel": "", "replyInThread": false, "recipient": "", "topic": "", "emoji": "", "url": "", "httpMethod": "", "headers": {}, "body": "", "approver": "", "message": "", "timeout": "", "duration": "1s"}}]
+          },
+          "state": {"status": "running", "currentStep": 1, "revision": 2},
+          "boundChannel": "",
+          "trigger": {}, "stepOutputs": {}
+        }
+      },
+      "expected": {"decision": "plan", "directive": "complete_run", "error": "none", "stepId": "", "effect": null}
+    },
+    {
+      "name": "transition_starts_pending_run",
+      "invariant": "A pending run starts once at revision zero.",
+      "input": {"decision": "transition", "request": {"state": {"status": "pending", "currentStep": 0, "revision": 0}, "expectedRevision": 0, "transitionId": "start", "transitionAlreadyApplied": false, "command": "start", "stepCount": 1, "stepIndex": 0}},
+      "expected": {"decision": "transition", "allowed": true, "error": "none", "nextState": {"status": "running", "currentStep": 0, "revision": 1}, "portEffect": "persist_transition"}
+    },
+    {
+      "name": "transition_skips_step",
+      "invariant": "A skip advances exactly one current step.",
+      "input": {"decision": "transition", "request": {"state": {"status": "running", "currentStep": 0, "revision": 1}, "expectedRevision": 1, "transitionId": "skip-0", "transitionAlreadyApplied": false, "command": "skip_step", "stepCount": 2, "stepIndex": 0}},
+      "expected": {"decision": "transition", "allowed": true, "error": "none", "nextState": {"status": "running", "currentStep": 1, "revision": 2}, "portEffect": "persist_transition"}
+    },
+    {
+      "name": "transition_completes_effect",
+      "invariant": "A successful effect advances exactly one step.",
+      "input": {"decision": "transition", "request": {"state": {"status": "running", "currentStep": 0, "revision": 2}, "expectedRevision": 2, "transitionId": "effect-0", "transitionAlreadyApplied": false, "command": "effect_completed", "stepCount": 1, "stepIndex": 0}},
+      "expected": {"decision": "transition", "allowed": true, "error": "none", "nextState": {"status": "running", "currentStep": 1, "revision": 3}, "portEffect": "persist_transition"}
+    },
+    {
+      "name": "transition_waits_for_approval",
+      "invariant": "Approval suspension keeps the current step.",
+      "input": {"decision": "transition", "request": {"state": {"status": "running", "currentStep": 0, "revision": 3}, "expectedRevision": 3, "transitionId": "await-0", "transitionAlreadyApplied": false, "command": "await_approval", "stepCount": 1, "stepIndex": 0}},
+      "expected": {"decision": "transition", "allowed": true, "error": "none", "nextState": {"status": "waiting_approval", "currentStep": 0, "revision": 4}, "portEffect": "persist_transition"}
+    },
+    {
+      "name": "transition_resumes_after_approval",
+      "invariant": "Approval resume advances past the suspended step.",
+      "input": {"decision": "transition", "request": {"state": {"status": "waiting_approval", "currentStep": 0, "revision": 4}, "expectedRevision": 4, "transitionId": "resume-0", "transitionAlreadyApplied": false, "command": "resume", "stepCount": 1, "stepIndex": 0}},
+      "expected": {"decision": "transition", "allowed": true, "error": "none", "nextState": {"status": "running", "currentStep": 1, "revision": 5}, "portEffect": "persist_transition"}
+    },
+    {
+      "name": "transition_completes_run",
+      "invariant": "Completion is allowed only after every step.",
+      "input": {"decision": "transition", "request": {"state": {"status": "running", "currentStep": 1, "revision": 5}, "expectedRevision": 5, "transitionId": "complete", "transitionAlreadyApplied": false, "command": "complete", "stepCount": 1, "stepIndex": 1}},
+      "expected": {"decision": "transition", "allowed": true, "error": "none", "nextState": {"status": "completed", "currentStep": 1, "revision": 6}, "portEffect": "persist_transition"}
+    },
+    {
+      "name": "transition_fails_run",
+      "invariant": "Failure is terminal and revisioned.",
+      "input": {"decision": "transition", "request": {"state": {"status": "running", "currentStep": 0, "revision": 1}, "expectedRevision": 1, "transitionId": "fail", "transitionAlreadyApplied": false, "command": "fail", "stepCount": 1, "stepIndex": 0}},
+      "expected": {"decision": "transition", "allowed": true, "error": "none", "nextState": {"status": "failed", "currentStep": 0, "revision": 2}, "portEffect": "persist_transition"}
+    },
+    {
+      "name": "transition_cancels_run",
+      "invariant": "Cancellation is terminal and revisioned.",
+      "input": {"decision": "transition", "request": {"state": {"status": "waiting_approval", "currentStep": 0, "revision": 2}, "expectedRevision": 2, "transitionId": "cancel", "transitionAlreadyApplied": false, "command": "cancel", "stepCount": 1, "stepIndex": 0}},
+      "expected": {"decision": "transition", "allowed": true, "error": "none", "nextState": {"status": "cancelled", "currentStep": 0, "revision": 3}, "portEffect": "persist_transition"}
+    },
+    {
+      "name": "transition_rejects_duplicate_id",
+      "invariant": "The same transition ID never commits twice in one run.",
+      "input": {"decision": "transition", "request": {"state": {"status": "running", "currentStep": 1, "revision": 4}, "expectedRevision": 4, "transitionId": "effect-0", "transitionAlreadyApplied": true, "command": "effect_completed", "stepCount": 2, "stepIndex": 1}},
+      "expected": {"decision": "transition", "allowed": false, "error": "duplicate_transition", "nextState": {"status": "running", "currentStep": 1, "revision": 4}, "portEffect": "none"}
+    },
+    {
+      "name": "transition_rejects_stale_revision",
+      "invariant": "A stale reader cannot authorize a second concurrent transition.",
+      "input": {"decision": "transition", "request": {"state": {"status": "running", "currentStep": 1, "revision": 5}, "expectedRevision": 4, "transitionId": "different", "transitionAlreadyApplied": false, "command": "effect_completed", "stepCount": 2, "stepIndex": 1}},
+      "expected": {"decision": "transition", "allowed": false, "error": "stale_revision", "nextState": {"status": "running", "currentStep": 1, "revision": 5}, "portEffect": "none"}
+    }
+  ]
+}

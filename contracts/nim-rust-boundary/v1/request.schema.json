@@ -695,6 +695,177 @@
           }
         }
       ]
+    },
+    "workflowValue": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string" },
+        { "type": "boolean" },
+        { "type": "number" }
+      ]
+    },
+    "workflowValueMap": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/workflowValue" }
+    },
+    "workflowAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind", "text", "channel", "replyInThread", "recipient", "topic",
+        "emoji", "url", "httpMethod", "headers", "body", "approver",
+        "message", "timeout", "duration"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "send_message", "send_dm", "set_channel_topic", "add_reaction",
+            "call_webhook", "request_approval", "delay"
+          ]
+        },
+        "text": { "type": "string" },
+        "channel": { "type": "string" },
+        "replyInThread": { "type": "boolean" },
+        "recipient": { "type": "string" },
+        "topic": { "type": "string" },
+        "emoji": { "type": "string" },
+        "url": { "type": "string" },
+        "httpMethod": { "type": "string" },
+        "headers": { "type": "object", "additionalProperties": { "type": "string" } },
+        "body": { "type": "string" },
+        "approver": { "type": "string" },
+        "message": { "type": "string" },
+        "timeout": { "type": "string" },
+        "duration": { "type": "string" }
+      }
+    },
+    "workflowTrigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "filter", "emoji", "cron", "interval"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "message_posted", "reaction_added", "diff_posted", "schedule", "webhook"
+          ]
+        },
+        "filter": { "type": "string" },
+        "emoji": { "type": "string" },
+        "cron": { "type": "string" },
+        "interval": { "type": "string" }
+      }
+    },
+    "workflowStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "condition", "timeoutSecs", "action"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "name": { "type": "string" },
+        "condition": { "type": "string", "maxLength": 4096 },
+        "timeoutSecs": { "type": "integer", "minimum": 0 },
+        "action": { "$ref": "#/$defs/workflowAction" }
+      }
+    },
+    "workflowDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "description", "trigger", "steps", "enabled"],
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "trigger": { "$ref": "#/$defs/workflowTrigger" },
+        "steps": { "type": "array", "items": { "$ref": "#/$defs/workflowStep" } },
+        "enabled": { "type": "boolean" }
+      }
+    },
+    "workflowRunState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "currentStep", "revision"],
+      "properties": {
+        "status": {
+          "enum": [
+            "pending", "running", "waiting_approval", "completed", "failed", "cancelled"
+          ]
+        },
+        "currentStep": { "type": "integer", "minimum": 0 },
+        "revision": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "workflowPlanRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["definition", "state", "boundChannel", "trigger", "stepOutputs"],
+      "properties": {
+        "definition": { "$ref": "#/$defs/workflowDefinition" },
+        "state": { "$ref": "#/$defs/workflowRunState" },
+        "boundChannel": { "type": "string" },
+        "trigger": { "$ref": "#/$defs/workflowValueMap" },
+        "stepOutputs": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/workflowValueMap" }
+        }
+      }
+    },
+    "workflowTransitionRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state", "expectedRevision", "transitionId", "transitionAlreadyApplied",
+        "command", "stepCount", "stepIndex"
+      ],
+      "properties": {
+        "state": { "$ref": "#/$defs/workflowRunState" },
+        "expectedRevision": { "type": "integer", "minimum": 0 },
+        "transitionId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "transitionAlreadyApplied": { "type": "boolean" },
+        "command": {
+          "enum": [
+            "start", "skip_step", "effect_completed", "await_approval",
+            "resume", "complete", "fail", "cancel"
+          ]
+        },
+        "stepCount": { "type": "integer", "minimum": 0 },
+        "stepIndex": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "workflowPolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "definition"],
+          "properties": {
+            "decision": { "const": "definition" },
+            "definition": { "$ref": "#/$defs/workflowDefinition" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "expression", "values"],
+          "properties": {
+            "decision": { "const": "condition" },
+            "expression": { "type": "string", "maxLength": 4096 },
+            "values": { "$ref": "#/$defs/workflowValueMap" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "plan" },
+            "request": { "$ref": "#/$defs/workflowPlanRequest" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "transition" },
+            "request": { "$ref": "#/$defs/workflowTransitionRequest" }
+          }
+        }
+      ]
     }
   },
   "oneOf": [
@@ -800,6 +971,18 @@
         "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
         "operation": { "const": "domain.moderation.policy" },
         "payload": { "$ref": "#/$defs/moderationPolicyPayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.workflow.policy" },
+        "payload": { "$ref": "#/$defs/workflowPolicyPayload" }
       }
     }
   ]

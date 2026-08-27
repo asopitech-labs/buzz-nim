@@ -406,6 +406,110 @@
         }
       ]
     },
+    "workflowPolicyError": {
+      "enum": [
+        "none", "name_required", "steps_required", "invalid_step",
+        "duplicate_step", "schedule_missing", "schedule_conflict",
+        "invalid_schedule", "reply_requires_message", "invalid_trigger",
+        "invalid_action", "definition_disabled", "invalid_condition",
+        "unknown_variable", "type_mismatch", "invalid_template",
+        "run_not_running", "invalid_step_index", "stale_revision",
+        "duplicate_transition", "invalid_transition", "terminal_state",
+        "invalid_transition_id"
+      ]
+    },
+    "workflowAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind", "text", "channel", "replyInThread", "recipient", "topic",
+        "emoji", "url", "httpMethod", "headers", "body", "approver",
+        "message", "timeout", "duration"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "send_message", "send_dm", "set_channel_topic", "add_reaction",
+            "call_webhook", "request_approval", "delay"
+          ]
+        },
+        "text": { "type": "string" },
+        "channel": { "type": "string" },
+        "replyInThread": { "type": "boolean" },
+        "recipient": { "type": "string" },
+        "topic": { "type": "string" },
+        "emoji": { "type": "string" },
+        "url": { "type": "string" },
+        "httpMethod": { "type": "string" },
+        "headers": { "type": "object", "additionalProperties": { "type": "string" } },
+        "body": { "type": "string" },
+        "approver": { "type": "string" },
+        "message": { "type": "string" },
+        "timeout": { "type": "string" },
+        "duration": { "type": "string" }
+      }
+    },
+    "workflowRunState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "currentStep", "revision"],
+      "properties": {
+        "status": {
+          "enum": [
+            "pending", "running", "waiting_approval", "completed", "failed", "cancelled"
+          ]
+        },
+        "currentStep": { "type": "integer", "minimum": 0 },
+        "revision": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "workflowPolicyResult": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "valid", "error", "requiresElevatedAuthority"],
+          "properties": {
+            "decision": { "const": "definition" },
+            "valid": { "type": "boolean" },
+            "error": { "$ref": "#/$defs/workflowPolicyError" },
+            "requiresElevatedAuthority": { "type": "boolean" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "value", "error"],
+          "properties": {
+            "decision": { "const": "condition" },
+            "value": { "type": "boolean" },
+            "error": { "$ref": "#/$defs/workflowPolicyError" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "directive", "error", "stepId", "effect"],
+          "properties": {
+            "decision": { "const": "plan" },
+            "directive": { "enum": ["reject", "execute_effect", "skip_step", "complete_run"] },
+            "error": { "$ref": "#/$defs/workflowPolicyError" },
+            "stepId": { "type": "string" },
+            "effect": {
+              "oneOf": [{ "$ref": "#/$defs/workflowAction" }, { "type": "null" }]
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "allowed", "error", "nextState", "portEffect"],
+          "properties": {
+            "decision": { "const": "transition" },
+            "allowed": { "type": "boolean" },
+            "error": { "$ref": "#/$defs/workflowPolicyError" },
+            "nextState": { "$ref": "#/$defs/workflowRunState" },
+            "portEffect": { "enum": ["none", "persist_transition"] }
+          }
+        }
+      ]
+    },
     "fault": {
       "type": "object",
       "additionalProperties": false,
@@ -517,7 +621,8 @@
                   "domain.community.policy",
                   "domain.membership.policy",
                   "domain.dm.policy",
-                  "domain.moderation.policy"
+                  "domain.moderation.policy",
+                  "domain.workflow.policy"
                 ]
               },
               "contains": { "const": "domain.event.policy" }
@@ -649,6 +754,21 @@
         "operation": { "const": "domain.moderation.policy" },
         "status": { "const": "ok" },
         "result": { "$ref": "#/$defs/moderationPolicyResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol", "version", "requestId", "operation", "status", "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.workflow.policy" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/workflowPolicyResult" }
       }
     },
     {

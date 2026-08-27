@@ -4,7 +4,8 @@ use nimino_boundary::{
     EventDisposition, EventPolicyError, EventPolicyResult, MembershipAction, MembershipPolicyError,
     MembershipPolicyResult, MembershipRole, ModerationAuditAction, ModerationAuthority,
     ModerationEffect, ModerationPolicyError, ModerationPolicyResult, RemoteErrorCode,
-    RetryDisposition, HOST_ERROR_CODES, PROTOCOL_NAME, PROTOCOL_VERSION,
+    RetryDisposition, WorkflowPolicyError, WorkflowPolicyResult, WorkflowPortEffect,
+    WorkflowRunState, WorkflowRunStatus, HOST_ERROR_CODES, PROTOCOL_NAME, PROTOCOL_VERSION,
 };
 use serde_json::json;
 
@@ -107,6 +108,33 @@ fn moderation_policy_fixtures_use_the_typed_operation_variant() {
             authority: ModerationAuthority::CommunityOwner,
             audit_action: ModerationAuditAction::Timeout,
             error: ModerationPolicyError::None,
+        })
+    );
+}
+
+#[test]
+fn workflow_policy_fixtures_use_the_typed_operation_variant() {
+    let request: BoundaryRequest = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/workflow-policy.request.json"
+    ))
+    .expect("valid workflow policy request");
+    assert_eq!(request.operation_name(), "domain.workflow.policy");
+
+    let response: BoundaryResponse = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/workflow-policy.response.json"
+    ))
+    .expect("valid workflow policy response");
+    assert_eq!(
+        response.into_result().expect("policy success"),
+        BoundaryResult::WorkflowPolicy(WorkflowPolicyResult::Transition {
+            allowed: true,
+            error: WorkflowPolicyError::None,
+            next_state: WorkflowRunState {
+                status: WorkflowRunStatus::Running,
+                current_step: 1,
+                revision: 4,
+            },
+            port_effect: WorkflowPortEffect::PersistTransition,
         })
     );
 }

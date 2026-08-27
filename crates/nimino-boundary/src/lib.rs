@@ -14,6 +14,7 @@ mod error;
 mod membership;
 mod moderation;
 mod runtime;
+mod workflow;
 
 pub use community::{
     CommunityAction, CommunityCommand, CommunityLifecycleRequest, CommunityPolicyError,
@@ -46,3 +47,9 @@ pub use moderation::{
     ModerationRestrictionCommand, ModerationRestrictionRequest,
 };
 pub use runtime::{BoundaryClient, BoundaryConfig, BoundaryRuntime, CallContext};
+pub use workflow::{
+    WorkflowAction, WorkflowActionKind, WorkflowDefinition, WorkflowDirective, WorkflowPlanRequest,
+    WorkflowPolicyError, WorkflowPolicyRequest, WorkflowPolicyResult, WorkflowPortEffect,
+    WorkflowRunState, WorkflowRunStatus, WorkflowStep, WorkflowTransitionCommand,
+    WorkflowTransitionRequest, WorkflowTrigger, WorkflowTriggerKind,
+};

@@ -6,6 +6,7 @@ import nimino_core/boundary/[
   membership_policy_codec,
   moderation_policy_codec,
   protocol,
+  workflow_policy_codec,
 ]
 
 suite "Nim/Rust boundary protocol v1":
@@ -266,3 +267,27 @@ suite "Nim/Rust boundary protocol v1":
         },
         "request-88-invalid",
       )
+
+  test "routes typed workflow transitions and rejects unknown fields":
+    let raw = """{
+      "protocol":"nimino.core.boundary",
+      "version":1,
+      "requestId":"request-29",
+      "operation":"domain.workflow.policy",
+      "payload":{"decision":"transition","request":{"state":{"status":"running","currentStep":0,"revision":3},"expectedRevision":3,"transitionId":"step-0","transitionAlreadyApplied":false,"command":"effect_completed","stepCount":1,"stepIndex":0}}
+    }"""
+    let request = decodeRequest(raw)
+    check request.operation.kind == boWorkflowPolicy
+    check executeWorkflowPolicy(request.operation.data, request.requestId) == %*{
+      "decision": "transition",
+      "allowed": true,
+      "error": "none",
+      "nextState": {"status": "running", "currentStep": 1, "revision": 4},
+      "portEffect": "persist_transition",
+    }
+
+    let invalidRequest = decodeRequest(raw.replace(
+      "\"stepIndex\":0", "\"stepIndex\":0,\"extra\":true"
+    ))
+    expect BoundaryProtocolError:
+      discard executeWorkflowPolicy(invalidRequest.operation.data, "request-29-invalid")

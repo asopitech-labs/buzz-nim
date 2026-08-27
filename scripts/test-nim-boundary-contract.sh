@@ -95,12 +95,14 @@ for (const [schemaName, fixtureName] of [
   ["request.schema.json", "membership-policy.request.json"],
   ["request.schema.json", "dm-policy.request.json"],
   ["request.schema.json", "moderation-policy.request.json"],
+  ["request.schema.json", "workflow-policy.request.json"],
   ["response.schema.json", "echo.response.json"],
   ["response.schema.json", "event-policy.response.json"],
   ["response.schema.json", "community-policy.response.json"],
   ["response.schema.json", "membership-policy.response.json"],
   ["response.schema.json", "dm-policy.response.json"],
   ["response.schema.json", "moderation-policy.response.json"],
+  ["response.schema.json", "workflow-policy.response.json"],
   ["response.schema.json", "unknown-operation.response.json"],
 ]) {
   const schema = JSON.parse(fs.readFileSync(path.join(root, schemaName), "utf8"));
@@ -151,7 +153,8 @@ if rg -n 'println!|print!' \
   "$repo_root/crates/nimino-boundary/src/moderation.rs" \
   "$repo_root/crates/nimino-boundary/src/error.rs" \
   "$repo_root/crates/nimino-boundary/src/membership.rs" \
-  "$repo_root/crates/nimino-boundary/src/runtime.rs"; then
+  "$repo_root/crates/nimino-boundary/src/runtime.rs" \
+  "$repo_root/crates/nimino-boundary/src/workflow.rs"; then
   echo "library code must not write to the worker protocol stream" >&2
   exit 1
 fi

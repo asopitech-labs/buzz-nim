@@ -112,7 +112,9 @@ isolation are exposed as `domain.community.policy`; channel/relay membership,
 invite, and ownership transfer are exposed as `domain.membership.policy`; DM
 participant-set mutations and access are exposed as `domain.dm.policy`;
 moderation reports, restrictions, and resolutions are exposed as
-`domain.moderation.policy`.
+`domain.moderation.policy`; workflow definition validation, condition
+evaluation, step planning, effect selection, and versioned run transitions are
+exposed as `domain.workflow.policy`.
 `nimino-boundary` owns no product, DB, replication, sync, or cluster-authority rule. Timeout,
 cancellation, crash, or corrupt stdout recycles the stateless worker before
 another request. See
@@ -150,6 +152,15 @@ scoped raw fact reads, DB compare-and-set guards, audit persistence, notices,
 disconnects, and enforcement of the returned decision. Duplicate, self-target,
 and cross-community inputs fail closed; the listed Rust branches are deleted
 by #12 without fallback.
+
+The [`Nimino workflow policy`](contracts/nimino-workflow/README.md) owns
+normalized definition validation, typed condition evaluation, current-step
+planning, resolved effect descriptors, and run-state transitions. Every
+transition is revisioned and carries a transition ID; duplicate IDs, stale
+revisions, and terminal-state mutations fail closed. Rust retains YAML/JSON
+codec work, scoped fact reads, scheduler clocks, effect I/O, timeouts,
+cryptographic formatting, and atomic persistence of the exact returned state.
+The effect ledger is #57; all Rust workflow-policy branches are removed by #12.
 
 The versioned [`Nimino data contract`](contracts/nimino-data/README.md)
 classifies canonical truth, rebuildable caches, and append-only logs, and fixes

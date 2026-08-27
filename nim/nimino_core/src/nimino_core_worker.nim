@@ -12,6 +12,7 @@ import nimino_core/boundary/[
   membership_policy_codec,
   moderation_policy_codec,
   protocol,
+  workflow_policy_codec,
 ]
 
 proc helloResult(): JsonNode =
@@ -29,6 +30,7 @@ proc helloResult(): JsonNode =
     "domain.membership.policy",
     "domain.dm.policy",
     "domain.moderation.policy",
+    "domain.workflow.policy",
   ]
 
 proc execute(request: BoundaryRequest; negotiated: var bool): string =
@@ -128,6 +130,12 @@ proc execute(request: BoundaryRequest; negotiated: var bool): string =
       request.requestId,
       request.operationName,
       executeModerationPolicy(request.operation.data, request.requestId),
+    )
+  of boWorkflowPolicy:
+    result = encodeSuccess(
+      request.requestId,
+      request.operationName,
+      executeWorkflowPolicy(request.operation.data, request.requestId),
     )
   else:
     result = encodeFailure(

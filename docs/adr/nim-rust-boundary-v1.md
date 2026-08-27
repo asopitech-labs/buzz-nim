@@ -203,3 +203,10 @@ Issue #12 and its child gates. There will be no production dual-runtime mode.
 Linux x86_64 is verified here. WSL2, Linux ARM64, macOS x64, and macOS ARM64
 runtime certification remain unverified by this issue and must be supplied by
 their platform/release issues before the final release gate can pass.
+
+## Workflow-policy amendment
+
+Issue #29 adds the typed `domain.workflow.policy` request/result variant after
+event, community, membership, DM, and moderation policy. The current contract
+bundle hash is
+`7ee3f5ecd9696588c753c255b85279da5361f43ed6a52fee5afc43a592d75746`.

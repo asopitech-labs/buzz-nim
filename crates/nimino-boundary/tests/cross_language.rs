@@ -7,7 +7,8 @@ use nimino_boundary::{
     BoundaryRuntime, CallContext, CommunityPolicyRequest, CommunityPolicyResult, DmPolicyRequest,
     DmPolicyResult, EchoPayload, EventPolicyRequest, EventPolicyResult, MembershipPolicyRequest,
     MembershipPolicyResult, ModerationPolicyRequest, ModerationPolicyResult, RemoteErrorCode,
-    MAX_FRAME_BYTES, MAX_INFLIGHT, PROTOCOL_NAME, PROTOCOL_VERSION, SCHEMA_HASH, WORKER_ROLE,
+    WorkflowPolicyRequest, WorkflowPolicyResult, MAX_FRAME_BYTES, MAX_INFLIGHT, PROTOCOL_NAME,
+    PROTOCOL_VERSION, SCHEMA_HASH, WORKER_ROLE,
 };
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -321,6 +322,52 @@ async fn moderation_policy_golden_corpus_crosses_the_real_worker_boundary() {
         assert_eq!(
             result,
             BoundaryResult::ModerationPolicy(case.expected),
+            "{}",
+            case.name
+        );
+    }
+    runtime.shutdown().await.expect("clean shutdown");
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct WorkflowPolicyCorpus {
+    schema_version: u16,
+    cases: Vec<WorkflowPolicyCase>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct WorkflowPolicyCase {
+    name: String,
+    invariant: String,
+    input: WorkflowPolicyRequest,
+    expected: WorkflowPolicyResult,
+}
+
+#[tokio::test]
+#[ignore = "requires the Nim test worker; run `just nim-boundary-test`"]
+async fn workflow_policy_golden_corpus_crosses_the_real_worker_boundary() {
+    let corpus: WorkflowPolicyCorpus = serde_json::from_str(include_str!(
+        "../../../contracts/nimino-workflow/v1/golden.json"
+    ))
+    .expect("valid workflow policy corpus");
+    assert_eq!(corpus.schema_version, 1);
+
+    let runtime = runtime(8).await;
+    let client = runtime.client();
+    for case in corpus.cases {
+        assert!(!case.invariant.is_empty(), "{} has no invariant", case.name);
+        let result = client
+            .call(
+                BoundaryRequest::workflow_policy(case.input),
+                CallContext::with_timeout(Duration::from_secs(2)),
+            )
+            .await
+            .unwrap_or_else(|error| panic!("{} failed: {error}", case.name));
+        assert_eq!(
+            result,
+            BoundaryResult::WorkflowPolicy(case.expected),
             "{}",
             case.name
         );
