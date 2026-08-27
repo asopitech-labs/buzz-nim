@@ -6,9 +6,14 @@
 
 #![deny(missing_docs)]
 
+mod control_log;
 mod redb_store;
 mod types;
 
+pub use control_log::{
+    ControlLogEntry, ControlLogStorePort, ControlMetadata, ControlSnapshot, RecoveredControlState,
+    VersionedControlMetadata, MAX_CONTROL_SNAPSHOT_BYTES,
+};
 pub use redb_store::RedbNodeStore;
 pub use types::{
     CacheReplacement, CanonicalCommit, CommitResult, LogAppend, NodeStorePort, RecordClass,

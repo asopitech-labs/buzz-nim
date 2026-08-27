@@ -117,6 +117,51 @@ pub enum StoreError {
     /// An idempotency key was reused for different content.
     #[error("intent id was reused with different content")]
     IntentConflict,
+    /// Atomic control metadata compare-and-set observed another revision.
+    #[error("control metadata conflict: expected revision {expected}, actual {actual}")]
+    ControlMetadataConflict {
+        /// Revision supplied by the caller.
+        expected: u64,
+        /// Current durable revision.
+        actual: u64,
+    },
+    /// A control append would create a non-contiguous prefix.
+    #[error("control log gap: expected previous/index {expected}, actual {actual}")]
+    ControlLogGap {
+        /// Required previous or entry index.
+        expected: u64,
+        /// Supplied previous or entry index.
+        actual: u64,
+    },
+    /// A control suffix replacement attempted to rewrite committed entries.
+    #[error("cannot replace committed control prefix through index {committed}")]
+    CommittedControlPrefix {
+        /// Highest committed index that must remain unchanged.
+        committed: u64,
+    },
+    /// A control append referenced state already removed by a snapshot.
+    #[error("control log is compacted through snapshot index {snapshot}")]
+    CompactedControlLog {
+        /// Latest installed snapshot index.
+        snapshot: u64,
+    },
+    /// An older control snapshot cannot replace a newer installed snapshot.
+    #[error("control snapshot regressed from {current} to {incoming}")]
+    ControlSnapshotRegression {
+        /// Current snapshot index.
+        current: u64,
+        /// Supplied snapshot index.
+        incoming: u64,
+    },
+    /// The same snapshot index was reused for different content.
+    #[error("control snapshot at index {index} conflicts with installed content")]
+    ControlSnapshotConflict {
+        /// Conflicting snapshot index.
+        index: u64,
+    },
+    /// Durable control state violates the local prefix/recovery shape.
+    #[error("corrupt control store: {0}")]
+    CorruptControlState(&'static str),
     /// Append-only storage already contains the supplied typed key.
     #[error("append-only log key already exists")]
     DuplicateLogKey,

@@ -63,6 +63,16 @@ The durable adapter in #49 must atomically persist term/vote metadata, append
 and fsync the control log, and install snapshots. Torn-write behavior belongs
 to that adapter; the logical recovery ceiling defined here is `commitIndex`.
 
+## Durable adapter (#49)
+
+`crates/nimino-store` implements a separate `ControlLogStorePort` on three
+control-only `redb` tables. Metadata uses revision compare-and-set; log writes
+replace only an uncommitted suffix and commit with immediate durability;
+snapshot installation updates recovery watermarks and compacts the covered
+prefix in the same transaction. Recovery validates the snapshot boundary,
+metadata indices, and contiguous suffix before returning opaque commands to the
+Nim state machine. These tables never enter the canonical event change feed.
+
 ## Formal model
 
 `formal/tla/cluster/NiminoControlLog.tla` models election timeouts, quorum-backed

@@ -41,6 +41,19 @@
     "runtimeStateMachineOwner": 51,
     "durableStoreOwner": 49
   },
+  "durableStore": {
+    "adapter": "crates/nimino-store",
+    "tables": [
+      "nimino_control_metadata_v1",
+      "nimino_control_log_v1",
+      "nimino_control_snapshot_v1"
+    ],
+    "metadata": "revision-CAS term/vote/commit/apply record in one fsynced transaction",
+    "log": "contiguous prefix with atomic replacement limited to the uncommitted suffix",
+    "snapshot": "atomic install with required authority metadata and covered-prefix compaction",
+    "recovery": "latest snapshot plus validated contiguous suffix",
+    "eventAntiEntropyTables": false
+  },
   "snapshot": {
     "source": "applied-committed-prefix",
     "requiredMetadata": [

@@ -57,7 +57,7 @@ impl RedbNodeStore {
         copy_verified(backup.as_ref(), destination.as_ref())
     }
 
-    fn database(&self) -> Result<MutexGuard<'_, Database>, StoreError> {
+    pub(crate) fn database(&self) -> Result<MutexGuard<'_, Database>, StoreError> {
         self.database.lock().map_err(|_| StoreError::LockPoisoned)
     }
 }
@@ -343,6 +343,7 @@ fn initialize(database: &Database) -> Result<(), StoreError> {
     transaction.open_table(CACHE).map_err(engine)?;
     transaction.open_table(LOG).map_err(engine)?;
     transaction.open_table(RECEIPTS).map_err(engine)?;
+    crate::control_log::initialize_tables(&transaction)?;
     transaction.commit().map_err(engine)
 }
 
@@ -555,8 +556,9 @@ fn change_key(community_id: &str, sequence: u64) -> Vec<u8> {
 
 fn prefix_end(prefix: &[u8]) -> Vec<u8> {
     let mut end = prefix.to_vec();
-    let last = end.last_mut().expect("validated prefix is non-empty");
-    *last += 1;
+    if let Some(last) = end.last_mut() {
+        *last += 1;
+    }
     end
 }
 
@@ -646,6 +648,6 @@ fn verify_schema(database: &Database) -> Result<(), StoreError> {
     Ok(())
 }
 
-fn engine(error: impl std::fmt::Display) -> StoreError {
+pub(crate) fn engine(error: impl std::fmt::Display) -> StoreError {
     StoreError::Engine(error.to_string())
 }

@@ -8,7 +8,7 @@ validation, replication, projections, or Chirps cluster decisions.
 
 | Operation | Gate | Durable result |
 |---|---|---|
-| Bootstrap | target is absent or a valid schema-v1 store | all six v1 tables and `schema_version=1` |
+| Bootstrap | target is absent or a valid schema-v1 store | separated data/control tables and `schema_version=1` |
 | Commit | exact community checkpoint and unique intent | records, changes, checkpoint, and receipt in one transaction |
 | Cache replace | exact source checkpoint and explicit record type | only that cache set is atomically replaced or cleared |
 | Log append | unique typed keys and unique intent | all evidence rows append or none append |

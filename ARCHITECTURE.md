@@ -172,6 +172,12 @@ plus no-clobber backup/restore. It is an I/O adapter only: record classification
 and acceptance remain in Nim, while replication and projection remain #50/#55.
 There is no Postgres or Chirps compatibility path in this target.
 
+The same crate exposes a separate `ControlLogStorePort` for #49. Its metadata,
+ordered log, and snapshot tables are disjoint from canonical event
+anti-entropy. Rust persists opaque entries and validates local prefix shape;
+quorum, elections, voter transitions, and command application remain #51 Nim
+control-plane decisions.
+
 `nimino-chirps` is the only workspace package permitted to depend directly on
 Alopex Chirps. The registry release is pinned to `=0.6.3`, default and optional
 features are disabled, and the lock checksum is part of the versioned contract.

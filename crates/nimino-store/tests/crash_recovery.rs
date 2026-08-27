@@ -1,8 +1,9 @@
 use std::{fs, path::PathBuf, process::Command};
 
 use nimino_store::{
-    CanonicalCommit, NodeStorePort, RecordClass, RecordWrite, RedbNodeStore, StoreError,
-    StoredRecord, SCHEMA_VERSION,
+    CanonicalCommit, ControlLogEntry, ControlLogStorePort, ControlMetadata, NodeStorePort,
+    RecordClass, RecordWrite, RedbNodeStore, StoreError, StoredRecord, VersionedControlMetadata,
+    SCHEMA_VERSION,
 };
 use redb::{Database, TableDefinition, TableHandle};
 use serde_json::json;
@@ -10,6 +11,9 @@ use uuid::Uuid;
 
 const META: TableDefinition<&str, u64> = TableDefinition::new("nimino_meta_v1");
 const CANONICAL: TableDefinition<&[u8], &[u8]> = TableDefinition::new("nimino_canonical_v1");
+const CONTROL_METADATA: TableDefinition<&str, &[u8]> =
+    TableDefinition::new("nimino_control_metadata_v1");
+const CONTROL_LOG: TableDefinition<u64, &[u8]> = TableDefinition::new("nimino_control_log_v1");
 
 struct TestPath(PathBuf);
 
@@ -101,6 +105,92 @@ fn recovers_the_last_commit_after_an_abrupt_process_exit() {
 }
 
 #[test]
+fn torn_control_writer_helper() {
+    let Ok(path) = std::env::var("NIMINO_CONTROL_CRASH_STORE") else {
+        return;
+    };
+    let database = Database::open(path).unwrap();
+    let mut transaction = database.begin_write().unwrap();
+    transaction.set_quick_repair(true);
+    let entry = serde_json::to_vec(&ControlLogEntry {
+        index: 2,
+        term: 2,
+        voter_epoch: 1,
+        kind: "command".into(),
+        payload: b"uncommitted".to_vec(),
+    })
+    .unwrap();
+    transaction
+        .open_table(CONTROL_LOG)
+        .unwrap()
+        .insert(2, entry.as_slice())
+        .unwrap();
+    let metadata = serde_json::to_vec(&VersionedControlMetadata {
+        revision: 2,
+        state: ControlMetadata {
+            term: 2,
+            voted_for: Some("node-b".into()),
+            commit_index: 2,
+            applied_index: 2,
+        },
+    })
+    .unwrap();
+    transaction
+        .open_table(CONTROL_METADATA)
+        .unwrap()
+        .insert("state", metadata.as_slice())
+        .unwrap();
+    std::process::exit(87);
+}
+
+#[test]
+fn rejects_a_torn_control_log_and_metadata_transaction() {
+    let path = TestPath::new("control-crash");
+    {
+        let store = RedbNodeStore::open(&path.0).unwrap();
+        store
+            .replace_control_suffix(
+                0,
+                vec![ControlLogEntry {
+                    index: 1,
+                    term: 1,
+                    voter_epoch: 1,
+                    kind: "command".into(),
+                    payload: b"committed".to_vec(),
+                }],
+            )
+            .unwrap();
+        store
+            .compare_and_set_control_metadata(
+                0,
+                ControlMetadata {
+                    term: 1,
+                    voted_for: Some("node-a".into()),
+                    commit_index: 1,
+                    applied_index: 1,
+                },
+            )
+            .unwrap();
+    }
+
+    let status = Command::new(std::env::current_exe().unwrap())
+        .args(["--exact", "torn_control_writer_helper", "--nocapture"])
+        .env("NIMINO_CONTROL_CRASH_STORE", &path.0)
+        .status()
+        .unwrap();
+    assert_eq!(status.code(), Some(87));
+
+    let recovered = RedbNodeStore::open(&path.0)
+        .unwrap()
+        .recover_control_state()
+        .unwrap();
+    assert_eq!(recovered.metadata.revision, 1);
+    assert_eq!(recovered.metadata.state.commit_index, 1);
+    assert_eq!(recovered.entries.len(), 1);
+    assert_eq!(recovered.entries[0].payload, b"committed");
+}
+
+#[test]
 fn rejects_unknown_schema_and_bootstraps_separate_tables() {
     let path = TestPath::new("schema");
     {
@@ -116,6 +206,9 @@ fn rejects_unknown_schema_and_bootstraps_separate_tables() {
         assert!(names.contains(&"nimino_canonical_v1".into()));
         assert!(names.contains(&"nimino_cache_v1".into()));
         assert!(names.contains(&"nimino_log_v1".into()));
+        assert!(names.contains(&"nimino_control_metadata_v1".into()));
+        assert!(names.contains(&"nimino_control_log_v1".into()));
+        assert!(names.contains(&"nimino_control_snapshot_v1".into()));
         transaction
             .open_table(META)
             .unwrap()

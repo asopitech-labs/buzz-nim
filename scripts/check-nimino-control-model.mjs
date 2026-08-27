@@ -59,6 +59,13 @@ check(
 check(contract.controlLog.runtimeStateMachineOwner === 51, "wrong runtime owner");
 check(contract.controlLog.durableStoreOwner === 49, "wrong durable-store owner");
 check(contract.controlLog.antiEntropyOwner === 50, "wrong anti-entropy owner");
+check(
+  contract.durableStore.adapter === "crates/nimino-store" &&
+    contract.durableStore.eventAntiEntropyTables === false &&
+    contract.durableStore.metadata.includes("revision-CAS") &&
+    contract.durableStore.log.includes("uncommitted suffix"),
+  "control-log durability must remain isolated and atomic",
+);
 check(contract.snapshot.mayContainUncommittedState === false, "unsafe snapshot");
 check(contract.cutoverOwner === 12, "wrong cutover owner");
 
@@ -68,6 +75,16 @@ check(sha256(formal.scenario) === formal.scenarioSha256, "TLC scenario hash drif
 
 const model = read(formal.model);
 const scenario = read(formal.scenario);
+const store = read("crates/nimino-store/src/control_log.rs");
+for (const table of contract.durableStore.tables) {
+  check(store.includes(`"${table}"`), `missing control store table: ${table}`);
+}
+check(
+  store.includes("pub trait ControlLogStorePort") &&
+    store.includes("set_quick_repair(true)") &&
+    !/\b(?:CANONICAL|CHANGES|Chirps)\b/.test(store),
+  "control store must remain a durable adapter isolated from data and transport",
+);
 for (const invariant of formal.invariants) {
   check(model.includes(`${invariant} ==`), `missing model invariant: ${invariant}`);
   check(
