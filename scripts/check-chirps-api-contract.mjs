@@ -297,6 +297,39 @@ for (const type of contract.publicIdentityApi) {
     `missing public identity API: ${type}`,
   );
 }
+check(
+  JSON.stringify(contract.publicRuntimeApi) ===
+    JSON.stringify([
+      "MeshClient",
+      "MeshMessage",
+      "MeshRuntime",
+      "MeshRuntimeError",
+      "MeshRuntimeOptions",
+      "MeshSubscription",
+    ]),
+  "public runtime API contract drifted",
+);
+for (const type of contract.publicRuntimeApi) {
+  check(
+    new RegExp(`\\bpub\\s+(?:struct|enum)\\s+${type}\\b`).test(publicCode),
+    `missing public runtime API: ${type}`,
+  );
+}
+const messaging = contract.runtimeMessaging;
+check(
+  messaging.transportOnly === true &&
+    messaging.peerViewIsAuthority === false &&
+    messaging.maxMessageBytes === 1024 * 1024 &&
+    messaging.maxQueueCapacity === 4096 &&
+    messaging.shutdownIsolation === "dedicated-tokio-runtime-thread" &&
+    JSON.stringify(messaging.commands) ===
+      JSON.stringify(["start", "send", "broadcast", "subscribe", "peers", "stop"]) &&
+    messaging.controlProtocolOwner === 9 &&
+    messaging.dataProtocolOwner === 10 &&
+    messaging.oldMeshReplacementOwner === 58 &&
+    messaging.cutoverOwner === 12,
+  "runtime messaging ownership contract drifted",
+);
 for (const error of identity.typedErrors) {
   check(new RegExp(`\\b${error}\\b`).test(publicCode), `missing typed identity error: ${error}`);
 }
@@ -389,5 +422,5 @@ checkFeatureTree();
 if (desktopUsesWrapper) checkFeatureTree("desktop/src-tauri/Cargo.toml");
 
 console.log(
-  `Chirps contract passed: ${contract.upstream.package} ${contract.upstream.requirement}, explicit production mTLS identity`,
+  `Chirps contract passed: ${contract.upstream.package} ${contract.upstream.requirement}, explicit mTLS identity and bounded runtime`,
 );

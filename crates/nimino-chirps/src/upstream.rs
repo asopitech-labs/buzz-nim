@@ -1,4 +1,13 @@
+use crate::runtime::{MeshMessage, MeshRuntimeError, RuntimeCommand, RuntimeWorker};
 use crate::NodeConfig;
+use crate::NodeId;
+use std::collections::BTreeSet;
+use std::io;
+use std::thread;
+use std::time::Duration;
+
+use alopex_chirps::Frame;
+use alopex_chirps::UserMessage;
 
 pub(crate) fn canonical_node_id(bytes: [u8; 16]) -> [u8; 16] {
     *alopex_chirps::NodeId::from(bytes).as_bytes()
@@ -26,19 +35,137 @@ pub(crate) fn chirps_node_config(config: &NodeConfig) -> alopex_chirps::NodeConf
     }
 }
 
+pub(crate) fn spawn_runtime(
+    config: NodeConfig,
+    command_capacity: usize,
+    worker: RuntimeWorker,
+) -> io::Result<thread::JoinHandle<()>> {
+    thread::Builder::new()
+        .name("nimino-chirps".to_owned())
+        .spawn(move || run_runtime(config, command_capacity, worker))
+}
+
+fn run_runtime(config: NodeConfig, command_capacity: usize, worker: RuntimeWorker) {
+    let RuntimeWorker {
+        mut commands,
+        events,
+        mut shutdown,
+        stopped,
+        startup,
+    } = worker;
+    let runtime = match tokio::runtime::Builder::new_multi_thread()
+        .worker_threads(2)
+        .enable_all()
+        .build()
+    {
+        Ok(runtime) => runtime,
+        Err(error) => {
+            let _ = startup.send(Err(MeshRuntimeError::ThreadStart(error.to_string())));
+            let _ = stopped.send(true);
+            return;
+        }
+    };
+
+    runtime.block_on(async move {
+        if let Err(error) = config.prepare() {
+            let _ = startup.send(Err(MeshRuntimeError::Config(error)));
+            return;
+        }
+        let mut chirps_config = chirps_node_config(&config);
+        chirps_config.send_queue_capacity = command_capacity;
+        let mesh = match alopex_chirps::start(chirps_config).await {
+            Ok(mesh) => mesh,
+            Err(error) => {
+                let _ = startup.send(Err(MeshRuntimeError::Transport(error.to_string())));
+                return;
+            }
+        };
+        let mut inbound = match mesh.subscribe().await {
+            Ok(inbound) => inbound,
+            Err(error) => {
+                let _ = startup.send(Err(MeshRuntimeError::Transport(error.to_string())));
+                return;
+            }
+        };
+        let local_node_id = from_chirps_node_id(mesh.node_id());
+        if startup.send(Ok(local_node_id)).is_err() {
+            return;
+        }
+        let mut observed_peers = BTreeSet::new();
+
+        loop {
+            tokio::select! {
+                biased;
+                _ = &mut shutdown => break,
+                command = commands.recv() => match command {
+                    Some(RuntimeCommand::Send { target, payload, reply }) => {
+                        let result = mesh
+                            .send_to(
+                                to_chirps_node_id(target),
+                                Frame::User(UserMessage { payload }),
+                            )
+                            .await
+                            .map_err(|error| MeshRuntimeError::Transport(error.to_string()));
+                        if result.is_ok() {
+                            observed_peers.insert(target);
+                        }
+                        let _ = reply.send(result);
+                    }
+                    Some(RuntimeCommand::Broadcast { payload, reply }) => {
+                        let result = mesh
+                            .broadcast(Frame::User(UserMessage { payload }))
+                            .await
+                            .map_err(|error| MeshRuntimeError::Transport(error.to_string()));
+                        let _ = reply.send(result);
+                    }
+                    Some(RuntimeCommand::Peers { reply }) => {
+                        let membership = mesh.membership().await;
+                        observed_peers.extend(membership
+                            .peers
+                            .keys()
+                            .copied()
+                            .map(from_chirps_node_id));
+                        let _ = reply.send(Ok(observed_peers.iter().copied().collect()));
+                    }
+                    None => break,
+                },
+                message = inbound.recv() => match message {
+                    Some((from, Frame::User(message))) => {
+                        let from = from_chirps_node_id(from);
+                        observed_peers.insert(from);
+                        let _ = events.send(MeshMessage::new(
+                            from,
+                            message.payload,
+                        ));
+                    }
+                    Some(_) => {}
+                    None => break,
+                },
+            }
+        }
+    });
+    runtime.shutdown_timeout(Duration::from_secs(2));
+    let _ = stopped.send(true);
+}
+
+fn to_chirps_node_id(node_id: NodeId) -> alopex_chirps::NodeId {
+    alopex_chirps::NodeId::from(node_id.as_bytes())
+}
+
+fn from_chirps_node_id(node_id: alopex_chirps::NodeId) -> NodeId {
+    NodeId::from_bytes(*node_id.as_bytes())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use alopex_chirps::Frame;
     use alopex_chirps::MeshHandle;
-    use alopex_chirps::UserMessage;
     use rcgen::generate_simple_self_signed;
     use std::fs;
     use std::net::{SocketAddr, UdpSocket};
     #[cfg(unix)]
     use std::os::unix::fs::PermissionsExt;
     use std::path::{Path, PathBuf};
-    use std::time::Duration;
     use tempfile::TempDir;
 
     fn free_addr() -> SocketAddr {

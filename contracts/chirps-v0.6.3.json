@@ -24,6 +24,14 @@
     "NodeId",
     "NodeIdentity"
   ],
+  "publicRuntimeApi": [
+    "MeshClient",
+    "MeshMessage",
+    "MeshRuntime",
+    "MeshRuntimeError",
+    "MeshRuntimeOptions",
+    "MeshSubscription"
+  ],
   "productionIdentity": {
     "mtlsRequired": true,
     "identityByteLengths": [16, 24],
@@ -42,6 +50,18 @@
     ],
     "runtimeMessagingOwner": 43,
     "admissionPolicyOwner": 48
+  },
+  "runtimeMessaging": {
+    "transportOnly": true,
+    "peerViewIsAuthority": false,
+    "maxMessageBytes": 1048576,
+    "maxQueueCapacity": 4096,
+    "shutdownIsolation": "dedicated-tokio-runtime-thread",
+    "commands": ["start", "send", "broadcast", "subscribe", "peers", "stop"],
+    "controlProtocolOwner": 9,
+    "dataProtocolOwner": 10,
+    "oldMeshReplacementOwner": 58,
+    "cutoverOwner": 12
   },
   "forbiddenDirectPackages": [
     "alopex-chirps-core",

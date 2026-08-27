@@ -8,8 +8,8 @@ repository.workspace = true
 
 [dependencies]
 alopex-chirps = { workspace = true }
+tokio = { workspace = true }
 
 [dev-dependencies]
 rcgen = "0.12"
 tempfile = "3"
-tokio = { workspace = true, features = ["macros", "rt-multi-thread", "time"] }

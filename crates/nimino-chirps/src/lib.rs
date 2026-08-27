@@ -14,7 +14,12 @@ use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
+mod runtime;
 mod upstream;
+
+pub use runtime::{
+    MeshClient, MeshMessage, MeshRuntime, MeshRuntimeError, MeshRuntimeOptions, MeshSubscription,
+};
 
 static IDENTITY_TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
