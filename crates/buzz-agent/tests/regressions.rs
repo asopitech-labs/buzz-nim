@@ -385,7 +385,12 @@ async fn mcp_init_timeout_kills_child() {
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn tool_metadata_caps_enforced() {
     let llm = spawn_capturing_llm(vec![openai_text("done")]).await;
-    let mut h = Harness::spawn(&llm.url).await;
+    let mut h = Harness::spawn_with_env(
+        &llm.url,
+        // This fixture intentionally transfers about 20 MB before enforcing caps.
+        &[("NIMINO_AGENT_MCP_INIT_TIMEOUT_SECS", "30")],
+    )
+    .await;
 
     let fake_mcp = env!("CARGO_BIN_EXE_fake-mcp");
     h.send(
