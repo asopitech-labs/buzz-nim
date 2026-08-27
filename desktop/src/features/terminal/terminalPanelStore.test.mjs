@@ -2,14 +2,14 @@ import assert from "node:assert/strict";
 import { beforeEach, test } from "node:test";
 
 import {
-  resetTerminalPanelForTests,
+  resetTerminalPanel,
   setTerminalPanelMode,
   setTerminalSessionChannels,
   toggleTerminalPanel,
   getTerminalPanelSnapshotForTests,
 } from "./terminalPanelStore.ts";
 
-beforeEach(resetTerminalPanelForTests);
+beforeEach(resetTerminalPanel);
 
 test("panel toggles between closed and the docked default", () => {
   toggleTerminalPanel();
@@ -30,4 +30,17 @@ test("session channel identities are de-duplicated", () => {
     [...getTerminalPanelSnapshotForTests().sessionChannelIds],
     ["one", "two"],
   );
+});
+
+test("reset returns a clean panel snapshot", () => {
+  setTerminalPanelMode("maximized");
+  setTerminalSessionChannels(["old-community"]);
+  const previous = getTerminalPanelSnapshotForTests();
+
+  resetTerminalPanel();
+
+  const next = getTerminalPanelSnapshotForTests();
+  assert.notEqual(next, previous);
+  assert.equal(next.mode, "closed");
+  assert.deepEqual([...next.sessionChannelIds], []);
 });

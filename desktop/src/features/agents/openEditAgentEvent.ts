@@ -30,6 +30,12 @@ type OpenEditAgentDetail = { pubkey: string; focus?: EditAgentFocusTarget };
 let pendingEditAgentPubkey: string | null = null;
 let pendingEditAgentFocus: EditAgentFocusTarget | undefined;
 
+/** Drop a request captured for the community being left. */
+export function resetPendingOpenEditAgent(): void {
+  pendingEditAgentPubkey = null;
+  pendingEditAgentFocus = undefined;
+}
+
 export function requestOpenEditAgent(
   pubkey: string,
   focus?: EditAgentFocusTarget,

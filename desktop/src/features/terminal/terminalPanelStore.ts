@@ -44,7 +44,8 @@ export function useTerminalPanel() {
   );
 }
 
-export function resetTerminalPanelForTests() {
+/** Close the panel and forget sessions from the community being left. */
+export function resetTerminalPanel() {
   snapshot = { mode: "closed", sessionChannelIds: new Set() };
 }
 

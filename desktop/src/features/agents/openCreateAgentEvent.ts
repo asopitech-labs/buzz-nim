@@ -7,6 +7,11 @@ export type OpenCreateAgentOptions = {
 
 let pendingOpenCreateAgent: OpenCreateAgentOptions | null = null;
 
+/** Drop a request captured for the community being left. */
+export function resetPendingOpenCreateAgent(): void {
+  pendingOpenCreateAgent = null;
+}
+
 export function requestOpenCreateAgent(options: OpenCreateAgentOptions = {}) {
   pendingOpenCreateAgent = options;
   window.dispatchEvent(

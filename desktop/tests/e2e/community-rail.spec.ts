@@ -476,6 +476,46 @@ test.describe("community rail", () => {
       .toBe(COMMUNITY_B.id);
   });
 
+  test("community switch clears timeout and terminal UI state", async ({
+    page,
+  }) => {
+    await installMockBridge(page, undefined, { skipCommunitySeed: true });
+    await seedCommunities(page, [COMMUNITY_A, COMMUNITY_B], COMMUNITY_A.id);
+    await page.goto("/");
+    await page.getByTestId("channel-general").click();
+
+    await page.evaluate(() => {
+      (
+        window as Window & {
+          __NIMINO_E2E_ACTIVATE_TIMEOUT__?: (expiresAtMs: number) => void;
+        }
+      ).__NIMINO_E2E_ACTIVATE_TIMEOUT__?.(Date.now() + 60_000);
+    });
+    await expect(page.getByTestId("composer-timeout-banner")).toBeVisible();
+    const chatHeader = page.getByTestId("chat-header");
+    await chatHeader.getByRole("button", { name: "Open Buzz Term" }).click();
+    await expect(
+      chatHeader.getByRole("button", { name: "Hide Buzz Term" }),
+    ).toBeVisible();
+
+    await page.getByTestId(`community-rail-button-${COMMUNITY_B.id}`).click();
+    await expect
+      .poll(() =>
+        page.evaluate(() =>
+          window.localStorage.getItem("nimino-active-community-id"),
+        ),
+      )
+      .toBe(COMMUNITY_B.id);
+    await page.getByTestId("channel-general").click();
+
+    await expect(page.getByTestId("composer-timeout-banner")).toHaveCount(0);
+    await expect(
+      page
+        .getByTestId("chat-header")
+        .getByRole("button", { name: "Open Buzz Term" }),
+    ).toBeVisible();
+  });
+
   test("community switch cancels a send after its link preview settles", async ({
     page,
   }) => {
