@@ -36,5 +36,6 @@
   },
   "canonicalRecordTypes": ["object_manifest", "object_pin", "object_gc_watermark"],
   "repairOwner": 59,
+  "repairContract": "nimino.data-ops/v1",
   "legacyRemovalOwner": 12
 }

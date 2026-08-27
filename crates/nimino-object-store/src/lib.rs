@@ -7,7 +7,7 @@
 
 use std::{
     fs::{self, File, OpenOptions},
-    io::{self, Read, Write},
+    io::{self, Read, Seek, SeekFrom, Write},
     path::{Path, PathBuf},
 };
 
@@ -266,6 +266,74 @@ impl LocalObjectStore {
             Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
             Err(error) => Err(error.into()),
         }
+    }
+
+    /// Resume-copy one verified object from another local adapter.
+    pub fn copy_from(
+        &self,
+        source: &Self,
+        transfer_id: &str,
+        digest: &str,
+        expected_size: u64,
+    ) -> Result<InstallResult, ObjectStoreError> {
+        source.verify(digest, expected_size)?;
+        if self.verify(digest, expected_size).is_ok() {
+            return Ok(InstallResult {
+                digest: digest.to_owned(),
+                size: expected_size,
+                installed: false,
+            });
+        }
+        let partial = self.begin_partial(transfer_id, digest, expected_size)?;
+        let mut input = File::open(source.object_path(digest)?)?;
+        input.seek(SeekFrom::Start(partial.offset))?;
+        let mut offset = partial.offset;
+        let mut chunk = vec![0_u8; MAX_CHUNK_BYTES];
+        while offset < expected_size {
+            let remaining = usize::try_from(expected_size - offset)
+                .unwrap_or(usize::MAX)
+                .min(chunk.len());
+            input.read_exact(&mut chunk[..remaining])?;
+            offset = self
+                .append_partial(
+                    transfer_id,
+                    digest,
+                    expected_size,
+                    offset,
+                    &chunk[..remaining],
+                )?
+                .offset;
+        }
+        self.finish_partial(transfer_id, digest, expected_size)
+    }
+
+    /// Move one corrupt object to an explicit no-clobber quarantine path.
+    pub fn quarantine_to(
+        &self,
+        digest: &str,
+        destination: impl AsRef<Path>,
+    ) -> Result<(), ObjectStoreError> {
+        let source = self.object_path(digest)?;
+        let destination = destination.as_ref();
+        if destination.exists() {
+            return Err(ObjectStoreError::InvalidInput(
+                "object quarantine destination already exists",
+            ));
+        }
+        let parent = destination
+            .parent()
+            .filter(|path| !path.as_os_str().is_empty())
+            .unwrap_or_else(|| Path::new("."));
+        let source_parent = source
+            .parent()
+            .ok_or(ObjectStoreError::InvalidInput("object path has no parent"))?;
+        fs::create_dir_all(parent)?;
+        fs::rename(&source, destination).map_err(map_not_found)?;
+        sync_directory(source_parent)?;
+        if source_parent != parent {
+            sync_directory(parent)?;
+        }
+        Ok(())
     }
 
     fn object_path(&self, digest: &str) -> Result<PathBuf, ObjectStoreError> {

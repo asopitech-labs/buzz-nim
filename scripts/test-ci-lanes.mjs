@@ -320,6 +320,17 @@ check(
   "workflow effect ledger contract must remain in CI",
 );
 check(
+  /^nimino-data-ops-contract:\n    node scripts\/test-nimino-data-ops-contract\.mjs$/m.test(
+    justfile,
+  ) &&
+    /^nimino-data-ops-scenarios:\n    cargo test -p nimino-data-ops --test convergence_scenarios -- --test-threads=1$/m.test(
+      justfile,
+    ) &&
+    workflow.includes("run: just nimino-data-ops-contract") &&
+    justfile.includes("cargo nextest run -p nimino-data-ops"),
+  "data verify/repair contract and scenarios must remain in CI",
+);
+check(
   /^nimino-cluster-scenario-contract:\n    node scripts\/test-nimino-cluster-scenario-contract\.mjs$/m.test(
     justfile,
   ) &&

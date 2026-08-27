@@ -189,6 +189,14 @@ nimino-projection-contract:
 nimino-effect-ledger-contract:
     node scripts/test-nimino-effect-ledger-contract.mjs
 
+# Verify quorum-selected manual repair policy and the operator adapter contract
+nimino-data-ops-contract:
+    node scripts/test-nimino-data-ops-contract.mjs
+
+# Exercise backlog, capacity failure, corruption, kill, and repeat repair
+nimino-data-ops-scenarios:
+    cargo test -p nimino-data-ops --test convergence_scenarios -- --test-threads=1
+
 # Verify the fixed 1/3/5-node real-mesh scenario definition and ownership
 nimino-cluster-scenario-contract:
     node scripts/test-nimino-cluster-scenario-contract.mjs
@@ -470,6 +478,8 @@ test-unit:
         # membership alone buys clippy/check, not a single executed test.
         cargo nextest run -p buzz-backend-kubernetes
         cargo nextest run -p nimino-store
+        cargo nextest run -p nimino-object-store
+        cargo nextest run -p nimino-data-ops
         # buzz-agent model-capabilities corpus: the Rust half of the
         # cross-language drift guard. `model_capabilities.rs` embeds
         # scripts/model-capabilities.json + scripts/normative-corpus.json via

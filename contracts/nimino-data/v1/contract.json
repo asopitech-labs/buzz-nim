@@ -112,6 +112,7 @@
   "antiEntropyContract": "nimino.sync/v1",
   "projectionLifecycleContract": "nimino.projection-lifecycle/v1",
   "effectLedgerContract": "nimino.effect-ledger/v1",
+  "repairContract": "nimino.data-ops/v1",
   "invariants": [
     "community scope is mandatory and adapter-derived",
     "a transaction never mixes canonical, cache, and log records",

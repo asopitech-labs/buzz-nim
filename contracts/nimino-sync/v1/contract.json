@@ -45,6 +45,7 @@
   },
   "communityIsolationEveryFrame": true,
   "conflictContract": "nimino.convergence/v1",
+  "repairContract": "nimino.data-ops/v1",
   "conflictResolutionOwner": 53,
   "scenarioHarnessOwner": 56,
   "legacyRemovalOwner": 12

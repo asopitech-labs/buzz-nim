@@ -41,5 +41,6 @@
     "idempotent": true
   },
   "repairOwner": 59,
+  "repairContract": "nimino.data-ops/v1",
   "legacyRemovalOwner": 12
 }

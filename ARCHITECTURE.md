@@ -170,6 +170,12 @@ returned only after the `executing` marker is durable. Missing receipts recover
 to `unknown`, never automatic retry. An authorized operator may attach the
 receipt outcome or explicitly retry with the same idempotency key.
 
+The [`Nimino data operations contract`](contracts/nimino-data-ops/README.md)
+uses strict-majority canonical/projection/object/effect facts to quarantine a
+divergent replica. Nim owns the repair decision and durable lifecycle; the
+`nimino-data-ops` Rust CLI only verifies digests, resumes verified object copies,
+and atomically swaps an explicitly selected source into a no-clobber target.
+
 The versioned [`Nimino data contract`](contracts/nimino-data/README.md)
 classifies canonical truth, rebuildable caches, and append-only logs, and fixes
 the transaction, query, and projection-rebuild intents used by the data-plane

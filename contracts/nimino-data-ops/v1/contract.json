@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.data-ops",
+  "version": 1,
+  "compatibilityMode": false,
+  "publicationState": "cutover-ready",
+  "owner": "nimino-core",
+  "module": "nim/nimino_core/src/nimino_core/domain/repair_policy.nim",
+  "cli": {
+    "crate": "nimino-data-ops",
+    "binary": "nimino-data-ops",
+    "commands": ["verify", "repair"],
+    "role": "digest-object-filesystem-adapter"
+  },
+  "contracts": {
+    "data": "nimino.data/v1",
+    "sync": "nimino.sync/v1",
+    "convergence": "nimino.convergence/v1",
+    "projection": "nimino.projection-lifecycle/v1",
+    "objects": "nimino.object-sync/v1",
+    "effects": "nimino.effect-ledger/v1",
+    "clusterScenarios": "nimino.cluster-scenarios/v1"
+  },
+  "facts": [
+    "communityId",
+    "nodeId",
+    "readable",
+    "checkpoint",
+    "canonicalDigest",
+    "projectionDigest",
+    "objectDigest",
+    "unknownEffects"
+  ],
+  "authority": {
+    "selection": "strict-majority-identical-snapshot",
+    "nodeCounts": [1, 3, 5],
+    "noQuorum": "fail-closed",
+    "source": "lexicographically-first-majority-node"
+  },
+  "repair": {
+    "operatorAuthorized": true,
+    "reasonRequired": true,
+    "durableMarkerBeforeAdapters": true,
+    "actions": ["replace-canonical", "rebuild-projections", "repair-objects"],
+    "unknownEffects": "manual-reconcile-required",
+    "postRepairVerificationRequired": true,
+    "idempotent": true
+  },
+  "adapterSafety": {
+    "storeCandidateVerifiedBeforeSwap": true,
+    "oldStoreMovedToNoClobberQuarantine": true,
+    "objectsVerifiedBySizeAndSha256": true,
+    "corruptObjectsMovedToNoClobberQuarantine": true,
+    "partialObjectsResumable": true
+  },
+  "scenarios": [
+    "disk-capacity-failure",
+    "batch-process-kill",
+    "corrupt-chunk",
+    "large-backlog",
+    "repeat-repair"
+  ],
+  "legacyRemovalOwner": 12
+}

@@ -33,6 +33,7 @@ members = [
     "crates/nimino-chirps",
     "crates/nimino-store",
     "crates/nimino-object-store",
+    "crates/nimino-data-ops",
     "examples/countdown-bot",
 ]
 exclude = ["desktop/src-tauri"]

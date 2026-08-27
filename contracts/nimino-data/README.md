@@ -25,6 +25,7 @@ the contract.
 | Atomicity, checkpoint compare, persistence | data adapter issue #35 | transaction result |
 | Replication order and convergence | sync issues #50 and #53 | canonical change stream |
 | Search/thread/feed derivation | projection issue #55 | replaceable cache rows |
+| Replica verification, quarantine, and manual repair | data operations issue #59 | bounded health facts and explicit repair directives |
 | Audit and operational evidence | append-only sink | log rows |
 | Cluster negotiation | Chirps adapter only | no data-domain artifact |
 
