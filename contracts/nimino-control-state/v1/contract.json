@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.control-state-machine",
+  "version": 1,
+  "compatibilityMode": false,
+  "publicationState": "cutover-ready",
+  "owner": "nimino-core",
+  "module": "nim/nimino_core/src/nimino_core/domain/control_state_machine.nim",
+  "formalModel": "nimino.control-log/v1",
+  "phases": ["stable-old", "joint", "stable-new"],
+  "operations": ["elect", "append", "commit", "apply", "snapshot", "recover"],
+  "authority": {
+    "stable": "majority-of-active-voters",
+    "joint": "majority-of-old-and-majority-of-new",
+    "minorityCanElect": false,
+    "minorityCanCommit": false,
+    "transportProvidesAuthority": false
+  },
+  "voterTransition": [
+    "stable-old",
+    "committed-begin-joint",
+    "joint",
+    "committed-finalize",
+    "stable-new"
+  ],
+  "durability": {
+    "port": "ControlLogStorePort",
+    "planBeforeMutation": true,
+    "settleAfterPersistence": true,
+    "storeFailure": "retain-pre-transition-state",
+    "metadata": "revision-CAS",
+    "eventAntiEntropy": false
+  },
+  "snapshot": {
+    "source": "fully-applied-committed-prefix",
+    "recovery": "snapshot-then-contiguous-durable-suffix",
+    "containsUncommittedState": false
+  },
+  "leaseOwner": 52,
+  "scenarioHarnessOwner": 56,
+  "cutoverOwner": 12
+}

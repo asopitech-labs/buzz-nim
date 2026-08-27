@@ -39,6 +39,7 @@
     "applyLimit": "commit-index",
     "antiEntropyOwner": 50,
     "runtimeStateMachineOwner": 51,
+    "runtimeStateMachineContract": "nimino.control-state-machine/v1",
     "durableStoreOwner": 49
   },
   "durableStore": {

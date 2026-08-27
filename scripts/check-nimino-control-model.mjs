@@ -57,6 +57,11 @@ check(
   "voter transition contract drifted",
 );
 check(contract.controlLog.runtimeStateMachineOwner === 51, "wrong runtime owner");
+check(
+  contract.controlLog.runtimeStateMachineContract ===
+    "nimino.control-state-machine/v1",
+  "runtime state-machine contract link drifted",
+);
 check(contract.controlLog.durableStoreOwner === 49, "wrong durable-store owner");
 check(contract.controlLog.antiEntropyOwner === 50, "wrong anti-entropy owner");
 check(

@@ -161,6 +161,10 @@ chirps-contract:
 control-model-contract:
     node scripts/check-nimino-control-model.mjs
 
+# Verify the pure Nim replicated-control reducer and persistence-first boundary
+nimino-control-state-contract:
+    node scripts/test-nimino-control-state-contract.mjs
+
 # Exhaustively check the bounded 3-node control-log state graph with TLC
 control-model-check: control-model-contract
     tlc -workers auto -config formal/scenarios/NiminoControlLog_3Node.cfg formal/tla/cluster/NiminoControlLog.tla

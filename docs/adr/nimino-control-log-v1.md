@@ -73,6 +73,12 @@ prefix in the same transaction. Recovery validates the snapshot boundary,
 metadata indices, and contiguous suffix before returning opaque commands to the
 Nim state machine. These tables never enter the canonical event change feed.
 
+Issue #51 implements that state machine in pure Nim. Election, append, commit,
+apply, snapshot, and recovery are deterministic plans. A plan becomes
+authoritative only after its `ControlLogStorePort` action succeeds; failure
+settles to the pre-transition state. Configuration entries do not alter voter
+authority when appended—only quorum commit advances phase and voter epoch.
+
 ## Formal model
 
 `formal/tla/cluster/NiminoControlLog.tla` models election timeouts, quorum-backed

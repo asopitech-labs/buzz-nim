@@ -178,6 +178,12 @@ anti-entropy. Rust persists opaque entries and validates local prefix shape;
 quorum, elections, voter transitions, and command application remain #51 Nim
 control-plane decisions.
 
+The #51 reducer returns persistence-first plans rather than performing I/O.
+Only `settleControlPlan(..., true)` exposes the planned state; a failed local
+store action returns the exact pre-transition state. Stable phases require one
+majority, joint phase requires both old and new majorities, and configuration
+append never changes authority before quorum commit.
+
 `nimino-chirps` is the only workspace package permitted to depend directly on
 Alopex Chirps. The registry release is pinned to `=0.6.3`, default and optional
 features are disabled, and the lock checksum is part of the versioned contract.
