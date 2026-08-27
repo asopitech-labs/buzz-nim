@@ -273,9 +273,9 @@ The `[Base]` layer is compiled into buzz-acp and is **identical for every agent*
 Pack authors do not write or configure the `[Base]` layer — it is maintained by the Buzz team
 and updated in buzz-acp releases.
 
-**Disabling or customizing the base layer**: Set `BUZZ_ACP_NO_BASE_PROMPT` to omit the `[Base]`
+**Disabling or customizing the base layer**: Set `NIMINO_ACP_NO_BASE_PROMPT` to omit the `[Base]`
 section entirely. To replace the compiled-in default with custom content, set
-`BUZZ_ACP_BASE_PROMPT_FILE` to a file path — buzz-acp reads it at startup and uses it instead.
+`NIMINO_ACP_BASE_PROMPT_FILE` to a file path — buzz-acp reads it at startup and uses it instead.
 
 ### The `[System]` Layer
 
@@ -904,7 +904,7 @@ with OPS registries. Details TBD.
 
 ### Installed Pack Location
 
-Installed packs live at `~/.buzz/packs/<pack-id>/`. buzz-acp reads packs from this location
+Installed packs live at `~/.nimino/packs/<pack-id>/`. buzz-acp reads packs from this location
 at agent startup.
 
 ### Desktop App Import

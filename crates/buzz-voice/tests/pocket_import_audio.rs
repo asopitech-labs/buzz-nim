@@ -22,7 +22,7 @@ fn checked_in_voice() -> PathBuf {
 }
 
 fn evidence_dir() -> PathBuf {
-    std::env::var_os("BUZZ_VOICE_EVIDENCE_DIR")
+    std::env::var_os("NIMINO_VOICE_EVIDENCE_DIR")
         .map(PathBuf::from)
         .unwrap_or_else(|| {
             Path::new(env!("CARGO_MANIFEST_DIR")).join("../../target/buzz-voice-evidence")
@@ -53,9 +53,9 @@ fn synthesize(model_dir: &Path, voice_path: &Path, text: &str) -> (Vec<f32>, Pcm
 }
 
 #[test]
-#[ignore = "requires BUZZ_POCKET_MODEL_DIR and runs the installed Pocket ONNX model"]
+#[ignore = "requires NIMINO_POCKET_MODEL_DIR and runs the installed Pocket ONNX model"]
 fn objective_import_synthesis_delete_and_mary_fallback() {
-    let model_dir = required_path("BUZZ_POCKET_MODEL_DIR");
+    let model_dir = required_path("NIMINO_POCKET_MODEL_DIR");
     let temp = tempfile::tempdir().expect("temporary voice workspace");
     let source = temp.path().join("Imported Eve.wav");
     fs::copy(checked_in_voice(), &source).expect("copy checked-in voice fixture");

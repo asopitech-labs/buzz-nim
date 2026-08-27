@@ -25,9 +25,9 @@ fn test_log_redacts_secrets_before_writing() {
 fn test_log_redacts_an_environment_secret_with_no_recognizable_prefix() {
     let secret = "0e8f31c5a4b7d296e5f1a";
     // Set before the reporter is built: the snapshot is taken at construction.
-    std::env::set_var("BUZZ_TEST_REGISTRY_TOKEN", secret);
+    std::env::set_var("NIMINO_TEST_REGISTRY_TOKEN", secret);
     let h = harness();
-    std::env::remove_var("BUZZ_TEST_REGISTRY_TOKEN");
+    std::env::remove_var("NIMINO_TEST_REGISTRY_TOKEN");
 
     h.reporter.record_attempt(
         1,

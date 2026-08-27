@@ -1,7 +1,7 @@
 import buzzAppIcon from "@/assets/app-icon@3x.png";
 import { claimInviteInBrowser } from "@/features/invite/invite-api";
 import {
-  BUZZ_RELEASES_URL,
+  NIMINO_RELEASES_URL,
   type BuzzDownloadPlatform,
   detectBuzzDownloadPlatform,
   resolveBuzzDownloadUrlForPlatform,
@@ -53,7 +53,7 @@ export function InvitePage({ code }: { code: string }) {
   const [browserJoinError, setBrowserJoinError] = React.useState<string | null>(
     null,
   );
-  const [downloadUrl, setDownloadUrl] = React.useState(BUZZ_RELEASES_URL);
+  const [downloadUrl, setDownloadUrl] = React.useState(NIMINO_RELEASES_URL);
   const [needsMacChoice, setNeedsMacChoice] = React.useState(false);
   const [showMacChoice, setShowMacChoice] = React.useState(false);
   const [choosingMacDownload, setChoosingMacDownload] = React.useState(false);
@@ -110,7 +110,7 @@ export function InvitePage({ code }: { code: string }) {
       const receipt = await acceptPolicy();
       const query = new URLSearchParams({ relay, code });
       if (receipt) query.set("policy_receipt", receipt);
-      window.location.href = `buzz://join?${query.toString()}`;
+      window.location.href = `nimino://join?${query.toString()}`;
     } finally {
       setOpening(false);
     }
@@ -245,7 +245,7 @@ export function InvitePage({ code }: { code: string }) {
                 }`}
               >
                 <a
-                  href={`buzz://join?relay=${encodeURIComponent(relay)}&code=${encodeURIComponent(code)}`}
+                  href={`nimino://join?relay=${encodeURIComponent(relay)}&code=${encodeURIComponent(code)}`}
                 >
                   Accept invite in Buzz
                 </a>
@@ -324,7 +324,7 @@ export function InvitePage({ code }: { code: string }) {
               <a
                 aria-disabled={choosingMacDownload}
                 className="rounded-2xl border border-black p-5 text-black no-underline hover:bg-black hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black aria-disabled:pointer-events-none aria-disabled:opacity-50"
-                href={BUZZ_RELEASES_URL}
+                href={NIMINO_RELEASES_URL}
                 onClick={(event) =>
                   void chooseMacDownload(event, {
                     operatingSystem: "macos",
@@ -340,7 +340,7 @@ export function InvitePage({ code }: { code: string }) {
               <a
                 aria-disabled={choosingMacDownload}
                 className="rounded-2xl border border-black p-5 text-black no-underline hover:bg-black hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black aria-disabled:pointer-events-none aria-disabled:opacity-50"
-                href={BUZZ_RELEASES_URL}
+                href={NIMINO_RELEASES_URL}
                 onClick={(event) =>
                   void chooseMacDownload(event, {
                     operatingSystem: "macos",

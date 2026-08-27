@@ -200,14 +200,14 @@ fn from_jsonl(text: &str) -> Vec<TraceStep> {
 }
 
 /// Assert that the committed JSONL fixture for `name` round-trips to
-/// `expected_trace` byte-exactly. Run with `BUZZ_CONFORMANCE_UPDATE=1`
+/// `expected_trace` byte-exactly. Run with `NIMINO_CONFORMANCE_UPDATE=1`
 /// to regenerate the fixture (so a schema change is a deliberate
 /// re-commit, not a silent break).
 fn assert_fixture_matches(name: &str, expected_trace: &[TraceStep]) {
     let expected = to_jsonl(expected_trace);
     let path = fixture_path(name);
 
-    if std::env::var("BUZZ_CONFORMANCE_UPDATE").is_ok() {
+    if std::env::var("NIMINO_CONFORMANCE_UPDATE").is_ok() {
         fs::create_dir_all(path.parent().expect("fixture dir")).expect("mkdir fixtures");
         fs::write(&path, &expected).expect("write fixture");
         return;
@@ -216,7 +216,7 @@ fn assert_fixture_matches(name: &str, expected_trace: &[TraceStep]) {
     let actual = fs::read_to_string(&path).unwrap_or_else(|e| {
         panic!(
             "fixture {} missing or unreadable ({e}); run with \
-             BUZZ_CONFORMANCE_UPDATE=1 to create it",
+             NIMINO_CONFORMANCE_UPDATE=1 to create it",
             path.display()
         )
     });
@@ -224,7 +224,7 @@ fn assert_fixture_matches(name: &str, expected_trace: &[TraceStep]) {
     assert_eq!(
         actual, expected,
         "committed fixture {} drifted from the typed builder; run with \
-         BUZZ_CONFORMANCE_UPDATE=1 to refresh if the change is intentional",
+         NIMINO_CONFORMANCE_UPDATE=1 to refresh if the change is intentional",
         name
     );
 

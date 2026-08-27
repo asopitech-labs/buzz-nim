@@ -19,8 +19,8 @@
 //! and the bucket is only accessible via the relay's IAM role.
 //!
 //! The whole feature is **off by default** and gated behind
-//! `BUZZ_MEDIA_UPLOAD_RECORDS`. IP collection is a second, independent opt-in
-//! (`BUZZ_MEDIA_UPLOAD_IP_HEADER`) and is *fail-empty*: a missing, malformed,
+//! `NIMINO_MEDIA_UPLOAD_RECORDS`. IP collection is a second, independent opt-in
+//! (`NIMINO_MEDIA_UPLOAD_IP_HEADER`) and is *fail-empty*: a missing, malformed,
 //! or non-public address records nothing — a wrong IP is worse than no IP,
 //! so absent is always preferable. The IP goes only into this
 //! record — never blob metadata, never the upload response, never the
@@ -83,7 +83,7 @@ pub struct UploadRecord {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub uploader_name: Option<String>,
     /// Uploader's public IP as reported by the configured edge header.
-    /// Present only when `BUZZ_MEDIA_UPLOAD_IP_HEADER` is set AND the header
+    /// Present only when `NIMINO_MEDIA_UPLOAD_IP_HEADER` is set AND the header
     /// held a valid public address (fail-empty). Omitted, never `null`.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub ip: Option<String>,

@@ -1,6 +1,6 @@
 [package]
 name = "buzz-relay"
-default-run = "buzz-relay"
+default-run = "nimino-relay"
 # Independent version: buzz-relay ships as a pinnable artifact
 # (ghcr.io/block/buzz), released on its own cadence via `just release-relay`.
 # It does NOT inherit the workspace version.
@@ -12,7 +12,7 @@ repository.workspace = true
 description = "WebSocket relay server for the Buzz communications platform"
 
 [[bin]]
-name = "buzz-relay"
+name = "nimino-relay"
 path = "src/main.rs"
 
 [dependencies]

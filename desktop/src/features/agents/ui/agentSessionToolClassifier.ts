@@ -41,7 +41,7 @@ const DEVELOPER_TOOL_BASES = new Set([
   "postcompact",
 ]);
 
-const BUZZ_CLI_GROUPS = new Set([
+const NIMINO_CLI_GROUPS = new Set([
   "messages",
   "channels",
   "dms",
@@ -62,7 +62,7 @@ const BUZZ_CLI_GROUPS = new Set([
   "pack",
 ]);
 
-const BUZZ_CLI_ADMIN_VERBS = new Set([
+const NIMINO_CLI_ADMIN_VERBS = new Set([
   "archive",
   "unarchive",
   "create",
@@ -73,7 +73,7 @@ const BUZZ_CLI_ADMIN_VERBS = new Set([
   "set-channel-add-policy",
 ]);
 
-const BUZZ_CLI_READ_VERBS = new Set([
+const NIMINO_CLI_READ_VERBS = new Set([
   "get",
   "list",
   "thread",
@@ -294,7 +294,7 @@ function classifyBuzzTool(
     operation,
     object: preview,
     source: "mcp",
-    groupKey: `buzz:${operation}`,
+    groupKey: `nimino:${operation}`,
   };
 }
 
@@ -335,7 +335,7 @@ function classifyDeveloperToolName(value: string | null | undefined) {
   if (!value) return null;
 
   const normalized = normalizeToolNameText(value);
-  const base = normalized.replace(/^buzz_dev_mcp_/, "");
+  const base = normalized.replace(/^nimino_dev_mcp_/, "");
 
   if (base === "shell" || normalized.endsWith("_shell")) return "shell";
   if (base === "read_file" || normalized.endsWith("_read_file"))
@@ -347,7 +347,7 @@ function classifyDeveloperToolName(value: string | null | undefined) {
   if (base === "todo") return "todo";
   if (base === "stop") return "stop_hook";
   if (base === "postcompact") return "post_compact_hook";
-  if (DEVELOPER_TOOL_BASES.has(base) || normalized.includes("buzz_dev_mcp")) {
+  if (DEVELOPER_TOOL_BASES.has(base) || normalized.includes("nimino_dev_mcp")) {
     return "dev_mcp";
   }
   return null;
@@ -444,8 +444,8 @@ function buzzOperationObject(operation: string) {
 }
 
 function buzzCliTone(group: string, verb: string): AgentActivityTone {
-  if (BUZZ_CLI_ADMIN_VERBS.has(verb)) return "admin";
-  if (BUZZ_CLI_READ_VERBS.has(verb)) return "read";
+  if (NIMINO_CLI_ADMIN_VERBS.has(verb)) return "admin";
+  if (NIMINO_CLI_READ_VERBS.has(verb)) return "read";
   if (group === "feed" && verb === "get") return "read";
   return "write";
 }
@@ -499,7 +499,7 @@ function findBuzzCommand(tokens: string[]): BuzzCommandRange | null {
         }
         continue;
       }
-      if (!BUZZ_CLI_GROUPS.has(tokens[j])) continue;
+      if (!NIMINO_CLI_GROUPS.has(tokens[j])) continue;
       const verbIndex = j + 1;
       if (!tokens[verbIndex] || isCommandSeparator(tokens[verbIndex])) {
         return null;
@@ -560,7 +560,7 @@ export function tokenizeShellCommand(command: string): string[] {
 }
 
 function isBuzzExecutable(token: string) {
-  return token === "buzz" || token.split(/[\\/]/).pop() === "buzz";
+  return token === "nimino" || token.split(/[\\/]/).pop() === "nimino";
 }
 
 function isCommandSeparator(token: string) {

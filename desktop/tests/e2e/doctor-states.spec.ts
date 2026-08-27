@@ -31,7 +31,7 @@ const GOOSE_AVAILABLE = {
 };
 
 /** buzz-agent is always available and has no auth step. */
-const BUZZ_AGENT_AVAILABLE = {
+const NIMINO_AGENT_AVAILABLE = {
   id: "buzz-agent",
   label: "Buzz Agent",
   avatar_url: "",
@@ -121,7 +121,7 @@ test.describe("Doctor panel state screenshots", () => {
         GOOSE_AVAILABLE,
         CLAUDE_AVAILABLE_LOGGED_IN,
         CODEX_NOT_INSTALLED,
-        BUZZ_AGENT_AVAILABLE,
+        NIMINO_AGENT_AVAILABLE,
       ],
     });
 
@@ -239,7 +239,7 @@ test.describe("Doctor panel state screenshots", () => {
         GOOSE_AVAILABLE,
         CLAUDE_AVAILABLE_LOGGED_IN,
         CODEX_NOT_INSTALLED,
-        BUZZ_AGENT_AVAILABLE,
+        NIMINO_AGENT_AVAILABLE,
       ],
     });
 
@@ -282,7 +282,7 @@ test.describe("Doctor panel state screenshots", () => {
           auth_status: { status: "logged_out" },
           login_hint: "Run `codex login` to authenticate.",
         },
-        BUZZ_AGENT_AVAILABLE,
+        NIMINO_AGENT_AVAILABLE,
       ],
     });
 
@@ -327,7 +327,7 @@ test.describe("Doctor panel state screenshots", () => {
           login_hint: "Run the Claude CLI to complete authentication.",
         },
         CODEX_NOT_INSTALLED,
-        BUZZ_AGENT_AVAILABLE,
+        NIMINO_AGENT_AVAILABLE,
       ],
     });
 
@@ -375,7 +375,7 @@ test.describe("Doctor panel state screenshots", () => {
           install_instructions_url:
             "https://github.com/agentclientprotocol/codex-acp",
         },
-        BUZZ_AGENT_AVAILABLE,
+        NIMINO_AGENT_AVAILABLE,
       ],
     });
 
@@ -438,7 +438,7 @@ test.describe("Doctor panel state screenshots", () => {
           can_auto_install: true,
           node_required: false,
         },
-        BUZZ_AGENT_AVAILABLE,
+        NIMINO_AGENT_AVAILABLE,
       ],
       installAcpRuntimeDelayMs: 250,
       installAcpRuntimeResults: [
@@ -533,7 +533,7 @@ test.describe("Doctor panel state screenshots", () => {
         GOOSE_AVAILABLE,
         CLAUDE_AVAILABLE_LOGGED_IN,
         CODEX_NOT_INSTALLED,
-        BUZZ_AGENT_AVAILABLE,
+        NIMINO_AGENT_AVAILABLE,
       ],
       acpRuntimesCatalogAfterInstall: [
         GOOSE_AVAILABLE,
@@ -546,7 +546,7 @@ test.describe("Doctor panel state screenshots", () => {
           underlying_cli_path: "/usr/local/bin/codex",
           auth_status: { status: "logged_in" },
         },
-        BUZZ_AGENT_AVAILABLE,
+        NIMINO_AGENT_AVAILABLE,
       ],
       installAcpRuntimeResult: {
         success: true,
@@ -598,7 +598,7 @@ test.describe("Doctor panel state screenshots", () => {
           auth_status: { status: "logged_out" },
           login_hint: "Run `codex login` to authenticate.",
         },
-        BUZZ_AGENT_AVAILABLE,
+        NIMINO_AGENT_AVAILABLE,
       ],
       // After the mocked connect succeeds, discovery reports logged_in so
       // the row face can flip from "Sign-in needed" to Ready.
@@ -613,7 +613,7 @@ test.describe("Doctor panel state screenshots", () => {
           underlying_cli_path: "/usr/local/bin/codex",
           auth_status: { status: "logged_in" },
         },
-        BUZZ_AGENT_AVAILABLE,
+        NIMINO_AGENT_AVAILABLE,
       ],
       connectAcpRuntimeDelayMs: 250,
       acpAuthMethods: {
@@ -676,7 +676,7 @@ test.describe("Doctor panel state screenshots", () => {
           login_hint: "Run the Claude CLI to complete authentication.",
         },
         CODEX_NOT_INSTALLED,
-        BUZZ_AGENT_AVAILABLE,
+        NIMINO_AGENT_AVAILABLE,
       ],
       acpAuthMethods: {
         claude: { methods: [] },
@@ -709,7 +709,7 @@ test.describe("Doctor panel state screenshots", () => {
           availability: "available",
           auth_status: { status: "logged_out" },
         },
-        BUZZ_AGENT_AVAILABLE,
+        NIMINO_AGENT_AVAILABLE,
       ],
       acpAuthMethodsErrors: {
         codex: "Could not inspect the Codex adapter.",
@@ -734,7 +734,7 @@ test.describe("Doctor panel state screenshots", () => {
           availability: "available",
           auth_status: { status: "logged_out" },
         },
-        BUZZ_AGENT_AVAILABLE,
+        NIMINO_AGENT_AVAILABLE,
       ],
       acpAuthMethods: {
         codex: {
@@ -770,7 +770,7 @@ test.describe("Doctor panel state screenshots", () => {
           availability: "available",
           auth_status: { status: "logged_out" },
         },
-        BUZZ_AGENT_AVAILABLE,
+        NIMINO_AGENT_AVAILABLE,
       ],
       acpAuthMethods: {
         codex: {
@@ -810,7 +810,7 @@ test.describe("Doctor panel state screenshots", () => {
           underlying_cli_path: "/usr/local/bin/codex",
           can_auto_install: true,
         },
-        BUZZ_AGENT_AVAILABLE,
+        NIMINO_AGENT_AVAILABLE,
       ],
       installAcpRuntimeDelayMs: 250,
     });
@@ -868,7 +868,7 @@ test.describe("Doctor panel state screenshots", () => {
           node_required: false,
         },
         GOOSE_AVAILABLE,
-        BUZZ_AGENT_AVAILABLE,
+        NIMINO_AGENT_AVAILABLE,
       ],
       installAcpRuntimeByRuntime: {
         claude: {
@@ -920,7 +920,7 @@ test.describe("Doctor panel state screenshots", () => {
           auth_status: { status: "logged_in" },
         },
         GOOSE_AVAILABLE,
-        BUZZ_AGENT_AVAILABLE,
+        NIMINO_AGENT_AVAILABLE,
       ],
     });
 
@@ -987,7 +987,7 @@ test.describe("Doctor panel state screenshots", () => {
           can_auto_install: true,
           node_required: false,
         },
-        BUZZ_AGENT_AVAILABLE,
+        NIMINO_AGENT_AVAILABLE,
       ],
       installAcpRuntimeDelayMs: 500,
       installAcpRuntimeOutputLines: [

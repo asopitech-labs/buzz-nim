@@ -63,7 +63,7 @@ The CLI supports NIP-42 authentication, so it works with Buzz relays out of the 
 ```bash
 just setup                          # Docker services + schema
 cargo build --release --workspace
-screen -dmS relay bash -c "./target/release/buzz-relay 2>&1 | tee /tmp/buzz-relay.log"
+screen -dmS relay bash -c "./target/release/nimino-relay 2>&1 | tee /tmp/buzz-relay.log"
 sleep 3 && curl -s http://localhost:3000/health   # → "ok"
 ```
 

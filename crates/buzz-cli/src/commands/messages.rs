@@ -641,7 +641,7 @@ pub async fn cmd_send_message(
             serde_json::json!({
                 "message": "mentioned pubkeys are not channel members; add them explicitly before retrying",
                 "missing_member_pubkeys": missing,
-                "add_member_command": format!("buzz channels add-member --channel {} --pubkey <pubkey> --role <member|bot>", p.channel_id),
+                "add_member_command": format!("nimino channels add-member --channel {} --pubkey <pubkey> --role <member|bot>", p.channel_id),
             })
             .to_string(),
         ));

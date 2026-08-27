@@ -286,10 +286,10 @@ impl ReadSession {
                             error = %e,
                             "replica session query failed mid-request; degrading to writer"
                         );
-                        // Deliberately not a `buzz_db_route_decision` event:
+                        // Deliberately not a `nimino_db_route_decision` event:
                         // the page's route was already recorded, and the
                         // offload metric must stay one-event-per-request.
-                        metrics::counter!("buzz_db_read_session_degraded").increment(1);
+                        metrics::counter!("nimino_db_read_session_degraded").increment(1);
                         writer.clone()
                     }
                 }
@@ -315,7 +315,7 @@ enum RouteDecision {
     /// `&'static str` is the metric reason (`covered`/`fresh`); the caller
     /// records the route only once the page is actually served from the
     /// replica, so a post-verification writer re-run or a mid-query replica
-    /// failure emits exactly one `buzz_db_route_decision` event per request
+    /// failure emits exactly one `nimino_db_route_decision` event per request
     /// (the offload percentage is read straight off `decision="replica"`).
     Replica(
         sqlx::Transaction<'static, sqlx::Postgres>,
@@ -456,7 +456,7 @@ impl RoutePredicate {
     /// sound predicate from the query shape. Never produces a covered arm
     /// without both a channel-scope proof AND a real upper bound.
     ///
-    /// `routing_enabled` is whether `BUZZ_REPLICA_READ_MAX_AGE_MS` is set
+    /// `routing_enabled` is whether `NIMINO_REPLICA_READ_MAX_AGE_MS` is set
     /// (non-zero). When it is NOT, this returns `Bounded` — which the zero
     /// budget then fails closed — so the new seams are genuinely dark at
     /// the deploy default even for channel-pinned queries carrying `until`.
@@ -478,7 +478,7 @@ impl RoutePredicate {
     }
 }
 
-/// Map the configured read budget (`BUZZ_REPLICA_READ_MAX_AGE_MS`) to the
+/// Map the configured read budget (`NIMINO_REPLICA_READ_MAX_AGE_MS`) to the
 /// runtime gate: `0` disables bounded-staleness routing; anything above the
 /// fence staleness gate is clamped to it (an entry older than the staleness
 /// gate never routes anyway, so a larger budget would only misrepresent the
@@ -534,7 +534,7 @@ pub struct DbConfig {
     /// Maximum number of connections in the pool.
     pub max_connections: u32,
     /// Maximum connections in the read-replica pool (env
-    /// `BUZZ_DB_READ_POOL_SIZE`). `None` inherits [`Self::max_connections`].
+    /// `NIMINO_DB_READ_POOL_SIZE`). `None` inherits [`Self::max_connections`].
     pub read_max_connections: Option<u32>,
     /// Minimum number of idle connections to maintain.
     pub min_connections: u32,
@@ -545,7 +545,7 @@ pub struct DbConfig {
     /// Seconds a connection may sit idle before being closed.
     pub idle_timeout_secs: u64,
     /// Replica read budget `B` in milliseconds (bounded arm, env
-    /// `BUZZ_REPLICA_READ_MAX_AGE_MS`). `0` disables bounded-staleness
+    /// `NIMINO_REPLICA_READ_MAX_AGE_MS`). `0` disables bounded-staleness
     /// routing — the rollout default. Values above
     /// [`replica_fence::FENCE_STALENESS`] are clamped to it: an entry older
     /// than the staleness gate never routes anyway, so a larger budget
@@ -559,7 +559,7 @@ impl Default for DbConfig {
     /// At 20 main + 5 audit = 25/pod, four relay pods fit within the PG limit.
     fn default() -> Self {
         Self {
-            database_url: "postgres://buzz:buzz_dev@localhost:5432/buzz".to_string(), // sadscan:disable np.postgres.1
+            database_url: "postgres://nimino:nimino_dev@localhost:5432/nimino".to_string(), // sadscan:disable np.postgres.1
             read_database_url: None,
             max_connections: 20,
             read_max_connections: None,
@@ -851,7 +851,7 @@ impl Db {
     /// probe. Returns `Ok(false)` when no replica is configured.
     ///
     /// Ordering matters (Perci, PR #2084 review): this must run **after**
-    /// the migration decision. On a relay with `BUZZ_AUTO_MIGRATE` off, the
+    /// the migration decision. On a relay with `NIMINO_AUTO_MIGRATE` off, the
     /// writer pool arms the GUC regardless, but if migration 0021 has not
     /// been applied there is no trigger enforcing it — and a heartbeat probe
     /// would open the fence over an unenforced floor. So the probe is gated
@@ -951,7 +951,7 @@ impl Db {
             // The acquire miss gets its own reason code: the reader pool's
             // short acquire timeout (READER_ACQUIRE_TIMEOUT) makes this the
             // fast fail-closed path under load, and
-            // `buzz_db_route_decision{decision="writer",reason="reader_acquire_timeout"}`
+            // `nimino_db_route_decision{decision="writer",reason="reader_acquire_timeout"}`
             // is the operator's alert signal for a struggling reader pool.
             //
             // The reason deliberately names the mechanism, not a diagnosis:
@@ -967,7 +967,7 @@ impl Db {
             // and reader connection health/latency; high active suggests
             // contention, but this metric alone does not distinguish
             // contention from slow connects. Note the gauge is a coarse
-            // sample (BUZZ_POOL_METRICS_INTERVAL_SECS, default 10s) while
+            // sample (NIMINO_POOL_METRICS_INTERVAL_SECS, default 10s) while
             // the event it explains lasts ~150ms — a short burst may fall
             // between samples entirely, so absence of elevated active is
             // NOT evidence of a cold connect.
@@ -1033,7 +1033,7 @@ impl Db {
     /// went, and why.
     fn record_route(path: &'static str, decision: &'static str, reason: &'static str) {
         metrics::counter!(
-            "buzz_db_route_decision",
+            "nimino_db_route_decision",
             "path" => path,
             "decision" => decision,
             "reason" => reason,
@@ -1079,7 +1079,7 @@ impl Db {
     ///
     /// `max` is the **reader's** ceiling ([`Db::read_max_connections`]), not
     /// the writer's: `buzz_db_read_pool_active / buzz_db_read_pool_max` is
-    /// the operator's utilisation signal for tuning `BUZZ_DB_READ_POOL_SIZE`,
+    /// the operator's utilisation signal for tuning `NIMINO_DB_READ_POOL_SIZE`,
     /// and deriving it from the writer's max would misreport saturation by
     /// exactly the ratio of the two pool sizes — in the direction that hides
     /// the problem.
@@ -1795,7 +1795,7 @@ impl Db {
     /// ([`RoutePredicate::for_query`]): a channel-pinned query with an
     /// `until` upper bound may be served covered (provably complete below
     /// the fence wall); anything else is bounded-staleness only. The whole
-    /// seam is gated on `BUZZ_REPLICA_READ_MAX_AGE_MS` (default off): when
+    /// seam is gated on `NIMINO_REPLICA_READ_MAX_AGE_MS` (default off): when
     /// unset, even covered-eligible queries stay on the writer, so merging
     /// this seam is a true no-op until the budget is configured. Every
     /// failure fails closed to the writer.
@@ -2911,11 +2911,11 @@ impl Db {
     ///   offload. NOTE: enabling the budget also breaks read-your-own-writes
     ///   on the GET leg; the client-side WS `since`-overlap union intended
     ///   to cover fresh events has NOT shipped yet — do not enable
-    ///   `BUZZ_REPLICA_HEAD_MAX_AGE_SECS` until it has, proven by a
+    ///   `NIMINO_REPLICA_HEAD_MAX_AGE_SECS` until it has, proven by a
     ///   post-then-immediately-refetch test.
     ///
     /// Every failure fails closed to the writer and is recorded in
-    /// `buzz_db_route_decision`.
+    /// `nimino_db_route_decision`.
     #[datastore_span(name = "get_channel_window", system = "postgresql")]
     pub async fn get_channel_window_with_session(
         &self,
@@ -5322,7 +5322,7 @@ mod tests {
     use sqlx::{Acquire, PgPool};
     use uuid::Uuid;
 
-    const TEST_DB_URL: &str = "postgres://buzz:buzz_dev@localhost:5432/buzz";
+    const TEST_DB_URL: &str = "postgres://nimino:nimino_dev@localhost:5432/nimino";
 
     async fn setup_db() -> Db {
         let database_url =
@@ -7296,7 +7296,7 @@ mod tests {
 
     /// Truth table for [`RoutePredicate::for_query`]: the strongest sound
     /// predicate per query shape, and — the deploy-day default row — that
-    /// `routing_enabled = false` (BUZZ_REPLICA_READ_MAX_AGE_MS unset)
+    /// `routing_enabled = false` (NIMINO_REPLICA_READ_MAX_AGE_MS unset)
     /// forces `Bounded` even for covered-eligible shapes, so the zero
     /// budget fails the new seams closed (Dawn's covered-at-zero-budget
     /// catch, design doc rev 5).
@@ -8200,7 +8200,7 @@ mod tests {
     /// sole connection is established and then HELD (so every further acquire
     /// must time out), with `reader_aurora_identity` asserted cold. It routes
     /// through `count_events_routed` rather than calling `proved_reader`
-    /// directly, because `buzz_db_route_decision` is emitted by `route_read`
+    /// directly, because `nimino_db_route_decision` is emitted by `route_read`
     /// — a direct call would prove the timing but never emit the label.
     ///
     /// Timing uses an upper bound of 2x the budget minus a margin: it must
@@ -8292,10 +8292,10 @@ mod tests {
             .snapshot()
             .into_vec()
             .into_iter()
-            .filter(|(key, ..)| key.key().name() == "buzz_db_route_decision")
+            .filter(|(key, ..)| key.key().name() == "nimino_db_route_decision")
             .map(|(key, _, _, value)| {
                 let metrics_util::debugging::DebugValue::Counter(n) = value else {
-                    panic!("buzz_db_route_decision must be a counter");
+                    panic!("nimino_db_route_decision must be a counter");
                 };
                 let labels: Vec<_> = key.key().labels().collect();
                 let get = |name: &str| {
@@ -9126,7 +9126,7 @@ mod tests {
     /// `spawn_fence_probe` must verify the floor guard before letting the
     /// probe run — catalog shape AND observed behavior — and refuse on
     /// sabotage. This is the production gate for a relay running with
-    /// `BUZZ_AUTO_MIGRATE` off: an armed GUC with no enforcing trigger must
+    /// `NIMINO_AUTO_MIGRATE` off: an armed GUC with no enforcing trigger must
     /// never yield an open fence.
     #[tokio::test]
     #[ignore = "requires Postgres"]
@@ -9192,7 +9192,7 @@ mod tests {
             "unexpected error: {err}"
         );
 
-        // Sabotage B: trigger dropped entirely (the BUZZ_AUTO_MIGRATE=off /
+        // Sabotage B: trigger dropped entirely (the NIMINO_AUTO_MIGRATE=off /
         // 0021-unapplied shape). Catalog check must refuse.
         sqlx::query("DROP TRIGGER events_created_at_floor ON events")
             .execute(&db.pool)

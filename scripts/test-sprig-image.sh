@@ -28,7 +28,7 @@ assert_run '
 '
 
 docker run --rm --entrypoint /bin/bash \
-  -e BUZZ_RELAY_URL=wss://relay.example.test/ "$IMAGE" -ceu '
+  -e NIMINO_RELAY_URL=wss://relay.example.test/ "$IMAGE" -ceu '
     /usr/local/bin/sprig-entrypoint --help >/dev/null 2>&1 & pid=$!
     for _ in 1 2 3 4 5; do
       git config --global --get credential.https://relay.example.test/git.helper >/dev/null 2>&1 && break

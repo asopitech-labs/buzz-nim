@@ -31,7 +31,7 @@ impl Default for Resources {
 }
 
 /// Default inactivity budget: the I5 opt-in (§Auto-Stop). The config field and
-/// `BUZZ_ACP_EXIT_AFTER_INACTIVITY` are one knob, not two.
+/// `NIMINO_ACP_EXIT_AFTER_INACTIVITY` are one knob, not two.
 pub const DEFAULT_INACTIVITY_SECONDS: u64 = 7200;
 
 /// Default `image` schema prefill: the published sprig image, in tag+digest

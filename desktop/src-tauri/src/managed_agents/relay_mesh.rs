@@ -42,8 +42,8 @@ pub fn apply_relay_mesh_env(
         return;
     }
     let model = relay_mesh_wire_model(model.unwrap_or(RELAY_MESH_AUTO_MODEL_ID)).to_string();
-    env.insert("BUZZ_AGENT_PROVIDER".to_string(), "openai".to_string());
-    env.insert("BUZZ_AGENT_MODEL".to_string(), model.clone());
+    env.insert("NIMINO_AGENT_PROVIDER".to_string(), "openai".to_string());
+    env.insert("NIMINO_AGENT_MODEL".to_string(), model.clone());
     env.insert(
         "OPENAI_COMPAT_BASE_URL".to_string(),
         RELAY_MESH_API_BASE_URL.to_string(),
@@ -58,15 +58,15 @@ pub fn apply_relay_mesh_env(
     // These are defaults, not policy: the effective agent/persona/global env
     // may deliberately choose a smaller cap or a different effort. This function
     // runs after those layers during readiness, so never clobber their values.
-    insert_default_if_unset(env, "BUZZ_AGENT_MAX_OUTPUT_TOKENS", "4096");
+    insert_default_if_unset(env, "NIMINO_AGENT_MAX_OUTPUT_TOKENS", "4096");
     // Mesh agents run on small local models, which are the ones most likely to
     // do the work and then end the turn without publishing it — the failure the
     // reply guard exists to catch. Everywhere else it stays opt-in and unset.
     // A default, not policy: an explicit `0` from the agent/persona/global env
     // survives (see `insert_default_if_unset`, and the copy-forward list in
     // `relay_mesh_process_env` that preserves it through the spawn path).
-    insert_default_if_unset(env, "BUZZ_AGENT_REQUIRE_REPLY", "1");
-    // Deliberately no BUZZ_AGENT_THINKING_EFFORT default: mesh translates
+    insert_default_if_unset(env, "NIMINO_AGENT_REQUIRE_REPLY", "1");
+    // Deliberately no NIMINO_AGENT_THINKING_EFFORT default: mesh translates
     // `reasoning_effort` into the chat template's `enable_thinking` flag, so any
     // value we pick overrides each model's own template default — and the right
     // value is model-specific. Measured with the real prompt and toolset:
@@ -100,13 +100,13 @@ pub fn relay_mesh_process_env(
 ) -> std::collections::BTreeMap<String, String> {
     let mut env = std::collections::BTreeMap::new();
     for key in [
-        "BUZZ_AGENT_MAX_OUTPUT_TOKENS",
-        "BUZZ_AGENT_THINKING_EFFORT",
+        "NIMINO_AGENT_MAX_OUTPUT_TOKENS",
+        "NIMINO_AGENT_THINKING_EFFORT",
         // Must be copied forward for the user's value to survive: this map is
         // written onto the command *after* the layered user env, so a key absent
         // here is re-defaulted by `apply_relay_mesh_env` below and an explicit
-        // `BUZZ_AGENT_REQUIRE_REPLY=0` would be silently overridden back to `1`.
-        "BUZZ_AGENT_REQUIRE_REPLY",
+        // `NIMINO_AGENT_REQUIRE_REPLY=0` would be silently overridden back to `1`.
+        "NIMINO_AGENT_REQUIRE_REPLY",
     ] {
         if let Some(value) = effective_env.get(key) {
             env.insert(key.to_string(), value.clone());
@@ -132,14 +132,15 @@ mod tests {
         );
 
         assert_eq!(
-            env.get("BUZZ_AGENT_MAX_OUTPUT_TOKENS").map(String::as_str),
+            env.get("NIMINO_AGENT_MAX_OUTPUT_TOKENS")
+                .map(String::as_str),
             Some("4096")
         );
         // Must stay unset: any value we pick overrides the model's own chat
         // template default, and the right value is model-specific ("none"
         // stops gemma tool-calling; enabling thinking makes Qwen3 burn ~4x the
         // output budget).
-        assert_eq!(env.get("BUZZ_AGENT_THINKING_EFFORT"), None);
+        assert_eq!(env.get("NIMINO_AGENT_THINKING_EFFORT"), None);
     }
 
     /// Stored `auto` is translated here, so buzz-agent receives a plain model
@@ -155,7 +156,7 @@ mod tests {
         );
 
         assert_eq!(
-            env.get("BUZZ_AGENT_MODEL").map(String::as_str),
+            env.get("NIMINO_AGENT_MODEL").map(String::as_str),
             Some(RELAY_MESH_VIRTUAL_MODEL_ID)
         );
         assert_eq!(
@@ -171,7 +172,7 @@ mod tests {
         apply_relay_mesh_env(&mut env, Some(RELAY_MESH_PROVIDER_ID), Some("  "));
 
         assert_eq!(
-            env.get("BUZZ_AGENT_MODEL").map(String::as_str),
+            env.get("NIMINO_AGENT_MODEL").map(String::as_str),
             Some(RELAY_MESH_VIRTUAL_MODEL_ID)
         );
     }
@@ -204,7 +205,7 @@ mod tests {
         );
 
         assert_eq!(
-            env.get("BUZZ_AGENT_MODEL").map(String::as_str),
+            env.get("NIMINO_AGENT_MODEL").map(String::as_str),
             Some("unsloth/Qwen3-8B-GGUF:Q4_K_M")
         );
         assert_eq!(
@@ -217,10 +218,13 @@ mod tests {
     fn native_provider_preserves_explicit_generation_controls() {
         let mut env = BTreeMap::from([
             (
-                "BUZZ_AGENT_MAX_OUTPUT_TOKENS".to_string(),
+                "NIMINO_AGENT_MAX_OUTPUT_TOKENS".to_string(),
                 "2048".to_string(),
             ),
-            ("BUZZ_AGENT_THINKING_EFFORT".to_string(), "high".to_string()),
+            (
+                "NIMINO_AGENT_THINKING_EFFORT".to_string(),
+                "high".to_string(),
+            ),
         ]);
         apply_relay_mesh_env(
             &mut env,
@@ -229,11 +233,12 @@ mod tests {
         );
 
         assert_eq!(
-            env.get("BUZZ_AGENT_MAX_OUTPUT_TOKENS").map(String::as_str),
+            env.get("NIMINO_AGENT_MAX_OUTPUT_TOKENS")
+                .map(String::as_str),
             Some("2048")
         );
         assert_eq!(
-            env.get("BUZZ_AGENT_THINKING_EFFORT").map(String::as_str),
+            env.get("NIMINO_AGENT_THINKING_EFFORT").map(String::as_str),
             Some("high")
         );
     }
@@ -248,7 +253,7 @@ mod tests {
         );
 
         assert_eq!(
-            env.get("BUZZ_AGENT_REQUIRE_REPLY").map(String::as_str),
+            env.get("NIMINO_AGENT_REQUIRE_REPLY").map(String::as_str),
             Some("1"),
             "mesh agents opt into the reply guard automatically"
         );
@@ -256,7 +261,7 @@ mod tests {
 
     #[test]
     fn native_provider_preserves_explicit_reply_guard_opt_out() {
-        let mut env = BTreeMap::from([("BUZZ_AGENT_REQUIRE_REPLY".to_string(), "0".to_string())]);
+        let mut env = BTreeMap::from([("NIMINO_AGENT_REQUIRE_REPLY".to_string(), "0".to_string())]);
         apply_relay_mesh_env(
             &mut env,
             Some(RELAY_MESH_PROVIDER_ID),
@@ -264,7 +269,7 @@ mod tests {
         );
 
         assert_eq!(
-            env.get("BUZZ_AGENT_REQUIRE_REPLY").map(String::as_str),
+            env.get("NIMINO_AGENT_REQUIRE_REPLY").map(String::as_str),
             Some("0"),
             "an explicit opt-out is a user decision, not a value to re-default"
         );
@@ -276,7 +281,7 @@ mod tests {
         apply_relay_mesh_env(&mut env, Some("anthropic"), Some("claude-haiku-4.5"));
 
         assert_eq!(
-            env.get("BUZZ_AGENT_REQUIRE_REPLY"),
+            env.get("NIMINO_AGENT_REQUIRE_REPLY"),
             None,
             "the guard stays opt-in everywhere except mesh"
         );
@@ -290,12 +295,12 @@ mod tests {
     #[test]
     fn process_env_preserves_explicit_reply_guard_opt_out() {
         let effective_env =
-            BTreeMap::from([("BUZZ_AGENT_REQUIRE_REPLY".to_string(), "0".to_string())]);
+            BTreeMap::from([("NIMINO_AGENT_REQUIRE_REPLY".to_string(), "0".to_string())]);
 
         let env = relay_mesh_process_env(&effective_env, "Gemma-4");
 
         assert_eq!(
-            env.get("BUZZ_AGENT_REQUIRE_REPLY").map(String::as_str),
+            env.get("NIMINO_AGENT_REQUIRE_REPLY").map(String::as_str),
             Some("0")
         );
     }
@@ -305,7 +310,7 @@ mod tests {
         let env = relay_mesh_process_env(&BTreeMap::new(), "Gemma-4");
 
         assert_eq!(
-            env.get("BUZZ_AGENT_REQUIRE_REPLY").map(String::as_str),
+            env.get("NIMINO_AGENT_REQUIRE_REPLY").map(String::as_str),
             Some("1")
         );
     }
@@ -314,7 +319,7 @@ mod tests {
     fn process_env_seeds_controls_without_restoring_unrelated_credentials() {
         let effective_env = BTreeMap::from([
             (
-                "BUZZ_AGENT_MAX_OUTPUT_TOKENS".to_string(),
+                "NIMINO_AGENT_MAX_OUTPUT_TOKENS".to_string(),
                 "1024".to_string(),
             ),
             ("OPENAI_API_KEY".to_string(), "must-not-leak".to_string()),
@@ -323,7 +328,8 @@ mod tests {
         let env = relay_mesh_process_env(&effective_env, "Gemma-4");
 
         assert_eq!(
-            env.get("BUZZ_AGENT_MAX_OUTPUT_TOKENS").map(String::as_str),
+            env.get("NIMINO_AGENT_MAX_OUTPUT_TOKENS")
+                .map(String::as_str),
             Some("1024")
         );
         assert_eq!(

@@ -42,7 +42,7 @@ import {
   getThemePair,
 } from "@/shared/theme/theme-loader";
 import {
-  BUZZ_GRADIENT_STOPS,
+  NIMINO_GRADIENT_STOPS,
   SystemPreferencePreviewFrame,
   ThemePreviewFrame,
   type ThemePreviewVars,
@@ -340,9 +340,9 @@ function PairedThemeTile({
             ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
             : "group-hover:ring-2 group-hover:ring-border",
         )}
-        darkGradient={darkName ? BUZZ_GRADIENT_STOPS[darkName] : undefined}
+        darkGradient={darkName ? NIMINO_GRADIENT_STOPS[darkName] : undefined}
         darkVars={darkVars}
-        lightGradient={BUZZ_GRADIENT_STOPS[lightName]}
+        lightGradient={NIMINO_GRADIENT_STOPS[lightName]}
         lightVars={lightVars}
       />
       <span
@@ -383,7 +383,7 @@ function SingleThemeTile({
             ? "ring-2 ring-primary ring-offset-2 ring-offset-background"
             : "group-hover:ring-2 group-hover:ring-border",
         )}
-        sidebarGradient={BUZZ_GRADIENT_STOPS[name]}
+        sidebarGradient={NIMINO_GRADIENT_STOPS[name]}
         vars={vars}
       />
       <span
@@ -542,19 +542,19 @@ function ThemeSettingsCard() {
       className="h-[112px] w-[168px] shrink-0"
       darkGradient={
         selectedPairedDarkTheme
-          ? BUZZ_GRADIENT_STOPS[selectedPairedDarkTheme]
+          ? NIMINO_GRADIENT_STOPS[selectedPairedDarkTheme]
           : undefined
       }
       darkVars={
         selectedPairedDarkTheme ? getVars(selectedPairedDarkTheme) : null
       }
-      lightGradient={BUZZ_GRADIENT_STOPS[selectedPairedTheme]}
+      lightGradient={NIMINO_GRADIENT_STOPS[selectedPairedTheme]}
       lightVars={getVars(selectedPairedTheme)}
     />
   ) : (
     <ThemePreviewFrame
       className="h-[112px] w-[168px] shrink-0"
-      sidebarGradient={BUZZ_GRADIENT_STOPS[selectedTheme]}
+      sidebarGradient={NIMINO_GRADIENT_STOPS[selectedTheme]}
       vars={getVars(selectedTheme)}
     />
   );

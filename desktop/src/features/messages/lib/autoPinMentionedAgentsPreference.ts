@@ -1,7 +1,7 @@
 import * as React from "react";
 
 export const KEEP_MENTIONED_AGENTS_PINNED_STORAGE_KEY =
-  "buzz.messages.keepMentionedAgentsPinned";
+  "nimino.messages.keepMentionedAgentsPinned";
 export const DEFAULT_KEEP_MENTIONED_AGENTS_PINNED = true;
 
 const listeners = new Set<() => void>();

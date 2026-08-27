@@ -18,14 +18,14 @@ just mesh-dev-fresh
 ```
 
 This removes development app data, the development keyring entry,
-`~/.buzz-dev`, and local Docker volumes; it preserves the installed Buzz app's
-data, production keyring, and `~/.buzz`. The first dev page load also clears
+`~/.nimino-dev`, and local Docker volumes; it preserves the installed Nimino app's
+data, production keyring, and `~/.nimino`. The first dev page load also clears
 only that dev server origin's WebKit storage, so saved fields from an earlier
 run cannot leak into the fresh state. It then seeds local channels and starts
 the mesh-enabled desktop with the repository's public Tyler test identity.
 That identity is a fixture and must never be pointed at staging or production.
 
-If using `mesh-dev-fresh`, the clean window opens at **Welcome to Buzz**. Join
+If using `mesh-dev-fresh`, the clean window opens at **Welcome to Nimino**. Join
 the seeded local community before continuing:
 
 1. Click **Join a community**.
@@ -154,7 +154,7 @@ admitted. A serving target is selectable only when its endpoint signature is
 valid, its invite token decodes as a bounded Iroh endpoint, and every advertised
 relay URL matches this machine's locally configured Iroh relay policy.
 
-`BUZZ_MESH_IROH_RELAYS` defaults to Iroh's production relay set. Set it to `0`
+`NIMINO_MESH_IROH_RELAYS` defaults to Iroh's production relay set. Set it to `0`
 for direct QUIC only, or to a comma-separated HTTPS allowlist for custom relays.
 Plain HTTP is accepted only for loopback development relays. Remote status notes
 cannot expand this local allowlist.

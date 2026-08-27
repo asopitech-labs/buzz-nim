@@ -64,7 +64,7 @@ export function getToolStatusDisplay(status: ToolStatus, isError: boolean) {
   };
 }
 
-const BUZZ_READ_TOOLS = new Set([
+const NIMINO_READ_TOOLS = new Set([
   "get_messages",
   "get_channel_history",
   "get_thread",
@@ -85,7 +85,7 @@ const BUZZ_READ_TOOLS = new Set([
   "get_contact_list",
 ]);
 
-const BUZZ_WRITE_TOOLS = new Set([
+const NIMINO_WRITE_TOOLS = new Set([
   "send_message",
   "send_diff_message",
   "edit_message",
@@ -119,13 +119,16 @@ const BUZZ_WRITE_TOOLS = new Set([
   "set_contact_list",
 ]);
 
-const BUZZ_TOOL_NAMES = new Set([...BUZZ_READ_TOOLS, ...BUZZ_WRITE_TOOLS]);
+const NIMINO_TOOL_NAMES = new Set([
+  ...NIMINO_READ_TOOLS,
+  ...NIMINO_WRITE_TOOLS,
+]);
 
-const BUZZ_TOOL_NAMES_BY_LENGTH = [...BUZZ_TOOL_NAMES].sort(
+const NIMINO_TOOL_NAMES_BY_LENGTH = [...NIMINO_TOOL_NAMES].sort(
   (left, right) => right.length - left.length,
 );
 
-const BUZZ_TOOL_TITLE_ALIASES: Array<[RegExp, string]> = [
+const NIMINO_TOOL_TITLE_ALIASES: Array<[RegExp, string]> = [
   [/\bsending message to channel\b/, "send_message"],
   [/\bretrieving recent messages from channel\b/, "get_messages"],
   [/\bgetting channel details\b/, "get_channel"],
@@ -138,8 +141,8 @@ const BUZZ_TOOL_TITLE_ALIASES: Array<[RegExp, string]> = [
 
 export function getBuzzToolInfo(title: string): BuzzToolInfo | null {
   const name = normalizeToolName(title);
-  const isRead = BUZZ_READ_TOOLS.has(name);
-  const isWrite = BUZZ_WRITE_TOOLS.has(name);
+  const isRead = NIMINO_READ_TOOLS.has(name);
+  const isWrite = NIMINO_WRITE_TOOLS.has(name);
   if (!isRead && !isWrite) {
     return null;
   }
@@ -228,7 +231,7 @@ export function findBuzzToolName(value: string, includeShortNames: boolean) {
 
   const normalized = normalizeToolNameText(value);
   return (
-    BUZZ_TOOL_NAMES_BY_LENGTH.find(
+    NIMINO_TOOL_NAMES_BY_LENGTH.find(
       (name) =>
         (includeShortNames || name.length >= 8) && normalized.includes(name),
     ) ?? null
@@ -242,7 +245,7 @@ function findBuzzToolAlias(value: string) {
     .replace(/[_-]+/g, " ")
     .replace(/\s+/g, " ");
   return (
-    BUZZ_TOOL_TITLE_ALIASES.find(([pattern]) =>
+    NIMINO_TOOL_TITLE_ALIASES.find(([pattern]) =>
       pattern.test(normalizedPhrase),
     )?.[1] ?? null
   );
@@ -268,7 +271,7 @@ export function formatToolTitle(
   fallbackTitle?: string,
 ): string {
   const name = normalizeToolName(toolName);
-  if (BUZZ_READ_TOOLS.has(name) || BUZZ_WRITE_TOOLS.has(name)) {
+  if (NIMINO_READ_TOOLS.has(name) || NIMINO_WRITE_TOOLS.has(name)) {
     return name
       .split("_")
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))

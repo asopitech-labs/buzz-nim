@@ -33,7 +33,7 @@ use crate::{
 /// the override independently; a workspace switch between two such reads can
 /// pair one relay's NIP-11 signer with another relay's snapshot query.
 /// Capturing both fields from one read — matching those two functions' exact
-/// precedence, including the standalone `BUZZ_RELAY_HTTP` path when no override
+/// precedence, including the standalone `NIMINO_RELAY_HTTP` path when no override
 /// is set — guarantees the pair is internally consistent.
 pub(crate) struct RelayTarget {
     /// Relay WebSocket URL (drives the NIP-11 fetch and the rendered footer).

@@ -297,7 +297,7 @@ fn emit_product_feedback_success(
 /// "error") — bounded, no cardinality risk.
 pub fn reject_with_transport(transport: &'static str, reason: &'static str) {
     metrics::counter!(
-        "buzz_events_rejected_total",
+        "nimino_events_rejected_total",
         "transport" => transport,
         "reason" => reason
     )
@@ -2017,8 +2017,8 @@ fn validate_event_reminder(event: &Event) -> Result<(), &'static str> {
     // omit it. The ordering check only applies when both are present.
     if let Some(nb) = not_before {
         // Reject reminders scheduled beyond the configured horizon. The same
-        // SPROUT_MAX_NOT_BEFORE_DELTA env var is advertised in NIP-11.
-        let max_delta: u64 = std::env::var("SPROUT_MAX_NOT_BEFORE_DELTA")
+        // NIMINO_MAX_NOT_BEFORE_DELTA is advertised in NIP-11.
+        let max_delta: u64 = std::env::var("NIMINO_MAX_NOT_BEFORE_DELTA")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(31_536_000); // 1 year default
@@ -2117,7 +2117,7 @@ pub async fn ingest_event(
         if r.accepted {
             let author_type = author_type_label(state, tenant, author_pubkey_bytes).await;
             metrics::counter!(
-                "buzz_events_stored_total",
+                "nimino_events_stored_total",
                 "kind" => kind_label,
                 "author_type" => author_type
             )
@@ -2874,7 +2874,7 @@ async fn ingest_event_inner(
             }
             pre_created_channel = Some(client_uuid);
             metrics::counter!(
-                "buzz_channels_created_total",
+                "nimino_channels_created_total",
                 "community" => tenant.host().to_owned(),
                 "type" => channel_type.to_string()
             )
@@ -3464,9 +3464,9 @@ mod tests {
             DEFAULT_LEASE_DURATION,
         };
 
-        let url = std::env::var("BUZZ_TEST_DATABASE_URL")
+        let url = std::env::var("NIMINO_TEST_DATABASE_URL")
             .or_else(|_| std::env::var("DATABASE_URL"))
-            .unwrap_or_else(|_| "postgres://buzz:buzz_dev@localhost:5432/buzz".to_string()); // sadscan:disable np.postgres.1
+            .unwrap_or_else(|_| "postgres://nimino:nimino_dev@localhost:5432/nimino".to_string()); // sadscan:disable np.postgres.1
         let pool = sqlx::PgPool::connect(&url).await.expect("connect test DB");
         let db = buzz_db::Db::from_pool(pool);
         db.migrate().await.expect("migrate test DB");
@@ -5414,10 +5414,10 @@ mod tests {
             .snapshot()
             .into_vec()
             .into_iter()
-            .filter(|(key, ..)| key.key().name() == "buzz_events_rejected_total")
+            .filter(|(key, ..)| key.key().name() == "nimino_events_rejected_total")
             .map(|(key, _, _, value)| {
                 let metrics_util::debugging::DebugValue::Counter(n) = value else {
-                    panic!("buzz_events_rejected_total must be a counter");
+                    panic!("nimino_events_rejected_total must be a counter");
                 };
                 let labels: Vec<_> = key.key().labels().collect();
                 let transport = labels

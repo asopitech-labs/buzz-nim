@@ -25,8 +25,8 @@ use tauri::{
     AppHandle, Emitter, Manager, Runtime,
 };
 
-const TRAY_ID: &str = "buzz-tray";
-const OPEN_BUZZ_ID: &str = "tray-open-buzz";
+const TRAY_ID: &str = "nimino-tray";
+const OPEN_NIMINO_ID: &str = "tray-open-buzz";
 const NEW_CHANNEL_ID: &str = "tray-new-channel";
 const QUIT_ID: &str = "tray-quit";
 const OPEN_CHANNEL_PREFIX: &str = "tray-open-channel:";
@@ -40,7 +40,8 @@ static PREVIEW_STARTED_AT: OnceLock<Instant> = OnceLock::new();
 /// without connecting to a relay. It is deliberately unavailable in release
 /// builds and must be explicitly enabled when launching the debug app.
 fn preview_activities() -> Option<Vec<TrayAgentActivity>> {
-    if !cfg!(debug_assertions) || std::env::var("BUZZ_TRAY_MENU_DEMO").ok().as_deref() != Some("1")
+    if !cfg!(debug_assertions)
+        || std::env::var("NIMINO_TRAY_MENU_DEMO").ok().as_deref() != Some("1")
     {
         return None;
     }
@@ -73,7 +74,8 @@ fn preview_activities() -> Option<Vec<TrayAgentActivity>> {
 }
 
 fn preview_recent_activities() -> Option<Vec<TrayAgentActivity>> {
-    if !cfg!(debug_assertions) || std::env::var("BUZZ_TRAY_MENU_DEMO").ok().as_deref() != Some("1")
+    if !cfg!(debug_assertions)
+        || std::env::var("NIMINO_TRAY_MENU_DEMO").ok().as_deref() != Some("1")
     {
         return None;
     }
@@ -225,22 +227,22 @@ pub(crate) fn show_main_window<R: Runtime>(app: &AppHandle<R>) {
         return;
     };
     if let Err(error) = window.unminimize() {
-        eprintln!("buzz-desktop: failed to restore main window from tray: {error}");
+        eprintln!("nimino-desktop: failed to restore main window from tray: {error}");
         return;
     }
     if let Err(error) = window.show() {
-        eprintln!("buzz-desktop: failed to show main window from tray: {error}");
+        eprintln!("nimino-desktop: failed to show main window from tray: {error}");
         return;
     }
     if let Err(error) = window.set_focus() {
-        eprintln!("buzz-desktop: failed to focus main window from tray: {error}");
+        eprintln!("nimino-desktop: failed to focus main window from tray: {error}");
     }
 }
 
 fn queue_tray_action<R: Runtime>(app: &AppHandle<R>, mut action: TrayAction) {
     let state = app.state::<TrayMenuState<R>>();
     let Ok(mut queue) = state.action_queue.lock() else {
-        eprintln!("buzz-desktop: tray action queue is unavailable");
+        eprintln!("nimino-desktop: tray action queue is unavailable");
         return;
     };
     if let TrayAction::OpenChannel {
@@ -254,7 +256,7 @@ fn queue_tray_action<R: Runtime>(app: &AppHandle<R>, mut action: TrayAction) {
     drop(queue);
 
     if let Err(error) = app.emit("tray-action-available", ()) {
-        eprintln!("buzz-desktop: failed to notify frontend of tray action: {error}");
+        eprintln!("nimino-desktop: failed to notify frontend of tray action: {error}");
     }
 }
 
@@ -335,7 +337,7 @@ fn build_menu<R: Runtime>(
     append_separator(app, &menu)?;
     menu.append(&MenuItem::with_id(
         app,
-        OPEN_BUZZ_ID,
+        OPEN_NIMINO_ID,
         "Open Buzz",
         true,
         None::<&str>,
@@ -446,7 +448,7 @@ fn apply_activity_presentation<R: Runtime>(
 
 fn handle_menu_event<R: Runtime>(app: &AppHandle<R>, id: &str) {
     match id {
-        OPEN_BUZZ_ID => show_main_window(app),
+        OPEN_NIMINO_ID => show_main_window(app),
         NEW_CHANNEL_ID => {
             show_main_window(app);
             queue_tray_action(app, TrayAction::NewChannel);
@@ -493,7 +495,7 @@ pub fn init<R: Runtime>(app: &AppHandle<R>) -> tauri::Result<()> {
         .on_menu_event(|app, event| handle_menu_event(app, event.id.as_ref()))
         .build(app)?;
     if let Err(error) = apply_activity_presentation(&tray, activities, recent_activities) {
-        eprintln!("buzz-desktop: failed to apply tray menu presentation: {error}");
+        eprintln!("nimino-desktop: failed to apply tray menu presentation: {error}");
     }
     mouse_nav::init(app);
     Ok(())

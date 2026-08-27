@@ -57,7 +57,7 @@ pub(crate) struct HarnessDefinition {
     #[serde(default)]
     pub args: Vec<String>,
     /// Environment variables injected at spawn time. Definition env is applied
-    /// first and LOSES on conflict with Buzz-injected vars — `BUZZ_MANAGED_AGENT`
+    /// first and LOSES on conflict with Buzz-injected vars — `NIMINO_MANAGED_AGENT`
     /// is always authoritative and cannot be overridden here.
     #[serde(default)]
     pub env: BTreeMap<String, String>,
@@ -174,7 +174,7 @@ fn validate_harness_definition(def: &HarnessDefinition) -> Result<(), String> {
         return Err("label must not be empty".into());
     }
     // Args travel to the harness through the comma-delimited
-    // `BUZZ_ACP_AGENT_ARGS` env transport (clap `value_delimiter = ','` on the
+    // `NIMINO_ACP_AGENT_ARGS` env transport (clap `value_delimiter = ','` on the
     // buzz-acp side), so a literal comma inside one argument would silently
     // split into two arguments at runtime. Reject at the validation boundary —
     // shared by save (UI/Tauri) and load (hand-authored files) — so the
@@ -187,7 +187,7 @@ fn validate_harness_definition(def: &HarnessDefinition) -> Result<(), String> {
         ));
     }
     // Validate env keys through the shared boundary validator.  This closes the
-    // reserved-key bypass exploit (BUZZ_AUTH_TAG=x forgery shape), rejects
+    // reserved-key bypass exploit (NIMINO_AUTH_TAG=x forgery shape), rejects
     // NUL bytes that would panic Command::env, and enforces size limits.
     crate::managed_agents::env_vars::validate_user_env_keys(&def.env)
         .map_err(|e| format!("env: {e}"))?;
@@ -875,11 +875,11 @@ mod tests {
 
     #[test]
     fn validate_rejects_malformed_key_with_equals_sign() {
-        // BUZZ_AUTH_TAG=x is the documented reserved-key bypass shape:
+        // NIMINO_AUTH_TAG=x is the documented reserved-key bypass shape:
         // the key contains '=' so Command::env would produce
-        // `BUZZ_AUTH_TAG=x=forged` in the child env.
+        // `NIMINO_AUTH_TAG=x=forged` in the child env.
         let mut env = BTreeMap::new();
-        env.insert("BUZZ_AUTH_TAG=x".to_string(), "forged".to_string());
+        env.insert("NIMINO_AUTH_TAG=x".to_string(), "forged".to_string());
         let def = HarnessDefinition {
             id: "bad-env".to_string(),
             label: "Bad".to_string(),
@@ -895,18 +895,18 @@ mod tests {
             "malformed key must be rejected: {err}"
         );
         assert!(
-            err.contains("BUZZ_AUTH_TAG"),
+            err.contains("NIMINO_AUTH_TAG"),
             "error must name the offending key: {err}"
         );
     }
 
     #[test]
     fn validate_rejects_reserved_key_buzz_managed_agent() {
-        // BUZZ_MANAGED_AGENT and BUZZ_MANAGED_AGENT_START_NONCE are the
+        // NIMINO_MANAGED_AGENT and NIMINO_MANAGED_AGENT_START_NONCE are the
         // ownership markers — supplying them in a definition must be rejected.
         let mut env = BTreeMap::new();
         env.insert(
-            "BUZZ_MANAGED_AGENT".to_string(),
+            "NIMINO_MANAGED_AGENT".to_string(),
             "fake-instance".to_string(),
         );
         let def = HarnessDefinition {
@@ -920,16 +920,16 @@ mod tests {
         };
         let err = validate_harness_definition_pub(&def).unwrap_err();
         assert!(
-            err.contains("reserved by Buzz"),
+            err.contains("reserved by Nimino"),
             "ownership marker key must be rejected: {err}"
         );
     }
 
     #[test]
     fn validate_rejects_reserved_key_case_insensitive() {
-        // BUZZ_PRIVATE_KEY in any casing must be blocked.
+        // NIMINO_PRIVATE_KEY in any casing must be blocked.
         let mut env = BTreeMap::new();
-        env.insert("buzz_private_key".to_string(), "secret".to_string());
+        env.insert("nimino_private_key".to_string(), "secret".to_string());
         let def = HarnessDefinition {
             id: "ci-marker".to_string(),
             label: "CI".to_string(),
@@ -941,7 +941,7 @@ mod tests {
         };
         let err = validate_harness_definition_pub(&def).unwrap_err();
         assert!(
-            err.contains("reserved by Buzz"),
+            err.contains("reserved by Nimino"),
             "reserved key must be blocked case-insensitively: {err}"
         );
     }
@@ -1012,7 +1012,7 @@ mod tests {
     // ── Comma-in-args validation (transport-lossiness guard) ─────────────────
 
     /// A definition whose args contain a literal comma must be rejected at the
-    /// validation boundary — the comma-delimited `BUZZ_ACP_AGENT_ARGS`
+    /// validation boundary — the comma-delimited `NIMINO_ACP_AGENT_ARGS`
     /// transport would silently split it into two args at spawn time.
     #[test]
     fn validate_rejects_comma_in_args() {

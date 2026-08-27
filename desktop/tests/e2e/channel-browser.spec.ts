@@ -9,7 +9,7 @@ async function seedCustomSection(page: Page) {
   await page.addInitScript(
     ({ pubkey, section }) => {
       window.localStorage.setItem(
-        `buzz-channel-sections.v1:${pubkey}`,
+        `nimino-channel-sections.v1:${pubkey}`,
         JSON.stringify({ version: 1, sections: [section], assignments: {} }),
       );
     },

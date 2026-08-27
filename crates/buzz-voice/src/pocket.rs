@@ -41,9 +41,9 @@ pub const VOICE_FILE_EXT: &str = "wav";
 const TTS_NUM_THREADS: usize = 1;
 
 /// EXPERIMENTAL (latency): override ONNX intra-op threads for the Pocket
-/// sessions via `BUZZ_TTS_THREADS`. Default preserves production's 1.
+/// sessions via `NIMINO_TTS_THREADS`. Default preserves production's 1.
 fn tts_num_threads() -> usize {
-    std::env::var("BUZZ_TTS_THREADS")
+    std::env::var("NIMINO_TTS_THREADS")
         .ok()
         .and_then(|v| v.parse::<usize>().ok())
         .filter(|&n| n >= 1)
@@ -292,10 +292,10 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "requires BUZZ_POCKET_TEST_MODEL_DIR"]
+    #[ignore = "requires NIMINO_POCKET_TEST_MODEL_DIR"]
     fn production_api_emits_non_silent_april_int8_pcm() {
-        let dir = std::env::var("BUZZ_POCKET_TEST_MODEL_DIR")
-            .expect("set BUZZ_POCKET_TEST_MODEL_DIR to an April INT8 model directory");
+        let dir = std::env::var("NIMINO_POCKET_TEST_MODEL_DIR")
+            .expect("set NIMINO_POCKET_TEST_MODEL_DIR to an April INT8 model directory");
         let engine = load_text_to_speech(&dir).expect("load April INT8 engine");
         let style = load_voice_style(&Path::new(&dir).join("reference_sample.wav"))
             .expect("load reference voice");

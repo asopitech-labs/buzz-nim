@@ -16,10 +16,10 @@ test("turns every bare Buzz entity permalink family into a chip node", () => {
   const owner = "ab".repeat(32);
   const id = "cd".repeat(32);
   const links = [
-    `buzz://repo?owner=${owner}&d=buzz`,
-    `buzz://project?owner=${owner}&d=onboarding`,
-    `buzz://pr?id=${id}&owner=${owner}&d=buzz`,
-    `buzz://issue?id=${id}&owner=${owner}&d=buzz`,
+    `nimino://repo?owner=${owner}&d=buzz`,
+    `nimino://project?owner=${owner}&d=onboarding`,
+    `nimino://pr?id=${id}&owner=${owner}&d=buzz`,
+    `nimino://issue?id=${id}&owner=${owner}&d=buzz`,
   ];
   for (const link of links) {
     const children = run(link);
@@ -29,7 +29,7 @@ test("turns every bare Buzz entity permalink family into a chip node", () => {
 });
 
 test("keeps sentence punctuation outside entity chip nodes", () => {
-  const link = `buzz://repo?owner=${"ab".repeat(32)}&d=buzz`;
+  const link = `nimino://repo?owner=${"ab".repeat(32)}&d=buzz`;
   const children = run(`${link}.`);
   assert.equal(children[0].value, link);
   assert.equal(children[1].value, ".");

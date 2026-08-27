@@ -184,8 +184,8 @@ fn run_buzz_acp_auth_command_with_paths<const N: usize>(
     let mut command = Command::new(acp_path);
     command
         .args(args)
-        .env("BUZZ_ACP_AGENT_COMMAND", adapter_path.as_os_str())
-        .env("BUZZ_ACP_AGENT_ARGS", agent_args.join(","))
+        .env("NIMINO_ACP_AGENT_COMMAND", adapter_path.as_os_str())
+        .env("NIMINO_ACP_AGENT_ARGS", agent_args.join(","))
         .stdout(Stdio::piped())
         .stderr(Stdio::piped());
     if let Some(workdir) = default_agent_workdir() {
@@ -528,7 +528,7 @@ mod tests {
             .expect("chmod adapter");
 
         let acp_path = temp.path().join("buzz-acp");
-        fs::write(&acp_path, "#!/bin/sh\nexec \"$BUZZ_ACP_AGENT_COMMAND\"\n")
+        fs::write(&acp_path, "#!/bin/sh\nexec \"$NIMINO_ACP_AGENT_COMMAND\"\n")
             .expect("write buzz-acp");
         fs::set_permissions(&acp_path, fs::Permissions::from_mode(0o755)).expect("chmod buzz-acp");
 

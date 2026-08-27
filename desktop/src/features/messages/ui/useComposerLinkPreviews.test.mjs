@@ -761,7 +761,7 @@ test("an abandoned concurrent render cannot invalidate the committed snapshot ta
 // ── Composer clone-URL classification ────────────────────────────────────────
 //
 // A same-relay `/git/<owner>/<repo>` clone URL is a Buzz repository entity: the
-// renderer normalizes it onto `buzz://repo` and shows it as an inline chip, not
+// renderer normalizes it onto `nimino://repo` and shows it as an inline chip, not
 // a standalone card. The composer must reach the same verdict from the same
 // active relay origin — without it the URL is classified as an external
 // generic-link, enters snapshot fetching, and shows a card the sent message

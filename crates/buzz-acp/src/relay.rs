@@ -25,7 +25,7 @@ use std::collections::{HashMap, HashSet, VecDeque};
 use std::time::Duration;
 
 /// Default capacity of the event channel from background task to harness.
-/// Override with `BUZZ_ACP_EVENT_BUFFER` env var at startup.
+/// Override with `NIMINO_ACP_EVENT_BUFFER` env var at startup.
 const EVENT_CHANNEL_CAPACITY_DEFAULT: usize = 256;
 /// Capacity of the command channel from harness to background task.
 const CMD_CHANNEL_CAPACITY: usize = 64;
@@ -33,7 +33,7 @@ const CMD_CHANNEL_CAPACITY: usize = 64;
 /// Read the event channel capacity from the environment, falling back to the
 /// compiled-in default. Parsed once at call-site (connect time).
 fn event_channel_capacity() -> usize {
-    std::env::var("BUZZ_ACP_EVENT_BUFFER")
+    std::env::var("NIMINO_ACP_EVENT_BUFFER")
         .ok()
         .and_then(|v| v.parse::<usize>().ok())
         .map(|v| v.max(1)) // mpsc::channel panics on capacity 0

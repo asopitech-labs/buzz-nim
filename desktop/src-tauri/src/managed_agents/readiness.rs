@@ -454,12 +454,12 @@ fn buzz_agent_requirements(effective: &EffectiveAgentEnv) -> Vec<Requirement> {
         missing.push(Requirement::GitBash);
     }
 
-    // Provider is required — maps to BUZZ_AGENT_PROVIDER in the effective env.
+    // Provider is required — maps to NIMINO_AGENT_PROVIDER in the effective env.
     // An empty string is treated as absent: a key set to "" is not a valid
     // provider and must not pass the readiness gate.
     let provider = effective
         .env
-        .get("BUZZ_AGENT_PROVIDER")
+        .get("NIMINO_AGENT_PROVIDER")
         .filter(|v| !v.is_empty())
         .map(String::as_str);
     if provider.is_none() {
@@ -468,12 +468,12 @@ fn buzz_agent_requirements(effective: &EffectiveAgentEnv) -> Vec<Requirement> {
         });
     }
 
-    // Model is required — maps to BUZZ_AGENT_MODEL in the effective env.
+    // Model is required — maps to NIMINO_AGENT_MODEL in the effective env.
     // Same empty-string treatment as provider.
     // Also accept provider-specific model fallback keys, matching buzz-agent's
     // own config.rs `from_env()` resolution order (e.g. DATABRICKS_MODEL for
     // databricks/databricks_v2, ANTHROPIC_MODEL for anthropic, etc.). The
-    // baked buzz-releases env sets DATABRICKS_MODEL but not BUZZ_AGENT_MODEL,
+    // baked buzz-releases env sets DATABRICKS_MODEL but not NIMINO_AGENT_MODEL,
     // so without this fallback agents baked from releases appear "not ready".
     let provider_model_key = match provider {
         Some("databricks") | Some("databricks_v2") | Some("databricks-v2") => {
@@ -486,7 +486,7 @@ fn buzz_agent_requirements(effective: &EffectiveAgentEnv) -> Vec<Requirement> {
     };
     let model_present = effective
         .env
-        .get("BUZZ_AGENT_MODEL")
+        .get("NIMINO_AGENT_MODEL")
         .filter(|v| !v.is_empty())
         .is_some()
         || provider_model_key
@@ -682,12 +682,12 @@ mod tests {
     fn buzz_agent_missing_provider_returns_not_ready_with_normalized_field() {
         let env = make_env(
             "buzz-agent",
-            env_with(&[("BUZZ_AGENT_MODEL", "claude-opus-4-5")]),
+            env_with(&[("NIMINO_AGENT_MODEL", "claude-opus-4-5")]),
         );
         let result = agent_readiness(&env);
         assert!(
             !result.is_ready(),
-            "missing BUZZ_AGENT_PROVIDER should be NotReady"
+            "missing NIMINO_AGENT_PROVIDER should be NotReady"
         );
         let reqs = result.requirements();
         assert!(
@@ -703,7 +703,7 @@ mod tests {
         let env = make_env(
             "buzz-agent",
             env_with(&[
-                ("BUZZ_AGENT_PROVIDER", "anthropic"),
+                ("NIMINO_AGENT_PROVIDER", "anthropic"),
                 ("ANTHROPIC_API_KEY", "sk-test"),
             ]),
         );
@@ -721,8 +721,8 @@ mod tests {
         let env = make_env(
             "buzz-agent",
             env_with(&[
-                ("BUZZ_AGENT_PROVIDER", "anthropic"),
-                ("BUZZ_AGENT_MODEL", "claude-opus-4-5"),
+                ("NIMINO_AGENT_PROVIDER", "anthropic"),
+                ("NIMINO_AGENT_MODEL", "claude-opus-4-5"),
             ]),
         );
         let result = agent_readiness(&env);
@@ -737,8 +737,8 @@ mod tests {
         let env = make_env(
             "buzz-agent",
             env_with(&[
-                ("BUZZ_AGENT_PROVIDER", "openai"),
-                ("BUZZ_AGENT_MODEL", "gpt-4o"),
+                ("NIMINO_AGENT_PROVIDER", "openai"),
+                ("NIMINO_AGENT_MODEL", "gpt-4o"),
             ]),
         );
         let result = agent_readiness(&env);
@@ -753,8 +753,8 @@ mod tests {
         let env = make_env(
             "buzz-agent",
             env_with(&[
-                ("BUZZ_AGENT_PROVIDER", "anthropic"),
-                ("BUZZ_AGENT_MODEL", "claude-opus-4-5"),
+                ("NIMINO_AGENT_PROVIDER", "anthropic"),
+                ("NIMINO_AGENT_MODEL", "claude-opus-4-5"),
                 ("ANTHROPIC_API_KEY", "sk-test"),
             ]),
         );
@@ -769,8 +769,8 @@ mod tests {
         let env = make_env(
             "buzz-agent",
             env_with(&[
-                ("BUZZ_AGENT_PROVIDER", "databricks"),
-                ("BUZZ_AGENT_MODEL", "dbrx-instruct"),
+                ("NIMINO_AGENT_PROVIDER", "databricks"),
+                ("NIMINO_AGENT_MODEL", "dbrx-instruct"),
                 ("DATABRICKS_HOST", "https://dbc.example.com"),
                 // NOTE: no DATABRICKS_TOKEN
             ]),
@@ -786,8 +786,8 @@ mod tests {
         let env = make_env(
             "buzz-agent",
             env_with(&[
-                ("BUZZ_AGENT_PROVIDER", "databricks"),
-                ("BUZZ_AGENT_MODEL", "dbrx-instruct"),
+                ("NIMINO_AGENT_PROVIDER", "databricks"),
+                ("NIMINO_AGENT_MODEL", "dbrx-instruct"),
                 // NOTE: no DATABRICKS_HOST
             ]),
         );
@@ -803,9 +803,9 @@ mod tests {
         let env = make_env(
             "buzz-agent",
             env_with(&[
-                ("BUZZ_AGENT_PROVIDER", "databricks_v2"),
+                ("NIMINO_AGENT_PROVIDER", "databricks_v2"),
                 (
-                    "BUZZ_AGENT_MODEL",
+                    "NIMINO_AGENT_MODEL",
                     "databricks/meta-llama-4-maverick-17b-instruct",
                 ),
             ]),
@@ -862,14 +862,14 @@ mod tests {
         let env = make_env(
             "buzz-agent",
             env_with(&[
-                ("BUZZ_AGENT_PROVIDER", ""),
-                ("BUZZ_AGENT_MODEL", "claude-opus-4-5"),
+                ("NIMINO_AGENT_PROVIDER", ""),
+                ("NIMINO_AGENT_MODEL", "claude-opus-4-5"),
             ]),
         );
         let result = agent_readiness(&env);
         assert!(
             !result.is_ready(),
-            "empty-string BUZZ_AGENT_PROVIDER must be treated as missing"
+            "empty-string NIMINO_AGENT_PROVIDER must be treated as missing"
         );
         assert!(result
             .requirements()
@@ -883,15 +883,15 @@ mod tests {
         let env = make_env(
             "buzz-agent",
             env_with(&[
-                ("BUZZ_AGENT_PROVIDER", "anthropic"),
-                ("BUZZ_AGENT_MODEL", ""),
+                ("NIMINO_AGENT_PROVIDER", "anthropic"),
+                ("NIMINO_AGENT_MODEL", ""),
                 ("ANTHROPIC_API_KEY", "sk-test"),
             ]),
         );
         let result = agent_readiness(&env);
         assert!(
             !result.is_ready(),
-            "empty-string BUZZ_AGENT_MODEL must be treated as missing"
+            "empty-string NIMINO_AGENT_MODEL must be treated as missing"
         );
         assert!(result
             .requirements()
@@ -905,8 +905,8 @@ mod tests {
         let env = make_env(
             "buzz-agent",
             env_with(&[
-                ("BUZZ_AGENT_PROVIDER", "anthropic"),
-                ("BUZZ_AGENT_MODEL", "claude-opus-4-5"),
+                ("NIMINO_AGENT_PROVIDER", "anthropic"),
+                ("NIMINO_AGENT_MODEL", "claude-opus-4-5"),
                 ("ANTHROPIC_API_KEY", ""),
             ]),
         );
@@ -925,8 +925,8 @@ mod tests {
         let env = make_env(
             "buzz-agent",
             env_with(&[
-                ("BUZZ_AGENT_PROVIDER", "databricks"),
-                ("BUZZ_AGENT_MODEL", "dbrx-instruct"),
+                ("NIMINO_AGENT_PROVIDER", "databricks"),
+                ("NIMINO_AGENT_MODEL", "dbrx-instruct"),
                 ("DATABRICKS_HOST", ""),
             ]),
         );
@@ -1468,9 +1468,9 @@ mod tests {
         // User env_vars must win over baked defaults; in OSS builds baked map is empty,
         // so this validates the user-env layer is present in the output.
         let mut env_vars = BTreeMap::new();
-        env_vars.insert("BUZZ_AGENT_PROVIDER".to_string(), "anthropic".to_string());
+        env_vars.insert("NIMINO_AGENT_PROVIDER".to_string(), "anthropic".to_string());
         env_vars.insert(
-            "BUZZ_AGENT_MODEL".to_string(),
+            "NIMINO_AGENT_MODEL".to_string(),
             "claude-opus-4-5".to_string(),
         );
 
@@ -1534,27 +1534,27 @@ mod tests {
         };
 
         let runtime = known_acp_runtime_exact("buzz-agent");
-        let effective = resolve_effective_agent_env(&record, &[], runtime, &Default::default());
+        let env = resolve_effective_agent_env(&record, &[], runtime, &Default::default()).env;
 
         // User env_vars must be present in the output (last-write-wins).
         assert_eq!(
-            effective.env.get("BUZZ_AGENT_PROVIDER").map(String::as_str),
+            env.get("NIMINO_AGENT_PROVIDER").map(String::as_str),
             Some("anthropic")
         );
         assert_eq!(
-            effective.env.get("BUZZ_AGENT_MODEL").map(String::as_str),
+            env.get("NIMINO_AGENT_MODEL").map(String::as_str),
             Some("claude-opus-4-5")
         );
     }
 
     #[test]
     fn buzz_agent_databricks_v2_with_databricks_model_but_no_buzz_agent_model_is_ready() {
-        // The baked buzz-releases env sets DATABRICKS_MODEL but not BUZZ_AGENT_MODEL.
+        // The baked buzz-releases env sets DATABRICKS_MODEL but not NIMINO_AGENT_MODEL.
         // An agent with only DATABRICKS_MODEL must pass the readiness gate.
         let env = make_env(
             "buzz-agent",
             env_with(&[
-                ("BUZZ_AGENT_PROVIDER", "databricks_v2"),
+                ("NIMINO_AGENT_PROVIDER", "databricks_v2"),
                 ("DATABRICKS_MODEL", "goose-claude-4-6-sonnet"),
                 ("DATABRICKS_HOST", "https://dbc.example.com"),
             ]),
@@ -1572,7 +1572,7 @@ mod tests {
         let env = make_env(
             "buzz-agent",
             env_with(&[
-                ("BUZZ_AGENT_PROVIDER", "databricks-v2"),
+                ("NIMINO_AGENT_PROVIDER", "databricks-v2"),
                 ("DATABRICKS_MODEL", "goose-claude-4-6-sonnet"),
                 ("DATABRICKS_HOST", "https://dbc.example.com"),
             ]),
@@ -1590,7 +1590,7 @@ mod tests {
         let env = make_env(
             "buzz-agent",
             env_with(&[
-                ("BUZZ_AGENT_PROVIDER", "databricks-v2"),
+                ("NIMINO_AGENT_PROVIDER", "databricks-v2"),
                 ("DATABRICKS_MODEL", "goose-claude-4-6-sonnet"),
                 // DATABRICKS_HOST intentionally absent
             ]),
@@ -1614,7 +1614,7 @@ mod tests {
         let env = make_env(
             "buzz-agent",
             env_with(&[
-                ("BUZZ_AGENT_PROVIDER", "databricks"),
+                ("NIMINO_AGENT_PROVIDER", "databricks"),
                 ("DATABRICKS_MODEL", "dbrx-instruct"),
                 ("DATABRICKS_HOST", "https://dbc.example.com"),
             ]),
@@ -1630,7 +1630,7 @@ mod tests {
         let env = make_env(
             "buzz-agent",
             env_with(&[
-                ("BUZZ_AGENT_PROVIDER", "anthropic"),
+                ("NIMINO_AGENT_PROVIDER", "anthropic"),
                 ("ANTHROPIC_MODEL", "claude-opus-4-5"),
                 ("ANTHROPIC_API_KEY", "sk-test"),
             ]),
@@ -1646,7 +1646,7 @@ mod tests {
         let env = make_env(
             "buzz-agent",
             env_with(&[
-                ("BUZZ_AGENT_PROVIDER", "openai"),
+                ("NIMINO_AGENT_PROVIDER", "openai"),
                 ("OPENAI_COMPAT_MODEL", "gpt-4o"),
                 ("OPENAI_COMPAT_API_KEY", "sk-test"),
             ]),
@@ -1659,11 +1659,11 @@ mod tests {
 
     #[test]
     fn buzz_agent_empty_provider_model_fallback_key_is_not_ready() {
-        // An empty DATABRICKS_MODEL with no BUZZ_AGENT_MODEL must still be NotReady.
+        // An empty DATABRICKS_MODEL with no NIMINO_AGENT_MODEL must still be NotReady.
         let env = make_env(
             "buzz-agent",
             env_with(&[
-                ("BUZZ_AGENT_PROVIDER", "databricks_v2"),
+                ("NIMINO_AGENT_PROVIDER", "databricks_v2"),
                 ("DATABRICKS_MODEL", ""),
                 ("DATABRICKS_HOST", "https://dbc.example.com"),
             ]),
@@ -1671,7 +1671,7 @@ mod tests {
         let result = agent_readiness(&env);
         assert!(
             !result.is_ready(),
-            "empty DATABRICKS_MODEL with no BUZZ_AGENT_MODEL must be NotReady"
+            "empty DATABRICKS_MODEL with no NIMINO_AGENT_MODEL must be NotReady"
         );
         assert!(result
             .requirements()
@@ -1687,8 +1687,8 @@ mod tests {
         let env = make_env(
             "buzz-agent",
             env_with(&[
-                ("BUZZ_AGENT_PROVIDER", "openrouter"),
-                ("BUZZ_AGENT_MODEL", "anthropic/claude-sonnet-4"),
+                ("NIMINO_AGENT_PROVIDER", "openrouter"),
+                ("NIMINO_AGENT_MODEL", "anthropic/claude-sonnet-4"),
                 ("OPENROUTER_API_KEY", "sk-or-test-key"),
             ]),
         );
@@ -1704,8 +1704,8 @@ mod tests {
         let env = make_env(
             "buzz-agent",
             env_with(&[
-                ("BUZZ_AGENT_PROVIDER", "openrouter"),
-                ("BUZZ_AGENT_MODEL", "anthropic/claude-sonnet-4"),
+                ("NIMINO_AGENT_PROVIDER", "openrouter"),
+                ("NIMINO_AGENT_MODEL", "anthropic/claude-sonnet-4"),
             ]),
         );
         let result = agent_readiness(&env);
@@ -1720,7 +1720,7 @@ mod tests {
         let env = make_env(
             "buzz-agent",
             env_with(&[
-                ("BUZZ_AGENT_PROVIDER", "openrouter"),
+                ("NIMINO_AGENT_PROVIDER", "openrouter"),
                 ("OPENROUTER_MODEL", "google/gemini-2.5-flash"),
                 ("OPENROUTER_API_KEY", "sk-or-test-key"),
             ]),

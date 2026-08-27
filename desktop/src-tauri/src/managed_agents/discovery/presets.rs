@@ -171,10 +171,10 @@ pub(super) const PRESET_HARNESSES: &[PresetHarness] = &[
         install_hint: "Buzz talks to OpenClaw through its ACP mode (openclaw acp), which relies on the OpenClaw Gateway daemon. Follow the setup guide to install both.\n\n\
             ⚠️  Execution-locus note: `openclaw acp` runs tools inside the \
             OpenClaw Gateway daemon, not in the Desktop process. \
-            Desktop-injected BUZZ_* env vars are visible to the `openclaw` \
+            Desktop-injected NIMINO_* env vars are visible to the `openclaw` \
             harness process itself, but do NOT automatically reach the \
             Gateway's execution environment. If your tools or agent logic \
-            needs BUZZ_* credentials at execution time, set them on the \
+            needs NIMINO_* credentials at execution time, set them on the \
             Gateway's own environment separately.",
         underlying_cli: None,
     },

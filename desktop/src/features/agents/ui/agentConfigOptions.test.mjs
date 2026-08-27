@@ -149,7 +149,7 @@ test("runtimeSupportsLlmProviderSelection is false for codex and claude", () => 
 
 test("resetConfigForHarnessChange clears harness-specific values", () => {
   const config = {
-    env_vars: { BUZZ_AGENT_THINKING_EFFORT: "high", KEEP_ME: "yes" },
+    env_vars: { NIMINO_AGENT_THINKING_EFFORT: "high", KEEP_ME: "yes" },
     model: "claude-opus",
     preferred_runtime: "buzz-agent",
     provider: "anthropic",

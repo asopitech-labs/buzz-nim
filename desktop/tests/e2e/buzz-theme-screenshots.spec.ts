@@ -4,12 +4,13 @@ import { waitForAnimations } from "../helpers/animations";
 import { installMockBridge } from "../helpers/bridge";
 
 const SHOTS = "test-results/buzz-theme";
-const THEME_STORAGE_KEY = "buzz-theme";
-const GLASS_BACKGROUND_STORAGE_KEY = "buzz-glass-background";
-const GLASS_OPACITY_STORAGE_KEY = "buzz-glass-opacity";
-const PROMINENT_ACTIVE_TAB_STORAGE_KEY = "buzz-prominent-active-tab";
-const CONVERSATION_DENSITY_STORAGE_KEY = "buzz.appearance.conversationDensity";
-const FONT_SIZE_STORAGE_KEY = "buzz.appearance.fontSize";
+const THEME_STORAGE_KEY = "nimino-theme";
+const GLASS_BACKGROUND_STORAGE_KEY = "nimino-glass-background";
+const GLASS_OPACITY_STORAGE_KEY = "nimino-glass-opacity";
+const PROMINENT_ACTIVE_TAB_STORAGE_KEY = "nimino-prominent-active-tab";
+const CONVERSATION_DENSITY_STORAGE_KEY =
+  "nimino.appearance.conversationDensity";
+const FONT_SIZE_STORAGE_KEY = "nimino.appearance.fontSize";
 const MOCK_PUBKEY = "deadbeef".repeat(8);
 const GENERAL_CHANNEL_ID = "9a1657ac-f7aa-5db0-b632-d8bbeb6dfb50";
 
@@ -31,7 +32,7 @@ async function seedIconChannelSection(page: Page) {
   await page.addInitScript(
     ({ channelId, pubkey }) => {
       window.localStorage.setItem(
-        `buzz-channel-sections.v1:${pubkey}`,
+        `nimino-channel-sections.v1:${pubkey}`,
         JSON.stringify({
           version: 1,
           sections: [
@@ -1623,7 +1624,7 @@ test("glass background keeps the content panel solid", async ({ page }) => {
   await expect
     .poll(() =>
       page.evaluate(() =>
-        (window.__BUZZ_E2E_COMMAND_LOG__ ?? []).some(
+        (window.__NIMINO_E2E_COMMAND_LOG__ ?? []).some(
           (entry) =>
             entry.command === "set_window_vibrancy" &&
             (entry.payload as { enabled?: boolean } | undefined)?.enabled ===
@@ -1695,7 +1696,7 @@ test("glass background is unavailable on Linux", async ({ page }) => {
   await expect
     .poll(() =>
       page.evaluate(() =>
-        (window.__BUZZ_E2E_COMMAND_LOG__ ?? []).some(
+        (window.__NIMINO_E2E_COMMAND_LOG__ ?? []).some(
           (entry) => entry.command === "set_window_vibrancy",
         ),
       ),

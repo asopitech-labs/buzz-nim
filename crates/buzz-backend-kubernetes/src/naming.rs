@@ -113,7 +113,7 @@ impl AgentIdentity {
 
 /// A fresh generation token: 8 lowercase hex chars from the OS RNG.
 ///
-/// Appears in the Secret name and as `BUZZ_MANAGED_AGENT_START_NONCE`, so the
+/// Appears in the Secret name and as `NIMINO_MANAGED_AGENT_START_NONCE`, so the
 /// Secret generation and the harness's lifecycle-frame correlator are one
 /// identity (§Launch data tier 3).
 pub fn new_generation() -> String {

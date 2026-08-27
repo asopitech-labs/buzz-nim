@@ -591,7 +591,7 @@ fn whitespace_provider_in_global_triggers_mesh_decision() {
 fn legacy_record_falls_back_to_env_sniff() {
     let mut rec = record(None, None, None, None);
     rec.env_vars = BTreeMap::from([
-        ("BUZZ_AGENT_PROVIDER".to_string(), "openai".to_string()),
+        ("NIMINO_AGENT_PROVIDER".to_string(), "openai".to_string()),
         (
             "OPENAI_COMPAT_BASE_URL".to_string(),
             "http://127.0.0.1:9337/v1/".to_string(),
@@ -610,118 +610,13 @@ fn legacy_record_falls_back_to_env_sniff() {
     );
 }
 
-/// Class A, oldest shipped record: both renamed sentinels in their original
-/// spelling. The preset first wrote `SPROUT_AGENT_PROVIDER` (#798) and the
-/// api-key value `sprout-mesh-local`; #971 and #960 renamed each in the same
-/// Jun-11 window without migrating persisted `env_vars`, so this exact shape is
-/// still on disk and must resolve mesh.
-#[test]
-fn legacy_record_falls_back_to_env_sniff_with_pre_rename_sentinels() {
-    let mut rec = record(None, None, None, None);
-    rec.env_vars = BTreeMap::from([
-        ("SPROUT_AGENT_PROVIDER".to_string(), "openai".to_string()),
-        (
-            "OPENAI_COMPAT_BASE_URL".to_string(),
-            "http://127.0.0.1:9337/v1".to_string(),
-        ),
-        ("OPENAI_COMPAT_MODEL".to_string(), "Qwen3".to_string()),
-        (
-            "OPENAI_COMPAT_API_KEY".to_string(),
-            "sprout-mesh-local".to_string(),
-        ),
-    ]);
-
-    assert_eq!(
-        resolve_effective_relay_mesh_model_id(&rec, &[], &global(None, None)).as_deref(),
-        Some("Qwen3"),
-        "the oldest shipped mesh record carries both pre-rename sentinels and was never migrated"
-    );
-}
-
-/// Class A straddling the rename window: old provider key with the new api-key
-/// value. Proves the two either/ors are independent rather than one either/or on
-/// a bundled old/new pair.
-#[test]
-fn legacy_record_falls_back_to_env_sniff_with_mixed_rename_sentinels() {
-    let mut rec = record(None, None, None, None);
-    rec.env_vars = BTreeMap::from([
-        ("SPROUT_AGENT_PROVIDER".to_string(), "openai".to_string()),
-        (
-            "OPENAI_COMPAT_BASE_URL".to_string(),
-            "http://127.0.0.1:9337/v1".to_string(),
-        ),
-        ("OPENAI_COMPAT_MODEL".to_string(), "Qwen3".to_string()),
-        (
-            "OPENAI_COMPAT_API_KEY".to_string(),
-            RELAY_MESH_API_KEY_PLACEHOLDER.to_string(),
-        ),
-    ]);
-
-    assert_eq!(
-        resolve_effective_relay_mesh_model_id(&rec, &[], &global(None, None)).as_deref(),
-        Some("Qwen3"),
-        "old provider key with new api key must resolve — the sentinels renamed independently"
-    );
-}
-
-/// The mirrored straddle: new provider key with the old api-key value.
-#[test]
-fn legacy_record_falls_back_to_env_sniff_with_new_provider_and_old_api_key() {
-    let mut rec = record(None, None, None, None);
-    rec.env_vars = BTreeMap::from([
-        ("BUZZ_AGENT_PROVIDER".to_string(), "openai".to_string()),
-        (
-            "OPENAI_COMPAT_BASE_URL".to_string(),
-            "http://127.0.0.1:9337/v1".to_string(),
-        ),
-        ("OPENAI_COMPAT_MODEL".to_string(), "Qwen3".to_string()),
-        (
-            "OPENAI_COMPAT_API_KEY".to_string(),
-            "sprout-mesh-local".to_string(),
-        ),
-    ]);
-
-    assert_eq!(
-        resolve_effective_relay_mesh_model_id(&rec, &[], &global(None, None)).as_deref(),
-        Some("Qwen3"),
-        "new provider key with old api key must resolve too"
-    );
-}
-
-/// Both spellings present and disagreeing: the renamed key is authoritative,
-/// so a record whose current provider env is non-mesh is not resurrected as
-/// mesh by the stale `SPROUT_` leftover.
-#[test]
-fn legacy_env_sniff_prefers_renamed_provider_key_over_stale_old_key() {
-    let mut rec = record(None, None, None, None);
-    rec.env_vars = BTreeMap::from([
-        ("BUZZ_AGENT_PROVIDER".to_string(), "anthropic".to_string()),
-        ("SPROUT_AGENT_PROVIDER".to_string(), "openai".to_string()),
-        (
-            "OPENAI_COMPAT_BASE_URL".to_string(),
-            "http://127.0.0.1:9337/v1".to_string(),
-        ),
-        ("OPENAI_COMPAT_MODEL".to_string(), "Qwen3".to_string()),
-        (
-            "OPENAI_COMPAT_API_KEY".to_string(),
-            RELAY_MESH_API_KEY_PLACEHOLDER.to_string(),
-        ),
-    ]);
-
-    assert_eq!(
-        resolve_effective_relay_mesh_model_id(&rec, &[], &global(None, None)),
-        None,
-        "the renamed key states current intent — a stale SPROUT_ key must not override it"
-    );
-}
-
 /// Class A negative: a user's own OpenAI-compatible provider on the same local
-/// port is not Buzz's preset — the placeholder API key is the discriminator.
+/// port is not Nimino's preset — the placeholder API key is the discriminator.
 #[test]
 fn legacy_env_sniff_ignores_user_openai_on_same_local_port() {
     let mut rec = record(None, None, None, None);
     rec.env_vars = BTreeMap::from([
-        ("BUZZ_AGENT_PROVIDER".to_string(), "openai".to_string()),
+        ("NIMINO_AGENT_PROVIDER".to_string(), "openai".to_string()),
         (
             "OPENAI_COMPAT_BASE_URL".to_string(),
             "http://127.0.0.1:9337/v1".to_string(),
@@ -786,7 +681,7 @@ fn definition_less_explicit_provider_wins_over_stale_legacy_mesh_bytes() {
         model_ref: "Qwen3".to_string(),
     });
     rec.env_vars = BTreeMap::from([
-        ("BUZZ_AGENT_PROVIDER".to_string(), "openai".to_string()),
+        ("NIMINO_AGENT_PROVIDER".to_string(), "openai".to_string()),
         (
             "OPENAI_COMPAT_BASE_URL".to_string(),
             "http://127.0.0.1:9337/v1".to_string(),
@@ -824,7 +719,7 @@ fn linked_record_ignores_legacy_mesh_marker_and_env() {
         model_ref: "Qwen3".to_string(),
     });
     rec.env_vars = BTreeMap::from([
-        ("BUZZ_AGENT_PROVIDER".to_string(), "openai".to_string()),
+        ("NIMINO_AGENT_PROVIDER".to_string(), "openai".to_string()),
         (
             "OPENAI_COMPAT_BASE_URL".to_string(),
             "http://127.0.0.1:9337/v1".to_string(),

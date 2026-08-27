@@ -21,12 +21,12 @@ pub(crate) const KNOWN_AGENT_BINARIES: &[&str] = &[
     // git-credential-nostr, git-sign-nostr) are short-lived per-tool-call
     // invocations — not listed here.
     "buzz-dev-mcp",
-    "buzz_dev_mcp",
+    "nimino_dev_mcp",
 ];
 
 /// Script interpreters that may host managed agent wrappers (e.g. npm shims).
 /// A process whose name matches here is NOT immediately claimed — it must also
-/// carry `BUZZ_MANAGED_AGENT` in its environment (checked by the caller via
+/// carry `NIMINO_MANAGED_AGENT` in its environment (checked by the caller via
 /// `process_has_buzz_marker()`). This avoids sweeping unrelated node processes.
 pub(crate) const KNOWN_SCRIPT_INTERPRETERS: &[&str] = &["node"];
 
@@ -46,7 +46,7 @@ pub(super) fn name_matches_known_binary(name: &str) -> bool {
 
 /// Check if a process name is a known script interpreter that may be hosting
 /// a managed agent wrapper (e.g. `node` running an npm shim for `codex-acp`).
-/// Callers must additionally verify `BUZZ_MANAGED_AGENT` ownership.
+/// Callers must additionally verify `NIMINO_MANAGED_AGENT` ownership.
 pub(super) fn name_matches_interpreter(name: &str) -> bool {
     KNOWN_SCRIPT_INTERPRETERS.contains(&name)
 }
@@ -123,9 +123,9 @@ pub(crate) fn process_belongs_to_us(_pid: u32) -> bool {
     false
 }
 
-/// The value stamped into the `BUZZ_MANAGED_AGENT` env var of every agent we
+/// The value stamped into the `NIMINO_MANAGED_AGENT` env var of every agent we
 /// spawn, identifying *which* desktop instance owns it. We use the app's bundle
-/// identifier (`xyz.block.buzz.app` for release, `xyz.block.buzz.app.dev`
+/// identifier (`com.asopitech.nimino` for release, `com.asopitech.nimino.dev`
 /// for `just dev`) because it is stable across restarts — a relaunched dev
 /// instance still recognizes its own previously-spawned agents as reclaimable,
 /// while never matching another instance's (e.g. a dev build never reaps a DMG
@@ -135,15 +135,15 @@ pub(crate) fn current_instance_id(app: &AppHandle) -> String {
     app.config().identifier.clone()
 }
 
-/// Build the full `BUZZ_MANAGED_AGENT=<instance-id>` env entry we match
+/// Build the full `NIMINO_MANAGED_AGENT=<instance-id>` env entry we match
 /// against when scanning processes. Kept here so the spawn stamp and the sweep
 /// matcher can never drift apart.
 pub(super) fn buzz_marker_entry(instance_id: &str) -> Vec<u8> {
-    format!("BUZZ_MANAGED_AGENT={instance_id}").into_bytes()
+    format!("NIMINO_MANAGED_AGENT={instance_id}").into_bytes()
 }
 
 /// Check if a running process is one of *our* managed agents: it must carry
-/// `BUZZ_MANAGED_AGENT=<instance_id>` in its environment, where `instance_id`
+/// `NIMINO_MANAGED_AGENT=<instance_id>` in its environment, where `instance_id`
 /// is this desktop instance's id. A process stamped with a *different* instance
 /// id belongs to another live Buzz app and must never be reaped here.
 #[cfg(target_os = "macos")]
@@ -338,7 +338,7 @@ pub(super) fn resolve_pgids_and_kill(candidate_pids: &[i32]) {
     });
     if pgids.is_empty() && candidate_groups > 0 {
         eprintln!(
-            "buzz-desktop: orphan sweep: skipped all {candidate_groups} candidate group(s) (live foreign group leader or candidate already exited); nothing signalled"
+            "nimino-desktop: orphan sweep: skipped all {candidate_groups} candidate group(s) (live foreign group leader or candidate already exited); nothing signalled"
         );
     }
     let unique: Vec<i32> = pgids.into_iter().collect();
@@ -372,7 +372,7 @@ pub(super) fn resolve_pgids_and_kill(candidate_pids: &[i32]) {
     });
     if pgids.is_empty() && candidate_groups > 0 {
         eprintln!(
-            "buzz-desktop: orphan sweep: skipped all {candidate_groups} candidate group(s) (live foreign group leader or candidate already exited); nothing signalled"
+            "nimino-desktop: orphan sweep: skipped all {candidate_groups} candidate group(s) (live foreign group leader or candidate already exited); nothing signalled"
         );
     }
     let unique: Vec<i32> = pgids.into_iter().collect();

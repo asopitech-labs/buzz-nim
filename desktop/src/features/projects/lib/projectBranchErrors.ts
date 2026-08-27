@@ -12,7 +12,7 @@ const NO_CHANNEL_BINDING_LEGACY_PHRASE = "no channel binding";
 const NO_CHANNEL_BINDING_COPY =
   "This repository is not linked to a project channel, so the relay cannot " +
   "authorize access. The repository owner can link it with: " +
-  "buzz repos bind --id <repo> --channel <channel-uuid>";
+  "nimino repos bind --id <repo> --channel <channel-uuid>";
 
 /** True when a git/relay error text is the unbound-repository denial. */
 export function isNoChannelBindingError(message: string): boolean {

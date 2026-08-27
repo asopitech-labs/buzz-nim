@@ -3,14 +3,14 @@
 Buzz can expose a private, deployment-wide read-only dashboard from the existing
 relay process. It shows open moderation reports and recent product feedback.
 
-Configure `BUZZ_ADMIN_HOST` to activate the dashboard. A private ingress limits
+Configure `NIMINO_ADMIN_HOST` to activate the dashboard. A private ingress limits
 access to the operator VPN or approved source IPs.
 
 Required configuration:
 
 ```text
-BUZZ_ADMIN_HOST=admin.example.com
-BUZZ_ADMIN_WEB_DIR=/srv/buzz/admin-web
+NIMINO_ADMIN_HOST=admin.example.com
+NIMINO_ADMIN_WEB_DIR=/srv/buzz/admin-web
 ```
 
 The relay requires the configured admin host and matching browser origin.

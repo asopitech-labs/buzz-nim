@@ -18,8 +18,8 @@ Three rules keep these useful rather than decorative:
   impossible values at once: a `respond_to` that was a pubkey where the
   desktop serializes a kebab-case `RespondTo` enum, allowlist and owner
   values failing `validate_respond_to_allowlist`'s 64-hex rule
-  (`types.rs:897`), an invented `BUZZ_ACP_PARALLELISM` where the emitter
-  writes `BUZZ_ACP_AGENTS` (`runtime.rs:729`), and a `launch.env` key from
+  (`types.rs:897`), an invented `NIMINO_ACP_PARALLELISM` where the emitter
+  writes `NIMINO_ACP_AGENTS` (`runtime.rs:729`), and a `launch.env` key from
   no layer of `resolve_effective_harness_descriptor`.
 * **The provider cannot police this file, so the desktop must.** Every field
   above is one this provider is deliberately indifferent to — `respond_to` is

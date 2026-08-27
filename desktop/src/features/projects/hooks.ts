@@ -81,7 +81,7 @@ export type {
 
 export type ProjectPullRequestCommentDecision = "request-changes";
 
-const HIDDEN_PROJECT_CARDS_KEY = "buzz.projects.hidden-cards.v1";
+const HIDDEN_PROJECT_CARDS_KEY = "nimino.projects.hidden-cards.v1";
 
 export type RepoState = {
   branches: Array<{ name: string; commit: string }>;

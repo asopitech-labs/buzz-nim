@@ -111,7 +111,7 @@ pub async fn send_moderation_notice(
     // gate on was_created (see comment at step 2).
     if was_created {
         metrics::counter!(
-            "buzz_channels_created_total",
+            "nimino_channels_created_total",
             "community" => tenant.host().to_owned(),
             "type" => "dm"
         )

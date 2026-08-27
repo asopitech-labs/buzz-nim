@@ -43,7 +43,7 @@ use buzz_test_client::BuzzTestClient;
 use nostr::{Alphabet, Filter, Keys, Kind, SingleLetterTag};
 
 /// NIP-51 bookmark set used for client-owned Mesh discovery notes.
-const KIND_BUZZ_MESH_MEMBER_STATUS: u16 = 30003;
+const KIND_NIMINO_MESH_MEMBER_STATUS: u16 = 30003;
 const MESH_STATUS_D_TAG_PREFIX: &str = "buzz-mesh-member-status:";
 const MESH_STATUS_TYPE: &str = "buzz-mesh-status";
 
@@ -81,7 +81,7 @@ fn sub_id(name: &str) -> String {
 
 fn mesh_status_filter() -> Filter {
     Filter::new()
-        .kind(Kind::Custom(KIND_BUZZ_MESH_MEMBER_STATUS))
+        .kind(Kind::Custom(KIND_NIMINO_MESH_MEMBER_STATUS))
         .custom_tag(SingleLetterTag::lowercase(Alphabet::K), MESH_STATUS_TYPE)
 }
 
@@ -114,7 +114,8 @@ async fn trust_member_reads_mesh_status() {
     let status = events
         .iter()
         .find(|e| {
-            e.kind == Kind::Custom(KIND_BUZZ_MESH_MEMBER_STATUS) && e.pubkey == member.public_key()
+            e.kind == Kind::Custom(KIND_NIMINO_MESH_MEMBER_STATUS)
+                && e.pubkey == member.public_key()
         })
         .expect("the publishing member must see its kind:30003 mesh status event");
 
@@ -175,7 +176,7 @@ async fn trust_member_reads_mesh_status() {
 /// Assertion 2: a valid Nostr identity that is NOT a relay member gets nothing
 /// back for a kind:30003 mesh-status REQ — membership gates the read.
 ///
-/// Requires a relay with `BUZZ_REQUIRE_RELAY_MEMBERSHIP=true` and a published
+/// Requires a relay with `NIMINO_REQUIRE_RELAY_MEMBERSHIP=true` and a published
 /// status event that members can see (paired with assertion 1).
 #[tokio::test]
 #[ignore]
@@ -203,7 +204,7 @@ async fn trust_nonmember_read_denied() {
 
     let leaked = events
         .iter()
-        .any(|e| e.kind == Kind::Custom(KIND_BUZZ_MESH_MEMBER_STATUS));
+        .any(|e| e.kind == Kind::Custom(KIND_NIMINO_MESH_MEMBER_STATUS));
     assert!(
         !leaked,
         "non-member must NOT receive kind:30003 mesh status"

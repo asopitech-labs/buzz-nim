@@ -2,10 +2,10 @@ import { invokeTauri } from "@/shared/api/tauri";
 import { getStorageItem } from "@/shared/lib/safeStorage";
 import { migrateLegacyCommunityStorage } from "./communityStorage";
 
-const BUZZ_COMMUNITIES_KEY = "buzz-communities";
-const BUZZ_ACTIVE_COMMUNITY_KEY = "buzz-active-community-id";
-const BUZZ_ONBOARDING_COMPLETION_STORAGE_KEY_PREFIX =
-  "buzz-onboarding-complete.v1:";
+const NIMINO_COMMUNITIES_KEY = "nimino-communities";
+const NIMINO_ACTIVE_COMMUNITY_KEY = "nimino-active-community-id";
+const NIMINO_ONBOARDING_COMPLETION_STORAGE_KEY_PREFIX =
+  "nimino-onboarding-complete.v1:";
 const LOCAL_DEV_RELAY_URLS = new Set([
   "ws://localhost:3000",
   "ws://127.0.0.1:3000",
@@ -78,26 +78,29 @@ export function applyLegacyCommunityStorage(
   legacyStorage: LegacyCommunityStorageSnapshot,
   storage: Storage = window.localStorage,
 ): void {
-  const currentCommunitiesRaw = storage.getItem(BUZZ_COMMUNITIES_KEY);
+  const currentCommunitiesRaw = storage.getItem(NIMINO_COMMUNITIES_KEY);
   const shouldWriteCommunities = shouldWriteLegacyCommunities({
     currentCommunitiesRaw,
     legacyCommunitiesRaw: legacyStorage.workspaces,
   });
 
   if (shouldWriteCommunities && legacyStorage.workspaces) {
-    storage.setItem(BUZZ_COMMUNITIES_KEY, legacyStorage.workspaces);
+    storage.setItem(NIMINO_COMMUNITIES_KEY, legacyStorage.workspaces);
   }
 
-  const currentActiveCommunityId = storage.getItem(BUZZ_ACTIVE_COMMUNITY_KEY);
+  const currentActiveCommunityId = storage.getItem(NIMINO_ACTIVE_COMMUNITY_KEY);
   if (
     legacyStorage.activeWorkspaceId &&
     (!currentActiveCommunityId || shouldWriteCommunities)
   ) {
-    storage.setItem(BUZZ_ACTIVE_COMMUNITY_KEY, legacyStorage.activeWorkspaceId);
+    storage.setItem(
+      NIMINO_ACTIVE_COMMUNITY_KEY,
+      legacyStorage.activeWorkspaceId,
+    );
   }
 
   for (const completion of legacyStorage.onboardingCompletions) {
-    const key = `${BUZZ_ONBOARDING_COMPLETION_STORAGE_KEY_PREFIX}${completion.pubkey}`;
+    const key = `${NIMINO_ONBOARDING_COMPLETION_STORAGE_KEY_PREFIX}${completion.pubkey}`;
     if (storage.getItem(key) === null) {
       storage.setItem(key, completion.value);
     }
@@ -119,8 +122,8 @@ export async function migrateLegacyCommunityStorageBeforeRender(): Promise<void>
   migrateLegacyCommunityStorage(window.localStorage);
   // block/buzz#5078 — read through the throw-safe accessor so a denied-storage
   // origin degrades to "no community state" instead of crashing pre-render.
-  const currentCommunitiesRaw = getStorageItem(BUZZ_COMMUNITIES_KEY);
-  const hasCurrentActiveCommunity = getStorageItem(BUZZ_ACTIVE_COMMUNITY_KEY);
+  const currentCommunitiesRaw = getStorageItem(NIMINO_COMMUNITIES_KEY);
+  const hasCurrentActiveCommunity = getStorageItem(NIMINO_ACTIVE_COMMUNITY_KEY);
   if (
     currentCommunitiesRaw &&
     hasCurrentActiveCommunity &&

@@ -110,9 +110,9 @@ def test_env_file_wires_owner_and_ports(state_dir):
     env_path = benchmark.write_env_file(state)
     env = dict(line.split("=", 1) for line in env_path.read_text().splitlines() if line)
     assert env["RELAY_OWNER_PUBKEY"] == state["owner_pubkey"]
-    assert env["BUZZ_HTTP_PORT"] == str(benchmark.RELAY_HTTP_PORT)
-    assert env["BUZZ_PG_HOST_PORT"] == str(benchmark.PG_HOST_PORT)
-    assert env["BUZZ_REQUIRE_RELAY_MEMBERSHIP"] == "true"
+    assert env["NIMINO_HTTP_PORT"] == str(benchmark.RELAY_HTTP_PORT)
+    assert env["NIMINO_PG_HOST_PORT"] == str(benchmark.PG_HOST_PORT)
+    assert env["NIMINO_REQUIRE_RELAY_MEMBERSHIP"] == "true"
 
 
 def test_compose_command_isolates_the_project(state_dir):

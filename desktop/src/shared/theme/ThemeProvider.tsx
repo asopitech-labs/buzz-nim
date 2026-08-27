@@ -23,18 +23,18 @@ import {
   resolveSystemTheme,
 } from "./theme-loader";
 
-export const THEME_STORAGE_KEY = "buzz-theme";
-const CACHE_KEY = "buzz-theme-cache";
-export const ACCENT_STORAGE_KEY = "buzz-accent-color";
-export const GLASS_BACKGROUND_STORAGE_KEY = "buzz-glass-background";
-export const GLASS_OPACITY_STORAGE_KEY = "buzz-glass-opacity";
-export const PROMINENT_ACTIVE_TAB_STORAGE_KEY = "buzz-prominent-active-tab";
+export const THEME_STORAGE_KEY = "nimino-theme";
+const CACHE_KEY = "nimino-theme-cache";
+export const ACCENT_STORAGE_KEY = "nimino-accent-color";
+export const GLASS_BACKGROUND_STORAGE_KEY = "nimino-glass-background";
+export const GLASS_OPACITY_STORAGE_KEY = "nimino-glass-opacity";
+export const PROMINENT_ACTIVE_TAB_STORAGE_KEY = "nimino-prominent-active-tab";
 export const GLASS_OPACITY_MIN = 30;
 export const GLASS_OPACITY_MAX = 90;
 export const DEFAULT_GLASS_OPACITY = 65;
 export const DEFAULT_PROMINENT_ACTIVE_TAB = false;
 export const NEUTRAL_ACCENT = "neutral";
-const FOLLOW_SYSTEM_KEY = "buzz-follow-system";
+const FOLLOW_SYSTEM_KEY = "nimino-follow-system";
 const VIDEO_REVIEW_NEUTRAL_ACCENT = "0 0% 98%";
 const VIDEO_REVIEW_CHIP_SURFACE = "#161616";
 const VIDEO_REVIEW_TEXT_CONTRAST = 4.5;

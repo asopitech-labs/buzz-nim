@@ -184,14 +184,14 @@ just desktop-dev  # terminal 2 — Vite dev server only (no Tauri shell)
 
 ```bash
 just down    # Stop Docker services, keep data
-just reset   # Wipe all dev state and recreate it; installed Buzz is preserved
+just reset   # Wipe all dev state and recreate it; installed Nimino is preserved
 ```
 
 Development desktop state uses separate bundle identifiers
-(`xyz.block.buzz.app.dev` and per-worktree variants), a separate keyring service
-(`buzz-desktop-dev`), and `~/.buzz-dev`. `just reset` removes those dev-only
+(`com.asopitech.nimino.dev` and per-worktree variants), a separate keyring service
+(`nimino-desktop-dev`), and `~/.nimino-dev`. `just reset` removes those dev-only
 locations and the local Docker volumes. It does not touch the installed app's
-`xyz.block.buzz.app` data, `buzz-desktop` keyring service, or `~/.buzz` nest.
+`com.asopitech.nimino` data, `nimino-desktop` keyring service, or `~/.nimino` nest.
 
 ---
 

@@ -12,7 +12,7 @@
 //! - [`RelayPeerTransport`] — "move these bytes to that runtime."
 //!
 //! The seams are what keep single-instance deployments and same-pod sessions
-//! mesh-free: when `BUZZ_MESH=off` or no peers exist, the relay never
+//! mesh-free: when `NIMINO_MESH=off` or no peers exist, the relay never
 //! constructs a mesh and the in-process fast path is untouched.
 //!
 //! **The law:** mesh membership is a hint; the Redis fenced generation is the
@@ -52,10 +52,10 @@ pub use wire::{
 /// Mesh configuration, resolved from env by the relay.
 #[derive(Clone, Debug)]
 pub struct MeshConfig {
-    /// `BUZZ_MESH` — `on` (default when replicas can exist) | `off` kill
+    /// `NIMINO_MESH` — `on` (default when replicas can exist) | `off` kill
     /// switch. When off, the relay must behave exactly like single-instance.
     pub enabled: bool,
-    /// UDP bind for the iroh endpoint (`BUZZ_MESH_BIND_ADDR`, default
+    /// UDP bind for the iroh endpoint (`NIMINO_MESH_BIND_ADDR`, default
     /// `0.0.0.0:3478`). Excluded from istio sidecar capture in k8s.
     pub bind_addr: std::net::SocketAddr,
     /// Ready-registry heartbeat refresh (default 15s; expiry is 3x).
@@ -116,7 +116,7 @@ pub enum MeshError {
         frame_generation: u64,
         known_generation: u64,
     },
-    #[error("mesh is disabled (BUZZ_MESH=off)")]
+    #[error("mesh is disabled (NIMINO_MESH=off)")]
     Disabled,
     #[error("transport: {0}")]
     Transport(String),

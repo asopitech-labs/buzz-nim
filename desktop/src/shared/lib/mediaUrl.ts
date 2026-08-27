@@ -307,7 +307,7 @@ export function mediaProxyUrl(port: number, mediaPath: string): string {
  * to go through the local streaming proxy. External Blossom URLs and
  * non-Blossom URLs are returned unchanged.
  *
- * Falls back to buzz-media:// if the proxy port isn't available yet.
+ * Falls back to nimino-media:// if the proxy port isn't available yet.
  */
 export function rewriteRelayUrl(url: string): string {
   const m = RELAY_MEDIA_RE.exec(url);
@@ -335,5 +335,5 @@ export function rewriteRelayUrl(url: string): string {
     ensureRelayOriginFetch();
   }
 
-  return `buzz-media://localhost/media/${m[1]}`;
+  return `nimino-media://localhost/media/${m[1]}`;
 }

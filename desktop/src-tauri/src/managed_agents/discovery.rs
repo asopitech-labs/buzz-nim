@@ -31,7 +31,7 @@ pub(crate) use runtime_metadata::KnownAcpRuntime;
 const GOOSE_AVATAR_URL: &str = "https://goose-docs.ai/img/logo_dark.png";
 const CLAUDE_CODE_AVATAR_URL: &str = "https://anthropic.gallerycdn.vsassets.io/extensions/anthropic/claude-code/2.1.77/1773707456892/Microsoft.VisualStudio.Services.Icons.Default";
 const CODEX_AVATAR_URL: &str = "https://openai.gallerycdn.vsassets.io/extensions/openai/chatgpt/26.5313.41514/1773706730621/Microsoft.VisualStudio.Services.Icons.Default";
-const BUZZ_AGENT_AVATAR_URL: &str =
+const NIMINO_AGENT_AVATAR_URL: &str =
     "https://raw.githubusercontent.com/block/buzz/refs/heads/main/crates/buzz-agent/buzz-agent.png";
 fn common_binary_paths() -> &'static [PathBuf] {
     static PATHS: OnceLock<Vec<PathBuf>> = OnceLock::new();
@@ -191,7 +191,7 @@ const KNOWN_ACP_RUNTIMES: &[KnownAcpRuntime] = &[
         label: "Buzz Agent",
         commands: &["buzz-agent"],
         aliases: &[],
-        avatar_url: BUZZ_AGENT_AVATAR_URL,
+        avatar_url: NIMINO_AGENT_AVATAR_URL,
         mcp_command: Some("buzz-dev-mcp"),
         mcp_hooks: true,
         underlying_cli: None,
@@ -204,17 +204,17 @@ const KNOWN_ACP_RUNTIMES: &[KnownAcpRuntime] = &[
         adapter_install_hint: "",
         skill_dir: None,
         supports_acp_model_switching: true,
-        model_env_var: Some("BUZZ_AGENT_MODEL"),
-        provider_env_var: Some("BUZZ_AGENT_PROVIDER"),
+        model_env_var: Some("NIMINO_AGENT_MODEL"),
+        provider_env_var: Some("NIMINO_AGENT_PROVIDER"),
         provider_locked: false,
         default_env: &[],
         config_file_path: None,
         config_file_format: None,
         supports_acp_native_config: false,
-        thinking_env_var: Some("BUZZ_AGENT_THINKING_EFFORT"),
-        max_tokens_env_var: Some("BUZZ_AGENT_MAX_OUTPUT_TOKENS"),
-        context_limit_env_var: Some("BUZZ_AGENT_MAX_CONTEXT_TOKENS"),
-        max_rounds_env_var: Some("BUZZ_AGENT_MAX_ROUNDS"),
+        thinking_env_var: Some("NIMINO_AGENT_THINKING_EFFORT"),
+        max_tokens_env_var: Some("NIMINO_AGENT_MAX_OUTPUT_TOKENS"),
+        context_limit_env_var: Some("NIMINO_AGENT_MAX_CONTEXT_TOKENS"),
+        max_rounds_env_var: Some("NIMINO_AGENT_MAX_ROUNDS"),
         required_normalized_fields: &["model", "provider"],
         login_hint: None,
         auth_probe_args: None,

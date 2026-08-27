@@ -7,11 +7,11 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
 : "${DATABASE_URL:?set DATABASE_URL to the isolated relay database}"
-: "${BUZZ_RELAY_URL:=http://localhost:3030}"
+: "${NIMINO_RELAY_URL:=http://localhost:3030}"
 : "${RELAY_URL:=ws://localhost:3030}"
-: "${BUZZ_RELAY_PRIVATE_KEY:=0000000000000000000000000000000000000000000000000000000000000001}"
-export BUZZ_RELAY_URL RELAY_URL BUZZ_RELAY_PRIVATE_KEY
-unset BUZZ_AUTH_TAG
+: "${NIMINO_RELAY_PRIVATE_KEY:=0000000000000000000000000000000000000000000000000000000000000001}"
+export NIMINO_RELAY_URL RELAY_URL NIMINO_RELAY_PRIVATE_KEY
+unset NIMINO_AUTH_TAG
 
 for binary in buzz buzz-admin; do
   resolved="$(command -v "$binary" || true)"
@@ -29,9 +29,9 @@ key_field() {
 
 OWNER_GEN="$(buzz-admin generate-key)"
 OWNER_SK="$(printf '%s\n' "$OWNER_GEN" | key_field Secret)"
-export BUZZ_PRIVATE_KEY="$OWNER_SK"
+export NIMINO_PRIVATE_KEY="$OWNER_SK"
 
-CHANNEL="$(buzz channels create \
+CHANNEL="$(nimino channels create \
   --name "roster-boundary-$$" --type stream --visibility open | jq -er '.channel_id')"
 
 LATE_GEN="$(buzz-admin generate-key)"
@@ -65,9 +65,9 @@ SQL
 
 TRIGGER_GEN="$(buzz-admin generate-key)"
 TRIGGER_PUBKEY="$(printf '%s\n' "$TRIGGER_GEN" | key_field Public)"
-buzz channels add-member --channel "$CHANNEL" --pubkey "$TRIGGER_PUBKEY" --role member >/dev/null
+nimino channels add-member --channel "$CHANNEL" --pubkey "$TRIGGER_PUBKEY" --role member >/dev/null
 
-BEFORE="$(buzz channels members --channel "$CHANNEL")"
+BEFORE="$(nimino channels members --channel "$CHANNEL")"
 BEFORE_COUNT="$(jq 'length' <<<"$BEFORE")"
 jq -e --arg pk "$LATE_PUBKEY" 'any(.[]; .pubkey == $pk and .role == "member")' \
   <<<"$BEFORE" >/dev/null
@@ -75,11 +75,11 @@ jq -e --arg pk "$LATE_PUBKEY" 'any(.[]; .pubkey == $pk and .role == "member")' \
 printf 'PASS discovery-before-republish channel=%s members=%s late_pubkey=%s\n' \
   "$CHANNEL" "$BEFORE_COUNT" "$LATE_PUBKEY"
 
-export BUZZ_PRIVATE_KEY="$LATE_SK"
-ACTION="$(buzz messages send --channel "$CHANNEL" --content "member-1501-action")"
+export NIMINO_PRIVATE_KEY="$LATE_SK"
+ACTION="$(nimino messages send --channel "$CHANNEL" --content "member-1501-action")"
 jq -e '.accepted == true' <<<"$ACTION" >/dev/null
 ACTION_ID="$(jq -er '.event_id' <<<"$ACTION")"
-buzz messages get --channel "$CHANNEL" --limit 10 \
+nimino messages get --channel "$CHANNEL" --limit 10 \
   | jq -e --arg id "$ACTION_ID" 'any(.[]; .id == $id and .content == "member-1501-action")' >/dev/null
 printf 'PASS late-member-action event_id=%s\n' "$ACTION_ID"
 
@@ -118,7 +118,7 @@ SQL
 [[ "$DISCOVERY_AFTER" == "$DISCOVERY_BEFORE" ]]
 printf 'PASS targeted-repair-preserves-metadata-and-admin-events channel=%s\n' "$CHANNEL"
 
-AFTER="$(buzz channels members --channel "$CHANNEL")"
+AFTER="$(nimino channels members --channel "$CHANNEL")"
 AFTER_COUNT="$(jq 'length' <<<"$AFTER")"
 jq -e --arg pk "$LATE_PUBKEY" 'any(.[]; .pubkey == $pk and .role == "member")' \
   <<<"$AFTER" >/dev/null

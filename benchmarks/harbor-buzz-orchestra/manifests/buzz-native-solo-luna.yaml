@@ -9,7 +9,7 @@
 # not a model finding.
 #
 # The endpoint name is the literal OpenAI model id: the runtime passes it to
-# the provider as BUZZ_AGENT_MODEL. Resolution to provider/key lives in
+# the provider as NIMINO_AGENT_MODEL. Resolution to provider/key lives in
 # testbed/endpoints/openai-live.json (OPENAI_COMPAT_API_KEY), which is
 # deployment config and deliberately outside this manifest — pass it with
 # `--endpoint-config`, since the default is anthropic-live.json.

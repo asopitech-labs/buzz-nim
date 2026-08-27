@@ -44,7 +44,7 @@ fn relay_http_url() -> String {
 }
 
 fn test_owner_keys() -> Keys {
-    std::env::var("BUZZ_TEST_OWNER_PRIVATE_KEY")
+    std::env::var("NIMINO_TEST_OWNER_PRIVATE_KEY")
         .ok()
         .and_then(|secret| Keys::parse(&secret).ok())
         .unwrap_or_else(Keys::generate)
@@ -73,7 +73,7 @@ fn nip98_post_header(keys: &Keys, url: &str, body: &str) -> String {
 
 async fn e2e_db_pool() -> sqlx::Pool<sqlx::Postgres> {
     let database_url = std::env::var("DATABASE_URL").unwrap_or_else(|_| {
-        "postgres://buzz:buzz_dev@localhost:5432/buzz".to_string() // sadscan:disable np.postgres.1
+        "postgres://nimino:nimino_dev@localhost:5432/nimino".to_string() // sadscan:disable np.postgres.1
     });
     sqlx::postgres::PgPoolOptions::new()
         .max_connections(1)

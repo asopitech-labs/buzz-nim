@@ -497,7 +497,7 @@ fn no_false_positive_override_when_persona_edited_mid_life() {
 fn config_file_only_system_prompt_surfaces_as_config_file_origin() {
     // Record/env has no prompt; the config file does. Must surface with
     // ConfigFile origin. Write mechanism is always RespawnWithEnvVar for
-    // system_prompt — the UI writes back via BUZZ_ACP_SYSTEM_PROMPT.
+    // system_prompt — the UI writes back via NIMINO_ACP_SYSTEM_PROMPT.
     let record = test_record();
     let field = build_system_prompt_field(
         &record,
@@ -510,7 +510,7 @@ fn config_file_only_system_prompt_surfaces_as_config_file_origin() {
     assert!(matches!(
         field.write_via,
         ConfigWriteMechanism::RespawnWithEnvVar { ref env_key }
-            if env_key == "BUZZ_ACP_SYSTEM_PROMPT"
+            if env_key == "NIMINO_ACP_SYSTEM_PROMPT"
     ));
     assert!(field.overridden_value.is_none());
 }
@@ -556,18 +556,18 @@ fn extra_env_vars_appear_in_advanced_as_buzz_explicit() {
         .insert("GOOSE_MODEL".to_string(), "some-model".to_string());
     record
         .env_vars
-        .insert("BUZZ_ACP_SYSTEM_PROMPT".to_string(), "hello".to_string());
+        .insert("NIMINO_ACP_SYSTEM_PROMPT".to_string(), "hello".to_string());
     // Non-normalized key — MUST appear in advanced.
     record
         .env_vars
-        .insert("SPROUT_ACP_MEMORY".to_string(), "mem-value".to_string());
+        .insert("CUSTOM_ACP_MEMORY".to_string(), "mem-value".to_string());
     let runtime = test_runtime();
 
     let surface = read_config_surface(&record, Some(runtime), None, &no_tiers(), None);
 
     let advanced_keys: Vec<&str> = surface.advanced.iter().map(|f| f.key.as_str()).collect();
     assert!(
-        advanced_keys.contains(&"SPROUT_ACP_MEMORY"),
+        advanced_keys.contains(&"CUSTOM_ACP_MEMORY"),
         "extra env var must appear in advanced"
     );
     assert!(
@@ -575,20 +575,20 @@ fn extra_env_vars_appear_in_advanced_as_buzz_explicit() {
         "normalized model key must not appear in advanced"
     );
     assert!(
-        !advanced_keys.contains(&"BUZZ_ACP_SYSTEM_PROMPT"),
+        !advanced_keys.contains(&"NIMINO_ACP_SYSTEM_PROMPT"),
         "normalized system prompt key must not appear in advanced"
     );
 
     let field = surface
         .advanced
         .iter()
-        .find(|f| f.key == "SPROUT_ACP_MEMORY")
+        .find(|f| f.key == "CUSTOM_ACP_MEMORY")
         .unwrap();
     assert_eq!(field.value.as_deref(), Some("mem-value"));
     assert_eq!(field.origin, ConfigOrigin::BuzzExplicit);
     assert!(matches!(
         field.write_via,
-        ConfigWriteMechanism::RespawnWithEnvVar { ref env_key } if env_key == "SPROUT_ACP_MEMORY"
+        ConfigWriteMechanism::RespawnWithEnvVar { ref env_key } if env_key == "CUSTOM_ACP_MEMORY"
     ));
 }
 
@@ -637,17 +637,17 @@ fn buzz_agent_runtime() -> &'static KnownAcpRuntime {
         adapter_install_hint: "",
         skill_dir: None,
         supports_acp_model_switching: true,
-        model_env_var: Some("BUZZ_AGENT_MODEL"),
-        provider_env_var: Some("BUZZ_AGENT_PROVIDER"),
+        model_env_var: Some("NIMINO_AGENT_MODEL"),
+        provider_env_var: Some("NIMINO_AGENT_PROVIDER"),
         provider_locked: false,
         default_env: &[],
         config_file_path: None,
         config_file_format: None,
         supports_acp_native_config: false,
-        thinking_env_var: Some("BUZZ_AGENT_THINKING_EFFORT"),
-        max_tokens_env_var: Some("BUZZ_AGENT_MAX_OUTPUT_TOKENS"),
-        context_limit_env_var: Some("BUZZ_AGENT_MAX_CONTEXT_TOKENS"),
-        max_rounds_env_var: Some("BUZZ_AGENT_MAX_ROUNDS"),
+        thinking_env_var: Some("NIMINO_AGENT_THINKING_EFFORT"),
+        max_tokens_env_var: Some("NIMINO_AGENT_MAX_OUTPUT_TOKENS"),
+        context_limit_env_var: Some("NIMINO_AGENT_MAX_CONTEXT_TOKENS"),
+        max_rounds_env_var: Some("NIMINO_AGENT_MAX_ROUNDS"),
         required_normalized_fields: &["model", "provider"],
         login_hint: None,
         auth_probe_args: None,
@@ -658,7 +658,7 @@ fn buzz_agent_runtime() -> &'static KnownAcpRuntime {
 fn buzz_agent_max_output_tokens_from_env_is_buzz_explicit() {
     let mut record = test_record();
     record.env_vars.insert(
-        "BUZZ_AGENT_MAX_OUTPUT_TOKENS".to_string(),
+        "NIMINO_AGENT_MAX_OUTPUT_TOKENS".to_string(),
         "8192".to_string(),
     );
     let runtime = buzz_agent_runtime();
@@ -671,7 +671,7 @@ fn buzz_agent_max_output_tokens_from_env_is_buzz_explicit() {
     assert!(matches!(
         field.write_via,
         ConfigWriteMechanism::RespawnWithEnvVar { ref env_key }
-            if env_key == "BUZZ_AGENT_MAX_OUTPUT_TOKENS"
+            if env_key == "NIMINO_AGENT_MAX_OUTPUT_TOKENS"
     ));
 }
 
@@ -679,7 +679,7 @@ fn buzz_agent_max_output_tokens_from_env_is_buzz_explicit() {
 fn buzz_agent_context_limit_from_env_is_buzz_explicit() {
     let mut record = test_record();
     record.env_vars.insert(
-        "BUZZ_AGENT_MAX_CONTEXT_TOKENS".to_string(),
+        "NIMINO_AGENT_MAX_CONTEXT_TOKENS".to_string(),
         "100000".to_string(),
     );
     let runtime = buzz_agent_runtime();
@@ -692,7 +692,7 @@ fn buzz_agent_context_limit_from_env_is_buzz_explicit() {
     assert!(matches!(
         field.write_via,
         ConfigWriteMechanism::RespawnWithEnvVar { ref env_key }
-            if env_key == "BUZZ_AGENT_MAX_CONTEXT_TOKENS"
+            if env_key == "NIMINO_AGENT_MAX_CONTEXT_TOKENS"
     ));
 }
 
@@ -718,11 +718,11 @@ fn buzz_agent_max_tokens_absent_when_no_env_var_or_file() {
 fn buzz_agent_max_tokens_env_var_not_double_surfaced_in_advanced() {
     let mut record = test_record();
     record.env_vars.insert(
-        "BUZZ_AGENT_MAX_OUTPUT_TOKENS".to_string(),
+        "NIMINO_AGENT_MAX_OUTPUT_TOKENS".to_string(),
         "4096".to_string(),
     );
     record.env_vars.insert(
-        "BUZZ_AGENT_MAX_CONTEXT_TOKENS".to_string(),
+        "NIMINO_AGENT_MAX_CONTEXT_TOKENS".to_string(),
         "50000".to_string(),
     );
     let runtime = buzz_agent_runtime();
@@ -731,11 +731,11 @@ fn buzz_agent_max_tokens_env_var_not_double_surfaced_in_advanced() {
 
     let advanced_keys: Vec<&str> = surface.advanced.iter().map(|f| f.key.as_str()).collect();
     assert!(
-        !advanced_keys.contains(&"BUZZ_AGENT_MAX_OUTPUT_TOKENS"),
+        !advanced_keys.contains(&"NIMINO_AGENT_MAX_OUTPUT_TOKENS"),
         "max_output_tokens must not appear in advanced when normalized"
     );
     assert!(
-        !advanced_keys.contains(&"BUZZ_AGENT_MAX_CONTEXT_TOKENS"),
+        !advanced_keys.contains(&"NIMINO_AGENT_MAX_CONTEXT_TOKENS"),
         "context_limit must not appear in advanced when normalized"
     );
 }
@@ -743,9 +743,10 @@ fn buzz_agent_max_tokens_env_var_not_double_surfaced_in_advanced() {
 #[test]
 fn buzz_agent_thinking_effort_from_env_is_buzz_explicit() {
     let mut record = test_record();
-    record
-        .env_vars
-        .insert("BUZZ_AGENT_THINKING_EFFORT".to_string(), "high".to_string());
+    record.env_vars.insert(
+        "NIMINO_AGENT_THINKING_EFFORT".to_string(),
+        "high".to_string(),
+    );
     let runtime = buzz_agent_runtime();
 
     let surface = read_config_surface(&record, Some(runtime), None, &no_tiers(), None);
@@ -756,7 +757,7 @@ fn buzz_agent_thinking_effort_from_env_is_buzz_explicit() {
     assert!(matches!(
         field.write_via,
         ConfigWriteMechanism::RespawnWithEnvVar { ref env_key }
-            if env_key == "BUZZ_AGENT_THINKING_EFFORT"
+            if env_key == "NIMINO_AGENT_THINKING_EFFORT"
     ));
 }
 
@@ -764,7 +765,7 @@ fn buzz_agent_thinking_effort_from_env_is_buzz_explicit() {
 fn buzz_agent_thinking_effort_env_var_not_double_surfaced_in_advanced() {
     let mut record = test_record();
     record.env_vars.insert(
-        "BUZZ_AGENT_THINKING_EFFORT".to_string(),
+        "NIMINO_AGENT_THINKING_EFFORT".to_string(),
         "medium".to_string(),
     );
     let runtime = buzz_agent_runtime();
@@ -773,7 +774,7 @@ fn buzz_agent_thinking_effort_env_var_not_double_surfaced_in_advanced() {
 
     let advanced_keys: Vec<&str> = surface.advanced.iter().map(|f| f.key.as_str()).collect();
     assert!(
-        !advanced_keys.contains(&"BUZZ_AGENT_THINKING_EFFORT"),
+        !advanced_keys.contains(&"NIMINO_AGENT_THINKING_EFFORT"),
         "thinking_effort must not appear in advanced when normalized"
     );
 }
@@ -823,13 +824,13 @@ fn buzz_agent_rt() -> &'static KnownAcpRuntime {
 }
 
 /// AC-1: no record effort, global env has effort → GlobalDefault.
-/// Real-world case: global-agent-config has BUZZ_AGENT_THINKING_EFFORT=high,
+/// Real-world case: global-agent-config has NIMINO_AGENT_THINKING_EFFORT=high,
 /// per-agent record has no env_vars → effort must surface with GlobalDefault origin.
 #[test]
 fn global_effort_surfaces_as_global_default_when_record_has_none() {
     let record = test_record();
     let runtime = buzz_agent_rt();
-    let tiers = global_env_tiers("BUZZ_AGENT_THINKING_EFFORT", "high");
+    let tiers = global_env_tiers("NIMINO_AGENT_THINKING_EFFORT", "high");
 
     let surface = read_config_surface(&record, Some(runtime), None, &tiers, None);
 
@@ -846,7 +847,7 @@ fn global_effort_surfaces_as_global_default_when_record_has_none() {
 fn persona_effort_shadows_global_and_tags_persona_default() {
     let record = test_record();
     let runtime = buzz_agent_rt();
-    let tiers = persona_and_global_env_tiers("BUZZ_AGENT_THINKING_EFFORT", "medium", "high");
+    let tiers = persona_and_global_env_tiers("NIMINO_AGENT_THINKING_EFFORT", "medium", "high");
 
     let surface = read_config_surface(&record, Some(runtime), None, &tiers, None);
 
@@ -866,11 +867,11 @@ fn persona_effort_shadows_global_and_tags_persona_default() {
 fn record_effort_outranks_persona_and_global_keeps_buzz_explicit() {
     let mut record = test_record();
     record.env_vars.insert(
-        "BUZZ_AGENT_THINKING_EFFORT".to_string(),
+        "NIMINO_AGENT_THINKING_EFFORT".to_string(),
         "xhigh".to_string(),
     );
     let runtime = buzz_agent_rt();
-    let tiers = persona_and_global_env_tiers("BUZZ_AGENT_THINKING_EFFORT", "medium", "high");
+    let tiers = persona_and_global_env_tiers("NIMINO_AGENT_THINKING_EFFORT", "medium", "high");
 
     let surface = read_config_surface(&record, Some(runtime), None, &tiers, None);
 
@@ -920,7 +921,7 @@ fn acp_effort_wins_over_inherited_global_effort_as_secondary() {
         goose_native_config: None,
         captured_at: "".to_string(),
     };
-    let tiers = global_env_tiers("BUZZ_AGENT_THINKING_EFFORT", "high");
+    let tiers = global_env_tiers("NIMINO_AGENT_THINKING_EFFORT", "high");
 
     let surface = read_config_surface(&record, Some(runtime), Some(&cache), &tiers, None);
 
@@ -944,7 +945,7 @@ fn acp_effort_wins_over_inherited_global_effort_as_secondary() {
 fn numeric_max_tokens_inherits_from_global_env() {
     let record = test_record();
     let runtime = buzz_agent_runtime();
-    let tiers = global_env_tiers("BUZZ_AGENT_MAX_OUTPUT_TOKENS", "16384");
+    let tiers = global_env_tiers("NIMINO_AGENT_MAX_OUTPUT_TOKENS", "16384");
 
     let surface = read_config_surface(&record, Some(runtime), None, &tiers, None);
 

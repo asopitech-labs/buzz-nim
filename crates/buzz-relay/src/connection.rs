@@ -103,7 +103,7 @@ impl ConnectionState {
                 let count = self.backpressure_count.fetch_add(1, Ordering::Relaxed) + 1;
                 if count >= self.grace_limit {
                     warn!(conn_id = %self.conn_id, count, "sustained backpressure — closing slow client");
-                    metrics::counter!("buzz_ws_backpressure_disconnects_total").increment(1);
+                    metrics::counter!("nimino_ws_backpressure_disconnects_total").increment(1);
                     self.cancel.cancel();
                 } else {
                     warn!(conn_id = %self.conn_id, count, grace = self.grace_limit, "send buffer full — grace {count}/{}", self.grace_limit);
@@ -196,7 +196,7 @@ async fn handle_active_connection(
 
     info!(conn_id = %conn_id, addr = %addr, "WebSocket connection established");
     metrics::counter!(
-        "buzz_ws_connections_total",
+        "nimino_ws_connections_total",
         "community" => conn.tenant.host().to_owned()
     )
     .increment(1);
@@ -213,7 +213,7 @@ async fn handle_active_connection(
 
     // Gauge incremented AFTER challenge send succeeds — early disconnects
     // don't leak. Decremented in the cleanup path below.
-    metrics::gauge!("buzz_ws_connections_active").increment(1.0);
+    metrics::gauge!("nimino_ws_connections_active").increment(1.0);
 
     // Register after challenge succeeds — avoids leaked entries on early disconnect.
     state.conn_manager.register(
@@ -263,7 +263,7 @@ async fn handle_active_connection(
                         timeout_secs = AUTH_TIMEOUT.as_secs(),
                         "NIP-42 auth timeout — closing connection"
                     );
-                    metrics::counter!("buzz_ws_auth_timeouts_total").increment(1);
+                    metrics::counter!("nimino_ws_auth_timeouts_total").increment(1);
                     auth_timeout_cancel.cancel();
                 }
             }
@@ -312,7 +312,7 @@ async fn handle_active_connection(
                 .await;
         }
     }
-    metrics::gauge!("buzz_ws_connections_active").decrement(1.0);
+    metrics::gauge!("nimino_ws_connections_active").decrement(1.0);
     info!(conn_id = %conn_id, addr = %addr, "WebSocket connection closed");
 
     drop(permit);
@@ -422,7 +422,7 @@ async fn send_loop_inner<S>(
                 if ws_send.flush().await.is_err() {
                     break;
                 }
-                metrics::histogram!("buzz_ws_send_batch_size").record(batched as f64);
+                metrics::histogram!("nimino_ws_send_batch_size").record(batched as f64);
             }
         }
     }
@@ -718,7 +718,7 @@ fn send_admission_result(
     match result {
         Ok(()) => true,
         Err(crate::admission::AdmissionError::Exceeded { reset_in_secs }) => {
-            metrics::counter!("buzz_admission_rejections_total", "transport" => "websocket", "reason" => "quota").increment(1);
+            metrics::counter!("nimino_admission_rejections_total", "transport" => "websocket", "reason" => "quota").increment(1);
             conn.send(request_rejection_message(
                 sub_id,
                 &format!("rate-limited: quota exceeded; retry in {reset_in_secs}s"),
@@ -726,7 +726,7 @@ fn send_admission_result(
             false
         }
         Err(crate::admission::AdmissionError::Unavailable) => {
-            metrics::counter!("buzz_admission_rejections_total", "transport" => "websocket", "reason" => "unavailable").increment(1);
+            metrics::counter!("nimino_admission_rejections_total", "transport" => "websocket", "reason" => "unavailable").increment(1);
             conn.send(request_rejection_message(
                 sub_id,
                 "rate-limited: shared admission unavailable",

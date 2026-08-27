@@ -4,7 +4,7 @@
  * data-URLs (or http URLs) from the relay's NIP-11 `icon` field.
  */
 
-const ICON_CACHE_KEY = "buzz-community-icons";
+const ICON_CACHE_KEY = "nimino-community-icons";
 export const MAX_CACHED_COMMUNITY_ICONS = 32;
 // Keep aligned with MAX_WORKSPACE_ICON_DATA_URL_LEN in
 // crates/buzz-relay/src/handlers/relay_admin.rs.

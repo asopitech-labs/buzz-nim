@@ -47,8 +47,8 @@ async fn main() {
     let channel = opts.channel.as_deref().unwrap_or("default");
     let kind = opts.kind.unwrap_or(9);
 
-    let keys = match std::env::var("BUZZ_PRIVATE_KEY") {
-        Ok(sk) => Keys::parse(&sk).expect("invalid BUZZ_PRIVATE_KEY"),
+    let keys = match std::env::var("NIMINO_PRIVATE_KEY") {
+        Ok(sk) => Keys::parse(&sk).expect("invalid NIMINO_PRIVATE_KEY"),
         Err(_) => Keys::generate(),
     };
     println!("Using pubkey: {}", keys.public_key());

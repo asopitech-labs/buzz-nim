@@ -9,7 +9,7 @@ Your `shell` tool has the `buzz` CLI on PATH, already authenticated as
 you. Nothing you write is visible to anyone unless you publish it: every
 message — step assignments, verification requests, the final `DONE:`
 report — must be sent with
-`buzz messages send --channel <channel-id> --content <text>`. Your turn is
+`nimino messages send --channel <channel-id> --content <text>`. Your turn is
 not complete until you have published your message. Do not use the shell
 for task work — that is your workers' job.
 

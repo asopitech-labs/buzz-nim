@@ -44,7 +44,7 @@ function agent(overrides = {}) {
 test("relay-mesh agents delegate start to the backend preflight", async () => {
   const meshAgent = agent({
     envVars: {
-      BUZZ_AGENT_PROVIDER: "openai",
+      NIMINO_AGENT_PROVIDER: "openai",
       OPENAI_COMPAT_BASE_URL: "http://127.0.0.1:9337/v1/",
     },
   });

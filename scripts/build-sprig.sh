@@ -160,14 +160,14 @@ export PATH="/opt/sprig:$PATH"
 
 ```bash
 # Agent provider
-export BUZZ_AGENT_PROVIDER=anthropic            # or openai
+export NIMINO_AGENT_PROVIDER=anthropic            # or openai
 export ANTHROPIC_API_KEY=sk-...
 export ANTHROPIC_MODEL=claude-sonnet-4-20250514
 
 # Nostr identity (shared by buzz-acp, git auth, signing, and buzz CLI)
 export NOSTR_PRIVATE_KEY=nsec1...
-export BUZZ_PRIVATE_KEY="$NOSTR_PRIVATE_KEY"
-export BUZZ_RELAY_URL=https://your-relay.example.com
+export NIMINO_PRIVATE_KEY="$NOSTR_PRIVATE_KEY"
+export NIMINO_RELAY_URL=https://your-relay.example.com
 ```
 README
 

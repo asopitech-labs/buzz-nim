@@ -88,7 +88,7 @@ plaintext file and does **not** migrate, so a transient outage cannot resurrect
 a rotated key from a leftover file.
 
 When no keyring backend is available (headless Linux with no Secret Service, for
-example), keys fall back to a `0o600` owner-only file. The `BUZZ_PRIVATE_KEY`
+example), keys fall back to a `0o600` owner-only file. The `NIMINO_PRIVATE_KEY`
 environment variable, when set, always takes precedence over both stores — this
 is how harnessed agents and CI receive their identity.
 

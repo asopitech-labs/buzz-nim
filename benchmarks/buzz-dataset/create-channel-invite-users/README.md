@@ -18,7 +18,7 @@ nobody else.
 `python:3.12-slim-bookworm`, no extra packages: the agent never runs in this
 container's shell. `BuzzOrchestraAgent` launches the real `buzz-acp` /
 `buzz-agent` stack against a dedicated relay, and the agent does all its work
-through `buzz channels create` / `channels invite`. Agent timeout 300s.
+through `nimino channels create` / `channels invite`. Agent timeout 300s.
 
 Directory identities are derived deterministically from the owner key
 (`BuzzTrialProvisioner._stable_credential`) without persisting any secret, and

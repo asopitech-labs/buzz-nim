@@ -431,7 +431,7 @@ mod tests {
             s3_endpoint: "http://localhost:9000".to_string(),
             s3_access_key: access.to_string(),
             s3_secret_key: secret.to_string(),
-            s3_bucket: "buzz-media".to_string(),
+            s3_bucket: "nimino-media".to_string(),
             s3_region: "us-west-2".to_string(),
             s3_addressing_style: S3AddressingStyle::Path,
             max_image_bytes: 50 * 1024 * 1024,
@@ -450,7 +450,7 @@ mod tests {
     /// comes from config rather than a hardcoded "us-east-1".
     #[test]
     fn static_keys_build_client_with_configured_region() {
-        let storage = MediaStorage::new(&storage_config("buzz_dev", "buzz_dev_secret"))
+        let storage = MediaStorage::new(&storage_config("nimino_dev", "nimino_dev_secret"))
             .expect("static creds should build a client");
         match storage.bucket.region {
             Region::Custom { ref region, .. } => assert_eq!(region, "us-west-2"),
@@ -460,24 +460,24 @@ mod tests {
 
     #[test]
     fn client_constructor_applies_both_addressing_styles() {
-        let path = MediaStorage::new(&storage_config("buzz_dev", "buzz_dev_secret"))
+        let path = MediaStorage::new(&storage_config("nimino_dev", "nimino_dev_secret"))
             .expect("path-style client");
         assert!(path.bucket.is_path_style());
-        assert_eq!(path.bucket.url(), "http://localhost:9000/buzz-media");
+        assert_eq!(path.bucket.url(), "http://localhost:9000/nimino-media");
 
-        let mut virtual_config = storage_config("buzz_dev", "buzz_dev_secret");
+        let mut virtual_config = storage_config("nimino_dev", "nimino_dev_secret");
         virtual_config.s3_addressing_style = S3AddressingStyle::Virtual;
         let virtual_hosted = MediaStorage::new(&virtual_config).expect("virtual-hosted client");
         assert!(virtual_hosted.bucket.is_subdomain_style());
         assert_eq!(
             virtual_hosted.bucket.url(),
-            "http://buzz-media.localhost:9000"
+            "http://nimino-media.localhost:9000"
         );
     }
 
     #[test]
     fn partial_static_keys_are_rejected() {
-        let err = match MediaStorage::new(&storage_config("buzz_dev", "")) {
+        let err = match MediaStorage::new(&storage_config("nimino_dev", "")) {
             Ok(_) => panic!("partial static creds must not silently use credential chain"),
             Err(err) => err,
         };
@@ -486,7 +486,7 @@ mod tests {
             "unexpected error: {err}"
         );
 
-        let err = match MediaStorage::new(&storage_config("", "buzz_dev_secret")) {
+        let err = match MediaStorage::new(&storage_config("", "nimino_dev_secret")) {
             Ok(_) => panic!("partial static creds must not silently use credential chain"),
             Err(err) => err,
         };

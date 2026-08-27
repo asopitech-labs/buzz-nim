@@ -70,7 +70,7 @@ const HUDDLE_DRAWER_EXIT_MS = 260;
 const HUDDLE_STATE_FALLBACK_INTERVAL_MS = 30_000;
 const HUDDLE_MODEL_STATUS_INTERVAL_MS = 10_000;
 const HUDDLE_REACTION_NAME_MAX = 48;
-const HEADPHONES_HINT_SEEN_STORAGE_KEY = "buzz.huddle.headphones-hint-seen";
+const HEADPHONES_HINT_SEEN_STORAGE_KEY = "nimino.huddle.headphones-hint-seen";
 
 function hasSeenHeadphonesHint() {
   return window.localStorage.getItem(HEADPHONES_HINT_SEEN_STORAGE_KEY) === "1";

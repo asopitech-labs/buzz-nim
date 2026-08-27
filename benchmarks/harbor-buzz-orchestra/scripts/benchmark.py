@@ -206,31 +206,31 @@ def write_env_file(state: dict[str, str]) -> Path:
     """Compose interpolation env — regenerated from state on every run."""
     env_path = STATE_DIR / ".env"
     lines = {
-        "BUZZ_IMAGE": os.environ.get("BUZZ_IMAGE", "ghcr.io/block/buzz:main"),
-        "BUZZ_DOMAIN": "localhost",
+        "NIMINO_IMAGE": os.environ.get("NIMINO_IMAGE", "ghcr.io/block/buzz:main"),
+        "NIMINO_DOMAIN": "localhost",
         "RELAY_URL": f"ws://localhost:{RELAY_HTTP_PORT}",
-        "BUZZ_MEDIA_BASE_URL": f"http://localhost:{RELAY_HTTP_PORT}/media",
-        "BUZZ_MEDIA_SERVER_DOMAIN": "localhost",
-        "BUZZ_CORS_ORIGINS": f"http://localhost:{RELAY_HTTP_PORT}",
-        "BUZZ_REQUIRE_AUTH_TOKEN": "true",
-        "BUZZ_REQUIRE_RELAY_MEMBERSHIP": "true",
-        "BUZZ_ALLOW_NIP_OA_AUTH": "true",
-        "BUZZ_AUTO_MIGRATE": "true",
-        "BUZZ_GIT_CONFORMANCE_PROBE": "true",
+        "NIMINO_MEDIA_BASE_URL": f"http://localhost:{RELAY_HTTP_PORT}/media",
+        "NIMINO_MEDIA_SERVER_DOMAIN": "localhost",
+        "NIMINO_CORS_ORIGINS": f"http://localhost:{RELAY_HTTP_PORT}",
+        "NIMINO_REQUIRE_AUTH_TOKEN": "true",
+        "NIMINO_REQUIRE_RELAY_MEMBERSHIP": "true",
+        "NIMINO_ALLOW_NIP_OA_AUTH": "true",
+        "NIMINO_AUTO_MIGRATE": "true",
+        "NIMINO_GIT_CONFORMANCE_PROBE": "true",
         "RUST_LOG": "buzz_relay=info,buzz_db=info,buzz_auth=info",
         "RELAY_OWNER_PUBKEY": state["owner_pubkey"],
-        "BUZZ_RELAY_PRIVATE_KEY": state["relay_private_key"],
-        "BUZZ_GIT_HOOK_HMAC_SECRET": state["git_hook_hmac_secret"],
-        "POSTGRES_DB": "buzz",
-        "POSTGRES_USER": "buzz",
+        "NIMINO_RELAY_PRIVATE_KEY": state["relay_private_key"],
+        "NIMINO_GIT_HOOK_HMAC_SECRET": state["git_hook_hmac_secret"],
+        "POSTGRES_DB": "nimino",
+        "POSTGRES_USER": "nimino",
         "POSTGRES_PASSWORD": state["postgres_password"],
         "REDIS_PASSWORD": state["redis_password"],
-        "BUZZ_S3_ACCESS_KEY": state["s3_access_key"],
-        "BUZZ_S3_SECRET_KEY": state["s3_secret_key"],
-        "BUZZ_S3_BUCKET": "buzz-media",
-        "BUZZ_HTTP_PORT": str(RELAY_HTTP_PORT),
-        "BUZZ_PG_HOST_PORT": str(PG_HOST_PORT),
-        "BUZZ_METRICS_HOST_PORT": str(METRICS_HOST_PORT),
+        "NIMINO_S3_ACCESS_KEY": state["s3_access_key"],
+        "NIMINO_S3_SECRET_KEY": state["s3_secret_key"],
+        "NIMINO_S3_BUCKET": "nimino-media",
+        "NIMINO_HTTP_PORT": str(RELAY_HTTP_PORT),
+        "NIMINO_PG_HOST_PORT": str(PG_HOST_PORT),
+        "NIMINO_METRICS_HOST_PORT": str(METRICS_HOST_PORT),
     }
     env_path.touch(mode=0o600)
     env_path.write_text("".join(f"{k}={v}\n" for k, v in lines.items()))
@@ -512,7 +512,7 @@ def launch_gui(state: dict[str, str]) -> subprocess.Popen:
     )
     # Distinct bundle identifier: the desktop app persists workspaces (incl.
     # their relay URLs) in per-identifier WebKit localStorage, and a stored
-    # workspace's relay URL overrides BUZZ_RELAY_URL by design. Reusing the
+    # workspace's relay URL overrides NIMINO_RELAY_URL by design. Reusing the
     # default identifier means any past local-dev session's ws://localhost:3000
     # workspace silently shadows the benchmark relay. An identifier of our own
     # keeps that state isolated both ways.
@@ -524,8 +524,8 @@ def launch_gui(state: dict[str, str]) -> subprocess.Popen:
         cwd=desktop_dir,
         env={
             **os.environ,
-            "BUZZ_RELAY_URL": f"ws://localhost:{RELAY_HTTP_PORT}",
-            "BUZZ_PRIVATE_KEY": state["user_secret_key"],
+            "NIMINO_RELAY_URL": f"ws://localhost:{RELAY_HTTP_PORT}",
+            "NIMINO_PRIVATE_KEY": state["user_secret_key"],
         },
     )
 
@@ -559,11 +559,11 @@ def leaderboard_argv(
         # The relay as reachable from inside a task container: Docker's
         # host alias, bridged to the canonical localhost address by the
         # uploaded forwarder. Override the alias with
-        # BUZZ_BENCHMARK_DOCKER_HOST if your engine exposes the host
+        # NIMINO_BENCHMARK_DOCKER_HOST if your engine exposes the host
         # differently.
         "--relay-gateway",
         (
-            f"{os.environ.get('BUZZ_BENCHMARK_DOCKER_HOST', 'host.docker.internal')}"
+            f"{os.environ.get('NIMINO_BENCHMARK_DOCKER_HOST', 'host.docker.internal')}"
             f":{RELAY_HTTP_PORT}"
         ),
         "--n-concurrent",

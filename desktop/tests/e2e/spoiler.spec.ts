@@ -31,7 +31,7 @@ type MockFeedItem = {
 
 type MockFeedWindow = Window &
   typeof globalThis & {
-    __BUZZ_E2E_PUSH_MOCK_FEED_ITEM__?: (item: MockFeedItem) => MockFeedItem;
+    __NIMINO_E2E_PUSH_MOCK_FEED_ITEM__?: (item: MockFeedItem) => MockFeedItem;
   };
 
 async function installSpoilerBridge(
@@ -316,14 +316,14 @@ test("non-interactive inbox preview spoilers let row clicks pass through", async
   await expect(page.getByTestId("home-inbox-list")).toBeVisible();
   await page.waitForFunction(
     () =>
-      typeof (window as MockFeedWindow).__BUZZ_E2E_PUSH_MOCK_FEED_ITEM__ ===
+      typeof (window as MockFeedWindow).__NIMINO_E2E_PUSH_MOCK_FEED_ITEM__ ===
       "function",
   );
 
   await page.evaluate(
     ({ channelId, createdAt, currentPubkey, senderPubkey }) => {
       const pushFeedItem = (window as MockFeedWindow)
-        .__BUZZ_E2E_PUSH_MOCK_FEED_ITEM__;
+        .__NIMINO_E2E_PUSH_MOCK_FEED_ITEM__;
       if (!pushFeedItem) {
         throw new Error("Mock feed injection helper is not installed.");
       }

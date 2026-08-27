@@ -108,7 +108,7 @@ test("confirms activation after create and preserves a safe disabled path", asyn
     .poll(() =>
       page.evaluate(
         () =>
-          (window.__BUZZ_E2E_COMMAND_PAYLOADS__ ?? []).filter(
+          (window.__NIMINO_E2E_COMMAND_PAYLOADS__ ?? []).filter(
             (call) => call.command === "create_workflow",
           ).length,
       ),
@@ -120,7 +120,7 @@ test("confirms activation after create and preserves a safe disabled path", asyn
   await expect(dialog).toBeHidden();
 
   const yaml = await page.evaluate(() => {
-    const call = [...(window.__BUZZ_E2E_COMMAND_PAYLOADS__ ?? [])]
+    const call = [...(window.__NIMINO_E2E_COMMAND_PAYLOADS__ ?? [])]
       .reverse()
       .find((candidate) => candidate.command === "create_workflow");
     return (call?.payload as { yamlDefinition?: string } | undefined)
@@ -441,7 +441,7 @@ test("round-trips manual author and reaction message IDs through save and reopen
     .poll(() =>
       page.evaluate(
         () =>
-          (window.__BUZZ_E2E_COMMAND_PAYLOADS__ ?? []).filter(
+          (window.__NIMINO_E2E_COMMAND_PAYLOADS__ ?? []).filter(
             (call) => call.command === "create_workflow",
           ).length,
       ),

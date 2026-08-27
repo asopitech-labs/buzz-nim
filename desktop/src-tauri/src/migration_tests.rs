@@ -4,11 +4,11 @@ use super::*;
 #[test]
 fn canonical_dev_data_dir_replaces_last_component() {
     let current =
-        PathBuf::from("/Users/me/Library/Application Support/xyz.block.buzz.app.dev.my-branch");
+        PathBuf::from("/Users/me/Library/Application Support/com.asopitech.nimino.dev.my-branch");
     let canonical = canonical_dev_data_dir(&current).unwrap();
     assert_eq!(
         canonical,
-        PathBuf::from("/Users/me/Library/Application Support/xyz.block.buzz.app.dev")
+        PathBuf::from("/Users/me/Library/Application Support/com.asopitech.nimino.dev")
     );
 }
 
@@ -20,7 +20,7 @@ fn canonical_dev_data_dir_returns_none_for_root() {
 
 #[test]
 fn legacy_app_data_dir_maps_release_identifier() {
-    let current = PathBuf::from("/Users/me/Library/Application Support/xyz.block.buzz.app");
+    let current = PathBuf::from("/Users/me/Library/Application Support/com.asopitech.nimino");
     let legacy = legacy_app_data_dir(&current).unwrap();
     assert_eq!(
         legacy,
@@ -31,7 +31,7 @@ fn legacy_app_data_dir_maps_release_identifier() {
 #[test]
 fn legacy_app_data_dir_maps_dev_worktree_identifier() {
     let current =
-        PathBuf::from("/Users/me/Library/Application Support/xyz.block.buzz.app.dev.my-branch");
+        PathBuf::from("/Users/me/Library/Application Support/com.asopitech.nimino.dev.my-branch");
     let legacy = legacy_app_data_dir(&current).unwrap();
     assert_eq!(
         legacy,
@@ -69,8 +69,8 @@ fn copy_dir_all_preserves_nested_files_without_overwriting() {
 fn setup_sync_layout() -> (tempfile::TempDir, PathBuf, PathBuf) {
     let parent = tempfile::tempdir().unwrap();
     let canonical = parent.path().join(CANONICAL_DEV_IDENTIFIER);
-    let worktree = parent.path().join("xyz.block.buzz.app.dev.my-branch");
-    let main_instance = parent.path().join("xyz.block.buzz.app.dev.main");
+    let worktree = parent.path().join("com.asopitech.nimino.dev.my-branch");
+    let main_instance = parent.path().join("com.asopitech.nimino.dev.main");
 
     std::fs::create_dir_all(canonical.join("agents")).unwrap();
     std::fs::write(
@@ -351,7 +351,7 @@ fn seed_up_migrates_sibling_file_to_canonical_then_symlinks() {
     let sibling = canonical
         .parent()
         .unwrap()
-        .join("xyz.block.buzz.app.dev.main");
+        .join("com.asopitech.nimino.dev.main");
     std::fs::create_dir_all(sibling.join("agents")).unwrap();
     std::fs::write(sibling.join(rel), r#"[{"id":"brain"}]"#).unwrap();
 
@@ -397,7 +397,7 @@ fn seed_up_skipped_when_canonical_has_file() {
     let sibling = canonical
         .parent()
         .unwrap()
-        .join("xyz.block.buzz.app.dev.main");
+        .join("com.asopitech.nimino.dev.main");
     std::fs::create_dir_all(sibling.join("agents")).unwrap();
     std::fs::write(sibling.join(rel), r#"[{"id":"should-not-win"}]"#).unwrap();
 
@@ -424,7 +424,7 @@ fn seed_up_ignores_sibling_symlink_as_source() {
     let sibling = canonical
         .parent()
         .unwrap()
-        .join("xyz.block.buzz.app.dev.main");
+        .join("com.asopitech.nimino.dev.main");
     std::fs::create_dir_all(sibling.join("agents")).unwrap();
     std::os::unix::fs::symlink(
         PathBuf::from("/nonexistent/elsewhere.json"),
@@ -443,10 +443,10 @@ fn canonical_dev_data_dir_returns_self_for_canonical_instance() {
     // When the current app data dir IS the canonical dev identifier,
     // canonical_dev_data_dir returns the exact same path — the caller
     // (sync_shared_agent_data) uses this equality to skip the sync.
-    // The env-var guards (BUZZ_SHARE_IDENTITY, BUZZ_PRIVATE_KEY)
+    // The env-var guards (NIMINO_SHARE_IDENTITY, NIMINO_PRIVATE_KEY)
     // require a live Tauri AppHandle and are covered by integration
     // testing only.
-    let current = PathBuf::from("/Users/me/Library/Application Support/xyz.block.buzz.app.dev");
+    let current = PathBuf::from("/Users/me/Library/Application Support/com.asopitech.nimino.dev");
     assert_eq!(canonical_dev_data_dir(&current).unwrap(), current);
 
     // Also verify with a temp dir on the real filesystem.
@@ -483,7 +483,7 @@ fn sync_migrates_teams_from_sibling_to_canonical() {
     let main_instance = canonical
         .parent()
         .unwrap()
-        .join("xyz.block.buzz.app.dev.main");
+        .join("com.asopitech.nimino.dev.main");
 
     // Before sync: canonical has no teams, .main has the real team dir.
     assert!(!canonical.join("agents/teams").exists());
@@ -840,7 +840,7 @@ fn reconcile_mcp_commands_skips_record_without_agent_command() {
 fn migrate_legacy_nest_carries_knowledge_and_skips_repos() {
     let dir = tempfile::tempdir().unwrap();
     let legacy = dir.path().join(".sprout");
-    let current = dir.path().join(".buzz");
+    let current = dir.path().join(".nimino");
 
     // Knowledge: a top-level file plus a nested dir.
     std::fs::create_dir_all(legacy.join("RESEARCH")).unwrap();
@@ -850,7 +850,7 @@ fn migrate_legacy_nest_carries_knowledge_and_skips_repos() {
     std::fs::create_dir_all(legacy.join("REPOS/buzz")).unwrap();
     std::fs::write(legacy.join("REPOS/buzz/huge.bin"), "checkout").unwrap();
 
-    let migrated = super::migrate_legacy_nest_at(&legacy, &current);
+    let migrated = super::copy_nest_knowledge_at(&legacy, &current);
 
     assert!(migrated, "migration ran because legacy nest existed");
     assert!(
@@ -871,7 +871,7 @@ fn migrate_legacy_nest_carries_knowledge_and_skips_repos() {
 fn migrate_legacy_nest_does_not_clobber_existing_destination() {
     let dir = tempfile::tempdir().unwrap();
     let legacy = dir.path().join(".sprout");
-    let current = dir.path().join(".buzz");
+    let current = dir.path().join(".nimino");
 
     std::fs::create_dir_all(legacy.join("RESEARCH")).unwrap();
     std::fs::write(legacy.join("AGENTS.md"), "legacy-agents").unwrap();
@@ -881,7 +881,7 @@ fn migrate_legacy_nest_does_not_clobber_existing_destination() {
     std::fs::write(current.join("AGENTS.md"), "live-agents").unwrap();
     std::fs::write(current.join("RESEARCH/NOTES.md"), "live-notes").unwrap();
 
-    super::migrate_legacy_nest_at(&legacy, &current);
+    super::copy_nest_knowledge_at(&legacy, &current);
 
     assert_eq!(
         std::fs::read_to_string(current.join("AGENTS.md")).unwrap(),
@@ -899,13 +899,13 @@ fn migrate_legacy_nest_does_not_clobber_existing_destination() {
 fn migrate_legacy_nest_is_idempotent_on_rerun() {
     let dir = tempfile::tempdir().unwrap();
     let legacy = dir.path().join(".sprout");
-    let current = dir.path().join(".buzz");
+    let current = dir.path().join(".nimino");
 
     std::fs::create_dir_all(legacy.join("PLANS")).unwrap();
     std::fs::write(legacy.join("PLANS/PLAN.md"), "plan").unwrap();
 
-    super::migrate_legacy_nest_at(&legacy, &current);
-    super::migrate_legacy_nest_at(&legacy, &current);
+    super::copy_nest_knowledge_at(&legacy, &current);
+    super::copy_nest_knowledge_at(&legacy, &current);
 
     assert_eq!(
         std::fs::read_to_string(current.join("PLANS/PLAN.md")).unwrap(),
@@ -917,9 +917,9 @@ fn migrate_legacy_nest_is_idempotent_on_rerun() {
 fn migrate_legacy_nest_noops_when_legacy_absent() {
     let dir = tempfile::tempdir().unwrap();
     let legacy = dir.path().join(".sprout");
-    let current = dir.path().join(".buzz");
+    let current = dir.path().join(".nimino");
 
-    let migrated = super::migrate_legacy_nest_at(&legacy, &current);
+    let migrated = super::copy_nest_knowledge_at(&legacy, &current);
 
     assert!(!migrated, "no migration when legacy nest is absent");
     assert!(
@@ -932,14 +932,14 @@ fn migrate_legacy_nest_noops_when_legacy_absent() {
 fn migrate_legacy_nest_respects_deliberate_dev_reset() {
     let dir = tempfile::tempdir().unwrap();
     let legacy = dir.path().join(".sprout");
-    let current = dir.path().join(".buzz-dev");
+    let current = dir.path().join(".nimino-dev");
 
     std::fs::create_dir_all(legacy.join("RESEARCH")).unwrap();
     std::fs::write(legacy.join("RESEARCH/NOTES.md"), "legacy-notes").unwrap();
     std::fs::create_dir_all(&current).unwrap();
     std::fs::write(current.join(".dev-nest-migrated"), "").unwrap();
 
-    let migrated = super::migrate_legacy_nest_at(&legacy, &current);
+    let migrated = super::copy_nest_knowledge_at(&legacy, &current);
 
     assert!(!migrated, "reset marker opts out of legacy nest imports");
     assert!(!current.join("RESEARCH").exists());
@@ -949,13 +949,13 @@ fn migrate_legacy_nest_respects_deliberate_dev_reset() {
 fn migrate_legacy_nest_overwrites_generated_default_agents_md() {
     let dir = tempfile::tempdir().unwrap();
     let legacy = dir.path().join(".sprout");
-    let current = dir.path().join(".buzz");
+    let current = dir.path().join(".nimino");
 
     std::fs::create_dir_all(&legacy).unwrap();
     std::fs::write(legacy.join("AGENTS.md"), "legacy team instructions").unwrap();
 
     // First-time launch order: ensure_nest writes the generated default into
-    // ~/.buzz/AGENTS.md, then migration runs.
+    // ~/.nimino/AGENTS.md, then migration runs.
     crate::managed_agents::ensure_nest_at(&current).unwrap();
     assert_eq!(
         std::fs::read_to_string(current.join("AGENTS.md")).unwrap(),
@@ -963,7 +963,7 @@ fn migrate_legacy_nest_overwrites_generated_default_agents_md() {
         "precondition: ensure_nest writes the generated default"
     );
 
-    super::migrate_legacy_nest_at(&legacy, &current);
+    super::copy_nest_knowledge_at(&legacy, &current);
 
     assert_eq!(
         std::fs::read_to_string(current.join("AGENTS.md")).unwrap(),
@@ -976,14 +976,14 @@ fn migrate_legacy_nest_overwrites_generated_default_agents_md() {
 fn migrate_legacy_nest_preserves_user_edited_agents_md() {
     let dir = tempfile::tempdir().unwrap();
     let legacy = dir.path().join(".sprout");
-    let current = dir.path().join(".buzz");
+    let current = dir.path().join(".nimino");
 
     std::fs::create_dir_all(&legacy).unwrap();
     std::fs::write(legacy.join("AGENTS.md"), "legacy team instructions").unwrap();
     std::fs::create_dir_all(&current).unwrap();
     std::fs::write(current.join("AGENTS.md"), "user-edited live AGENTS").unwrap();
 
-    super::migrate_legacy_nest_at(&legacy, &current);
+    super::copy_nest_knowledge_at(&legacy, &current);
 
     assert_eq!(
         std::fs::read_to_string(current.join("AGENTS.md")).unwrap(),

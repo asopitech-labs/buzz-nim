@@ -250,11 +250,11 @@ test("concealed terminal viewport does not steal Buzz focus", async ({
   const input = page.getByLabel("Terminal input");
   await expect(input).toHaveCount(0);
   await page.getByTestId("chat-title").click();
-  await page.keyboard.type("BUZZ_KEYSTROKE");
+  await page.keyboard.type("NIMINO_KEYSTROKE");
   const terminalInputs = await page.evaluate(
     () =>
       (window as typeof window & { __SAMI_TERM__: { inputs: string[] } })
         .__SAMI_TERM__.inputs,
   );
-  expect(terminalInputs.join("")).not.toContain("BUZZ_KEYSTROKE");
+  expect(terminalInputs.join("")).not.toContain("NIMINO_KEYSTROKE");
 });

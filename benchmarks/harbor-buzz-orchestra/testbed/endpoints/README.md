@@ -16,7 +16,7 @@ M1 wiring proof: both placeholder endpoints resolve to one local llama-server
 
 buzz-agent env contract (crates/buzz-agent/src/config.rs, pinned at the M1
 binary SHA): `provider=openai` reads `OPENAI_COMPAT_API_KEY` +
-`OPENAI_COMPAT_BASE_URL`; the runtime sets `BUZZ_AGENT_MODEL` from the
+`OPENAI_COMPAT_BASE_URL`; the runtime sets `NIMINO_AGENT_MODEL` from the
 manifest endpoint name, which overrides `OPENAI_COMPAT_MODEL` — llama-server
 ignores the model name, so the placeholder value is harmless there.
 llama-server needs no real key; the provisioner's per-endpoint

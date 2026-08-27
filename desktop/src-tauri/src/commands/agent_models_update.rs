@@ -101,7 +101,7 @@ pub async fn update_managed_agent(
             record.parallelism = parallelism;
         }
         // turn_timeout_seconds is intentionally not applied here —
-        // BUZZ_ACP_TURN_TIMEOUT is deprecated and ignored by the harness.
+        // NIMINO_ACP_TURN_TIMEOUT is deprecated and ignored by the harness.
         // Use idle_timeout_seconds or max_turn_duration_seconds instead.
         // Store the relay override exactly as supplied (trimmed). An explicit
         // value pins the agent; empty falls back to the workspace relay at

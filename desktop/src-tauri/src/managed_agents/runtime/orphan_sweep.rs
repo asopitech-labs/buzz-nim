@@ -109,7 +109,7 @@ pub(super) const PROC_PIDTBSDINFO: libc::c_int = 3;
 
 // ── Sweep ownership rule ──────────────────────────────────────────────────────
 //
-// The `BUZZ_MANAGED_AGENT` env marker is the SOLE authoritative ownership
+// The `NIMINO_MANAGED_AGENT` env marker is the SOLE authoritative ownership
 // proof for sweep/receipt decisions. Do NOT name-gate via
 // `process_belongs_to_us` here — custom harnesses use arbitrary binary names
 // and a name-gated predicate would silently leak their orphans (the old Linux
@@ -119,7 +119,7 @@ pub(super) const PROC_PIDTBSDINFO: libc::c_int = 3;
 // always returns `false`.
 
 /// Enumerate all processes on the system owned by the current user and kill any
-/// agent binary stamped with *this* instance's `BUZZ_MANAGED_AGENT` marker
+/// agent binary stamped with *this* instance's `NIMINO_MANAGED_AGENT` marker
 /// (`instance_id`) that isn't in `skip_pids`. This catches orphans that escaped
 /// PID-file-based cleanup (e.g. agent workers spawned with their own process
 /// group whose parent harness already exited and had its PID file removed),
@@ -161,7 +161,7 @@ pub(crate) fn sweep_system_agent_processes(instance_id: &str, skip_pids: &[u32])
             continue;
         }
         // Custom harnesses don't match KNOWN_AGENT_BINARIES by name; the
-        // BUZZ_MANAGED_AGENT env marker is the authoritative ownership proof.
+        // NIMINO_MANAGED_AGENT env marker is the authoritative ownership proof.
         if !process_has_buzz_marker(upid, instance_id) {
             continue;
         }
@@ -174,7 +174,7 @@ pub(crate) fn sweep_system_agent_processes(instance_id: &str, skip_pids: &[u32])
 
     if !orphans.is_empty() {
         eprintln!(
-            "buzz-desktop: system sweep found {} orphaned agent process(es), cleaning up",
+            "nimino-desktop: system sweep found {} orphaned agent process(es), cleaning up",
             orphans.len()
         );
         resolve_pgids_and_kill(&orphans);
@@ -227,7 +227,7 @@ pub(crate) fn sweep_system_agent_processes(instance_id: &str, skip_pids: &[u32])
 
     if !orphans.is_empty() {
         eprintln!(
-            "buzz-desktop: system sweep found {} orphaned agent process(es), cleaning up",
+            "nimino-desktop: system sweep found {} orphaned agent process(es), cleaning up",
             orphans.len()
         );
         resolve_pgids_and_kill(&orphans);
@@ -257,7 +257,7 @@ pub(crate) fn sweep_system_agent_processes_with_grace(
         .collect();
     if !confirmed.is_empty() {
         eprintln!(
-            "buzz-desktop: periodic sweep confirmed {} orphaned agent process(es), cleaning up",
+            "nimino-desktop: periodic sweep confirmed {} orphaned agent process(es), cleaning up",
             confirmed.len()
         );
         resolve_pgids_and_kill(&confirmed);
@@ -317,7 +317,7 @@ pub(crate) fn collect_same_instance_orphans(
             continue;
         }
         // Custom harnesses don't match KNOWN_AGENT_BINARIES by name; the
-        // BUZZ_MANAGED_AGENT env marker is the authoritative ownership proof.
+        // NIMINO_MANAGED_AGENT env marker is the authoritative ownership proof.
         if !process_has_buzz_marker(upid, instance_id) {
             continue;
         }

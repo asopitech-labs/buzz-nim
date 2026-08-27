@@ -455,7 +455,7 @@ mod tests {
             source_team_persona_slug: None,
             catalog_source: None,
             env_vars: std::collections::BTreeMap::from([
-                ("BUZZ_AGENT_PROVIDER".to_string(), "openai".to_string()),
+                ("NIMINO_AGENT_PROVIDER".to_string(), "openai".to_string()),
                 (
                     "OPENAI_COMPAT_BASE_URL".to_string(),
                     "http://127.0.0.1:9337/v1/".to_string(),

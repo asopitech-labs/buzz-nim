@@ -1,15 +1,15 @@
 # HA shape: replicas=3 + Redis + RWO git (object-store-backed; no RWM). Render-only check.
-relayUrl: wss://buzz.example.com
+relayUrl: wss://nimino.example.com
 ownerPubkey: "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"
 replicaCount: 3
 secrets:
   existingSecret: buzz-secrets
 externalPostgresql:
-  url: "postgres://buzz:pw@postgres.example.com:5432/buzz"
+  url: "postgres://nimino:pw@postgres.example.com:5432/nimino"
 externalRedis:
   url: "redis://:pw@redis.example.com:6379"
 s3:
-  bucket: "buzz-media"
+  bucket: "nimino-media"
 persistence:
   git:
     enabled: true

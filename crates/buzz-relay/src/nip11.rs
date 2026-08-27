@@ -15,7 +15,7 @@ use crate::config::DEFAULT_MAX_FRAME_BYTES;
 pub(crate) const SUPPORTED_NIPS: &[u32] = &[1, 2, 10, 11, 16, 17, 23, 25, 29, 33, 38, 42, 50, 56];
 
 /// NIP-43 (relay membership). Advertised only when the relay actually
-/// enforces membership (`BUZZ_REQUIRE_RELAY_MEMBERSHIP=true`) AND has a
+/// enforces membership (`NIMINO_REQUIRE_RELAY_MEMBERSHIP=true`) AND has a
 /// stable signing key — both are required for kind 13534/8000/8001 events
 /// to be verifiable by clients.
 pub(crate) const NIP_RELAY_MEMBERSHIP: u32 = 43;
@@ -96,7 +96,7 @@ pub struct RelayLimitation {
 /// `AuthState::Authenticated`. This is independent of the REST API token
 /// toggle (`config.require_auth_token`).
 fn relay_limitation(max_message_length: usize) -> RelayLimitation {
-    let max_not_before_delta: u64 = std::env::var("SPROUT_MAX_NOT_BEFORE_DELTA")
+    let max_not_before_delta: u64 = std::env::var("NIMINO_MAX_NOT_BEFORE_DELTA")
         .ok()
         .and_then(|v| v.parse().ok())
         .unwrap_or(31_536_000); // 1 year default

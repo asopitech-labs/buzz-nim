@@ -246,12 +246,18 @@ test("drag resize batches visual updates and commits state only on release", asy
   fireEvent.pointerMove(handle, { clientY: 460, pointerId: 1 });
   fireEvent.pointerMove(handle, { clientY: 440, pointerId: 1 });
   assert.equal(substrate.dataset.terminalResizing, "true");
-  assert.equal(window.localStorage.getItem("buzz-terminal-dock-height"), null);
+  assert.equal(
+    window.localStorage.getItem("nimino-terminal-dock-height"),
+    null,
+  );
 
   await waitFor(() => assert.equal(substrate.style.height, "380px"));
   fireEvent.pointerUp(handle, { clientY: 440, pointerId: 1 });
   assert.equal(substrate.dataset.terminalResizing, undefined);
-  assert.equal(window.localStorage.getItem("buzz-terminal-dock-height"), "380");
+  assert.equal(
+    window.localStorage.getItem("nimino-terminal-dock-height"),
+    "380",
+  );
 });
 
 test("drag resize repaints the canvas without reporting PTY geometry until release", async () => {
@@ -309,7 +315,10 @@ test("unmount cancels a queued drag update", async () => {
   view.unmount();
   await new Promise((resolve) => window.requestAnimationFrame(resolve));
 
-  assert.equal(window.localStorage.getItem("buzz-terminal-dock-height"), null);
+  assert.equal(
+    window.localStorage.getItem("nimino-terminal-dock-height"),
+    null,
+  );
   assert.equal(
     handle.closest(".buzz-terminal-substrate").style.height,
     previousHeight,

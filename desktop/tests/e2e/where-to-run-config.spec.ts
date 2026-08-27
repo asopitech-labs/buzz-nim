@@ -59,8 +59,8 @@ async function probeInvocations(page: Page): Promise<number> {
   return page.evaluate(
     () =>
       (
-        window as Window & { __BUZZ_E2E_COMMANDS__?: string[] }
-      ).__BUZZ_E2E_COMMANDS__?.filter(
+        window as Window & { __NIMINO_E2E_COMMANDS__?: string[] }
+      ).__NIMINO_E2E_COMMANDS__?.filter(
         (command) => command === "probe_backend_provider",
       ).length ?? 0,
   );

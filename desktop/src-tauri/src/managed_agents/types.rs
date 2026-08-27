@@ -260,12 +260,12 @@ pub struct ManagedAgentRecord {
     /// (`known_acp_runtime`) — and no longer written by updates. Kept for
     /// serde compatibility with existing stores.
     pub mcp_command: String,
-    /// Deprecated: `BUZZ_ACP_TURN_TIMEOUT` is ignored by the harness and the
+    /// Deprecated: `NIMINO_ACP_TURN_TIMEOUT` is ignored by the harness and the
     /// desktop no longer emits or edits it. Kept for serde compatibility with
     /// existing stores; use `idle_timeout_seconds` or
     /// `max_turn_duration_seconds` for turn-length control.
     pub turn_timeout_seconds: u64,
-    /// Idle timeout in seconds (`BUZZ_ACP_IDLE_TIMEOUT`): how long the agent
+    /// Idle timeout in seconds (`NIMINO_ACP_IDLE_TIMEOUT`): how long the agent
     /// may stay silent on its ACP channel mid-turn before the harness times
     /// the turn out.
     #[serde(default)]
@@ -346,7 +346,7 @@ pub struct ManagedAgentRecord {
     pub last_error: Option<String>,
     #[serde(default)]
     pub last_error_code: Option<i64>,
-    /// Inbound author gate mode. Translates to `BUZZ_ACP_RESPOND_TO`.
+    /// Inbound author gate mode. Translates to `NIMINO_ACP_RESPOND_TO`.
     #[serde(default)]
     pub respond_to: RespondTo,
     /// Allowlist used when `respond_to == Allowlist`. Stored normalized
@@ -440,7 +440,7 @@ pub struct ManagedAgentRecord {
     /// deserialize as `None`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub relay_mesh: Option<RelayMeshConfig>,
-    /// Canonical Claude Code effort level. Injected as `BUZZ_ACP_EFFORT_LEVEL` at spawn
+    /// Canonical Claude Code effort level. Injected as `NIMINO_ACP_EFFORT_LEVEL` at spawn
     /// so the harness applies it via `session/set_config_option` at session creation.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub effort_level: Option<String>,
@@ -457,7 +457,7 @@ pub struct ManagedAgentProcess {
     /// adopted via `runtime_pid` have none; their config is unknown.
     pub spawn_config: super::spawn_snapshot::SpawnConfigSnapshot,
     /// Whether this process was spawned in setup-listener mode (i.e.
-    /// `BUZZ_ACP_SETUP_PAYLOAD` was set at launch because the agent was
+    /// `NIMINO_ACP_SETUP_PAYLOAD` was set at launch because the agent was
     /// `NotReady`). Runtime-only — never persisted. Used by
     /// `install_acp_runtime` to target only stuck agents for auto-restart,
     /// excluding healthy in-pool agents.
@@ -795,7 +795,7 @@ pub struct UpdateTeamRequest {
 }
 
 pub const DEFAULT_ACP_COMMAND: &str = "buzz-acp";
-/// ~5 min (320s) — matches the CLI harness default (BUZZ_ACP_IDLE_TIMEOUT).
+/// ~5 min (320s) — matches the CLI harness default (NIMINO_ACP_IDLE_TIMEOUT).
 pub const DEFAULT_AGENT_TURN_TIMEOUT_SECONDS: u64 = 320;
 pub const DEFAULT_AGENT_PARALLELISM: u32 = 10;
 
@@ -819,8 +819,8 @@ fn default_record_active() -> bool {
 //
 // Mirrors `buzz-acp`'s `--respond-to` CLI flag and the related
 // `--respond-to-allowlist` option. Persisted per agent so the desktop can
-// translate the user's choice into `BUZZ_ACP_RESPOND_TO` /
-// `BUZZ_ACP_RESPOND_TO_ALLOWLIST` env vars at spawn time.
+// translate the user's choice into `NIMINO_ACP_RESPOND_TO` /
+// `NIMINO_ACP_RESPOND_TO_ALLOWLIST` env vars at spawn time.
 //
 // Wire format is kebab-case (`owner-only`, `allowlist`, `anyone`) to match
 // the harness CLI vocabulary and the strings the GUI emits.

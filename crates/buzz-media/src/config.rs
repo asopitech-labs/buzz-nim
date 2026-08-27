@@ -27,7 +27,7 @@ impl FromStr for S3AddressingStyle {
             "path" => Ok(Self::Path),
             "virtual" => Ok(Self::Virtual),
             _ => Err(format!(
-                "BUZZ_S3_ADDRESSING_STYLE must be 'path' or 'virtual', got {value:?}"
+                "NIMINO_S3_ADDRESSING_STYLE must be 'path' or 'virtual', got {value:?}"
             )),
         }
     }
@@ -81,7 +81,7 @@ pub struct MediaConfig {
     pub public_base_url: String,
     /// Whether to write per-upload-event records under `_uploads/`
     /// (moderation side channel). Off by default; set via
-    /// `BUZZ_MEDIA_UPLOAD_RECORDS=true`.
+    /// `NIMINO_MEDIA_UPLOAD_RECORDS=true`.
     #[serde(default)]
     pub upload_records_enabled: bool,
     /// Trusted edge header to read the uploader's public IP from (e.g.
@@ -129,7 +129,7 @@ impl MediaConfig {
         // are meeting a reporting obligation.
         if self.upload_ip_header.is_some() && !self.upload_records_enabled {
             return Err(
-                "BUZZ_MEDIA_UPLOAD_IP_HEADER is set but BUZZ_MEDIA_UPLOAD_RECORDS is not \
+                "NIMINO_MEDIA_UPLOAD_IP_HEADER is set but NIMINO_MEDIA_UPLOAD_RECORDS is not \
                  enabled — the IP would never be recorded. Enable upload records or unset \
                  the header."
                     .to_string(),
@@ -137,15 +137,15 @@ impl MediaConfig {
         }
         if self.upload_port_header.is_some() && self.upload_ip_header.is_none() {
             return Err(
-                "BUZZ_MEDIA_UPLOAD_PORT_HEADER is set without BUZZ_MEDIA_UPLOAD_IP_HEADER — \
+                "NIMINO_MEDIA_UPLOAD_PORT_HEADER is set without NIMINO_MEDIA_UPLOAD_IP_HEADER — \
                  a port is only recorded alongside an IP. Set the IP header or unset the \
                  port header."
                     .to_string(),
             );
         }
         for (name, value) in [
-            ("BUZZ_MEDIA_UPLOAD_IP_HEADER", &self.upload_ip_header),
-            ("BUZZ_MEDIA_UPLOAD_PORT_HEADER", &self.upload_port_header),
+            ("NIMINO_MEDIA_UPLOAD_IP_HEADER", &self.upload_ip_header),
+            ("NIMINO_MEDIA_UPLOAD_PORT_HEADER", &self.upload_port_header),
         ] {
             if let Some(h) = value {
                 if axum::http::HeaderName::from_bytes(h.as_bytes()).is_err() {
@@ -167,7 +167,7 @@ mod tests {
             s3_endpoint: "http://localhost:9000".to_string(),
             s3_access_key: "k".to_string(),
             s3_secret_key: "s".to_string(),
-            s3_bucket: "buzz-media".to_string(),
+            s3_bucket: "nimino-media".to_string(),
             s3_region: "us-east-1".to_string(),
             s3_addressing_style: S3AddressingStyle::Path,
             max_image_bytes: 1,
@@ -204,7 +204,7 @@ mod tests {
             let error =
                 S3AddressingStyle::from_str(invalid).expect_err("must reject invalid style");
             assert!(
-                error.contains("BUZZ_S3_ADDRESSING_STYLE must be 'path' or 'virtual'"),
+                error.contains("NIMINO_S3_ADDRESSING_STYLE must be 'path' or 'virtual'"),
                 "unexpected error for {invalid:?}: {error}"
             );
         }

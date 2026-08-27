@@ -20,12 +20,12 @@ pub fn print_agent_access_owner_only_probe_if_requested() -> bool {
 #[cfg(test)]
 mod tests {
     #[test]
-    #[ignore = "requires BUZZ_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY"]
+    #[ignore = "requires NIMINO_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY"]
     fn compiled_policy_matches_expected() {
-        let expected = std::env::var("BUZZ_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY")
-            .expect("BUZZ_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY must be set")
+        let expected = std::env::var("NIMINO_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY")
+            .expect("NIMINO_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY must be set")
             .parse::<bool>()
-            .expect("BUZZ_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY must be true or false");
+            .expect("NIMINO_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY must be true or false");
         assert_eq!(super::agent_access_owner_only(), expected);
     }
 }

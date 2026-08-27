@@ -56,7 +56,7 @@ test("authorized Desktop sends its identity to a fresh Desktop recovery session"
     .poll(() =>
       page.evaluate(
         () =>
-          window.__BUZZ_E2E_COMMAND_LOG__?.findLast(
+          window.__NIMINO_E2E_COMMAND_LOG__?.findLast(
             ({ command }) => command === "join_identity_recovery_pairing",
           )?.payload,
       ),

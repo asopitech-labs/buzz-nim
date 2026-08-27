@@ -48,7 +48,7 @@ function headRows(banner) {
   );
 }
 
-const EXPECTED_BUZZ_TERM = [
+const EXPECTED_NIMINO_TERM = [
   "██                                             ██",
   "██▄▄▄     ██  ██    ██████    ██████          █████      ▄███▄    ██ ▄██    ██▄██▄██",
   "██▀▀██    ██  ██       ▄██       ▄██           ██       ██▄▄▄█    ███▀▀     ██ ██ ██",
@@ -69,7 +69,7 @@ test("builds the amended four-layer Buzz Term composite", () => {
   const { top, left, bottom, right } = frameBounds(banner);
   assert.equal(banner.cells[top][left].layer, "bevel_hi");
   assert.equal(banner.cells[bottom - 1][right - 1].layer, "bevel_lo");
-  assert.deepEqual(headRows(banner), EXPECTED_BUZZ_TERM);
+  assert.deepEqual(headRows(banner), EXPECTED_NIMINO_TERM);
 });
 
 test("requires every frame emitter independently", () => {

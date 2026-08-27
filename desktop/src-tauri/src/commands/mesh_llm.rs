@@ -156,7 +156,7 @@ fn buzz_mesh_name_for_relay(relay_url: &str) -> String {
         .map(|url| url.origin().ascii_serialization())
         .unwrap_or_else(|_| relay_url.trim().trim_end_matches('/').to_ascii_lowercase());
     let digest = hex::encode(Sha256::digest(normalized.as_bytes()));
-    format!("buzz-community-{}", &digest[..32])
+    format!("nimino-community-{}", &digest[..32])
 }
 
 pub(super) fn buzz_mesh_name(state: &AppState) -> String {

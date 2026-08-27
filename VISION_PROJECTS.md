@@ -155,7 +155,7 @@ Workflows orchestrate. Agents perform the compute. The relay is the message bus,
 
 A push to a branch channel triggers the CI workflow. The workflow engine coordinates the steps — build, test, lint. Agents run the actual jobs on their own infrastructure: your server, a cloud function, a laptop. Results post back to the branch channel alongside the conversation.
 
-Workflows live in the repo (`.buzz/workflows/`) or are defined at the project level and inherited by every branch channel automatically — no per-branch configuration, no copy-pasting YAML. Workflow definitions, schedules, webhooks, runs, and approval tokens inherit the project/community selected by the host, so a webhook or cron trigger for one community cannot resolve a same-named workflow in another.
+Workflows live in the repo (`.nimino/workflows/`) or are defined at the project level and inherited by every branch channel automatically — no per-branch configuration, no copy-pasting YAML. Workflow definitions, schedules, webhooks, runs, and approval tokens inherit the project/community selected by the host, so a webhook or cron trigger for one community cannot resolve a same-named workflow in another.
 
 ```yaml
 name: CI

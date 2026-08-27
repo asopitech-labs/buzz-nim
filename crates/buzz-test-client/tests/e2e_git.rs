@@ -163,20 +163,20 @@ impl GitS3Probe {
         // they must receive the same provider connection and URL style as the
         // relay. Unit/live MinIO probes in buzz-relay keep explicit local
         // fixtures and do not need provider overrides.
-        let endpoint = std::env::var("BUZZ_S3_ENDPOINT")
+        let endpoint = std::env::var("NIMINO_S3_ENDPOINT")
             .unwrap_or_else(|_| "http://localhost:9000".to_string());
         let access_key =
-            std::env::var("BUZZ_S3_ACCESS_KEY").unwrap_or_else(|_| "buzz_dev".to_string());
-        let secret_key =
-            std::env::var("BUZZ_S3_SECRET_KEY").unwrap_or_else(|_| "buzz_dev_secret".to_string());
+            std::env::var("NIMINO_S3_ACCESS_KEY").unwrap_or_else(|_| "nimino_dev".to_string());
+        let secret_key = std::env::var("NIMINO_S3_SECRET_KEY")
+            .unwrap_or_else(|_| "nimino_dev_secret".to_string());
         let bucket_name =
-            std::env::var("BUZZ_S3_BUCKET").unwrap_or_else(|_| "buzz-media".to_string());
+            std::env::var("NIMINO_S3_BUCKET").unwrap_or_else(|_| "nimino-media".to_string());
         let region_name =
-            std::env::var("BUZZ_S3_REGION").unwrap_or_else(|_| "us-east-1".to_string());
-        let addressing_style = std::env::var("BUZZ_S3_ADDRESSING_STYLE")
+            std::env::var("NIMINO_S3_REGION").unwrap_or_else(|_| "us-east-1".to_string());
+        let addressing_style = std::env::var("NIMINO_S3_ADDRESSING_STYLE")
             .unwrap_or_else(|_| "path".to_string())
             .parse::<S3AddressingStyle>()
-            .expect("BUZZ_S3_ADDRESSING_STYLE must be 'path' or 'virtual'");
+            .expect("NIMINO_S3_ADDRESSING_STYLE must be 'path' or 'virtual'");
 
         let bucket = Self::bucket(
             endpoint,
@@ -191,7 +191,7 @@ impl GitS3Probe {
 
     fn pointer_key(owner: &str, repo: &str) -> String {
         let repo = repo.strip_suffix(".git").unwrap_or(repo);
-        if let Ok(community) = std::env::var("BUZZ_E2E_GIT_COMMUNITY_ID") {
+        if let Ok(community) = std::env::var("NIMINO_E2E_GIT_COMMUNITY_ID") {
             return format!("repos/{community}/{owner}/{repo}/pointer");
         }
         format!("repos/{owner}/{repo}/pointer")
@@ -246,7 +246,7 @@ fn git_s3_probe_builds_both_addressing_styles() {
         "https://storage.example".to_string(),
         "access",
         "secret",
-        "buzz-media",
+        "nimino-media",
         "us-east-1".to_string(),
         S3AddressingStyle::Path,
     );
@@ -257,7 +257,7 @@ fn git_s3_probe_builds_both_addressing_styles() {
         "https://storage.example".to_string(),
         "access",
         "secret",
-        "buzz-media",
+        "nimino-media",
         "auto".to_string(),
         S3AddressingStyle::Virtual,
     );

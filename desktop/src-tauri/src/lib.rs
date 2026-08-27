@@ -129,7 +129,7 @@ pub fn run() {
             }
             // Forward any deep link URLs from the duplicate launch.
             for arg in &argv {
-                if arg.starts_with("buzz://") {
+                if arg.starts_with("nimino://") {
                     handle_deep_link_url(app, arg);
                 }
             }
@@ -182,7 +182,7 @@ pub fn run() {
                             .is_err()
                             {
                                 eprintln!(
-                                    "buzz-desktop: initial render did not commit before reveal timeout"
+                                    "nimino-desktop: initial render did not commit before reveal timeout"
                                 );
                             }
 
@@ -215,7 +215,7 @@ pub fn run() {
         builder.plugin(tauri_plugin_updater::Builder::new().build())
     };
     let app = app_menu::install(builder)
-        .register_asynchronous_uri_scheme_protocol("buzz-media", |ctx, request, responder| {
+        .register_asynchronous_uri_scheme_protocol("nimino-media", |ctx, request, responder| {
             let app = ctx.app_handle().clone();
             tauri::async_runtime::spawn(async move {
                 let response = media_proxy::handle_buzz_media(&app, &request).await;
@@ -284,7 +284,7 @@ pub fn run() {
             // memberships, DMs, and relay identity.
             let state = app_handle.state::<AppState>();
             if let Err(e) = resolve_persisted_identity(&app_handle, &state) {
-                eprintln!("buzz-desktop: fatal: identity resolution failed: {e}");
+                eprintln!("nimino-desktop: fatal: identity resolution failed: {e}");
                 std::process::exit(1);
             }
 
@@ -307,7 +307,7 @@ pub fn run() {
             // snapshot. Synchronous and best-effort — a failure here must not
             // block launch, but a missing persona is logged loudly inside.
             if let Err(e) = backfill_persona_snapshots(&app_handle) {
-                eprintln!("buzz-desktop: persona-snapshot backfill failed: {e}");
+                eprintln!("nimino-desktop: persona-snapshot backfill failed: {e}");
             }
 
             // Warm the loaded-harness registry BEFORE restore so cold-launch
@@ -367,12 +367,12 @@ pub fn run() {
                     .store(port, std::sync::atomic::Ordering::Relaxed);
             });
 
-            // Create the Buzz nest (~/.buzz or ~/.buzz-dev for dev builds) before
+            // Create the Buzz nest (~/.nimino or ~/.nimino-dev for dev builds) before
             // agents are restored, so default_agent_workdir() resolves to the
             // nest directory. Non-fatal: agents fall back to $HOME if nest
             // creation fails.
             if let Err(error) = ensure_nest() {
-                eprintln!("buzz-desktop: failed to create nest: {error}");
+                eprintln!("nimino-desktop: failed to create nest: {error}");
             }
             archive::spawn_warm_init(app_handle.clone());
 
@@ -391,26 +391,15 @@ pub fn run() {
                 None => true,
             };
 
-            // Carry the agent's knowledge from the legacy nest (~/.sprout) into
-            // the live nest after it exists. Must run after ensure_nest() so the
-            // destination is present. Non-fatal.
-            // On a real migration, emit a one-time hint so the user can delete
-            // the now-inert ~/.sprout; the frontend dedupes the toast.
-            // Suppressed when a reset completed this boot: the nest was wiped and
-            // a fresh ~/.sprout-less state is exactly what we want.
-            if !reset_outcome.completed && migration::migrate_legacy_nest() {
-                let _ = app_handle.emit("legacy-nest-migrated", ());
-            }
-
             // One-time migration for dev builds: copy accumulated knowledge
-            // from the shared ~/.buzz nest into the new dedicated ~/.buzz-dev
+            // from the shared ~/.nimino nest into the new dedicated ~/.nimino-dev
             // nest so no work is lost when the nest is first namespaced.
-            // Runs only when nest_dir() resolved to ~/.buzz-dev (dev instance).
-            // Suppressed after a reset so re-importing ~/.buzz into ~/.buzz-dev
+            // Runs only when nest_dir() resolved to ~/.nimino-dev (dev instance).
+            // Suppressed after a reset so re-importing ~/.nimino into ~/.nimino-dev
             // doesn't re-populate what was just wiped.
             let is_dev_nest = managed_agents::nest_dir()
                 .and_then(|p| p.file_name().map(|n| n.to_os_string()))
-                .is_some_and(|n| n == ".buzz-dev");
+                .is_some_and(|n| n == ".nimino-dev");
             if !reset_outcome.completed && is_dev_nest {
                 migration::migrate_dev_nest();
             }
@@ -420,7 +409,7 @@ pub fn run() {
             if let Ok(exe) = std::env::current_exe() {
                 if let Some(parent) = exe.parent() {
                     if let Err(error) = managed_agents::ensure_cli_symlink(parent, is_dev_nest) {
-                        eprintln!("buzz-desktop: failed to create CLI symlink: {error}");
+                        eprintln!("nimino-desktop: failed to create CLI symlink: {error}");
                     }
                 }
             }
@@ -509,7 +498,7 @@ pub fn run() {
                         )
                         .await
                         {
-                            eprintln!("buzz-desktop: event-flush: {e}");
+                            eprintln!("nimino-desktop: event-flush: {e}");
                         }
                         tokio::time::sleep(Duration::from_secs(30)).await;
                     }
@@ -877,7 +866,7 @@ pub fn run() {
             api.prevent_close();
             if let Some(window) = app_handle.get_webview_window("main") {
                 if let Err(error) = window.hide() {
-                    eprintln!("buzz-desktop: failed to hide main window: {error}");
+                    eprintln!("nimino-desktop: failed to hide main window: {error}");
                 }
             }
         }
@@ -900,7 +889,7 @@ pub fn run() {
                     });
             if is_active_huddle_window {
                 if let Err(error) = app_handle.emit("huddle-companion-returned", ()) {
-                    eprintln!("buzz-desktop: failed to restore huddle drawer: {error}");
+                    eprintln!("nimino-desktop: failed to restore huddle drawer: {error}");
                 }
             }
         }

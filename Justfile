@@ -161,6 +161,9 @@ chirps-contract:
 naming-contract:
     node scripts/check-nimino-naming-contract.mjs
 
+runtime-namespace-contract:
+    node scripts/check-nimino-runtime-namespace.mjs
+
 # Verify the versioned Nimino wire/data classification and old-client rejection fixture
 protocol-contract:
     node scripts/check-nimino-protocol-contract.mjs
@@ -182,7 +185,7 @@ ci-lanes-contract:
     node scripts/test-ci-lanes.mjs
 
 # Run repo lint, formatting, and repository policy checks
-check: fmt-check clippy chirps-contract naming-contract protocol-contract gui-surface-contract wsl-support-contract removed-client-contract ci-lanes-contract desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check file-size-check
+check: fmt-check clippy chirps-contract naming-contract protocol-contract runtime-namespace-contract gui-surface-contract wsl-support-contract removed-client-contract ci-lanes-contract desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check file-size-check
 
 # Run the active-product differential file-size ratchet and its policy tests.
 # The ratchet inspects only files changed from the merge base, so this stays
@@ -253,7 +256,7 @@ _ensure-sidecar-stubs:
     set -euo pipefail
     TARGET=$(rustc -vV | sed -n 's|host: ||p')
     mkdir -p desktop/src-tauri/binaries
-    SIDECARS=(buzz-acp buzz-agent buzz-dev-mcp git-credential-nostr buzz)
+    SIDECARS=(buzz-acp buzz-agent buzz-dev-mcp git-credential-nostr nimino)
     if [[ "$TARGET" != *windows* ]]; then
         SIDECARS+=(buzz-backend-kubernetes)
     fi
@@ -319,24 +322,24 @@ desktop-tauri-test-compiled-flags: _ensure-sidecar-stubs
     set -euo pipefail
     cd desktop/src-tauri
     echo "=== Clean build (no flag) → expect false ==="
-    env -u BUZZ_BUILD_AUTO_CONNECT_DEFAULT_RELAY \
-      BUZZ_TEST_EXPECTED_AUTO_CONNECT_DEFAULT_RELAY=false \
+    env -u NIMINO_BUILD_AUTO_CONNECT_DEFAULT_RELAY \
+      NIMINO_TEST_EXPECTED_AUTO_CONNECT_DEFAULT_RELAY=false \
       cargo test compiled_flag_matches_expected -- --ignored --nocapture
-    env -u BUZZ_BUILD_AGENT_ACCESS_OWNER_ONLY \
-      BUZZ_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY=false \
+    env -u NIMINO_BUILD_AGENT_ACCESS_OWNER_ONLY \
+      NIMINO_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY=false \
       cargo test --lib
-    env -u BUZZ_BUILD_AGENT_ACCESS_OWNER_ONLY \
-      BUZZ_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY=false \
+    env -u NIMINO_BUILD_AGENT_ACCESS_OWNER_ONLY \
+      NIMINO_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY=false \
       cargo test compiled_policy_matches_expected -- --ignored --nocapture
     echo "=== Internal build (flags set) → expect true ==="
-    BUZZ_BUILD_AUTO_CONNECT_DEFAULT_RELAY=1 \
-      BUZZ_TEST_EXPECTED_AUTO_CONNECT_DEFAULT_RELAY=true \
+    NIMINO_BUILD_AUTO_CONNECT_DEFAULT_RELAY=1 \
+      NIMINO_TEST_EXPECTED_AUTO_CONNECT_DEFAULT_RELAY=true \
       cargo test compiled_flag_matches_expected -- --ignored --nocapture
-    BUZZ_BUILD_AGENT_ACCESS_OWNER_ONLY=1 \
-      BUZZ_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY=true \
+    NIMINO_BUILD_AGENT_ACCESS_OWNER_ONLY=1 \
+      NIMINO_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY=true \
       cargo test --lib
-    BUZZ_BUILD_AGENT_ACCESS_OWNER_ONLY=1 \
-      BUZZ_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY=true \
+    NIMINO_BUILD_AGENT_ACCESS_OWNER_ONLY=1 \
+      NIMINO_TEST_EXPECTED_AGENT_ACCESS_OWNER_ONLY=true \
       cargo test compiled_policy_matches_expected -- --ignored --nocapture
     echo "Both compiled states verified."
 
@@ -355,7 +358,7 @@ desktop-release-build target="aarch64-apple-darwin":
     fi
     touch "desktop/src-tauri/binaries/buzz-dev-mcp-$TARGET"
     touch "desktop/src-tauri/binaries/git-credential-nostr-$TARGET"
-    touch "desktop/src-tauri/binaries/buzz-$TARGET"
+    touch "desktop/src-tauri/binaries/nimino-$TARGET"
     pnpm install
     cd {{desktop_dir}} && pnpm tauri build --features mesh-llm --target {{target}}
 
@@ -458,13 +461,13 @@ mesh-dev-fresh:
     set -euo pipefail
     ./scripts/dev-reset.sh --yes
     ./scripts/setup-desktop-test-data.sh
-    export BUZZ_PRIVATE_KEY="3dbaebadb5dfd777ff25149ee230d907a15a9e1294b40b830661e65bb42f6c03"
-    export BUZZ_REQUIRE_RELAY_MEMBERSHIP=true
-    export BUZZ_ALLOW_NIP_OA_AUTH=true
+    export NIMINO_PRIVATE_KEY="3dbaebadb5dfd777ff25149ee230d907a15a9e1294b40b830661e65bb42f6c03"
+    export NIMINO_REQUIRE_RELAY_MEMBERSHIP=true
+    export NIMINO_ALLOW_NIP_OA_AUTH=true
     export RELAY_OWNER_PUBKEY="e5ebc6cdb579be112e336cc319b5989b4bb6af11786ea90dbe52b5f08d741b34"
-    export BUZZ_RELAY_PRIVATE_KEY="0000000000000000000000000000000000000000000000000000000000000001"
-    export BUZZ_RECONCILE_CHANNELS=true
-    export BUZZ_RESET_WEBVIEW_STATE=1
+    export NIMINO_RELAY_PRIVATE_KEY="0000000000000000000000000000000000000000000000000000000000000001"
+    export NIMINO_RECONCILE_CHANNELS=true
+    export NIMINO_RESET_WEBVIEW_STATE=1
     exec just mesh=1 dev
 
 # Real serve->client->inference on this machine (not CI).
@@ -518,7 +521,7 @@ relay-web: bootstrap _ensure-migrations
     export PATH="{{justfile_directory()}}/bin:$PATH"
     [[ -d node_modules ]] || pnpm install
     pnpm -C web build
-    BUZZ_WEB_DIR=./web/dist cargo run -p buzz-relay
+    NIMINO_WEB_DIR=./web/dist cargo run -p buzz-relay
 
 # Build and run the private read-only admin dashboard
 admin: bootstrap _ensure-migrations
@@ -527,9 +530,9 @@ admin: bootstrap _ensure-migrations
     export PATH="{{justfile_directory()}}/bin:$PATH"
     [[ -d node_modules ]] || pnpm install
     pnpm -C admin-web build
-    export BUZZ_ADMIN_HOST="${BUZZ_ADMIN_HOST:-admin.localhost:3000}"
-    export BUZZ_ADMIN_WEB_DIR="${BUZZ_ADMIN_WEB_DIR:-{{justfile_directory()}}/admin-web/dist}"
-    echo "Admin dashboard: http://${BUZZ_ADMIN_HOST}/reports"
+    export NIMINO_ADMIN_HOST="${NIMINO_ADMIN_HOST:-admin.localhost:3000}"
+    export NIMINO_ADMIN_WEB_DIR="${NIMINO_ADMIN_WEB_DIR:-{{justfile_directory()}}/admin-web/dist}"
+    echo "Admin dashboard: http://${NIMINO_ADMIN_HOST}/reports"
     cargo run -p buzz-relay
 
 # Seed deterministic reports and product feedback for local admin dashboard review
@@ -554,10 +557,10 @@ dev *ARGS: bootstrap _ensure-sidecar-stubs _ensure-migrations
     #!/usr/bin/env bash
     set -euo pipefail
     export PATH="{{justfile_directory()}}/bin:$PATH"
-    bind_addr="${BUZZ_BIND_ADDR:-0.0.0.0:3000}"
+    bind_addr="${NIMINO_BIND_ADDR:-0.0.0.0:3000}"
     relay_port="${bind_addr##*:}"; [[ -n "$relay_port" ]] || relay_port=3000
-    health_port="${BUZZ_HEALTH_PORT:-8080}"
-    metrics_port="${BUZZ_METRICS_PORT:-9102}"
+    health_port="${NIMINO_HEALTH_PORT:-8080}"
+    metrics_port="${NIMINO_METRICS_PORT:-9102}"
     if command -v lsof >/dev/null 2>&1; then
         for spec in "relay:$relay_port" "health:$health_port" "metrics:$metrics_port"; do
             name="${spec%%:*}"; port="${spec##*:}"
@@ -573,9 +576,9 @@ dev *ARGS: bootstrap _ensure-sidecar-stubs _ensure-migrations
     # Docker Desktop's forwarded MinIO port can stall under the deployment
     # probe's 32 concurrent writers. Keep the gate enabled in local dev, using
     # the bounded profile already used by the relay test launcher.
-    export BUZZ_GIT_PROBE_WRITERS="${BUZZ_GIT_PROBE_WRITERS:-8}"
-    export BUZZ_GIT_PROBE_ROUNDS="${BUZZ_GIT_PROBE_ROUNDS:-2}"
-    ./target/debug/buzz-relay &
+    export NIMINO_GIT_PROBE_WRITERS="${NIMINO_GIT_PROBE_WRITERS:-8}"
+    export NIMINO_GIT_PROBE_ROUNDS="${NIMINO_GIT_PROBE_ROUNDS:-2}"
+    ./target/debug/nimino-relay &
     RELAY_PID=$!
     cleanup() {
         [[ -n "${INSTANCE_ID:-}" ]] && ../scripts/cleanup-instance-agents.sh "$INSTANCE_ID" || true
@@ -602,10 +605,10 @@ dev *ARGS: bootstrap _ensure-sidecar-stubs _ensure-migrations
     cd {{desktop_dir}}
     [[ -d node_modules ]] || pnpm install
     source ../scripts/instance-env.sh
-    INSTANCE_ID=$(node -e "console.log(JSON.parse(process.env.BUZZ_TAURI_CONFIG).identifier)")
-    echo "Starting on Vite port ${BUZZ_VITE_PORT}, relay ${BUZZ_RELAY_URL}"
+    INSTANCE_ID=$(node -e "console.log(JSON.parse(process.env.NIMINO_TAURI_CONFIG).identifier)")
+    echo "Starting on Vite port ${NIMINO_VITE_PORT}, relay ${NIMINO_RELAY_URL}"
     FEATURES=(); [[ -n "{{mesh}}" ]] && FEATURES=(--features mesh-llm)
-    pnpm exec tauri dev ${FEATURES[@]+"${FEATURES[@]}"} --config "$BUZZ_TAURI_CONFIG" {{ARGS}}
+    pnpm exec tauri dev ${FEATURES[@]+"${FEATURES[@]}"} --config "$NIMINO_TAURI_CONFIG" {{ARGS}}
 
 # Run only the desktop app. No relay, database, Docker, migrations, or .env are needed.
 # The app opens normally and asks for a community before making a relay connection.
@@ -616,25 +619,25 @@ desktop-standalone *ARGS: _ensure-sidecar-stubs
     cargo build -p buzz-acp -p buzz-agent -p buzz-backend-kubernetes -p buzz-dev-mcp -p buzz-cli -p git-credential-nostr
     TARGET=$(rustc -vV | sed -n 's|host: ||p')
     TARGET_DIR=$(cargo metadata --format-version 1 --no-deps | node -p "JSON.parse(require('fs').readFileSync(0, 'utf8')).target_directory")
-    for bin in buzz-acp buzz-agent buzz-backend-kubernetes buzz-dev-mcp git-credential-nostr buzz; do
+    for bin in buzz-acp buzz-agent buzz-backend-kubernetes buzz-dev-mcp git-credential-nostr nimino; do
         cp "${TARGET_DIR}/debug/${bin}" "desktop/src-tauri/binaries/${bin}-${TARGET}"
         chmod +x "desktop/src-tauri/binaries/${bin}-${TARGET}"
     done
     cd {{desktop_dir}}
     [[ -d node_modules ]] || pnpm install
-    unset BUZZ_PRIVATE_KEY BUZZ_SHARE_IDENTITY
+    unset NIMINO_PRIVATE_KEY NIMINO_SHARE_IDENTITY
     if [[ -n "{{fresh}}" ]]; then
-        export BUZZ_RESET_WEBVIEW_STATE=1
+        export NIMINO_RESET_WEBVIEW_STATE=1
     fi
     source ../scripts/instance-env.sh
-    INSTANCE_ID=$(node -e "console.log(JSON.parse(process.env.BUZZ_TAURI_CONFIG).identifier)")
-    export BUZZ_DEV_KEYRING_SERVICE="buzz-desktop-dev.${BUZZ_INSTANCE_SLUG:-main}"
+    INSTANCE_ID=$(node -e "console.log(JSON.parse(process.env.NIMINO_TAURI_CONFIG).identifier)")
+    export NIMINO_DEV_KEYRING_SERVICE="nimino-desktop-dev.${NIMINO_INSTANCE_SLUG:-main}"
     if [[ -n "{{fresh}}" ]]; then
-        ../scripts/reset-desktop-standalone-state.sh "$INSTANCE_ID" "$BUZZ_DEV_KEYRING_SERVICE"
+        ../scripts/reset-desktop-standalone-state.sh "$INSTANCE_ID" "$NIMINO_DEV_KEYRING_SERVICE"
     fi
     trap '../scripts/cleanup-instance-agents.sh "$INSTANCE_ID" || true' EXIT
-    echo "Starting standalone desktop on Vite port ${BUZZ_VITE_PORT}; no relay services were started"
-    pnpm exec tauri dev --config "$BUZZ_TAURI_CONFIG" {{ARGS}}
+    echo "Starting standalone desktop on Vite port ${NIMINO_VITE_PORT}; no relay services were started"
+    pnpm exec tauri dev --config "$NIMINO_TAURI_CONFIG" {{ARGS}}
 
 # Run the desktop app against the internal staging relay (installs deps + builds agent tools automatically)
 staging *ARGS: bootstrap _ensure-sidecar-stubs
@@ -653,7 +656,7 @@ staging *ARGS: bootstrap _ensure-sidecar-stubs
     # tauri dev copies next to the exe would hide the provider from "Run on".
     TARGET=$(rustc -vV | sed -n 's|host: ||p')
     TARGET_DIR=$(cargo metadata --format-version 1 --no-deps | node -p "JSON.parse(require('fs').readFileSync(0, 'utf8')).target_directory")
-    STAGING_SIDECARS=(buzz)
+    STAGING_SIDECARS=(nimino)
     if [[ "$TARGET" != *windows* ]]; then
         STAGING_SIDECARS+=(buzz-backend-kubernetes)
     fi
@@ -662,14 +665,14 @@ staging *ARGS: bootstrap _ensure-sidecar-stubs
         chmod +x "desktop/src-tauri/binaries/${bin}-${TARGET}"
     done
     cd {{desktop_dir}}
-    export BUZZ_RELAY_URL="wss://sprout-oss.stage.blox.sqprod.co"
+    export NIMINO_RELAY_URL="wss://sprout-oss.stage.blox.sqprod.co"
     source ../scripts/instance-env.sh
     # Ctrl+C kills the Tauri app before its in-process sweep finishes, leaking
     # agent workers. Reap this instance's agents on exit as a backstop.
-    INSTANCE_ID=$(node -e "console.log(JSON.parse(process.env.BUZZ_TAURI_CONFIG).identifier)")
+    INSTANCE_ID=$(node -e "console.log(JSON.parse(process.env.NIMINO_TAURI_CONFIG).identifier)")
     trap '../scripts/cleanup-instance-agents.sh "$INSTANCE_ID" || true' EXIT
-    echo "Starting staging on Vite port ${BUZZ_VITE_PORT}, relay ${BUZZ_RELAY_URL}"
-    pnpm exec tauri dev ${FEATURES[@]+"${FEATURES[@]}"} --config "$BUZZ_TAURI_CONFIG" {{ARGS}}
+    echo "Starting staging on Vite port ${NIMINO_VITE_PORT}, relay ${NIMINO_RELAY_URL}"
+    pnpm exec tauri dev ${FEATURES[@]+"${FEATURES[@]}"} --config "$NIMINO_TAURI_CONFIG" {{ARGS}}
 
 # Run the desktop app against the production relay (installs deps + builds agent tools automatically)
 production *ARGS: bootstrap _ensure-sidecar-stubs
@@ -688,7 +691,7 @@ production *ARGS: bootstrap _ensure-sidecar-stubs
     # tauri dev copies next to the exe would hide the provider from "Run on".
     TARGET=$(rustc -vV | sed -n 's|host: ||p')
     TARGET_DIR=$(cargo metadata --format-version 1 --no-deps | node -p "JSON.parse(require('fs').readFileSync(0, 'utf8')).target_directory")
-    PRODUCTION_SIDECARS=(buzz)
+    PRODUCTION_SIDECARS=(nimino)
     if [[ "$TARGET" != *windows* ]]; then
         PRODUCTION_SIDECARS+=(buzz-backend-kubernetes)
     fi
@@ -697,14 +700,14 @@ production *ARGS: bootstrap _ensure-sidecar-stubs
         chmod +x "desktop/src-tauri/binaries/${bin}-${TARGET}"
     done
     cd {{desktop_dir}}
-    export BUZZ_RELAY_URL="wss://buzz.block.builderlab.xyz"
+    export NIMINO_RELAY_URL="wss://buzz.block.builderlab.xyz"
     source ../scripts/instance-env.sh
     # Ctrl+C kills the Tauri app before its in-process sweep finishes, leaking
     # agent workers. Reap this instance's agents on exit as a backstop.
-    INSTANCE_ID=$(node -e "console.log(JSON.parse(process.env.BUZZ_TAURI_CONFIG).identifier)")
+    INSTANCE_ID=$(node -e "console.log(JSON.parse(process.env.NIMINO_TAURI_CONFIG).identifier)")
     trap '../scripts/cleanup-instance-agents.sh "$INSTANCE_ID" || true' EXIT
-    echo "Starting production on Vite port ${BUZZ_VITE_PORT}, relay ${BUZZ_RELAY_URL}"
-    pnpm exec tauri dev ${FEATURES[@]+"${FEATURES[@]}"} --config "$BUZZ_TAURI_CONFIG" {{ARGS}}
+    echo "Starting production on Vite port ${NIMINO_VITE_PORT}, relay ${NIMINO_RELAY_URL}"
+    pnpm exec tauri dev ${FEATURES[@]+"${FEATURES[@]}"} --config "$NIMINO_TAURI_CONFIG" {{ARGS}}
 
 # Run the desktop frontend dev server (port derived from worktree)
 desktop-dev:
@@ -713,8 +716,8 @@ desktop-dev:
     cd {{desktop_dir}}
     [[ -d node_modules ]] || pnpm install
     source ../scripts/instance-env.sh
-    echo "Starting frontend dev server on Vite port ${BUZZ_VITE_PORT}, relay ${BUZZ_RELAY_URL}"
-    pnpm exec vite --port "${BUZZ_VITE_PORT}" --strictPort
+    echo "Starting frontend dev server on Vite port ${NIMINO_VITE_PORT}, relay ${NIMINO_RELAY_URL}"
+    pnpm exec vite --port "${NIMINO_VITE_PORT}" --strictPort
 
 # ─── Web ─────────────────────────────────────────────────────────────────────
 
@@ -724,9 +727,9 @@ web:
     set -euo pipefail
     [[ -d node_modules ]] || pnpm install
     source scripts/instance-env.sh
-    export VITE_PORT=$((BUZZ_VITE_PORT + 100))
-    export VITE_RELAY_URL="${BUZZ_RELAY_URL}"
-    echo "Starting web dev server on port ${VITE_PORT}, relay ${BUZZ_RELAY_URL}"
+    export VITE_PORT=$((NIMINO_VITE_PORT + 100))
+    export VITE_RELAY_URL="${NIMINO_RELAY_URL}"
+    echo "Starting web dev server on port ${VITE_PORT}, relay ${NIMINO_RELAY_URL}"
     cd {{web_dir}}
     pnpm exec vite --port "${VITE_PORT}" --strictPort
 
@@ -814,7 +817,7 @@ bump-desktop-version version:
     "
     # Regenerate lockfiles
     pnpm install --lockfile-only
-    cargo update -p buzz-desktop --manifest-path desktop/src-tauri/Cargo.toml
+    cargo update -p nimino-desktop --manifest-path desktop/src-tauri/Cargo.toml
     echo "Bumped desktop manifests to {{ version }} and regenerated lockfiles"
 
 # Bump the relay crate version and regenerate the lockfile
@@ -1004,7 +1007,7 @@ _release-pr lane version:
 # ─── Agent Harness ────────────────────────────────────────────────────────────
 
 # Run a goose agent connected to a Buzz relay (foreground)
-goose relay="ws://localhost:3000" agents="1" heartbeat="0" prompt="" key="$BUZZ_PRIVATE_KEY":
+goose relay="ws://localhost:3000" agents="1" heartbeat="0" prompt="" key="$NIMINO_PRIVATE_KEY":
     #!/usr/bin/env bash
     set -euo pipefail
     export PATH="{{justfile_directory()}}/bin:$PATH"
@@ -1012,7 +1015,7 @@ goose relay="ws://localhost:3000" agents="1" heartbeat="0" prompt="" key="$BUZZ_
     exec env "${env_args[@]}" ./target/release/buzz-acp
 
 # Run a goose agent in the background (screen session named 'goose-agent-N')
-goose-bg relay="ws://localhost:3000" agents="1" heartbeat="0" prompt="" key="$BUZZ_PRIVATE_KEY":
+goose-bg relay="ws://localhost:3000" agents="1" heartbeat="0" prompt="" key="$NIMINO_PRIVATE_KEY":
     #!/usr/bin/env bash
     set -euo pipefail
     export PATH="{{justfile_directory()}}/bin:$PATH"

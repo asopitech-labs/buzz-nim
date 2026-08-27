@@ -48,8 +48,8 @@ type DesktopNotificationOptions = NotificationOptions & {
 };
 
 type TestWindow = Window & {
-  __BUZZ_E2E_APP_BADGE_COUNT__?: number;
-  __BUZZ_E2E_APP_BADGE_STATE__?: AppBadgeState["kind"];
+  __NIMINO_E2E_APP_BADGE_COUNT__?: number;
+  __NIMINO_E2E_APP_BADGE_STATE__?: AppBadgeState["kind"];
 };
 
 function hasNotificationApi() {
@@ -319,9 +319,9 @@ export async function listenForDesktopNotificationActions(
 export async function setDesktopAppBadge(state: AppBadgeState): Promise<void> {
   if (typeof window !== "undefined") {
     const testWindow = window as TestWindow;
-    testWindow.__BUZZ_E2E_APP_BADGE_COUNT__ =
+    testWindow.__NIMINO_E2E_APP_BADGE_COUNT__ =
       state.kind === "count" ? state.count : 0;
-    testWindow.__BUZZ_E2E_APP_BADGE_STATE__ = state.kind;
+    testWindow.__NIMINO_E2E_APP_BADGE_STATE__ = state.kind;
   }
 
   if (!isTauri()) {

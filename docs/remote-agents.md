@@ -126,8 +126,8 @@ bind at the same layer. Three contracts, nested:
    layer live: fail-closed identity (I1's property, enforced wherever the
    env is assembled), presence publication (I3), owner-verified `!shutdown`,
    and **intentional clean exit is terminal to automatic supervisor
-   restart** (I5). A bash script that exports `BUZZ_PRIVATE_KEY`,
-   `BUZZ_RELAY_URL`, `BUZZ_AUTH_TAG` and execs the harness is a conforming
+   restart** (I5). A bash script that exports `NIMINO_PRIVATE_KEY`,
+   `NIMINO_RELAY_URL`, `NIMINO_AUTH_TAG` and execs the harness is a conforming
    launcher at this layer — today, with no code change.
 2. **The provider/deployer contract — binds provider-managed launches
    only.** The two operations (`info`/`deploy`), the reconciliation loop,
@@ -213,7 +213,7 @@ one.
   The Kubernetes binding minimizes the *avoidable* part of that window by
   sizing the termination grace period to the harness's full graceful-shutdown
   path (§K8s Grace). Two consequences the bound imposes: (a) the harness's
-  presence-suppression knob, `BUZZ_ACP_NO_PRESENCE`, MUST join
+  presence-suppression knob, `NIMINO_ACP_NO_PRESENCE`, MUST join
   `RESERVED_ENV_KEYS` — locally the knob is cosmetic (the process and UI
   remain visible), but remotely M1 makes presence the *only* signal, so an
   unreserved user env var would convert "wrong for ≤180s" into "wrong
@@ -441,14 +441,14 @@ The agent payload (field list per
 | `launch` | **normative addition** (§Launch data): the desktop-resolved launch contract — `command` (name, not path), normalized `args`, layered `env`, overridable `policy_env`, and `owner_pubkey` |
 
 **Reserved-key rule (normative for providers).** `D` strips
-`BUZZ_PRIVATE_KEY`, `NOSTR_PRIVATE_KEY`, `BUZZ_AUTH_TAG`, `BUZZ_RELAY_URL`,
+`NIMINO_PRIVATE_KEY`, `NOSTR_PRIVATE_KEY`, `NIMINO_AUTH_TAG`, `NIMINO_RELAY_URL`,
 and the other reserved keys from `env_vars` before merge. A provider MUST
 construct the agent environment's identity variables from the **top-level**
-payload fields (`private_key_nsec` → `BUZZ_PRIVATE_KEY`/`NOSTR_PRIVATE_KEY`,
-`auth_tag` → `BUZZ_AUTH_TAG`, `relay_url` → `BUZZ_RELAY_URL`); reading
+payload fields (`private_key_nsec` → `NIMINO_PRIVATE_KEY`/`NOSTR_PRIVATE_KEY`,
+`auth_tag` → `NIMINO_AUTH_TAG`, `relay_url` → `NIMINO_RELAY_URL`); reading
 `env_vars` for them yields an identityless agent. A related hardening `D`
 performs is part of the contract's rationale: env keys are validated as
-POSIX-shaped names before merge, because a key like `BUZZ_AUTH_TAG=x`
+POSIX-shaped names before merge, because a key like `NIMINO_AUTH_TAG=x`
 smuggled through `Command::env` would bypass the reserved-key strip
 entirely. A provider materializing `env_vars` into a substrate object
 (e.g. a Kubernetes Secret) MUST likewise never let a user-supplied key
@@ -486,12 +486,12 @@ spawn**, and the provider applies it mechanically.
                                 // (resolve_effective_harness_descriptor)
   "policy_env":   {str: str},   // overridable behavior defaults (tier 1, below):
                                 // runtime default_env (e.g. GOOSE_MODE=auto),
-                                // BUZZ_ACP_RELAY_OBSERVER, BUZZ_ACP_LAZY_POOL=true,
-                                // BUZZ_ACP_SESSION_TITLE (resolved),
-                                // BUZZ_ACP_TEAM_INSTRUCTIONS, BUZZ_ACP_MODEL,
+                                // NIMINO_ACP_RELAY_OBSERVER, NIMINO_ACP_LAZY_POOL=true,
+                                // NIMINO_ACP_SESSION_TITLE (resolved),
+                                // NIMINO_ACP_TEAM_INSTRUCTIONS, NIMINO_ACP_MODEL,
                                 // MCP_HOOK_SERVERS=* (mcp_hooks runtimes only)
   "owner_pubkey": str | null    // resolved workspace owner (hex) — legacy
-                                // BUZZ_ACP_AGENT_OWNER fallback, non-secret
+                                // NIMINO_ACP_AGENT_OWNER fallback, non-secret
 }
 ```
 
@@ -503,8 +503,8 @@ byte, and definition-provided `agent_args` are lost when the instance's own
 args are empty. `launch.env` is that descriptor's layered env, which is
 where per-runtime model/provider injection lives (`GOOSE_MODEL`/
 `GOOSE_PROVIDER` for goose; nothing for `provider_locked` runtimes like
-Claude; `BUZZ_AGENT_MODEL`/`BUZZ_AGENT_PROVIDER` for buzz-agent). A fixed
-`provider → BUZZ_AGENT_PROVIDER` mapping is wrong for three of the four
+Claude; `NIMINO_AGENT_MODEL`/`NIMINO_AGENT_PROVIDER` for buzz-agent). A fixed
+`provider → NIMINO_AGENT_PROVIDER` mapping is wrong for three of the four
 built-in runtimes and is why this block exists.
 
 **What `policy_env` carries — and deliberately does not.** Its irreducible
@@ -512,10 +512,10 @@ wire fields are exactly three scalars plus the metadata-derived defaults —
 plus the four record-derived behavior knobs that would otherwise be
 mis-tiered (below):
 
-- `BUZZ_ACP_TEAM_INSTRUCTIONS` — the only truly non-reconstructible policy
+- `NIMINO_ACP_TEAM_INSTRUCTIONS` — the only truly non-reconstructible policy
   value: `effective_team_instructions` (`spawn_hash.rs:41-52`) needs the
   desktop's `TeamRecord` store, which no pod can reach.
-- `BUZZ_ACP_SESSION_TITLE` — sent **resolved** (`resolve_session_title`,
+- `NIMINO_ACP_SESSION_TITLE` — sent **resolved** (`resolve_session_title`,
   `runtime/metadata.rs:45`), not as its `display_name`/`name` inputs. The
   resolution strips control characters, and that property transfers: an
   interior NUL fails a local spawn at the env boundary, and would make the
@@ -531,7 +531,7 @@ mis-tiered (below):
   resolved local env" not a pure function of the record; serializing it
   verbatim would bake a host accident into the pod. Launch data MUST be
   computed from record + config alone.
-- `BUZZ_ACP_LAZY_POOL=true` — a **deliberate pick, not a transcription**:
+- `NIMINO_ACP_LAZY_POOL=true` — a **deliberate pick, not a transcription**:
   the two local paths disagree (manual Start is eager, `runtime.rs:1001`;
   launch restore is lazy, `restore.rs:333`, precisely to avoid "N idle
   brains on every launch"). Remote pods take the lazy arm: an idle LLM pool
@@ -539,14 +539,14 @@ mis-tiered (below):
 - `MCP_HOOK_SERVERS=*` when the resolved runtime has `mcp_hooks`
   (`runtime.rs:594-598`; buzz-agent only at `28ae6cd21`) — gates the
   `_Stop`/`_PostCompact` hook tools.
-- `BUZZ_ACP_SYSTEM_PROMPT`, `BUZZ_ACP_IDLE_TIMEOUT`,
-  `BUZZ_ACP_MAX_TURN_DURATION`, `BUZZ_ACP_AGENTS` — resolved by the desktop
+- `NIMINO_ACP_SYSTEM_PROMPT`, `NIMINO_ACP_IDLE_TIMEOUT`,
+  `NIMINO_ACP_MAX_TURN_DURATION`, `NIMINO_ACP_AGENTS` — resolved by the desktop
   from the record's `system_prompt` / `idle_timeout_seconds` /
   `max_turn_duration_seconds` / `parallelism` (each omitted when null,
-  matching the local spawn's conditional emission). `BUZZ_ACP_AGENTS` is
+  matching the local spawn's conditional emission). `NIMINO_ACP_AGENTS` is
   the **effective** parallelism: `min(record.parallelism, harness_cap)`
   where the cap is harness-specific (e.g. OpenClaw is capped at 5). These
-  are **tier-1 control-plane** keys: `BUZZ_ACP_AGENTS` is in
+  are **tier-1 control-plane** keys: `NIMINO_ACP_AGENTS` is in
   `RESERVED_ENV_KEYS` (`env_vars.rs`) so the desktop-resolved effective
   value cannot be overridden by a definition env var; the others are
   tier-1 by local fact (written before the user env layer). A provider
@@ -555,11 +555,11 @@ mis-tiered (below):
   field silently defeating an override that works locally — which is why
   the provider MUST NOT remap them (§Entrypoint mapping table).
 
-`BUZZ_ACP_DEDUP` and `BUZZ_ACP_MULTIPLE_EVENT_HANDLING` are **deliberately
+`NIMINO_ACP_DEDUP` and `NIMINO_ACP_MULTIPLE_EVENT_HANDLING` are **deliberately
 unset**: the local spawn writes `queue`/`steer` (`runtime.rs:730-731`), and
 those are exactly the harness's clap defaults (`config.rs:344,356`) — a pod
 that omits both is behaviorally identical, and adding rows for them would
-imply a divergence that does not exist. `BUZZ_MANAGED_AGENT` is likewise
+imply a divergence that does not exist. `NIMINO_MANAGED_AGENT` is likewise
 deliberately absent remotely: it brands local harness processes so the
 desktop's orphan sweep and instance reaper can prove ownership by scanning
 process env (`orphan_sweep.rs`, `instance_reaper.rs`) — there is no local
@@ -573,7 +573,7 @@ process to sweep.
    system prompt, model, idle timeout, etc. Locally the user env is written
    after them (`runtime.rs:860` and its comment). A policy-wins order here
    would make remote agents ignore overrides local agents honor.
-   **Exception — `BUZZ_ACP_AGENTS`:** this key IS reserved
+   **Exception — `NIMINO_ACP_AGENTS`:** this key IS reserved
    (`env_vars.rs:RESERVED_ENV_KEYS`) so the desktop-controlled effective
    parallelism (applying any per-harness cap) cannot be bypassed by a
    user-supplied definition env var. The reserved-key strip removes any
@@ -585,8 +585,8 @@ process to sweep.
 3. **Authoritative** — unoverridable at every layer, written last and
    backed by the reserved-key strip: the identity variables from top-level
    payload fields (§Reserved-key rule), the respond-to gate values,
-   `BUZZ_ACP_AGENT_OWNER`, the inactivity bound, `BUZZ_ACP_MCP_COMMAND`,
-   and `BUZZ_MANAGED_AGENT_START_NONCE`. For the nonce, the provider MUST
+   `NIMINO_ACP_AGENT_OWNER`, the inactivity bound, `NIMINO_ACP_MCP_COMMAND`,
+   and `NIMINO_MANAGED_AGENT_START_NONCE`. For the nonce, the provider MUST
    set it to the attempt's **generation token** (§K8s Secrets): the harness
    stamps it into every observer lifecycle frame (`buzz-acp/lib.rs:1501`),
    so the Secret generation and the lifecycle correlator become one
@@ -598,8 +598,8 @@ desktop's filesystem; forwarding them into a container is a guaranteed
 failure. The provider/image re-derives:
 
 - the harness and agent binaries: `launch.command` is a *name*, resolved
-  against the image's own `PATH` (`BUZZ_ACP_AGENT_COMMAND`), and
-  `BUZZ_ACP_MCP_COMMAND=buzz-dev-mcp` likewise;
+  against the image's own `PATH` (`NIMINO_ACP_AGENT_COMMAND`), and
+  `NIMINO_ACP_MCP_COMMAND=buzz-dev-mcp` likewise;
 - `CLAUDE_CODE_EXECUTABLE` — a `resolve_command()` host path
   (`configure_runtime_cli`, `runtime.rs:424-446`), same class as the
   command paths: image-local resolution or unset;
@@ -607,16 +607,16 @@ failure. The provider/image re-derives:
 - git credential/signing helper locations — the relay-URL *scoping* of the
   credential config is normative (never a global helper), the helper *path*
   is image-local (§Image);
-- `BUZZ_ACP_SETUP_PAYLOAD` is desktop-computed readiness state and MUST NOT
+- `NIMINO_ACP_SETUP_PAYLOAD` is desktop-computed readiness state and MUST NOT
   appear in a remote pod.
 
 **Owner resolution (normative):** the provider MUST have either a non-null
-`auth_tag` (→ `BUZZ_AUTH_TAG`) or a non-null `launch.owner_pubkey`
-(→ `BUZZ_ACP_AGENT_OWNER`) before any mutation; if both are null it MUST
+`auth_tag` (→ `NIMINO_AUTH_TAG`) or a non-null `launch.owner_pubkey`
+(→ `NIMINO_ACP_AGENT_OWNER`) before any mutation; if both are null it MUST
 refuse the deploy. Without an owner the harness cannot match `!shutdown`
 (`buzz-acp/src/lib.rs: resolve_agent_owner`, main-loop owner check) and the
 agent answers its own stop command conversationally — §Stop would be
-describing a mechanism that does not work. `BUZZ_ACP_AGENT_OWNER` is a
+describing a mechanism that does not work. `NIMINO_ACP_AGENT_OWNER` is a
 reserved key, so this value can only arrive as authoritative launch data,
 never through user env.
 
@@ -927,7 +927,7 @@ can yield two live instances in one scope.
 I5's enforcement point. A new harness knob:
 
 ```
---exit-after-inactivity <secs>   /   BUZZ_ACP_EXIT_AFTER_INACTIVITY
+--exit-after-inactivity <secs>   /   NIMINO_ACP_EXIT_AFTER_INACTIVITY
 ```
 
 - **Default 0 = disabled.** The flag ships in the harness every *local*
@@ -950,17 +950,17 @@ I5's enforcement point. A new harness knob:
   which under `lazy_pool` starts false (`:1320`) and flips true only on a
   wake (`:2570`) — and wakes require pending work (`pool_lifecycle.rs:42`).
   A reaper riding that tick composes with the mandated
-  `BUZZ_ACP_LAZY_POOL=true` (§Launch data) into a deadlock in I5's single
+  `NIMINO_ACP_LAZY_POOL=true` (§Launch data) into a deadlock in I5's single
   most important case: a never-mentioned lazy pod never runs the tick, so
   the idle agent the reaper exists to kill is exactly the one it can never
   evaluate. The reaper therefore runs on its own timer, independent of pool
   state (an idle-pool check needs no pool). Check granularity makes the
   effective bound `t ∈ [T, T+interval)`, immaterial at T=7200.
-- **Reserved keys**: `BUZZ_ACP_EXIT_AFTER_INACTIVITY` MUST join
+- **Reserved keys**: `NIMINO_ACP_EXIT_AFTER_INACTIVITY` MUST join
   `RESERVED_ENV_KEYS` (`env_vars.rs`) when it lands — it is tier-3
   authoritative (§Launch data), and without reservation a user env var
   could disable the reaper and reopen unbounded lifetime through the front
-  door. `BUZZ_ACP_NO_PRESENCE` (`config.rs:378`) MUST join in the same
+  door. `NIMINO_ACP_NO_PRESENCE` (`config.rs:378`) MUST join in the same
   change, for the same shape of reason at I3 instead of I5: unreserved, it
   lets user env silently defeat the 180s presence bound (I3). One knob
   guards "knows when to leave", the other "you can see that it left";
@@ -1083,28 +1083,28 @@ individually:
 
 | source | env var |
 |---|---|
-| `relay_url` | `BUZZ_RELAY_URL` |
-| `private_key_nsec` | `BUZZ_PRIVATE_KEY` and `NOSTR_PRIVATE_KEY` (the git helpers read the latter) |
-| `auth_tag` | `BUZZ_AUTH_TAG` (omitted when null; then `launch.owner_pubkey` → `BUZZ_ACP_AGENT_OWNER` is REQUIRED — §Launch data owner rule) |
-| `launch.command` | `BUZZ_ACP_AGENT_COMMAND` — the *name*, resolved against the image's own PATH; never a forwarded host path |
-| `launch.args` | `BUZZ_ACP_AGENT_ARGS`, comma-joined |
+| `relay_url` | `NIMINO_RELAY_URL` |
+| `private_key_nsec` | `NIMINO_PRIVATE_KEY` and `NOSTR_PRIVATE_KEY` (the git helpers read the latter) |
+| `auth_tag` | `NIMINO_AUTH_TAG` (omitted when null; then `launch.owner_pubkey` → `NIMINO_ACP_AGENT_OWNER` is REQUIRED — §Launch data owner rule) |
+| `launch.command` | `NIMINO_ACP_AGENT_COMMAND` — the *name*, resolved against the image's own PATH; never a forwarded host path |
+| `launch.args` | `NIMINO_ACP_AGENT_ARGS`, comma-joined |
 | `launch.env`, `launch.policy_env` | verbatim, at their precedence tiers |
-| generation token (§K8s Secrets) | `BUZZ_MANAGED_AGENT_START_NONCE` — the lifecycle-frame correlator and the Secret generation are one identity (§Launch data tier 3) |
-| `system_prompt`, `idle_timeout_seconds`, `max_turn_duration_seconds`, `parallelism` | **not mapped by the provider** — the desktop resolves these into `launch.policy_env` (`BUZZ_ACP_SYSTEM_PROMPT`, `BUZZ_ACP_IDLE_TIMEOUT`, `BUZZ_ACP_MAX_TURN_DURATION`, `BUZZ_ACP_AGENTS`). `BUZZ_ACP_AGENTS` carries the **effective** parallelism (`min(record.parallelism, harness_cap)`), is reserved (`env_vars.rs:RESERVED_ENV_KEYS`), and cannot be overridden by user env. The remaining knobs are tier-1 by local fact (written before user env); a provider that mapped the top-level copies after `launch.env` would silently defeat local overrides. The top-level fields remain as display/bookkeeping inputs only |
+| generation token (§K8s Secrets) | `NIMINO_MANAGED_AGENT_START_NONCE` — the lifecycle-frame correlator and the Secret generation are one identity (§Launch data tier 3) |
+| `system_prompt`, `idle_timeout_seconds`, `max_turn_duration_seconds`, `parallelism` | **not mapped by the provider** — the desktop resolves these into `launch.policy_env` (`NIMINO_ACP_SYSTEM_PROMPT`, `NIMINO_ACP_IDLE_TIMEOUT`, `NIMINO_ACP_MAX_TURN_DURATION`, `NIMINO_ACP_AGENTS`). `NIMINO_ACP_AGENTS` carries the **effective** parallelism (`min(record.parallelism, harness_cap)`), is reserved (`env_vars.rs:RESERVED_ENV_KEYS`), and cannot be overridden by user env. The remaining knobs are tier-1 by local fact (written before user env); a provider that mapped the top-level copies after `launch.env` would silently defeat local overrides. The top-level fields remain as display/bookkeeping inputs only |
 | `turn_timeout_seconds` | not mapped — deprecated upstream and ignored; the local spawn also does not emit it |
-| `respond_to` | `BUZZ_ACP_RESPOND_TO` |
-| `respond_to_allowlist` | `BUZZ_ACP_RESPOND_TO_ALLOWLIST`, comma-joined |
-| — | `BUZZ_ACP_MCP_COMMAND=buzz-dev-mcp` (image-local; the dev-MCP requirement) |
-| `provider_config.inactivity_seconds` | `BUZZ_ACP_EXIT_AFTER_INACTIVITY` (schema default 7200; the I5 opt-in, §Auto-Stop — the config field and this env var are one knob, not two) |
+| `respond_to` | `NIMINO_ACP_RESPOND_TO` |
+| `respond_to_allowlist` | `NIMINO_ACP_RESPOND_TO_ALLOWLIST`, comma-joined |
+| — | `NIMINO_ACP_MCP_COMMAND=buzz-dev-mcp` (image-local; the dev-MCP requirement) |
+| `provider_config.inactivity_seconds` | `NIMINO_ACP_EXIT_AFTER_INACTIVITY` (schema default 7200; the I5 opt-in, §Auto-Stop — the config field and this env var are one knob, not two) |
 
 The top-level `model`/`provider` payload fields are display/bookkeeping
 inputs; the *environment* consequence of model and provider selection
-(per-runtime vars, `provider_locked` suppression, `BUZZ_ACP_MODEL`) arrives
+(per-runtime vars, `provider_locked` suppression, `NIMINO_ACP_MODEL`) arrives
 resolved inside `launch.env`/`launch.policy_env`. A provider MUST NOT map
 `provider` to any env var itself — that mapping is per-runtime and lives in
 the desktop's resolver (§Launch data).
 
-**Encoding honesty note.** `BUZZ_ACP_AGENT_ARGS` is comma-delimited by the
+**Encoding honesty note.** `NIMINO_ACP_AGENT_ARGS` is comma-delimited by the
 harness's CLI parser, and the desktop's *local* spawn performs the same
 comma-join — an argument containing a comma is unrepresentable in both
 paths. This is a harness interface limitation the binding inherits and
@@ -1384,7 +1384,7 @@ ephemeral-runner lesson: disposable generations still need durable
 diagnostics, forwarded off the pod by the cluster operator's stack. The
 binding's contribution is correlation, not transport: the pod carries the
 full-pubkey annotation, the generation token (doubling as
-`BUZZ_MANAGED_AGENT_START_NONCE`, so lifecycle frames and pod logs share a
+`NIMINO_MANAGED_AGENT_START_NONCE`, so lifecycle frames and pod logs share a
 correlator), the provider version, and the resolved image reference
 (§Image) — enough to attribute any shipped log line to an exact identity,
 generation, and binary, with no secret in any of it. GC on next-deploy
@@ -1427,9 +1427,9 @@ is conforming iff:
    pubkey — refusing to launch rather than launching identityless (I1's
    property, enforced wherever the env is assembled).
 2. It does not suppress the harness's promises on a remote agent:
-   presence stays enabled (`BUZZ_ACP_NO_PRESENCE` never set — remotely,
+   presence stays enabled (`NIMINO_ACP_NO_PRESENCE` never set — remotely,
    presence is the only signal, I3), and the inactivity knob
-   (`BUZZ_ACP_EXIT_AFTER_INACTIVITY`) carries the owner's *deliberate*
+   (`NIMINO_ACP_EXIT_AFTER_INACTIVITY`) carries the owner's *deliberate*
    lifetime policy, never an accidental passthrough of user env (I5; the
    reserved-key rule is the provider path's realization of this).
 3. The substrate's **termination signal reaches the harness process**,
@@ -1606,10 +1606,10 @@ Desktop- and harness-side, discovered during this design:
    `agent_args` serialize as blank/empty — a different command line than the
    identical local agent; (c) no `owner_pubkey` — a null-`auth_tag` agent
    cannot match `!shutdown` (it *answers* it), stranding §Stop; (d) spawn
-   policy (`BUZZ_ACP_RELAY_OBSERVER`, runtime `default_env` such as
+   policy (`NIMINO_ACP_RELAY_OBSERVER`, runtime `default_env` such as
    `GOOSE_MODE=auto`, team instructions, session title, lazy-pool selection)
    is absent — remote pods run different observer/approval semantics
-   (`BUZZ_ACP_DEDUP`/`BUZZ_ACP_MULTIPLE_EVENT_HANDLING` are *not* on this
+   (`NIMINO_ACP_DEDUP`/`NIMINO_ACP_MULTIPLE_EVENT_HANDLING` are *not* on this
    list: the local writes match the harness defaults, §Launch data); (e) a
    mesh-provider agent deploys pointed at a loopback URL that cannot exist
    in the pod instead of being refused. Until `deploy_payload_json` emits
@@ -1624,7 +1624,7 @@ Desktop- and harness-side, discovered during this design:
    Conformance: a provider that echoes a launch-only secret into an error
    must come back redacted.
 4. **The I5 reaper does not exist, and its natural home is a trap**
-   (harness code prerequisite). `BUZZ_ACP_EXIT_AFTER_INACTIVITY` appears
+   (harness code prerequisite). `NIMINO_ACP_EXIT_AFTER_INACTIVITY` appears
    nowhere in the harness at `28ae6cd21`; §Auto-Stop is a design, not a
    description. Worse, the obvious attachment point — the existing 30s
    maintenance tick — is gated on `pool_ready` (`lib.rs:1743`), which under

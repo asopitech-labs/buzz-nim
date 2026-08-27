@@ -108,14 +108,14 @@ impl Harness {
     async fn spawn_with_env(base_url: &str, extra: &[(&str, &str)]) -> Self {
         let bin = env!("CARGO_BIN_EXE_buzz-agent");
         let mut cmd = tokio::process::Command::new(bin);
-        cmd.env("BUZZ_AGENT_PROVIDER", "openai")
+        cmd.env("NIMINO_AGENT_PROVIDER", "openai")
             .env("OPENAI_COMPAT_API_KEY", "test")
             .env("OPENAI_COMPAT_MODEL", "fake-model")
             .env("OPENAI_COMPAT_BASE_URL", base_url)
-            .env("BUZZ_AGENT_LLM_TIMEOUT_SECS", "5")
-            .env("BUZZ_AGENT_TOOL_TIMEOUT_SECS", "5")
-            .env("BUZZ_AGENT_MAX_ROUNDS", "8")
-            .env("BUZZ_AGENT_MCP_INIT_TIMEOUT_SECS", "2");
+            .env("NIMINO_AGENT_LLM_TIMEOUT_SECS", "5")
+            .env("NIMINO_AGENT_TOOL_TIMEOUT_SECS", "5")
+            .env("NIMINO_AGENT_MAX_ROUNDS", "8")
+            .env("NIMINO_AGENT_MCP_INIT_TIMEOUT_SECS", "2");
         for (k, v) in extra {
             cmd.env(k, v);
         }
@@ -595,8 +595,8 @@ async fn history_budget_evicts_old_turns() {
     let mut h = Harness::spawn_with_env(
         &llm.url,
         &[
-            ("BUZZ_AGENT_MAX_HISTORY_BYTES", &BUDGET.to_string()),
-            ("BUZZ_AGENT_MAX_HANDOFFS", "0"), // exercise truncation, not handoff
+            ("NIMINO_AGENT_MAX_HISTORY_BYTES", &BUDGET.to_string()),
+            ("NIMINO_AGENT_MAX_HANDOFFS", "0"), // exercise truncation, not handoff
         ],
     )
     .await;
@@ -835,7 +835,7 @@ async fn hook_stop_blocks_premature_end() {
         &llm.url,
         &[
             ("MCP_HOOK_SERVERS", "fake"),
-            ("BUZZ_AGENT_STOP_MAX_REJECTIONS", "10"),
+            ("NIMINO_AGENT_STOP_MAX_REJECTIONS", "10"),
         ],
     )
     .await;
@@ -916,7 +916,7 @@ async fn hook_stop_budget_exhausted() {
         &llm.url,
         &[
             ("MCP_HOOK_SERVERS", "fake"),
-            ("BUZZ_AGENT_STOP_MAX_REJECTIONS", "1"),
+            ("NIMINO_AGENT_STOP_MAX_REJECTIONS", "1"),
         ],
     )
     .await;
@@ -969,7 +969,7 @@ async fn hook_stop_consecutive_end_turn_uses_rejection_budget() {
         &llm.url,
         &[
             ("MCP_HOOK_SERVERS", "fake"),
-            ("BUZZ_AGENT_STOP_MAX_REJECTIONS", "2"),
+            ("NIMINO_AGENT_STOP_MAX_REJECTIONS", "2"),
         ],
     )
     .await;
@@ -1023,7 +1023,7 @@ async fn hook_stop_budget_resets_per_prompt() {
         &llm.url,
         &[
             ("MCP_HOOK_SERVERS", "fake"),
-            ("BUZZ_AGENT_STOP_MAX_REJECTIONS", "1"),
+            ("NIMINO_AGENT_STOP_MAX_REJECTIONS", "1"),
         ],
     )
     .await;
@@ -1163,9 +1163,9 @@ async fn hook_post_compact_injects_after_handoff() {
         &llm.url,
         &[
             ("MCP_HOOK_SERVERS", "fake"),
-            ("BUZZ_AGENT_MAX_HISTORY_BYTES", &(1024 * 1024).to_string()),
+            ("NIMINO_AGENT_MAX_HISTORY_BYTES", &(1024 * 1024).to_string()),
             // Allow at least one handoff.
-            ("BUZZ_AGENT_MAX_HANDOFFS", "3"),
+            ("NIMINO_AGENT_MAX_HANDOFFS", "3"),
         ],
     )
     .await;
@@ -1263,11 +1263,11 @@ async fn handoff_summary_prompt_includes_full_history_within_context_budget() {
     let mut h = Harness::spawn_with_env(
         &llm.url,
         &[
-            ("BUZZ_AGENT_MAX_CONTEXT_TOKENS", "10000"),
-            ("BUZZ_AGENT_MAX_OUTPUT_TOKENS", "1000"),
-            ("BUZZ_AGENT_MAX_HANDOFFS", "3"),
+            ("NIMINO_AGENT_MAX_CONTEXT_TOKENS", "10000"),
+            ("NIMINO_AGENT_MAX_OUTPUT_TOKENS", "1000"),
+            ("NIMINO_AGENT_MAX_HANDOFFS", "3"),
             (
-                "BUZZ_AGENT_MAX_HISTORY_BYTES",
+                "NIMINO_AGENT_MAX_HISTORY_BYTES",
                 &(16 * 1024 * 1024).to_string(),
             ),
         ],
@@ -1331,11 +1331,11 @@ async fn handoff_summary_prompt_keeps_latest_item_when_one_item_exceeds_budget()
     let mut h = Harness::spawn_with_env(
         &llm.url,
         &[
-            ("BUZZ_AGENT_MAX_CONTEXT_TOKENS", "10000"),
-            ("BUZZ_AGENT_MAX_OUTPUT_TOKENS", "1000"),
-            ("BUZZ_AGENT_MAX_HANDOFFS", "3"),
+            ("NIMINO_AGENT_MAX_CONTEXT_TOKENS", "10000"),
+            ("NIMINO_AGENT_MAX_OUTPUT_TOKENS", "1000"),
+            ("NIMINO_AGENT_MAX_HANDOFFS", "3"),
             (
-                "BUZZ_AGENT_MAX_HISTORY_BYTES",
+                "NIMINO_AGENT_MAX_HISTORY_BYTES",
                 &(16 * 1024 * 1024).to_string(),
             ),
         ],
@@ -1400,13 +1400,13 @@ async fn token_usage_over_budget_triggers_handoff() {
     let mut h = Harness::spawn_with_env(
         &llm.url,
         &[
-            ("BUZZ_AGENT_MAX_CONTEXT_TOKENS", "1000"),
-            ("BUZZ_AGENT_MAX_OUTPUT_TOKENS", "100"),
-            ("BUZZ_AGENT_MAX_HANDOFFS", "3"),
+            ("NIMINO_AGENT_MAX_CONTEXT_TOKENS", "1000"),
+            ("NIMINO_AGENT_MAX_OUTPUT_TOKENS", "100"),
+            ("NIMINO_AGENT_MAX_HANDOFFS", "3"),
             // Huge byte budget so the byte path can NOT be what fires — only
             // the token gate can explain a handoff on these tiny prompts.
             (
-                "BUZZ_AGENT_MAX_HISTORY_BYTES",
+                "NIMINO_AGENT_MAX_HISTORY_BYTES",
                 &(16 * 1024 * 1024).to_string(),
             ),
         ],
@@ -1490,13 +1490,13 @@ async fn stale_usage_plus_history_growth_triggers_handoff() {
     let mut h = Harness::spawn_with_env(
         &llm.url,
         &[
-            ("BUZZ_AGENT_MAX_CONTEXT_TOKENS", "10000"),
-            ("BUZZ_AGENT_MAX_OUTPUT_TOKENS", "1000"),
-            ("BUZZ_AGENT_MAX_HANDOFFS", "3"),
+            ("NIMINO_AGENT_MAX_CONTEXT_TOKENS", "10000"),
+            ("NIMINO_AGENT_MAX_OUTPUT_TOKENS", "1000"),
+            ("NIMINO_AGENT_MAX_HANDOFFS", "3"),
             // Huge byte budget so the None-path byte fallback can't be what
             // fires — only the token-mode growth estimate can explain it.
             (
-                "BUZZ_AGENT_MAX_HISTORY_BYTES",
+                "NIMINO_AGENT_MAX_HISTORY_BYTES",
                 &(16 * 1024 * 1024).to_string(),
             ),
         ],
@@ -1529,7 +1529,7 @@ async fn stale_usage_plus_history_growth_triggers_handoff() {
     h.shutdown().await;
 }
 
-/// `_Stop` hook that takes longer than `BUZZ_AGENT_HOOK_TIMEOUT_MS`
+/// `_Stop` hook that takes longer than `NIMINO_AGENT_HOOK_TIMEOUT_MS`
 /// must be treated as no-objection (fail-open). Agent stops normally.
 ///
 /// Note on server-kill-on-timeout: `call_hooks` calls `kill_server` on a
@@ -1550,7 +1550,7 @@ async fn hook_stop_timeout_failopen() {
         &[
             ("MCP_HOOK_SERVERS", "fake"),
             // Hook delay (3s) >> hook timeout (200ms) → fail-open.
-            ("BUZZ_AGENT_HOOK_TIMEOUT_MS", "200"),
+            ("NIMINO_AGENT_HOOK_TIMEOUT_MS", "200"),
         ],
     )
     .await;
@@ -1853,7 +1853,7 @@ async fn cancel_sends_notifications_cancelled_to_any_mcp_server() {
 }
 
 // ---------------------------------------------------------------------------
-// Reply guard (`BUZZ_AGENT_REQUIRE_REPLY`)
+// Reply guard (`NIMINO_AGENT_REQUIRE_REPLY`)
 //
 // The guard reminds the model to publish when a turn is about to end without
 // any recognized attempt to post to Buzz. It rides the existing `_Stop` gate
@@ -1887,7 +1887,7 @@ fn openai_shell_send(id: &str) -> Value {
     openai_tool_call(
         id,
         "fake__shell",
-        json!({ "command": "buzz messages send --channel c --content hi" }),
+        json!({ "command": "nimino messages send --channel c --content hi" }),
     )
 }
 
@@ -1940,12 +1940,12 @@ async fn reply_guard_off_by_default() {
     h.shutdown().await;
 }
 
-/// `BUZZ_AGENT_REQUIRE_REPLY=0` is off too — the toggle is numeric, so a
+/// `NIMINO_AGENT_REQUIRE_REPLY=0` is off too — the toggle is numeric, so a
 /// literal `0` must not read as "set, therefore on".
 #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
 async fn reply_guard_explicit_zero_is_off() {
     let llm = spawn_capturing_llm(vec![openai_text("done"), openai_text("unexpected")]).await;
-    let mut h = Harness::spawn_with_env(&llm.url, &[("BUZZ_AGENT_REQUIRE_REPLY", "0")]).await;
+    let mut h = Harness::spawn_with_env(&llm.url, &[("NIMINO_AGENT_REQUIRE_REPLY", "0")]).await;
     let sid = init_session(&mut h, json!([])).await;
 
     let r = prompt_to_completion(&mut h, &sid).await;
@@ -1974,7 +1974,7 @@ async fn reply_guard_nags_twice_then_lets_the_turn_end() {
         openai_text("must-not-be-requested"),
     ])
     .await;
-    let mut h = Harness::spawn_with_env(&llm.url, &[("BUZZ_AGENT_REQUIRE_REPLY", "1")]).await;
+    let mut h = Harness::spawn_with_env(&llm.url, &[("NIMINO_AGENT_REQUIRE_REPLY", "1")]).await;
     let sid = init_session(&mut h, json!([])).await;
 
     let r = prompt_to_completion(&mut h, &sid).await;
@@ -2005,7 +2005,7 @@ async fn reply_guard_nags_twice_then_lets_the_turn_end() {
         .expect("reminder body");
     let text = nag["text"].as_str().unwrap_or("");
     assert!(
-        text.contains("buzz messages send"),
+        text.contains("nimino messages send"),
         "reminder should name the command: {text}"
     );
     assert!(
@@ -2025,7 +2025,7 @@ async fn reply_guard_satisfied_by_registered_shell_send() {
         openai_text("must-not-be-requested"),
     ])
     .await;
-    let mut h = Harness::spawn_with_env(&llm.url, &[("BUZZ_AGENT_REQUIRE_REPLY", "1")]).await;
+    let mut h = Harness::spawn_with_env(&llm.url, &[("NIMINO_AGENT_REQUIRE_REPLY", "1")]).await;
     let sid = init_session_with_fake_mcp(
         &mut h,
         &[("FAKE_MCP_TOOL_COUNT", "1"), ("FAKE_MCP_SHELL_TOOL", "1")],
@@ -2061,8 +2061,8 @@ async fn reply_guard_ignores_unregistered_shell_tool() {
     let mut h = Harness::spawn_with_env(
         &llm.url,
         &[
-            ("BUZZ_AGENT_REQUIRE_REPLY", "1"),
-            ("BUZZ_AGENT_STOP_MAX_REJECTIONS", "1"),
+            ("NIMINO_AGENT_REQUIRE_REPLY", "1"),
+            ("NIMINO_AGENT_STOP_MAX_REJECTIONS", "1"),
         ],
     )
     .await;
@@ -2111,7 +2111,7 @@ async fn reply_guard_ignores_calls_lost_to_the_turn_cap() {
         "type": "function",
         "function": {
             "name": "fake__shell",
-            "arguments": json!({ "command": "buzz messages send --channel c --content hi" })
+            "arguments": json!({ "command": "nimino messages send --channel c --content hi" })
                 .to_string(),
         },
     }));
@@ -2132,8 +2132,8 @@ async fn reply_guard_ignores_calls_lost_to_the_turn_cap() {
     let mut h = Harness::spawn_with_env(
         &llm.url,
         &[
-            ("BUZZ_AGENT_REQUIRE_REPLY", "1"),
-            ("BUZZ_AGENT_STOP_MAX_REJECTIONS", "1"),
+            ("NIMINO_AGENT_REQUIRE_REPLY", "1"),
+            ("NIMINO_AGENT_STOP_MAX_REJECTIONS", "1"),
         ],
     )
     .await;
@@ -2170,8 +2170,8 @@ async fn reply_guard_bounded_by_stop_rejection_budget() {
     let mut h = Harness::spawn_with_env(
         &llm.url,
         &[
-            ("BUZZ_AGENT_REQUIRE_REPLY", "1"),
-            ("BUZZ_AGENT_STOP_MAX_REJECTIONS", "1"),
+            ("NIMINO_AGENT_REQUIRE_REPLY", "1"),
+            ("NIMINO_AGENT_STOP_MAX_REJECTIONS", "1"),
         ],
     )
     .await;
@@ -2198,8 +2198,8 @@ async fn reply_guard_off_when_stop_budget_is_zero() {
     let mut h = Harness::spawn_with_env(
         &llm.url,
         &[
-            ("BUZZ_AGENT_REQUIRE_REPLY", "1"),
-            ("BUZZ_AGENT_STOP_MAX_REJECTIONS", "0"),
+            ("NIMINO_AGENT_REQUIRE_REPLY", "1"),
+            ("NIMINO_AGENT_STOP_MAX_REJECTIONS", "0"),
         ],
     )
     .await;
@@ -2236,9 +2236,9 @@ async fn reply_guard_combines_with_stop_hook_objection() {
     let mut h = Harness::spawn_with_env(
         &llm.url,
         &[
-            ("BUZZ_AGENT_REQUIRE_REPLY", "1"),
+            ("NIMINO_AGENT_REQUIRE_REPLY", "1"),
             ("MCP_HOOK_SERVERS", "fake"),
-            ("BUZZ_AGENT_STOP_MAX_REJECTIONS", "10"),
+            ("NIMINO_AGENT_STOP_MAX_REJECTIONS", "10"),
         ],
     )
     .await;
@@ -2295,10 +2295,10 @@ async fn reply_guard_combines_with_stop_hook_objection() {
 #[test]
 fn reply_guard_rejects_unparseable_toggle() {
     let out = std::process::Command::new(env!("CARGO_BIN_EXE_buzz-agent"))
-        .env("BUZZ_AGENT_PROVIDER", "openai")
+        .env("NIMINO_AGENT_PROVIDER", "openai")
         .env("OPENAI_COMPAT_API_KEY", "test")
         .env("OPENAI_COMPAT_MODEL", "fake-model")
-        .env("BUZZ_AGENT_REQUIRE_REPLY", "true")
+        .env("NIMINO_AGENT_REQUIRE_REPLY", "true")
         .stdin(Stdio::null())
         .output()
         .expect("run buzz-agent");
@@ -2309,7 +2309,7 @@ fn reply_guard_rejects_unparseable_toggle() {
     );
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(
-        stderr.contains("BUZZ_AGENT_REQUIRE_REPLY"),
+        stderr.contains("NIMINO_AGENT_REQUIRE_REPLY"),
         "expected the offending key in the error, got: {stderr}"
     );
 }
@@ -2317,10 +2317,10 @@ fn reply_guard_rejects_unparseable_toggle() {
 #[test]
 fn max_token_recoveries_rejects_unparseable_value() {
     let out = std::process::Command::new(env!("CARGO_BIN_EXE_buzz-agent"))
-        .env("BUZZ_AGENT_PROVIDER", "openai")
+        .env("NIMINO_AGENT_PROVIDER", "openai")
         .env("OPENAI_COMPAT_API_KEY", "test")
         .env("OPENAI_COMPAT_MODEL", "fake-model")
-        .env("BUZZ_AGENT_MAX_TOKEN_RECOVERIES", "unbounded")
+        .env("NIMINO_AGENT_MAX_TOKEN_RECOVERIES", "unbounded")
         .stdin(Stdio::null())
         .output()
         .expect("run buzz-agent");
@@ -2330,7 +2330,7 @@ fn max_token_recoveries_rejects_unparseable_value() {
     );
     let stderr = String::from_utf8_lossy(&out.stderr);
     assert!(
-        stderr.contains("BUZZ_AGENT_MAX_TOKEN_RECOVERIES"),
+        stderr.contains("NIMINO_AGENT_MAX_TOKEN_RECOVERIES"),
         "expected offending key in config error: {stderr}"
     );
 }
@@ -2415,15 +2415,15 @@ async fn context_window_400_recovers_instead_of_sticking() {
             // Large window + large byte budget: neither proactive gate can be
             // what produces the handoff, so a handoff here is attributable to
             // the reactive path alone.
-            ("BUZZ_AGENT_MAX_CONTEXT_TOKENS", "200000"),
-            ("BUZZ_AGENT_MAX_OUTPUT_TOKENS", "8192"),
+            ("NIMINO_AGENT_MAX_CONTEXT_TOKENS", "200000"),
+            ("NIMINO_AGENT_MAX_OUTPUT_TOKENS", "8192"),
             (
-                "BUZZ_AGENT_MAX_HISTORY_BYTES",
+                "NIMINO_AGENT_MAX_HISTORY_BYTES",
                 &(16 * 1024 * 1024).to_string(),
             ),
             // Cap of 0: proves the forced path bypasses `max_handoffs`. Any
             // gated handoff is impossible under this setting.
-            ("BUZZ_AGENT_MAX_HANDOFFS", "0"),
+            ("NIMINO_AGENT_MAX_HANDOFFS", "0"),
         ],
     )
     .await;
@@ -2539,7 +2539,7 @@ async fn max_tokens_recovery_respects_finite_round_cap() {
         openai_text("must not be requested"),
     ])
     .await;
-    let mut h = Harness::spawn_with_env(&llm.url, &[("BUZZ_AGENT_MAX_ROUNDS", "1")]).await;
+    let mut h = Harness::spawn_with_env(&llm.url, &[("NIMINO_AGENT_MAX_ROUNDS", "1")]).await;
     let sid = init_session(&mut h, json!([])).await;
     let prompt_id = h
         .send(
@@ -2568,8 +2568,8 @@ async fn repeated_max_tokens_is_bounded() {
     let mut h = Harness::spawn_with_env(
         &llm.url,
         &[
-            ("BUZZ_AGENT_MAX_ROUNDS", "0"),
-            ("BUZZ_AGENT_MAX_TOKEN_RECOVERIES", "2"),
+            ("NIMINO_AGENT_MAX_ROUNDS", "0"),
+            ("NIMINO_AGENT_MAX_TOKEN_RECOVERIES", "2"),
         ],
     )
     .await;
@@ -2629,7 +2629,7 @@ async fn zero_max_token_recoveries_disables_retry() {
     ])
     .await;
     let mut h =
-        Harness::spawn_with_env(&llm.url, &[("BUZZ_AGENT_MAX_TOKEN_RECOVERIES", "0")]).await;
+        Harness::spawn_with_env(&llm.url, &[("NIMINO_AGENT_MAX_TOKEN_RECOVERIES", "0")]).await;
     let sid = init_session(&mut h, json!([])).await;
     let prompt_id = h
         .send(
@@ -2682,7 +2682,7 @@ async fn max_tokens_recovery_can_proceed_to_tool_call() {
 /// `max_rounds` is finite. `round` is incremented BEFORE the completion that
 /// gets rejected, so a naive `continue` after recovery re-enters the loop with
 /// the rejected attempt already charged against the cap: with
-/// `BUZZ_AGENT_MAX_ROUNDS=1` the turn would return `max_turn_requests` after
+/// `NIMINO_AGENT_MAX_ROUNDS=1` the turn would return `max_turn_requests` after
 /// destructively resetting history, having never sent the retry. That silently
 /// converts "recovered" into "history destroyed, question unanswered" — worse
 /// than the error it replaced, because the user gets a stop reason rather than a
@@ -2708,15 +2708,15 @@ async fn recovery_retry_is_sent_under_a_finite_round_cap() {
     let mut h = Harness::spawn_with_env(
         &llm.url,
         &[
-            ("BUZZ_AGENT_MAX_CONTEXT_TOKENS", "200000"),
-            ("BUZZ_AGENT_MAX_OUTPUT_TOKENS", "8192"),
+            ("NIMINO_AGENT_MAX_CONTEXT_TOKENS", "200000"),
+            ("NIMINO_AGENT_MAX_OUTPUT_TOKENS", "8192"),
             (
-                "BUZZ_AGENT_MAX_HISTORY_BYTES",
+                "NIMINO_AGENT_MAX_HISTORY_BYTES",
                 &(16 * 1024 * 1024).to_string(),
             ),
-            ("BUZZ_AGENT_MAX_HANDOFFS", "0"),
+            ("NIMINO_AGENT_MAX_HANDOFFS", "0"),
             // The whole point: a finite cap, at its tightest.
-            ("BUZZ_AGENT_MAX_ROUNDS", "1"),
+            ("NIMINO_AGENT_MAX_ROUNDS", "1"),
         ],
     )
     .await;
@@ -2778,8 +2778,8 @@ async fn finite_round_cap_still_binds_without_a_context_overflow() {
     let mut h = Harness::spawn_with_env(
         &llm.url,
         &[
-            ("BUZZ_AGENT_MAX_CONTEXT_TOKENS", "200000"),
-            ("BUZZ_AGENT_MAX_ROUNDS", "1"),
+            ("NIMINO_AGENT_MAX_CONTEXT_TOKENS", "200000"),
+            ("NIMINO_AGENT_MAX_ROUNDS", "1"),
         ],
     )
     .await;
@@ -2828,12 +2828,12 @@ async fn forced_handoff_retains_live_prompt_exactly_once() {
     let mut h = Harness::spawn_with_env(
         &llm.url,
         &[
-            ("BUZZ_AGENT_MAX_CONTEXT_TOKENS", "200000"),
+            ("NIMINO_AGENT_MAX_CONTEXT_TOKENS", "200000"),
             (
-                "BUZZ_AGENT_MAX_HISTORY_BYTES",
+                "NIMINO_AGENT_MAX_HISTORY_BYTES",
                 &(16 * 1024 * 1024).to_string(),
             ),
-            ("BUZZ_AGENT_MAX_HANDOFFS", "0"),
+            ("NIMINO_AGENT_MAX_HANDOFFS", "0"),
         ],
     )
     .await;
@@ -2893,8 +2893,8 @@ async fn ordinary_400_stays_terminal_and_triggers_no_recovery() {
     let mut h = Harness::spawn_with_env(
         &llm.url,
         &[
-            ("BUZZ_AGENT_MAX_CONTEXT_TOKENS", "200000"),
-            ("BUZZ_AGENT_MAX_HANDOFFS", "3"),
+            ("NIMINO_AGENT_MAX_CONTEXT_TOKENS", "200000"),
+            ("NIMINO_AGENT_MAX_HANDOFFS", "3"),
         ],
     )
     .await;
@@ -2947,12 +2947,12 @@ async fn context_recovery_budget_exhaustion_surfaces_the_error() {
     let mut h = Harness::spawn_with_env(
         &llm.url,
         &[
-            ("BUZZ_AGENT_MAX_CONTEXT_TOKENS", "200000"),
+            ("NIMINO_AGENT_MAX_CONTEXT_TOKENS", "200000"),
             (
-                "BUZZ_AGENT_MAX_HISTORY_BYTES",
+                "NIMINO_AGENT_MAX_HISTORY_BYTES",
                 &(16 * 1024 * 1024).to_string(),
             ),
-            ("BUZZ_AGENT_MAX_HANDOFFS", "0"),
+            ("NIMINO_AGENT_MAX_HANDOFFS", "0"),
         ],
     )
     .await;
@@ -3021,12 +3021,12 @@ async fn small_history_context_400_refuses_rescue_at_the_prompt_floor() {
     let mut h = Harness::spawn_with_env(
         &llm.url,
         &[
-            ("BUZZ_AGENT_MAX_CONTEXT_TOKENS", "200000"),
+            ("NIMINO_AGENT_MAX_CONTEXT_TOKENS", "200000"),
             (
-                "BUZZ_AGENT_MAX_HISTORY_BYTES",
+                "NIMINO_AGENT_MAX_HISTORY_BYTES",
                 &(16 * 1024 * 1024).to_string(),
             ),
-            ("BUZZ_AGENT_MAX_HANDOFFS", "0"),
+            ("NIMINO_AGENT_MAX_HANDOFFS", "0"),
         ],
     )
     .await;
@@ -3089,12 +3089,12 @@ async fn recovery_shrinks_the_summarize_prompt_below_the_rejected_size() {
     let mut h = Harness::spawn_with_env(
         &llm.url,
         &[
-            ("BUZZ_AGENT_MAX_CONTEXT_TOKENS", "200000"),
+            ("NIMINO_AGENT_MAX_CONTEXT_TOKENS", "200000"),
             (
-                "BUZZ_AGENT_MAX_HISTORY_BYTES",
+                "NIMINO_AGENT_MAX_HISTORY_BYTES",
                 &(16 * 1024 * 1024).to_string(),
             ),
-            ("BUZZ_AGENT_MAX_HANDOFFS", "0"),
+            ("NIMINO_AGENT_MAX_HANDOFFS", "0"),
         ],
     )
     .await;
@@ -3173,12 +3173,12 @@ async fn recovery_shrinks_further_on_each_rung() {
     let mut h = Harness::spawn_with_env(
         &llm.url,
         &[
-            ("BUZZ_AGENT_MAX_CONTEXT_TOKENS", "200000"),
+            ("NIMINO_AGENT_MAX_CONTEXT_TOKENS", "200000"),
             (
-                "BUZZ_AGENT_MAX_HISTORY_BYTES",
+                "NIMINO_AGENT_MAX_HISTORY_BYTES",
                 &(16 * 1024 * 1024).to_string(),
             ),
-            ("BUZZ_AGENT_MAX_HANDOFFS", "0"),
+            ("NIMINO_AGENT_MAX_HANDOFFS", "0"),
         ],
     )
     .await;
@@ -3299,15 +3299,15 @@ async fn reactive_reset_clears_usage_baseline_so_the_gate_is_not_blind() {
     let mut h = Harness::spawn_with_env(
         &llm.url,
         &[
-            ("BUZZ_AGENT_MAX_CONTEXT_TOKENS", "200000"),
-            ("BUZZ_AGENT_MAX_OUTPUT_TOKENS", "8192"),
+            ("NIMINO_AGENT_MAX_CONTEXT_TOKENS", "200000"),
+            ("NIMINO_AGENT_MAX_OUTPUT_TOKENS", "8192"),
             (
-                "BUZZ_AGENT_MAX_HISTORY_BYTES",
+                "NIMINO_AGENT_MAX_HISTORY_BYTES",
                 &(16 * 1024 * 1024).to_string(),
             ),
             // Must permit a GATED handoff — turn 3 observes the proactive gate,
             // which a cap of 0 would forbid.
-            ("BUZZ_AGENT_MAX_HANDOFFS", "5"),
+            ("NIMINO_AGENT_MAX_HANDOFFS", "5"),
         ],
     )
     .await;
@@ -3420,13 +3420,13 @@ async fn handoff_cap_resets_per_turn_not_per_session() {
     let mut h = Harness::spawn_with_env(
         &llm.url,
         &[
-            ("BUZZ_AGENT_MAX_CONTEXT_TOKENS", "1000"),
-            ("BUZZ_AGENT_MAX_OUTPUT_TOKENS", "100"),
+            ("NIMINO_AGENT_MAX_CONTEXT_TOKENS", "1000"),
+            ("NIMINO_AGENT_MAX_OUTPUT_TOKENS", "100"),
             // Cap of 1 per turn. Before the fix this permanently disables the
             // gate once session handoff_count reaches 1.
-            ("BUZZ_AGENT_MAX_HANDOFFS", "1"),
+            ("NIMINO_AGENT_MAX_HANDOFFS", "1"),
             (
-                "BUZZ_AGENT_MAX_HISTORY_BYTES",
+                "NIMINO_AGENT_MAX_HISTORY_BYTES",
                 &(16 * 1024 * 1024).to_string(),
             ),
         ],
@@ -3542,11 +3542,11 @@ async fn handoff_cap_binds_within_a_single_turn() {
     let mut h = Harness::spawn_with_env(
         &llm.url,
         &[
-            ("BUZZ_AGENT_MAX_CONTEXT_TOKENS", "1000"),
-            ("BUZZ_AGENT_MAX_OUTPUT_TOKENS", "100"),
-            ("BUZZ_AGENT_MAX_HANDOFFS", "1"),
+            ("NIMINO_AGENT_MAX_CONTEXT_TOKENS", "1000"),
+            ("NIMINO_AGENT_MAX_OUTPUT_TOKENS", "100"),
+            ("NIMINO_AGENT_MAX_HANDOFFS", "1"),
             (
-                "BUZZ_AGENT_MAX_HISTORY_BYTES",
+                "NIMINO_AGENT_MAX_HISTORY_BYTES",
                 &(16 * 1024 * 1024).to_string(),
             ),
         ],
@@ -3739,11 +3739,11 @@ async fn failed_summarize_burns_handoff_attempt_budget() {
     let mut h = Harness::spawn_with_env(
         &llm.url,
         &[
-            ("BUZZ_AGENT_MAX_CONTEXT_TOKENS", "1000"),
-            ("BUZZ_AGENT_MAX_OUTPUT_TOKENS", "100"),
-            ("BUZZ_AGENT_MAX_HANDOFFS", "1"),
+            ("NIMINO_AGENT_MAX_CONTEXT_TOKENS", "1000"),
+            ("NIMINO_AGENT_MAX_OUTPUT_TOKENS", "100"),
+            ("NIMINO_AGENT_MAX_HANDOFFS", "1"),
             (
-                "BUZZ_AGENT_MAX_HISTORY_BYTES",
+                "NIMINO_AGENT_MAX_HISTORY_BYTES",
                 &(16 * 1024 * 1024).to_string(),
             ),
         ],

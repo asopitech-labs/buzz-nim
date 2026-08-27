@@ -20,11 +20,11 @@ use tracing::{error, info};
 /// The pre-receive hook script content.
 ///
 /// Environment variables set by the relay before spawning git receive-pack:
-/// - `BUZZ_HOOK_URL` — internal policy endpoint (http://127.0.0.1:{port}/internal/git/policy)
-/// - `BUZZ_HOOK_SECRET` — per-push HMAC secret
-/// - `BUZZ_REPO_ID` — repo identifier (d-tag)
-/// - `BUZZ_COMMUNITY_ID` — server-resolved community UUID for the git HTTP request
-/// - `BUZZ_PUSHER_PUBKEY` — authenticated pusher's hex pubkey
+/// - `NIMINO_HOOK_URL` — internal policy endpoint (http://127.0.0.1:{port}/internal/git/policy)
+/// - `NIMINO_HOOK_SECRET` — per-push HMAC secret
+/// - `NIMINO_REPO_ID` — repo identifier (d-tag)
+/// - `NIMINO_COMMUNITY_ID` — server-resolved community UUID for the git HTTP request
+/// - `NIMINO_PUSHER_PUBKEY` — authenticated pusher's hex pubkey
 ///
 /// Git sets automatically (quarantine):
 /// - `GIT_OBJECT_DIRECTORY` — quarantine object store
@@ -41,12 +41,12 @@ export LC_ALL=C
 ZERO="0000000000000000000000000000000000000000"
 
 # Fail-closed: required env vars must be set by the relay.
-: "${BUZZ_REPO_ID:?error: BUZZ_REPO_ID not set}"
-: "${BUZZ_REPO_OWNER:?error: BUZZ_REPO_OWNER not set}"
-: "${BUZZ_COMMUNITY_ID:?error: BUZZ_COMMUNITY_ID not set}"
-: "${BUZZ_PUSHER_PUBKEY:?error: BUZZ_PUSHER_PUBKEY not set}"
-: "${BUZZ_HOOK_URL:?error: BUZZ_HOOK_URL not set}"
-: "${BUZZ_HOOK_SECRET:?error: BUZZ_HOOK_SECRET not set}"
+: "${NIMINO_REPO_ID:?error: NIMINO_REPO_ID not set}"
+: "${NIMINO_REPO_OWNER:?error: NIMINO_REPO_OWNER not set}"
+: "${NIMINO_COMMUNITY_ID:?error: NIMINO_COMMUNITY_ID not set}"
+: "${NIMINO_PUSHER_PUBKEY:?error: NIMINO_PUSHER_PUBKEY not set}"
+: "${NIMINO_HOOK_URL:?error: NIMINO_HOOK_URL not set}"
+: "${NIMINO_HOOK_SECRET:?error: NIMINO_HOOK_SECRET not set}"
 
 WORK_DIR=$(mktemp -d) || { echo "error: cannot create temp dir" >&2; exit 1; }
 REFS_FILE="$WORK_DIR/refs"
@@ -99,8 +99,8 @@ TIMESTAMP=$(date +%s)
 
 # Structurally unambiguous HMAC format (matches Rust's compute_hmac):
 # len(repo_id):repo_id | repo_owner | pusher | (old_oid + new_oid + len(ref):ref + is_anc)* | timestamp
-REPO_ID_LEN=${#BUZZ_REPO_ID}
-HMAC_INPUT="${REPO_ID_LEN}:${BUZZ_REPO_ID}|${BUZZ_REPO_OWNER}|${BUZZ_COMMUNITY_ID}|${BUZZ_PUSHER_PUBKEY}|"
+REPO_ID_LEN=${#NIMINO_REPO_ID}
+HMAC_INPUT="${REPO_ID_LEN}:${NIMINO_REPO_ID}|${NIMINO_REPO_OWNER}|${NIMINO_COMMUNITY_ID}|${NIMINO_PUSHER_PUBKEY}|"
 # Sort by ref_name (field 1) — matches Rust's sort_by(|a, b| a.ref_name.cmp(&b.ref_name))
 if [ -f "$HMAC_FILE" ]; then
     sort "$HMAC_FILE" | while IFS=' ' read ref_name old_oid new_oid is_anc; do
@@ -112,7 +112,7 @@ if [ -f "$HMAC_FILE" ]; then
 fi
 HMAC_INPUT="${HMAC_INPUT}|${TIMESTAMP}"
 
-SIGNATURE=$(printf '%s' "$HMAC_INPUT" | openssl dgst -sha256 -hmac "$BUZZ_HOOK_SECRET" -hex 2>/dev/null | sed 's/.*= //')
+SIGNATURE=$(printf '%s' "$HMAC_INPUT" | openssl dgst -sha256 -hmac "$NIMINO_HOOK_SECRET" -hex 2>/dev/null | sed 's/.*= //')
 if [ -z "$SIGNATURE" ]; then
     echo "error: failed to compute HMAC signature" >&2
     exit 1
@@ -121,8 +121,8 @@ fi
 # Phase 3: POST to policy endpoint — FAIL-CLOSED.
 # repo_id is free-form (user-chosen d-tag) — must be escaped for JSON safety.
 # repo_owner, community_id, and pusher_pubkey are validated fixed-shape strings — no escaping needed.
-SAFE_REPO_ID=$(printf '%s' "$BUZZ_REPO_ID" | sed 's/\\/\\\\/g; s/"/\\"/g')
-BODY="{\"repo_id\":\"${SAFE_REPO_ID}\",\"repo_owner\":\"${BUZZ_REPO_OWNER}\",\"community_id\":\"${BUZZ_COMMUNITY_ID}\",\"pusher_pubkey\":\"${BUZZ_PUSHER_PUBKEY}\",\"ref_updates\":[${REFS}],\"timestamp\":${TIMESTAMP},\"signature\":\"${SIGNATURE}\"}"
+SAFE_REPO_ID=$(printf '%s' "$NIMINO_REPO_ID" | sed 's/\\/\\\\/g; s/"/\\"/g')
+BODY="{\"repo_id\":\"${SAFE_REPO_ID}\",\"repo_owner\":\"${NIMINO_REPO_OWNER}\",\"community_id\":\"${NIMINO_COMMUNITY_ID}\",\"pusher_pubkey\":\"${NIMINO_PUSHER_PUBKEY}\",\"ref_updates\":[${REFS}],\"timestamp\":${TIMESTAMP},\"signature\":\"${SIGNATURE}\"}"
 
 HTTP_CODE=$(curl --silent --max-time 10 \
     -o "$RESP_FILE" \
@@ -130,7 +130,7 @@ HTTP_CODE=$(curl --silent --max-time 10 \
     -X POST \
     -H "Content-Type: application/json" \
     -d "$BODY" \
-    "$BUZZ_HOOK_URL" 2>/dev/null) || {
+    "$NIMINO_HOOK_URL" 2>/dev/null) || {
     echo "error: push authorization failed (network error reaching policy service)" >&2
     exit 1
 }

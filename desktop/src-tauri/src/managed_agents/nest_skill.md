@@ -11,11 +11,11 @@ version: 1
 
 ## Environment
 
-`BUZZ_PRIVATE_KEY` is set by the harness at runtime or by the developer's environment. If missing, tell the user to set it (hex or nsec format). Never read or echo the value.
+`NIMINO_PRIVATE_KEY` is set by the harness at runtime or by the developer's environment. If missing, tell the user to set it (hex or nsec format). Never read or echo the value.
 
-`BUZZ_RELAY_URL` defaults to `http://localhost:3000`. In development, the user may need to set this to a staging or production relay URL.
+`NIMINO_RELAY_URL` defaults to `http://localhost:3000`. In development, the user may need to set this to a staging or production relay URL.
 
-`BUZZ_AUTH_TAG` is required for `buzz agents draft-create` and `buzz agents draft-update` because those commands send owner-reviewed Desktop drafts. If missing, explain that this managed agent cannot open owner-reviewed agent drafts from chat.
+`NIMINO_AUTH_TAG` is required for `nimino agents draft-create` and `nimino agents draft-update` because those commands send owner-reviewed Desktop drafts. If missing, explain that this managed agent cannot open owner-reviewed agent drafts from chat.
 
 Run the bundled CLI with `--help` and `<command> <subcommand> --help` to discover all flags, arguments, and usage. This skill documents only what `--help` cannot tell you.
 
@@ -24,7 +24,7 @@ Run the bundled CLI with `--help` and `<command> <subcommand> --help` to discove
 When someone naturally asks to create an agent, ask for at most two things: the agent's **name** and **what it should do day-to-day**. Turn the user's rough purpose into the system prompt yourself; do not separately ask for purpose, tone, constraints, access, runtime, provider, or model unless the request is genuinely ambiguous. Then run:
 
 ```bash
-buzz agents draft-create \
+nimino agents draft-create \
   --channel <current-channel-uuid> \
   --display-name "Research helper" \
   --system-prompt "Find reliable sources and summarize them concisely."
@@ -35,11 +35,11 @@ Use the UUID from the current Buzz `[Context]`; do not ask the user for it. Do n
 For an explicit change to an existing personal agent, use:
 
 ```bash
-buzz agents draft-update --channel <uuid> --agent-name "Current name" \
+nimino agents draft-update --channel <uuid> --agent-name "Current name" \
   --system-prompt "Updated instructions"
 ```
 
-Run `buzz agents draft-update --help` for optional runtime, provider, model, rename, and access changes. Prefer these CLI commands over any legacy MCP agent-management tools.
+Run `nimino agents draft-update --help` for optional runtime, provider, model, rename, and access changes. Prefer these CLI commands over any legacy MCP agent-management tools.
 
 ## Git Repositories
 
@@ -77,10 +77,10 @@ Output varies by command group — `--help` shows flags but not response shapes.
 `--format compact` is a global flag — position it before the subcommand:
 
 ```bash
-buzz --format compact channels list          # [{channel_id, name}]
-buzz --format compact messages get --channel <UUID>  # [{id, content, created_at}]
-buzz --format compact users get              # [{pubkey, display_name}]
-buzz --format compact feed get               # [{id, content, created_at}]
+nimino --format compact channels list          # [{channel_id, name}]
+nimino --format compact messages get --channel <UUID>  # [{id, content, created_at}]
+nimino --format compact users get              # [{pubkey, display_name}]
+nimino --format compact feed get               # [{id, content, created_at}]
 ```
 
 Write commands are unaffected. `--format json` (default) returns full fields.
@@ -90,7 +90,7 @@ Write commands are unaffected. `--format json` (default) returns full fields.
 **Mentions that notify:** Keep readable `@Name` text in message content and, when intended pubkeys are known, pass the identities in the same send with repeatable `--mention <hex-or-npub>`. Any explicit identity (`--mention` or `nostr:npub...`) permits unresolved or ambiguous `@Name` text as presentation-only; uniquely resolved member names still add recipients. Include a pubkey for every presentation-only name that should notify. The CLI reports the signed event's `mention_pubkeys`; no follow-up verification command is needed. Without explicit identities, names resolve against current channel members. An unresolved/ambiguous name or non-member target stops before publishing. Add membership separately only when authorized, then retry; sending never changes membership automatically.
 
 ```bash
-buzz messages send --channel <UUID> \
+nimino messages send --channel <UUID> \
   --content "@Alice check this" --mention <alice-pubkey>
 ```
 
@@ -127,7 +127,7 @@ buzz messages send --channel <UUID> \
 4. **`dms open` returns `dm_id`** — use this value as `--channel` for subsequent `messages send/get` commands on that DM.
 5. **Content max 65,536 bytes** (exit 1 if exceeded). Diffs auto-truncate at 61,440 bytes at a hunk boundary.
 6. **`users get` always returns an array** — even for a single pubkey lookup. Never expect a bare object.
-7. **All `mem` subcommands accept `--owner <hex-pubkey>`** — for querying or writing memories owned by a different pubkey in multi-agent scenarios. Defaults to the owner from `BUZZ_AUTH_TAG`.
+7. **All `mem` subcommands accept `--owner <hex-pubkey>`** — for querying or writing memories owned by a different pubkey in multi-agent scenarios. Defaults to the owner from `NIMINO_AUTH_TAG`.
 8. **`mem rm` cannot delete `core`** — use `mem set core ''` instead.
 
 ## Forum Posts
@@ -154,9 +154,9 @@ Message content is rendered as GitHub-flavored Markdown on both desktop and mobi
 For safe concurrent writes, use hash-based conflict detection:
 
 ```bash
-HASH=$(buzz mem hash <slug>)                                    # 1. get current SHA-256
+HASH=$(nimino mem hash <slug>)                                    # 1. get current SHA-256
 # ... build unified diff ...
-buzz mem patch <slug> --base-hash "$HASH" --patch-file diff.patch  # 2. apply with check
+nimino mem patch <slug> --base-hash "$HASH" --patch-file diff.patch  # 2. apply with check
 ```
 
 Exit code 5 if the value changed since the hash was read (another agent wrote first). Retry by re-reading, re-diffing, and re-patching.
@@ -167,9 +167,9 @@ Flags: `--dry-run` to preview without writing, `--no-base-hash` to skip conflict
 
 The relay has no push or webhook support. Poll with a `--since` cursor:
 
-1. `buzz messages get --channel <UUID> --limit 50` — note the maximum `created_at` from results
+1. `nimino messages get --channel <UUID> --limit 50` — note the maximum `created_at` from results
 2. Sleep 10-30 seconds
-3. `buzz messages get --channel <UUID> --since <max_created_at> --limit 50`
+3. `nimino messages get --channel <UUID> --since <max_created_at> --limit 50`
 4. Repeat, advancing `--since` each iteration
 
 Minimum interval: 5 seconds (relay rate limiting). Use 10s for low-latency, 30s for background monitoring. `feed get` always returns newest-first regardless of `--since`.

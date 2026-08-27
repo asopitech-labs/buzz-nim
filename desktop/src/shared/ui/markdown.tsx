@@ -1347,10 +1347,7 @@ export function createMarkdownComponents(
       // Malformed message deep links fall through to external handling.
     }
 
-    // `buzz://pr|issue|repo|project?…` entity links navigate in-app;
-    // malformed ones fall through to the default anchor. The provider-backed
-    // component keeps metadata tooltips available for both raw chips and
-    // authored Markdown labels.
+    // Nimino entity links navigate in-app; malformed links use default anchors.
     if (href) {
       const entityAnchor = React.createElement(
         EntityLinkAnchor,
@@ -1365,7 +1362,9 @@ export function createMarkdownComponents(
       );
       if (
         parseEntityLink(href).ok ||
-        parseSupportedLinkPreview(href, relayOrigin)?.href.startsWith("buzz://")
+        parseSupportedLinkPreview(href, relayOrigin)?.href.startsWith(
+          "nimino://",
+        )
       )
         return entityAnchor;
     }

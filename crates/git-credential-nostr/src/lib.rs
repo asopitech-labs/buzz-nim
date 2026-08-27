@@ -76,7 +76,7 @@ fn load_key() -> Result<String, String> {
 /// The tag must be part of the signed NIP-98 event: Git's credential protocol
 /// can return an Authorization value, but it cannot add a separate HTTP header.
 fn load_auth_tag() -> Result<Option<Tag>, String> {
-    let raw = std::env::var("BUZZ_AUTH_TAG")
+    let raw = std::env::var("NIMINO_AUTH_TAG")
         .ok()
         .filter(|value| !value.is_empty())
         .or_else(|| git_config("nostr.authtag"));

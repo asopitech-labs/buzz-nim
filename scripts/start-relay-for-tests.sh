@@ -91,17 +91,17 @@ wait_healthy "MinIO" "buzz-minio"
 log "Applying database schema..."
 export PGHOST=localhost
 export PGPORT=5432
-export PGUSER=buzz
-export PGPASSWORD=buzz_dev
-export PGDATABASE=buzz
+export PGUSER=nimino
+export PGPASSWORD=nimino_dev
+export PGDATABASE=nimino
 
 # Use the already-running docker postgres for desired-state planning instead of
 # downloading an embedded Postgres from Maven Central (transient-fetch flake source).
 export PGSCHEMA_PLAN_HOST=localhost
 export PGSCHEMA_PLAN_PORT=5432
-export PGSCHEMA_PLAN_DB=buzz
-export PGSCHEMA_PLAN_USER=buzz
-export PGSCHEMA_PLAN_PASSWORD=buzz_dev
+export PGSCHEMA_PLAN_DB=nimino
+export PGSCHEMA_PLAN_USER=nimino
+export PGSCHEMA_PLAN_PASSWORD=nimino_dev
 
 ./bin/pgschema apply --file schema/schema.sql --auto-approve
 docker exec -i -e PGPASSWORD="${PGPASSWORD}" buzz-postgres \
@@ -135,7 +135,7 @@ ok "Community seeded"
 # ── Build relay ──────────────────────────────────────────────────────────────
 
 if [[ "${SKIP_BUILD}" == "true" ]]; then
-  for bin in buzz-relay git-credential-nostr; do
+  for bin in nimino-relay git-credential-nostr; do
     if [[ ! -x "./target/${CARGO_PROFILE}/${bin}" ]]; then
       err "--no-build: ./target/${CARGO_PROFILE}/${bin} missing or not executable"
       exit 1
@@ -156,34 +156,34 @@ log "Starting relay..."
 # membership-gated relay (e.g. the mesh lifecycle smoke). All three must be
 # set together — the relay fails fast otherwise.
 MEMBERSHIP_ENV=()
-if [[ "${BUZZ_REQUIRE_RELAY_MEMBERSHIP:-}" == "true" ]]; then
+if [[ "${NIMINO_REQUIRE_RELAY_MEMBERSHIP:-}" == "true" ]]; then
   MEMBERSHIP_ENV+=(
-    BUZZ_REQUIRE_RELAY_MEMBERSHIP=true
-    RELAY_OWNER_PUBKEY="${RELAY_OWNER_PUBKEY:?RELAY_OWNER_PUBKEY required with BUZZ_REQUIRE_RELAY_MEMBERSHIP=true}"
-    BUZZ_RELAY_PRIVATE_KEY="${BUZZ_RELAY_PRIVATE_KEY:?BUZZ_RELAY_PRIVATE_KEY required with BUZZ_REQUIRE_RELAY_MEMBERSHIP=true}"
+    NIMINO_REQUIRE_RELAY_MEMBERSHIP=true
+    RELAY_OWNER_PUBKEY="${RELAY_OWNER_PUBKEY:?RELAY_OWNER_PUBKEY required with NIMINO_REQUIRE_RELAY_MEMBERSHIP=true}"
+    NIMINO_RELAY_PRIVATE_KEY="${NIMINO_RELAY_PRIVATE_KEY:?NIMINO_RELAY_PRIVATE_KEY required with NIMINO_REQUIRE_RELAY_MEMBERSHIP=true}"
   )
   log "Membership gating enabled (NIP-43)"
 fi
 
 nohup env \
-  DATABASE_URL=postgres://buzz:buzz_dev@localhost:5432/buzz \
+  DATABASE_URL=postgres://nimino:nimino_dev@localhost:5432/nimino \
   REDIS_URL=redis://localhost:6379 \
   RELAY_URL=ws://localhost:3000 \
-  BUZZ_BIND_ADDR=0.0.0.0:3000 \
-  BUZZ_REQUIRE_AUTH_TOKEN=false \
-  BUZZ_RECONCILE_CHANNELS=true \
-  BUZZ_GIT_PROBE_WRITERS=8 \
+  NIMINO_BIND_ADDR=0.0.0.0:3000 \
+  NIMINO_REQUIRE_AUTH_TOKEN=false \
+  NIMINO_RECONCILE_CHANNELS=true \
+  NIMINO_GIT_PROBE_WRITERS=8 \
   ${MEMBERSHIP_ENV[@]+"${MEMBERSHIP_ENV[@]}"} \
-  "./target/${CARGO_PROFILE}/buzz-relay" > /tmp/buzz-relay.log 2>&1 &
-echo $! > /tmp/buzz-relay.pid
+  "./target/${CARGO_PROFILE}/nimino-relay" > /tmp/nimino-relay.log 2>&1 &
+echo $! > /tmp/nimino-relay.pid
 
 # ── Poll readiness ───────────────────────────────────────────────────────────
 
 log "Waiting for relay readiness..."
 for attempt in $(seq 1 60); do
-  if ! kill -0 "$(cat /tmp/buzz-relay.pid)" 2>/dev/null; then
+  if ! kill -0 "$(cat /tmp/nimino-relay.pid)" 2>/dev/null; then
     err "Relay process died"
-    cat /tmp/buzz-relay.log
+    cat /tmp/nimino-relay.log
     exit 1
   fi
   status_code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/_readiness || true)
@@ -196,5 +196,5 @@ for attempt in $(seq 1 60); do
 done
 
 err "Relay did not become ready within 60s"
-cat /tmp/buzz-relay.log
+cat /tmp/nimino-relay.log
 exit 1

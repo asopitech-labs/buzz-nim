@@ -14,24 +14,24 @@ use std::collections::BTreeMap;
 /// before writing its own values, so a key the authoritative tier has no value
 /// for is **removed** rather than left holding a lower-tier value. Plain
 /// overwrite is not enough — most of these are written conditionally
-/// (`BUZZ_ACP_AGENT_ARGS` only when `launch.args` is non-empty,
-/// `BUZZ_ACP_RESPOND_TO` only when set), and without the clear, a lower tier
+/// (`NIMINO_ACP_AGENT_ARGS` only when `launch.args` is non-empty,
+/// `NIMINO_ACP_RESPOND_TO` only when set), and without the clear, a lower tier
 /// could supply the value for exactly the cases the authoritative tier stays
 /// silent on. Clearing is also what the local spawn does: the desktop strips
 /// reserved keys from user env before the authoritative layer is written
 /// (`env_vars.rs:54-57`), so absent-means-absent in both paths.
 const AUTHORITATIVE_KEYS: &[&str] = &[
-    "BUZZ_RELAY_URL",
-    "BUZZ_PRIVATE_KEY",
+    "NIMINO_RELAY_URL",
+    "NIMINO_PRIVATE_KEY",
     "NOSTR_PRIVATE_KEY",
-    "BUZZ_AUTH_TAG",
-    "BUZZ_ACP_AGENT_OWNER",
-    "BUZZ_ACP_AGENT_COMMAND",
-    "BUZZ_ACP_AGENT_ARGS",
-    "BUZZ_ACP_RESPOND_TO",
-    "BUZZ_ACP_RESPOND_TO_ALLOWLIST",
-    "BUZZ_ACP_MCP_COMMAND",
-    "BUZZ_ACP_EXIT_AFTER_INACTIVITY",
+    "NIMINO_AUTH_TAG",
+    "NIMINO_ACP_AGENT_OWNER",
+    "NIMINO_ACP_AGENT_COMMAND",
+    "NIMINO_ACP_AGENT_ARGS",
+    "NIMINO_ACP_RESPOND_TO",
+    "NIMINO_ACP_RESPOND_TO_ALLOWLIST",
+    "NIMINO_ACP_MCP_COMMAND",
+    "NIMINO_ACP_EXIT_AFTER_INACTIVITY",
     START_NONCE_KEY,
 ];
 
@@ -39,12 +39,12 @@ const AUTHORITATIVE_KEYS: &[&str] = &[
 /// suffix — one generation, one identity — so the reconciler restamps this on
 /// every create attempt rather than letting the caller's value persist across
 /// a retry.
-pub const START_NONCE_KEY: &str = "BUZZ_MANAGED_AGENT_START_NONCE";
+pub const START_NONCE_KEY: &str = "NIMINO_MANAGED_AGENT_START_NONCE";
 
 /// Presence is the only remote liveness signal (I3), so a launch that
 /// suppresses it is non-conforming (L1 item 2) — and unlike a reserved-key
 /// collision, there is no "authoritative value" to overwrite it with. Refuse.
-const FORBIDDEN_KEY: &str = "BUZZ_ACP_NO_PRESENCE";
+const FORBIDDEN_KEY: &str = "NIMINO_ACP_NO_PRESENCE";
 
 /// Kubernetes' own cap on the summed value bytes of a Secret
 /// (`MaxSecretSize`, `pkg/apis/core/types.go`). Enforced here so an oversized
@@ -111,7 +111,7 @@ const RESPOND_TO_MODES: [&str; 4] = ["owner-only", RESPOND_TO_ALLOWLIST, "anyone
 /// in allowlist mode, and merely warned about otherwise. Validating it in
 /// every mode would refuse a deploy whose identical local spawn succeeds —
 /// and a stale list is already harmless here, since
-/// `BUZZ_ACP_RESPOND_TO_ALLOWLIST` is an authoritative key that tier 3 clears.
+/// `NIMINO_ACP_RESPOND_TO_ALLOWLIST` is an authoritative key that tier 3 clears.
 fn validate_respond_to_gate(respond_to: &str, allowlist: Option<&[String]>) -> Result<(), String> {
     // Exact, untrimmed: `clap` does not trim, so `" allowlist "` is `rc=2` at
     // the harness — a parse failure even earlier than the config errors below.
@@ -225,8 +225,8 @@ pub fn build_env(
                     no relay to connect to"
             .to_string());
     };
-    env.insert("BUZZ_RELAY_URL".into(), relay_url.to_string());
-    env.insert("BUZZ_PRIVATE_KEY".into(), agent.private_key_nsec.clone());
+    env.insert("NIMINO_RELAY_URL".into(), relay_url.to_string());
+    env.insert("NIMINO_PRIVATE_KEY".into(), agent.private_key_nsec.clone());
     // The git credential/signing helpers read NOSTR_PRIVATE_KEY.
     env.insert("NOSTR_PRIVATE_KEY".into(), agent.private_key_nsec.clone());
 
@@ -243,10 +243,10 @@ pub fn build_env(
         }
         (tag, own) => {
             if let Some(t) = tag {
-                env.insert("BUZZ_AUTH_TAG".into(), t.to_string());
+                env.insert("NIMINO_AUTH_TAG".into(), t.to_string());
             }
             if let Some(o) = own {
-                env.insert("BUZZ_ACP_AGENT_OWNER".into(), o.to_string());
+                env.insert("NIMINO_ACP_AGENT_OWNER".into(), o.to_string());
             }
         }
     }
@@ -255,31 +255,31 @@ pub fn build_env(
     // A host path forwarded from the desktop is guaranteed absent in the
     // container (§Launch data, host-resolved values).
     if let Some(command) = launch.command.as_deref().filter(|c| !c.is_empty()) {
-        env.insert("BUZZ_ACP_AGENT_COMMAND".into(), command.to_string());
+        env.insert("NIMINO_ACP_AGENT_COMMAND".into(), command.to_string());
     }
     if !launch.args.is_empty() {
         // Comma-joined because that is what the harness's CLI parser decodes,
         // and what the desktop's local spawn does. An argument containing a
         // comma is unrepresentable in both paths; inventing an escaping
         // scheme here would produce args the harness cannot decode.
-        env.insert("BUZZ_ACP_AGENT_ARGS".into(), launch.args.join(","));
+        env.insert("NIMINO_ACP_AGENT_ARGS".into(), launch.args.join(","));
     }
-    env.insert("BUZZ_ACP_MCP_COMMAND".into(), "buzz-dev-mcp".into());
+    env.insert("NIMINO_ACP_MCP_COMMAND".into(), "buzz-dev-mcp".into());
 
     if let Some(respond_to) = agent.respond_to.as_deref().filter(|s| !s.is_empty()) {
         validate_respond_to_gate(respond_to, agent.respond_to_allowlist.as_deref())?;
-        env.insert("BUZZ_ACP_RESPOND_TO".into(), respond_to.to_string());
+        env.insert("NIMINO_ACP_RESPOND_TO".into(), respond_to.to_string());
     }
     if let Some(list) = agent
         .respond_to_allowlist
         .as_ref()
         .filter(|l| !l.is_empty())
     {
-        env.insert("BUZZ_ACP_RESPOND_TO_ALLOWLIST".into(), list.join(","));
+        env.insert("NIMINO_ACP_RESPOND_TO_ALLOWLIST".into(), list.join(","));
     }
 
     if let Some(secs) = auth.inactivity_seconds {
-        env.insert("BUZZ_ACP_EXIT_AFTER_INACTIVITY".into(), secs.to_string());
+        env.insert("NIMINO_ACP_EXIT_AFTER_INACTIVITY".into(), secs.to_string());
     }
     // The generation token doubles as the lifecycle-frame correlator, so pod
     // logs and observer frames share one identity (§K8s Secrets).
@@ -329,10 +329,10 @@ mod tests {
     #[test]
     fn identity_comes_from_top_level_fields() {
         let env = build(&payload_json(serde_json::json!({}))).unwrap();
-        assert_eq!(env["BUZZ_RELAY_URL"], "wss://relay.example");
-        assert_eq!(env["BUZZ_PRIVATE_KEY"], "nsec1example");
+        assert_eq!(env["NIMINO_RELAY_URL"], "wss://relay.example");
+        assert_eq!(env["NIMINO_PRIVATE_KEY"], "nsec1example");
         assert_eq!(env["NOSTR_PRIVATE_KEY"], "nsec1example");
-        assert_eq!(env["BUZZ_AUTH_TAG"], "tag-1");
+        assert_eq!(env["NIMINO_AUTH_TAG"], "tag-1");
     }
 
     /// Wren's amendment, and the spec's later-wins rule: a lower tier that
@@ -345,31 +345,31 @@ mod tests {
             "launch": {
                 "command": "goose",
                 "policy_env": {
-                    "BUZZ_PRIVATE_KEY": "nsec1attacker",
-                    "BUZZ_MANAGED_AGENT_START_NONCE": "forged",
+                    "NIMINO_PRIVATE_KEY": "nsec1attacker",
+                    "NIMINO_MANAGED_AGENT_START_NONCE": "forged",
                 },
                 "env": {
-                    "BUZZ_RELAY_URL": "wss://attacker.example",
+                    "NIMINO_RELAY_URL": "wss://attacker.example",
                     "NOSTR_PRIVATE_KEY": "nsec1attacker",
-                    "BUZZ_AUTH_TAG": "forged-tag",
-                    "BUZZ_ACP_AGENT_OWNER": "cafe",
-                    "BUZZ_ACP_AGENT_COMMAND": "/bin/sh",
-                    "BUZZ_ACP_MCP_COMMAND": "/bin/sh",
-                    "BUZZ_ACP_EXIT_AFTER_INACTIVITY": "0",
+                    "NIMINO_AUTH_TAG": "forged-tag",
+                    "NIMINO_ACP_AGENT_OWNER": "cafe",
+                    "NIMINO_ACP_AGENT_COMMAND": "/bin/sh",
+                    "NIMINO_ACP_MCP_COMMAND": "/bin/sh",
+                    "NIMINO_ACP_EXIT_AFTER_INACTIVITY": "0",
                 },
                 "owner_pubkey": "beef"
             }
         }));
         let env = build(&agent).unwrap();
-        assert_eq!(env["BUZZ_PRIVATE_KEY"], "nsec1example");
+        assert_eq!(env["NIMINO_PRIVATE_KEY"], "nsec1example");
         assert_eq!(env["NOSTR_PRIVATE_KEY"], "nsec1example");
-        assert_eq!(env["BUZZ_RELAY_URL"], "wss://relay.example");
-        assert_eq!(env["BUZZ_AUTH_TAG"], "tag-1");
-        assert_eq!(env["BUZZ_ACP_AGENT_OWNER"], "beef");
-        assert_eq!(env["BUZZ_ACP_AGENT_COMMAND"], "goose");
-        assert_eq!(env["BUZZ_ACP_MCP_COMMAND"], "buzz-dev-mcp");
-        assert_eq!(env["BUZZ_ACP_EXIT_AFTER_INACTIVITY"], "7200");
-        assert_eq!(env["BUZZ_MANAGED_AGENT_START_NONCE"], "gen0001");
+        assert_eq!(env["NIMINO_RELAY_URL"], "wss://relay.example");
+        assert_eq!(env["NIMINO_AUTH_TAG"], "tag-1");
+        assert_eq!(env["NIMINO_ACP_AGENT_OWNER"], "beef");
+        assert_eq!(env["NIMINO_ACP_AGENT_COMMAND"], "goose");
+        assert_eq!(env["NIMINO_ACP_MCP_COMMAND"], "buzz-dev-mcp");
+        assert_eq!(env["NIMINO_ACP_EXIT_AFTER_INACTIVITY"], "7200");
+        assert_eq!(env["NIMINO_MANAGED_AGENT_START_NONCE"], "gen0001");
     }
 
     /// Tier 1 is *overridable* — user env beats policy defaults, matching the
@@ -379,21 +379,21 @@ mod tests {
     fn user_env_overrides_policy_defaults() {
         let agent = payload_json(serde_json::json!({
             "launch": {
-                "policy_env": {"GOOSE_MODE": "auto", "BUZZ_ACP_MODEL": "sonnet"},
+                "policy_env": {"GOOSE_MODE": "auto", "NIMINO_ACP_MODEL": "sonnet"},
                 "env": {"GOOSE_MODE": "chat"},
                 "owner_pubkey": "beef"
             }
         }));
         let env = build(&agent).unwrap();
         assert_eq!(env["GOOSE_MODE"], "chat");
-        assert_eq!(env["BUZZ_ACP_MODEL"], "sonnet");
+        assert_eq!(env["NIMINO_ACP_MODEL"], "sonnet");
     }
 
     /// F2 provider seam: the desktop strips both model keys from a Claude
     /// launch.env and rides the canonical model on policy_env alone. This test
     /// pins the final `build_env` output for that shape: the canonical
     /// ANTHROPIC_MODEL survives (tier 1, no tier-2 key to overwrite it) and
-    /// BUZZ_ACP_MODEL is absent — so the remote process has exactly one model
+    /// NIMINO_ACP_MODEL is absent — so the remote process has exactly one model
     /// authority. Same-value and conflicting-value collisions are both moot
     /// because the desktop already removed the launch.env keys.
     #[test]
@@ -413,7 +413,7 @@ mod tests {
             "canonical model must survive as the single authority"
         );
         assert!(
-            !env.contains_key("BUZZ_ACP_MODEL"),
+            !env.contains_key("NIMINO_ACP_MODEL"),
             "no second model authority may reach the remote process"
         );
         assert_eq!(env["KEEP_ME"], "yes");
@@ -423,7 +423,7 @@ mod tests {
     /// model keys (older desktop, tampering), tier 2 later-wins over tier 1 —
     /// which is exactly why the desktop must strip them. This documents the
     /// hazard the desktop fix prevents: a launch.env ANTHROPIC_MODEL overrides
-    /// the canonical, and a launch.env BUZZ_ACP_MODEL introduces a second
+    /// the canonical, and a launch.env NIMINO_ACP_MODEL introduces a second
     /// authority. Neither key is authoritative in k8s, so the provider cannot
     /// defend against it — the desktop strip is the only guard.
     #[test]
@@ -432,7 +432,7 @@ mod tests {
             "launch": {
                 "command": "claude",
                 "policy_env": {"ANTHROPIC_MODEL": "claude-opus-4"},
-                "env": {"ANTHROPIC_MODEL": "user-haiku", "BUZZ_ACP_MODEL": "user-sonnet"},
+                "env": {"ANTHROPIC_MODEL": "user-haiku", "NIMINO_ACP_MODEL": "user-sonnet"},
                 "owner_pubkey": "beef"
             }
         }));
@@ -442,8 +442,8 @@ mod tests {
             "launch.env later-wins — proving the desktop must strip it"
         );
         assert_eq!(
-            env["BUZZ_ACP_MODEL"], "user-sonnet",
-            "a leftover BUZZ_ACP_MODEL would be a second authority — desktop strips it"
+            env["NIMINO_ACP_MODEL"], "user-sonnet",
+            "a leftover NIMINO_ACP_MODEL would be a second authority — desktop strips it"
         );
     }
 
@@ -531,9 +531,9 @@ mod tests {
             "launch": {"owner_pubkey": "  beefcafe  "}
         }));
         let env = build(&agent).unwrap();
-        assert_eq!(env["BUZZ_RELAY_URL"], "wss://relay.example");
-        assert_eq!(env["BUZZ_AUTH_TAG"], "tag-1");
-        assert_eq!(env["BUZZ_ACP_AGENT_OWNER"], "beefcafe");
+        assert_eq!(env["NIMINO_RELAY_URL"], "wss://relay.example");
+        assert_eq!(env["NIMINO_AUTH_TAG"], "tag-1");
+        assert_eq!(env["NIMINO_ACP_AGENT_OWNER"], "beefcafe");
     }
 
     /// L1 item 1's third identity component. The nsec arm is enforced in
@@ -556,17 +556,17 @@ mod tests {
             "launch": {"owner_pubkey": "beefcafe"}
         }));
         let env = build(&agent).unwrap();
-        assert_eq!(env["BUZZ_ACP_AGENT_OWNER"], "beefcafe");
-        assert!(!env.contains_key("BUZZ_AUTH_TAG"));
+        assert_eq!(env["NIMINO_ACP_AGENT_OWNER"], "beefcafe");
+        assert!(!env.contains_key("NIMINO_AUTH_TAG"));
     }
 
     #[test]
     fn refuses_presence_suppression() {
         let agent = payload_json(serde_json::json!({
-            "launch": {"env": {"BUZZ_ACP_NO_PRESENCE": "1"}, "owner_pubkey": "beef"}
+            "launch": {"env": {"NIMINO_ACP_NO_PRESENCE": "1"}, "owner_pubkey": "beef"}
         }));
         let err = build(&agent).unwrap_err();
-        assert!(err.contains("BUZZ_ACP_NO_PRESENCE"), "got: {err}");
+        assert!(err.contains("NIMINO_ACP_NO_PRESENCE"), "got: {err}");
     }
 
     /// `foo.bar` is a legal Secret key but not a legal env name: pre-1.30
@@ -588,12 +588,12 @@ mod tests {
             "launch": {"command": "goose", "args": ["run", "--no-session"], "owner_pubkey": "b"}
         }));
         let env = build(&agent).unwrap();
-        assert_eq!(env["BUZZ_ACP_AGENT_ARGS"], "run,--no-session");
+        assert_eq!(env["NIMINO_ACP_AGENT_ARGS"], "run,--no-session");
 
         let agent = payload_json(serde_json::json!({
             "launch": {"command": "goose", "args": [], "owner_pubkey": "b"}
         }));
-        assert!(!build(&agent).unwrap().contains_key("BUZZ_ACP_AGENT_ARGS"));
+        assert!(!build(&agent).unwrap().contains_key("NIMINO_ACP_AGENT_ARGS"));
     }
 
     /// The top-level `model`/`provider` fields are display inputs; their
@@ -608,8 +608,8 @@ mod tests {
         }));
         let env = build(&agent).unwrap();
         for key in [
-            "BUZZ_AGENT_PROVIDER",
-            "BUZZ_AGENT_MODEL",
+            "NIMINO_AGENT_PROVIDER",
+            "NIMINO_AGENT_MODEL",
             "GOOSE_PROVIDER",
             "GOOSE_MODEL",
         ] {
@@ -639,14 +639,14 @@ mod tests {
             },
         )
         .unwrap();
-        assert!(!env.contains_key("BUZZ_ACP_EXIT_AFTER_INACTIVITY"));
+        assert!(!env.contains_key("NIMINO_ACP_EXIT_AFTER_INACTIVITY"));
     }
 
     /// Structural guard over the whole authoritative list at once: whatever
     /// the lower tiers contain, no authoritative key holds a lower-tier value
     /// — including the conditionally-written ones the authoritative tier has
     /// nothing to say about, which must be **absent** rather than spoofed.
-    /// This test caught exactly that: `BUZZ_ACP_AGENT_ARGS` is only written
+    /// This test caught exactly that: `NIMINO_ACP_AGENT_ARGS` is only written
     /// when `launch.args` is non-empty, so plain later-wins overwrite left the
     /// spoofed value in place.
     #[test]
@@ -677,9 +677,9 @@ mod tests {
         // The keys the authoritative tier had no value for are gone, not
         // merely different.
         for absent in [
-            "BUZZ_ACP_AGENT_ARGS",
-            "BUZZ_ACP_RESPOND_TO",
-            "BUZZ_ACP_RESPOND_TO_ALLOWLIST",
+            "NIMINO_ACP_AGENT_ARGS",
+            "NIMINO_ACP_RESPOND_TO",
+            "NIMINO_ACP_RESPOND_TO_ALLOWLIST",
         ] {
             assert!(!env.contains_key(absent), "{absent} survived the clear");
         }
@@ -736,9 +736,9 @@ mod tests {
             "respond_to_allowlist": [pubkey('a'), pubkey('b')],
         }));
         let env = build(&agent).unwrap();
-        assert_eq!(env["BUZZ_ACP_RESPOND_TO"], "allowlist");
+        assert_eq!(env["NIMINO_ACP_RESPOND_TO"], "allowlist");
         assert_eq!(
-            env["BUZZ_ACP_RESPOND_TO_ALLOWLIST"],
+            env["NIMINO_ACP_RESPOND_TO_ALLOWLIST"],
             format!("{},{}", pubkey('a'), pubkey('b'))
         );
     }
@@ -756,7 +756,7 @@ mod tests {
             }));
             let env = build(&agent)
                 .unwrap_or_else(|e| panic!("{mode} with a stale list must deploy: {e}"));
-            assert_eq!(env["BUZZ_ACP_RESPOND_TO"], mode);
+            assert_eq!(env["NIMINO_ACP_RESPOND_TO"], mode);
         }
     }
 
@@ -811,7 +811,7 @@ mod tests {
             }));
             let env = build(&agent)
                 .unwrap_or_else(|e| panic!("{mode} is valid at the harness but was refused: {e}"));
-            assert_eq!(env["BUZZ_ACP_RESPOND_TO"], mode);
+            assert_eq!(env["NIMINO_ACP_RESPOND_TO"], mode);
         }
     }
 }

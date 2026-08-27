@@ -25,7 +25,7 @@
 
 import { setLocalStorageItemWithRecovery } from "@/shared/lib/localStorageQuota";
 
-const JOIN_ALERT_STORAGE_PREFIX = "buzz-community-join-seen.v1";
+const JOIN_ALERT_STORAGE_PREFIX = "nimino-community-join-seen.v1";
 
 /**
  * Cap on *departed* pubkeys retained per community.
@@ -34,7 +34,7 @@ const JOIN_ALERT_STORAGE_PREFIX = "buzz-community-join-seen.v1";
  * again, the ledger no longer recognizes it, and it is alerted as a fresh join
  * — on every snapshot, forever. So the cap bounds only the tail of keys that
  * have left, and the ledger's real ceiling is the roster the relay can deliver
- * (a kind:13534 snapshot larger than `BUZZ_MAX_FRAME_BYTES` never arrives).
+ * (a kind:13534 snapshot larger than `NIMINO_MAX_FRAME_BYTES` never arrives).
  */
 export const JOIN_ALERT_DEPARTED_MAX_ITEMS = 5_000;
 

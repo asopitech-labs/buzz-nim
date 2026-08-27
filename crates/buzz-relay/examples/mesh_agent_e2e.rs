@@ -171,13 +171,13 @@ async fn run() -> anyhow::Result<()> {
     // nonexistent absolute paths outside that root.
     let marker_name = format!("mesh-e2e-{}.txt", std::process::id());
     let prompt = format!(
-        "Use your developer tools to create {marker_name} in the current working directory containing exactly the text BUZZ_OK (no quotes, no newline commentary). Then confirm."
+        "Use your developer tools to create {marker_name} in the current working directory containing exactly the text NIMINO_OK (no quotes, no newline commentary). Then confirm."
     );
     let mcp = vec![("dev".to_string(), repo_bin("buzz-dev-mcp")?)];
     let (r, marker) =
         agent_chat_with_marker(&base, "mesh", None, &prompt, &mcp, &marker_name).await;
     let file_ok = std::fs::read_to_string(&marker)
-        .map(|c| c.contains("BUZZ_OK"))
+        .map(|c| c.contains("NIMINO_OK"))
         .unwrap_or(false);
     match r {
         Ok(text) => record(
@@ -277,16 +277,16 @@ async fn agent_chat_in_isolated_home(
         .env("PATH", std::env::var("PATH").unwrap_or_default())
         .env("HOME", &home)
         // The transport subset of apply_relay_mesh_env(): provider, base URL,
-        // model, key, and chat API. Not BUZZ_AGENT_REQUIRE_REPLY, which needs
+        // model, key, and chat API. Not NIMINO_AGENT_REQUIRE_REPLY, which needs
         // Buzz's publish tools to mean anything.
-        .env("BUZZ_AGENT_PROVIDER", "openai")
-        .env("BUZZ_AGENT_MODEL", model)
+        .env("NIMINO_AGENT_PROVIDER", "openai")
+        .env("NIMINO_AGENT_MODEL", model)
         .env("OPENAI_COMPAT_BASE_URL", base)
         .env("OPENAI_COMPAT_MODEL", model)
         .env("OPENAI_COMPAT_API_KEY", "buzz-mesh-local")
         .env("OPENAI_COMPAT_API", "chat")
-        .env("BUZZ_AGENT_MAX_OUTPUT_TOKENS", "4096")
-        // No BUZZ_AGENT_THINKING_EFFORT: apply_relay_mesh_env() deliberately
+        .env("NIMINO_AGENT_MAX_OUTPUT_TOKENS", "4096")
+        // No NIMINO_AGENT_THINKING_EFFORT: apply_relay_mesh_env() deliberately
         // leaves it unset so each model's chat template picks its own default.
         // Pinning a value here would test a config the product does not ship.
         .stdin(Stdio::piped())
@@ -296,7 +296,7 @@ async fn agent_chat_in_isolated_home(
     // router's context-fit rejection. Normal and tool turns leave it unset,
     // matching the desktop provider path.
     if let Some(value) = max_output_tokens {
-        command.env("BUZZ_AGENT_MAX_OUTPUT_TOKENS", value);
+        command.env("NIMINO_AGENT_MAX_OUTPUT_TOKENS", value);
     }
     let mut child = match command.spawn() {
         Ok(child) => child,

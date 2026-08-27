@@ -23,7 +23,7 @@ pub mod error;
 pub mod handlers;
 /// Stateless HMAC-signed relay invite tokens (mint/verify).
 pub mod invite_token;
-/// Inter-relay mesh startup wiring (`BUZZ_MESH` seam).
+/// Inter-relay mesh startup wiring (`NIMINO_MESH` seam).
 pub mod mesh_boot;
 /// Prometheus metrics: recorder, upkeep, HTTP middleware.
 pub mod metrics;

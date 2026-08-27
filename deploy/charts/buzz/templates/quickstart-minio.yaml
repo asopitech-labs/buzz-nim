@@ -5,7 +5,7 @@ deploys leave minio.enabled=false and point s3.* at managed object storage.
 */ -}}
 {{- if .Values.minio.enabled -}}
 {{- if .Values.secrets.existingSecret -}}
-{{- fail "minio.enabled=true (quickstart) is incompatible with secrets.existingSecret. Quickstart autogenerates MinIO credentials in the chart-managed Secret; for external S3 set minio.enabled=false and provide BUZZ_S3_ACCESS_KEY/BUZZ_S3_SECRET_KEY." -}}
+{{- fail "minio.enabled=true (quickstart) is incompatible with secrets.existingSecret. Quickstart autogenerates MinIO credentials in the chart-managed Secret; for external S3 set minio.enabled=false and provide NIMINO_S3_ACCESS_KEY/NIMINO_S3_SECRET_KEY." -}}
 {{- end -}}
 apiVersion: apps/v1
 kind: Deployment
@@ -37,12 +37,12 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ include "buzz.chartSecretName" . }}
-                  key: BUZZ_S3_ACCESS_KEY
+                  key: NIMINO_S3_ACCESS_KEY
             - name: MINIO_ROOT_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ include "buzz.chartSecretName" . }}
-                  key: BUZZ_S3_SECRET_KEY
+                  key: NIMINO_S3_SECRET_KEY
           ports:
             - { name: api, containerPort: 9000 }
             - { name: console, containerPort: 9001 }

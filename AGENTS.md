@@ -209,9 +209,9 @@ check existing reply handlers for the pattern.
 ## Agent CLI (`buzz-cli`)
 
 `buzz` is the agent-first CLI. Auth env vars
-(`BUZZ_RELAY_URL`, `BUZZ_PRIVATE_KEY`, `BUZZ_AUTH_TAG`) are auto-injected
+(`NIMINO_RELAY_URL`, `NIMINO_PRIVATE_KEY`, `NIMINO_AUTH_TAG`) are auto-injected
 by the ACP harness into managed agent subprocesses. In development, set
-`BUZZ_PRIVATE_KEY` and `BUZZ_RELAY_URL` in your environment manually.
+`NIMINO_PRIVATE_KEY` and `NIMINO_RELAY_URL` in your environment manually.
 
 ### Building the CLI
 
@@ -224,11 +224,11 @@ or invoke with the full path.
 
 ### Deep Links
 
-`buzz://message?channel=<uuid>&id=<hex>` links reference a specific message
+`nimino://message?channel=<uuid>&id=<hex>` links reference a specific message
 thread. Pass the link directly to the CLI:
 
 ```bash
-buzz --format compact messages thread --link '<buzz://message?...>'
+nimino --format compact messages thread --link '<nimino://message?...>'
 ```
 
 The selected message ID is authoritative: `messages thread` verifies its
@@ -241,7 +241,7 @@ All reads return sig-stripped JSON arrays; all writes return
 0=ok, 1=input error, 2=network/relay, 3=auth, 4=other, 5=write conflict (NIP-33 LWW).
 
 `--format compact` is a **global** flag — it goes before the subcommand:
-`buzz --format compact channels list`, NOT `buzz channels list --format compact`.
+`nimino --format compact channels list`, NOT `nimino channels list --format compact`.
 
 See `crates/buzz-cli/TESTING.md` for the full live-testing runbook.
 
@@ -295,7 +295,7 @@ Output is a PNG path on stdout.
 
 Use `--messages` to inject content into a channel before capture. The JSON file
 is an array of objects — `channelName` and `content` are required, all other
-fields are optional and passed through to `__BUZZ_E2E_EMIT_MOCK_MESSAGE__`:
+fields are optional and passed through to `__NIMINO_E2E_EMIT_MOCK_MESSAGE__`:
 
 ```json
 [
@@ -409,7 +409,7 @@ must run BEFORE `installMockBridge(page)` — React reads state on mount, the
 bridge triggers mount.
 
 **Live messages:** Call `waitForMockLiveSubscription(page, channelName)` before
-`__BUZZ_E2E_EMIT_MOCK_MESSAGE__` — messages are silently dropped without a
+`__NIMINO_E2E_EMIT_MOCK_MESSAGE__` — messages are silently dropped without a
 subscription. Navigate to the channel first (triggers subscription), then away
 (so unread indicators appear), then inject.
 

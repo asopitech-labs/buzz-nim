@@ -118,7 +118,7 @@ test("getActivityHeadline uses semantic tool descriptors", () => {
         title: "Shell",
         toolName: "dev__shell",
         buzzToolName: null,
-        args: { command: "buzz messages send --content hi" },
+        args: { command: "nimino messages send --content hi" },
         descriptor: {
           renderClass: "message",
           label: "Send Message",

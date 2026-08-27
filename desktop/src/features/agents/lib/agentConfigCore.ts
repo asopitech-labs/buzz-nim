@@ -2,7 +2,7 @@ import type {
   AcpRuntimeCatalogEntry,
   GlobalAgentConfig,
 } from "@/shared/api/types";
-import { BUZZ_AGENT_THINKING_EFFORT } from "../ui/buzzAgentConfig";
+import { NIMINO_AGENT_THINKING_EFFORT } from "../ui/buzzAgentConfig";
 
 /**
  * Lifecycle status of the ACP runtime catalog query on a per-agent surface.
@@ -212,11 +212,11 @@ export function deriveAgentConfigFieldModel({
           : "legacyProviderModelCatalog",
       currentPersistence: {
         kind: "envVar",
-        key: BUZZ_AGENT_THINKING_EFFORT,
+        key: NIMINO_AGENT_THINKING_EFFORT,
       },
       targetApplication: { kind: "envVar", key: runtime.thinkingEnvVar },
       render: "control",
-      value: valueFromEnv(config, BUZZ_AGENT_THINKING_EFFORT),
+      value: valueFromEnv(config, NIMINO_AGENT_THINKING_EFFORT),
     });
   } else if (runtime?.id === "claude") {
     fields.push({
@@ -291,7 +291,7 @@ export function getRenderableEffortField(
  * Per-surface consequences (assuming standard descriptor sets):
  * - Global: effort key + numeric keys rendered by the descriptors
  * - Per-agent buzz-agent: effort key + 3 numeric keys
- * - Per-agent Goose: 2 numeric keys only — Goose effort (BUZZ_AGENT_THINKING_EFFORT)
+ * - Per-agent Goose: 2 numeric keys only — Goose effort (NIMINO_AGENT_THINKING_EFFORT)
  *   stays a visible generic env row because no effort control renders per-agent
  *   for Goose (effort migration is out of scope)
  */

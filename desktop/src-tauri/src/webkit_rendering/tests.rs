@@ -213,7 +213,7 @@ fn test_safe_rendering_applies_the_safest_set_without_any_hardware_signal() {
     // The escape hatch exists for the machine neither signal recognises, so it
     // must not depend on either one.
     let drm = drm(&["0x8086"]);
-    let args = ["buzz://channel/1", SAFE_RENDERING];
+    let args = ["nimino://channel/1", SAFE_RENDERING];
     let plan = plan(args, &env_from(&[]), drm.path());
 
     assert_eq!(

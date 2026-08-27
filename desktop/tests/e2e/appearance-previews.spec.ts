@@ -4,9 +4,9 @@ import { waitForAnimations } from "../helpers/animations";
 import { installMockBridge } from "../helpers/bridge";
 
 const SHOTS = "test-results/appearance-previews";
-const THEME_STORAGE_KEY = "buzz-theme";
-const LINK_PREVIEW_STYLE_STORAGE_KEY = "buzz.appearance.linkPreviewStyle";
-const THREAD_VIEW_MODE_STORAGE_KEY = "buzz.channels.threadViewMode";
+const THEME_STORAGE_KEY = "nimino-theme";
+const LINK_PREVIEW_STYLE_STORAGE_KEY = "nimino.appearance.linkPreviewStyle";
+const THREAD_VIEW_MODE_STORAGE_KEY = "nimino.channels.threadViewMode";
 
 async function openAppearance(
   page: Page,

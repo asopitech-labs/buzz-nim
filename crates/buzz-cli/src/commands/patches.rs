@@ -193,7 +193,7 @@ pub async fn cmd_patch_status(
 /// Parse the CLI's status word into a `GitStatus`. `merged` and `resolved`
 /// are accepted as synonyms for the same underlying kind (1631) — NIP-34
 /// uses "applied/merged" for patches and "resolved" for issues, but it's one
-/// status kind either way. Shared by `buzz issues status`.
+/// status kind either way. Shared by `nimino issues status`.
 pub(crate) fn parse_status(s: &str) -> Result<GitStatus, CliError> {
     match s {
         "open" => Ok(GitStatus::Open),

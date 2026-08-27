@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::broadcast;
 use uuid::Uuid;
 
-use crate::topic::BUZZ_PREFIX;
+use crate::topic::NIMINO_PREFIX;
 
 /// Tenant-local Redis pub/sub channel suffix for cache-invalidation messages.
 pub const CACHE_INVALIDATION_SUFFIX: &str = "cache-invalidate";
@@ -29,7 +29,7 @@ pub const CACHE_INVALIDATION_PATTERN: &str = "buzz:*:cache-invalidate";
 /// Redis pub/sub channel for cache-invalidation messages under `ctx`.
 pub fn cache_invalidation_channel(ctx: &TenantContext) -> String {
     format!(
-        "{BUZZ_PREFIX}:{}:{CACHE_INVALIDATION_SUFFIX}",
+        "{NIMINO_PREFIX}:{}:{CACHE_INVALIDATION_SUFFIX}",
         ctx.community()
     )
 }
@@ -37,7 +37,7 @@ pub fn cache_invalidation_channel(ctx: &TenantContext) -> String {
 /// Parse a cache-invalidation Redis channel into its scoped community id.
 pub fn parse_cache_invalidation_channel(channel: &str) -> Option<CommunityId> {
     let mut parts = channel.split(':');
-    if parts.next()? != BUZZ_PREFIX {
+    if parts.next()? != NIMINO_PREFIX {
         return None;
     }
     let community_id = Uuid::parse_str(parts.next()?).ok()?;

@@ -45,12 +45,12 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ include "buzz.chartSecretName" . }}
-                  key: BUZZ_S3_ACCESS_KEY
+                  key: NIMINO_S3_ACCESS_KEY
             - name: S3_SECRET_KEY
               valueFrom:
                 secretKeyRef:
                   name: {{ include "buzz.chartSecretName" . }}
-                  key: BUZZ_S3_SECRET_KEY
+                  key: NIMINO_S3_SECRET_KEY
           command: ["/bin/sh", "-c"]
           args:
             - |

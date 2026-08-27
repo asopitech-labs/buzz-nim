@@ -646,7 +646,7 @@ async fn build_roster_resolution(
     finalize_roster_resolution(&slugs, found, archived_result, &mut std::io::stderr())
 }
 
-/// `buzz channels create --template <name>`: load a desktop-local channel
+/// `nimino channels create --template <name>`: load a desktop-local channel
 /// template, resolve its agent roster against the relay, create the
 /// channel, apply the canvas template, and add resolved agents as members.
 ///
@@ -1030,12 +1030,12 @@ pub async fn cmd_set_add_policy(client: &BuzzClient, policy: &str) -> Result<(),
     }
 
     // Check if this policy is allowed by the deployment.
-    // NOTE: This gate covers only the `buzz channels set-add-policy` CLI path.
+    // NOTE: This gate covers only the `nimino channels set-add-policy` CLI path.
     // A client that submits a kind:10100 event directly to the relay bypasses
     // this check. Full enforcement requires relay-side validation, which is
     // intentionally out of scope for this change (see team decision: no
     // relay-side enforcement of client behavior).
-    if let Ok(allowed_raw) = std::env::var("BUZZ_ACP_ALLOWED_CHANNEL_ADD_POLICIES") {
+    if let Ok(allowed_raw) = std::env::var("NIMINO_ACP_ALLOWED_CHANNEL_ADD_POLICIES") {
         let allowed: Vec<&str> = allowed_raw
             .split(',')
             .map(str::trim)
@@ -1044,7 +1044,7 @@ pub async fn cmd_set_add_policy(client: &BuzzClient, policy: &str) -> Result<(),
         if !allowed.is_empty() && !allowed.contains(&policy) {
             return Err(CliError::Usage(format!(
                 "channel_add_policy '{policy}' is not permitted on this deployment \
-                 (BUZZ_ACP_ALLOWED_CHANNEL_ADD_POLICIES={allowed_raw})"
+                 (NIMINO_ACP_ALLOWED_CHANNEL_ADD_POLICIES={allowed_raw})"
             )));
         }
     }
@@ -1328,7 +1328,7 @@ mod tests {
         assert!(result.is_ok(), "visibility-only update should be accepted");
     }
 
-    // --- BUZZ_ACP_ALLOWED_CHANNEL_ADD_POLICIES gate ---
+    // --- NIMINO_ACP_ALLOWED_CHANNEL_ADD_POLICIES gate ---
 
     fn check_allowed_channel_add_policy(allowed_raw: &str, policy: &str) -> Result<(), CliError> {
         let allowed: Vec<&str> = allowed_raw
@@ -1339,7 +1339,7 @@ mod tests {
         if !allowed.is_empty() && !allowed.contains(&policy) {
             return Err(CliError::Usage(format!(
                 "channel_add_policy '{policy}' is not permitted on this deployment \
-                 (BUZZ_ACP_ALLOWED_CHANNEL_ADD_POLICIES={allowed_raw})"
+                 (NIMINO_ACP_ALLOWED_CHANNEL_ADD_POLICIES={allowed_raw})"
             )));
         }
         Ok(())
@@ -1383,7 +1383,7 @@ mod tests {
     //
     // This test calls cmd_set_add_policy directly with the env var set. The function
     // returns early with an error before any network call, so no relay is needed.
-    // If the BUZZ_ACP_ALLOWED_CHANNEL_ADD_POLICIES check were removed from cmd_set_add_policy,
+    // If the NIMINO_ACP_ALLOWED_CHANNEL_ADD_POLICIES check were removed from cmd_set_add_policy,
     // this test would fail (it would proceed to sign_event and return a different error).
 
     fn make_test_client() -> BuzzClient {
@@ -1397,10 +1397,13 @@ mod tests {
 
     #[tokio::test]
     async fn set_add_policy_env_gate_rejects_disallowed_via_full_path() {
-        std::env::set_var("BUZZ_ACP_ALLOWED_CHANNEL_ADD_POLICIES", "owner_only,nobody");
+        std::env::set_var(
+            "NIMINO_ACP_ALLOWED_CHANNEL_ADD_POLICIES",
+            "owner_only,nobody",
+        );
         let client = make_test_client();
         let result = cmd_set_add_policy(&client, "anyone").await;
-        std::env::remove_var("BUZZ_ACP_ALLOWED_CHANNEL_ADD_POLICIES");
+        std::env::remove_var("NIMINO_ACP_ALLOWED_CHANNEL_ADD_POLICIES");
 
         assert!(
             result.is_err(),

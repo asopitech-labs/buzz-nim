@@ -15,8 +15,8 @@ pub const DEFAULT_MAX_FRAME_BYTES: usize = 512 * 1024;
 /// Errors that can occur while loading relay configuration.
 #[derive(Debug, Error)]
 pub enum ConfigError {
-    /// The `BUZZ_BIND_ADDR` environment variable could not be parsed as a socket address.
-    #[error("invalid BUZZ_BIND_ADDR: {0}")]
+    /// The `NIMINO_BIND_ADDR` environment variable could not be parsed as a socket address.
+    #[error("invalid NIMINO_BIND_ADDR: {0}")]
     InvalidBindAddr(String),
     /// A configuration value failed validation.
     #[error("invalid config: {0}")]
@@ -59,14 +59,14 @@ pub struct Config {
     /// Optional read-replica connection URL (e.g. an Aurora `cluster-ro-`
     /// endpoint). Unset means all reads stay on the writer.
     pub read_database_url: Option<String>,
-    /// Replica read budget `B` in milliseconds (`BUZZ_REPLICA_READ_MAX_AGE_MS`).
+    /// Replica read budget `B` in milliseconds (`NIMINO_REPLICA_READ_MAX_AGE_MS`).
     /// `0` (the default) disables bounded-staleness replica routing; see
     /// [`buzz_db::DbConfig::replica_read_max_age_ms`].
     pub replica_read_max_age_ms: u64,
 
     /// Upper bound, in milliseconds, of the per-connection random delay applied
     /// when sending the `1012 Service Restart` close frame during graceful
-    /// shutdown (`BUZZ_DRAIN_JITTER_MS`). Each live connection is closed after
+    /// shutdown (`NIMINO_DRAIN_JITTER_MS`). Each live connection is closed after
     /// an independent delay drawn uniformly from `[1, drain_jitter_ms]` when
     /// jitter is enabled, which
     /// spreads client reconnects across the window instead of releasing the
@@ -94,7 +94,7 @@ pub struct Config {
     /// database sits idle.
     pub db_pool_size: u32,
     /// Maximum connections in the Postgres read-replica pool
-    /// (`BUZZ_DB_READ_POOL_SIZE`). Defaults to `db_pool_size`. Sized
+    /// (`NIMINO_DB_READ_POOL_SIZE`). Defaults to `db_pool_size`. Sized
     /// independently so reader capacity can be tuned against the replica's
     /// headroom without touching the writer pool.
     pub db_read_pool_size: Option<u32>,
@@ -158,22 +158,22 @@ pub struct Config {
     ///
     /// Defaults to `true` so single-pod deployments (the N=1 case) keep today's
     /// behavior unchanged. Operators running multiple relay pods MUST set
-    /// `BUZZ_HUDDLE_AUDIO_AVAILABLE=false` until the out-of-relay media/SFU
+    /// `NIMINO_HUDDLE_AUDIO_AVAILABLE=false` until the out-of-relay media/SFU
     /// service lands.
     pub huddle_audio_available: bool,
 
-    /// Inter-relay mesh configuration (`BUZZ_MESH`, `BUZZ_MESH_BIND_ADDR`).
-    /// Opt-in: mesh forms only when `BUZZ_MESH=on` is explicit. The default
+    /// Inter-relay mesh configuration (`NIMINO_MESH`, `NIMINO_MESH_BIND_ADDR`).
+    /// Opt-in: mesh forms only when `NIMINO_MESH=on` is explicit. The default
     /// (absent/off) is exact single-instance behavior — no bind, no Redis
     /// registry write — so an image upgrade with untouched env is a strict
     /// no-regression rollout.
     pub mesh: buzz_relay_mesh::MeshConfig,
 
-    /// Testbed-only reliable-stream echo consumer (`BUZZ_MESH_DEMO_ECHO`).
+    /// Testbed-only reliable-stream echo consumer (`NIMINO_MESH_DEMO_ECHO`).
     /// When `on`, the owner side of an inbound reliable mesh stream echoes
     /// every validated `Data` frame back to the sender — a transport/
     /// session-routing smoke for cross-pod evidence runs, NOT a product flow.
-    /// Same strict opt-in as `BUZZ_MESH`; default off means inbound reliable
+    /// Same strict opt-in as `NIMINO_MESH`; default off means inbound reliable
     /// streams are accepted, logged, and closed (no session consumer yet).
     pub mesh_demo_echo: bool,
 
@@ -214,7 +214,7 @@ pub struct Config {
     /// signature is cryptographically self-proving). This flag only controls
     /// whether NIP-OA can grant membership access on closed relays.
     ///
-    /// Default: `false`. Set via `BUZZ_ALLOW_NIP_OA_AUTH=true`.
+    /// Default: `false`. Set via `NIMINO_ALLOW_NIP_OA_AUTH=true`.
     pub allow_nip_oa_auth: bool,
 
     /// Media storage configuration (S3/MinIO).
@@ -228,13 +228,13 @@ pub struct Config {
 
     /// Whether tamper-evident event/media audit logging is enabled. Defaults to true.
     /// This does not control the separate `moderation_actions` audit trail.
-    /// Set `BUZZ_AUDIT_ENABLED=false` for deployments that do not require it.
+    /// Set `NIMINO_AUDIT_ENABLED=false` for deployments that do not require it.
     pub audit_enabled: bool,
 
     /// Optional override for ephemeral channel TTL (in seconds).
     /// When set, any channel created with a TTL tag will use this value instead
     /// of the client-provided one. Useful for testing ephemeral expiry quickly.
-    /// Example: `BUZZ_EPHEMERAL_TTL_OVERRIDE=60` → all ephemeral channels expire
+    /// Example: `NIMINO_EPHEMERAL_TTL_OVERRIDE=60` → all ephemeral channels expire
     /// 60 seconds after the last message.
     pub ephemeral_ttl_override: Option<i32>,
 
@@ -307,31 +307,31 @@ fn rate_limit_config_from_env() -> Result<buzz_auth::RateLimitConfig, ConfigErro
     let defaults = buzz_auth::RateLimitConfig::default();
     Ok(buzz_auth::RateLimitConfig {
         human_messages_per_min: positive_u64_from_env(
-            "BUZZ_RATE_LIMIT_HUMAN_MESSAGES_PER_MIN",
+            "NIMINO_RATE_LIMIT_HUMAN_MESSAGES_PER_MIN",
             defaults.human_messages_per_min,
         )?,
         human_api_calls_per_min: positive_u64_from_env(
-            "BUZZ_RATE_LIMIT_HUMAN_API_CALLS_PER_MIN",
+            "NIMINO_RATE_LIMIT_HUMAN_API_CALLS_PER_MIN",
             defaults.human_api_calls_per_min,
         )?,
         human_ws_events_per_sec: positive_u64_from_env(
-            "BUZZ_RATE_LIMIT_HUMAN_WS_EVENTS_PER_SEC",
+            "NIMINO_RATE_LIMIT_HUMAN_WS_EVENTS_PER_SEC",
             defaults.human_ws_events_per_sec,
         )?,
         agent_standard_messages_per_min: positive_u64_from_env(
-            "BUZZ_RATE_LIMIT_AGENT_STANDARD_MESSAGES_PER_MIN",
+            "NIMINO_RATE_LIMIT_AGENT_STANDARD_MESSAGES_PER_MIN",
             defaults.agent_standard_messages_per_min,
         )?,
         agent_standard_api_calls_per_min: positive_u64_from_env(
-            "BUZZ_RATE_LIMIT_AGENT_STANDARD_API_CALLS_PER_MIN",
+            "NIMINO_RATE_LIMIT_AGENT_STANDARD_API_CALLS_PER_MIN",
             defaults.agent_standard_api_calls_per_min,
         )?,
         agent_elevated_messages_per_min: positive_u64_from_env(
-            "BUZZ_RATE_LIMIT_AGENT_ELEVATED_MESSAGES_PER_MIN",
+            "NIMINO_RATE_LIMIT_AGENT_ELEVATED_MESSAGES_PER_MIN",
             defaults.agent_elevated_messages_per_min,
         )?,
         agent_platform_messages_per_min: positive_u64_from_env(
-            "BUZZ_RATE_LIMIT_AGENT_PLATFORM_MESSAGES_PER_MIN",
+            "NIMINO_RATE_LIMIT_AGENT_PLATFORM_MESSAGES_PER_MIN",
             defaults.agent_platform_messages_per_min,
         )?,
     })
@@ -381,7 +381,7 @@ fn parse_optional_bool(name: &str) -> Result<bool, ConfigError> {
 fn ensure_git_repo_path(
     raw: impl Into<std::path::PathBuf>,
 ) -> Result<std::path::PathBuf, ConfigError> {
-    ensure_git_path("BUZZ_GIT_REPO_PATH", raw)
+    ensure_git_path("NIMINO_GIT_REPO_PATH", raw)
 }
 
 fn ensure_git_path(
@@ -400,14 +400,14 @@ fn ensure_git_path(
 
 /// Env vars that once gated authenticated media reads.
 ///
-/// `BUZZ_REQUIRE_MEDIA_GET_AUTH` was the real flag; `BUZZ_REQUIRE_MEDIA_READ_AUTH`
+/// `NIMINO_REQUIRE_MEDIA_GET_AUTH` was the real flag; `NIMINO_REQUIRE_MEDIA_READ_AUTH`
 /// was documented in `.env.example` as an accepted alias but was never read by
 /// the relay. Media reads are now unconditionally authenticated, so both are
 /// inert and an operator still setting either — especially to `false` — holds a
 /// belief about their deployment that is no longer true.
 const INERT_MEDIA_READ_AUTH_VARS: [&str; 2] = [
-    "BUZZ_REQUIRE_MEDIA_GET_AUTH",
-    "BUZZ_REQUIRE_MEDIA_READ_AUTH",
+    "NIMINO_REQUIRE_MEDIA_GET_AUTH",
+    "NIMINO_REQUIRE_MEDIA_READ_AUTH",
 ];
 
 /// Which of `names` are present, so startup can warn that they do nothing.
@@ -427,11 +427,11 @@ impl Config {
     /// Loads configuration from environment variables, falling back to development defaults.
     pub fn from_env() -> Result<Self, ConfigError> {
         let bind_addr_raw =
-            std::env::var("BUZZ_BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:3000".to_string());
+            std::env::var("NIMINO_BIND_ADDR").unwrap_or_else(|_| "0.0.0.0:3000".to_string());
         let bind_addr = parse_bind_addr(&bind_addr_raw)?;
 
         let database_url = std::env::var("DATABASE_URL")
-            .unwrap_or_else(|_| "postgres://buzz:buzz_dev@localhost:5432/buzz".to_string()); // sadscan:disable np.postgres.1
+            .unwrap_or_else(|_| "postgres://nimino:nimino_dev@localhost:5432/nimino".to_string()); // sadscan:disable np.postgres.1
 
         let read_database_url = std::env::var("READ_DATABASE_URL")
             .ok()
@@ -440,9 +440,9 @@ impl Config {
 
         // The old seconds-denominated name is a hard startup error, not an
         // alias: silently honouring it would mean 1000x the intended budget.
-        if std::env::var("BUZZ_REPLICA_HEAD_MAX_AGE_SECS").is_ok() {
+        if std::env::var("NIMINO_REPLICA_HEAD_MAX_AGE_SECS").is_ok() {
             return Err(ConfigError::InvalidValue(
-                "BUZZ_REPLICA_HEAD_MAX_AGE_SECS was renamed to BUZZ_REPLICA_READ_MAX_AGE_MS \
+                "NIMINO_REPLICA_HEAD_MAX_AGE_SECS was renamed to NIMINO_REPLICA_READ_MAX_AGE_MS \
                  (note: milliseconds, not seconds); refusing to start"
                     .to_string(),
             ));
@@ -450,10 +450,10 @@ impl Config {
 
         // Replica read budget: 0 = off (the rollout default), so this is a
         // non-negative parse, unlike `positive_u64_from_env`.
-        let replica_read_max_age_ms = match std::env::var("BUZZ_REPLICA_READ_MAX_AGE_MS") {
+        let replica_read_max_age_ms = match std::env::var("NIMINO_REPLICA_READ_MAX_AGE_MS") {
             Ok(raw) => raw.trim().parse::<u64>().map_err(|_| {
                 ConfigError::InvalidValue(
-                    "BUZZ_REPLICA_READ_MAX_AGE_MS must be a non-negative integer".to_string(),
+                    "NIMINO_REPLICA_READ_MAX_AGE_MS must be a non-negative integer".to_string(),
                 )
             })?,
             Err(_) => 0,
@@ -464,14 +464,14 @@ impl Config {
         // hard-drain budget. An empty/whitespace-only value is treated as unset
         // (jitter off), matching the sibling vars in this file — so setting the
         // var to "" is a valid kill switch, not a crashloop.
-        let drain_jitter_ms = match std::env::var("BUZZ_DRAIN_JITTER_MS") {
+        let drain_jitter_ms = match std::env::var("NIMINO_DRAIN_JITTER_MS") {
             Ok(raw) if raw.trim().is_empty() => 0,
             Ok(raw) => raw
                 .trim()
                 .parse::<u64>()
                 .map_err(|_| {
                     ConfigError::InvalidValue(
-                        "BUZZ_DRAIN_JITTER_MS must be a non-negative integer".to_string(),
+                        "NIMINO_DRAIN_JITTER_MS must be a non-negative integer".to_string(),
                     )
                 })?
                 .min(MAX_DRAIN_JITTER_MS),
@@ -481,19 +481,19 @@ impl Config {
         let redis_url =
             std::env::var("REDIS_URL").unwrap_or_else(|_| "redis://localhost:6379".to_string());
 
-        let redis_pool_size = std::env::var("BUZZ_REDIS_POOL_SIZE")
+        let redis_pool_size = std::env::var("NIMINO_REDIS_POOL_SIZE")
             .ok()
             .and_then(|v| v.parse::<usize>().ok())
             .filter(|&v| v > 0)
             .unwrap_or(16);
 
-        let db_pool_size = std::env::var("BUZZ_DB_POOL_SIZE")
+        let db_pool_size = std::env::var("NIMINO_DB_POOL_SIZE")
             .ok()
             .and_then(|v| v.parse::<u32>().ok())
             .filter(|&v| v > 0)
             .unwrap_or(50);
 
-        let db_read_pool_size = std::env::var("BUZZ_DB_READ_POOL_SIZE")
+        let db_read_pool_size = std::env::var("NIMINO_DB_READ_POOL_SIZE")
             .ok()
             .and_then(|v| v.parse::<u32>().ok())
             .filter(|&v| v > 0);
@@ -501,81 +501,81 @@ impl Config {
         let relay_url =
             std::env::var("RELAY_URL").unwrap_or_else(|_| "ws://localhost:3000".to_string());
 
-        let pairing_relay_url = std::env::var("BUZZ_PAIRING_RELAY_URL")
+        let pairing_relay_url = std::env::var("NIMINO_PAIRING_RELAY_URL")
             .ok()
             .map(|value| value.trim().to_string())
             .filter(|value| !value.is_empty())
             .map(|value| {
                 let parsed = url::Url::parse(&value).map_err(|e| {
                     ConfigError::InvalidValue(format!(
-                        "BUZZ_PAIRING_RELAY_URL must be a valid ws:// or wss:// URL: {e}"
+                        "NIMINO_PAIRING_RELAY_URL must be a valid ws:// or wss:// URL: {e}"
                     ))
                 })?;
                 if !matches!(parsed.scheme(), "ws" | "wss") || parsed.host_str().is_none() {
                     return Err(ConfigError::InvalidValue(
-                        "BUZZ_PAIRING_RELAY_URL must be a valid ws:// or wss:// URL".to_string(),
+                        "NIMINO_PAIRING_RELAY_URL must be a valid ws:// or wss:// URL".to_string(),
                     ));
                 }
                 Ok(value)
             })
             .transpose()?;
 
-        let max_connections = std::env::var("BUZZ_MAX_CONNECTIONS")
+        let max_connections = std::env::var("NIMINO_MAX_CONNECTIONS")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(10_000);
 
-        let max_concurrent_handlers = std::env::var("BUZZ_MAX_CONCURRENT_HANDLERS")
+        let max_concurrent_handlers = std::env::var("NIMINO_MAX_CONCURRENT_HANDLERS")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(1024);
 
-        let send_buffer_size = std::env::var("BUZZ_SEND_BUFFER")
+        let send_buffer_size = std::env::var("NIMINO_SEND_BUFFER")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(1_000);
 
-        let max_frame_bytes = std::env::var("BUZZ_MAX_FRAME_BYTES")
+        let max_frame_bytes = std::env::var("NIMINO_MAX_FRAME_BYTES")
             .ok()
             .and_then(|v| v.parse::<usize>().ok())
             .filter(|&v| v > 0)
             .unwrap_or(DEFAULT_MAX_FRAME_BYTES);
 
-        let slow_client_grace_limit = std::env::var("BUZZ_SLOW_CLIENT_GRACE_LIMIT")
+        let slow_client_grace_limit = std::env::var("NIMINO_SLOW_CLIENT_GRACE_LIMIT")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(15);
 
-        let require_auth_token = std::env::var("BUZZ_REQUIRE_AUTH_TOKEN")
+        let require_auth_token = std::env::var("NIMINO_REQUIRE_AUTH_TOKEN")
             .map(|v| v == "true" || v == "1")
             .unwrap_or(false);
 
-        let pubkey_allowlist_enabled = std::env::var("BUZZ_PUBKEY_ALLOWLIST")
+        let pubkey_allowlist_enabled = std::env::var("NIMINO_PUBKEY_ALLOWLIST")
             .map(|v| v == "true" || v == "1")
             .unwrap_or(false);
 
-        let require_relay_membership = std::env::var("BUZZ_REQUIRE_RELAY_MEMBERSHIP")
+        let require_relay_membership = std::env::var("NIMINO_REQUIRE_RELAY_MEMBERSHIP")
             .map(|v| v == "true" || v == "1")
             .unwrap_or(false);
 
         // Defaults true → single-pod (N=1) keeps today's huddle behavior. A
         // horizontally-scaled deployment sets this false; see the field doc.
-        let huddle_audio_available = std::env::var("BUZZ_HUDDLE_AUDIO_AVAILABLE")
+        let huddle_audio_available = std::env::var("NIMINO_HUDDLE_AUDIO_AVAILABLE")
             .map(|v| !(v == "false" || v == "0"))
             .unwrap_or(true);
 
         // Mesh opt-in: default OFF. Strict rollout no-regression — an image
         // upgrade with untouched env must not bind a new UDP port or write a
         // new Redis key. Horizontally-scaled deployments explicitly set
-        // `BUZZ_MESH=on`; anything else (absent, `off`, other values) keeps
+        // `NIMINO_MESH=on`; anything else (absent, `off`, other values) keeps
         // exact single-instance behavior.
-        let mesh_enabled = std::env::var("BUZZ_MESH")
+        let mesh_enabled = std::env::var("NIMINO_MESH")
             .map(|v| v.eq_ignore_ascii_case("on") || v == "true" || v == "1")
             .unwrap_or(false);
-        let mesh_bind_addr = std::env::var("BUZZ_MESH_BIND_ADDR")
+        let mesh_bind_addr = std::env::var("NIMINO_MESH_BIND_ADDR")
             .map(|raw| {
                 raw.parse::<SocketAddr>().map_err(|e| {
-                    ConfigError::InvalidValue(format!("invalid BUZZ_MESH_BIND_ADDR: {e}"))
+                    ConfigError::InvalidValue(format!("invalid NIMINO_MESH_BIND_ADDR: {e}"))
                 })
             })
             .unwrap_or_else(|_| Ok("0.0.0.0:3478".parse().expect("static default parses")))?;
@@ -585,17 +585,17 @@ impl Config {
             registry_refresh: std::time::Duration::from_secs(15),
         };
 
-        // Demo echo opt-in: same strict pattern as BUZZ_MESH — explicit
+        // Demo echo opt-in: same strict pattern as NIMINO_MESH — explicit
         // `on`/`true`/`1` only, anything else (absent, `off`, typos) is off.
-        let mesh_demo_echo = std::env::var("BUZZ_MESH_DEMO_ECHO")
+        let mesh_demo_echo = std::env::var("NIMINO_MESH_DEMO_ECHO")
             .map(|v| v.eq_ignore_ascii_case("on") || v == "true" || v == "1")
             .unwrap_or(false);
 
-        let allow_nip_oa_auth = std::env::var("BUZZ_ALLOW_NIP_OA_AUTH")
+        let allow_nip_oa_auth = std::env::var("NIMINO_ALLOW_NIP_OA_AUTH")
             .map(|v| v == "true" || v == "1")
             .unwrap_or(false);
 
-        // Note: intentionally not prefixed with BUZZ_ — this is a relay-identity
+        // Note: intentionally not prefixed with NIMINO_ — this is a relay-identity
         // config that may be shared across multiple services (e.g., ACP agent).
         let relay_owner_pubkey = std::env::var("RELAY_OWNER_PUBKEY")
             .ok()
@@ -615,7 +615,7 @@ impl Config {
                 }
             });
 
-        // Note: intentionally not prefixed with BUZZ_ — same relay-identity
+        // Note: intentionally not prefixed with NIMINO_ — same relay-identity
         // config family as RELAY_OWNER_PUBKEY. Comma-separated 64-char hex
         // pubkeys. Unlike RELAY_OWNER_PUBKEY (warn-and-ignore), an invalid
         // entry here is a hard config error: silently dropping an operator
@@ -661,104 +661,105 @@ impl Config {
 
         if !require_auth_token {
             warn!(
-                "BUZZ_REQUIRE_AUTH_TOKEN is false — REST API requests bypass token auth. \
+                "NIMINO_REQUIRE_AUTH_TOKEN is false — REST API requests bypass token auth. \
                  WebSocket protocol auth is unaffected. Set to true for production."
             );
         }
 
-        let cors_origins = std::env::var("BUZZ_CORS_ORIGINS")
+        let cors_origins = std::env::var("NIMINO_CORS_ORIGINS")
             .unwrap_or_default()
             .split(',')
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty())
             .collect();
 
-        let relay_private_key = std::env::var("BUZZ_RELAY_PRIVATE_KEY").ok();
+        let relay_private_key = std::env::var("NIMINO_RELAY_PRIVATE_KEY").ok();
 
-        let uds_path = std::env::var("BUZZ_UDS_PATH")
+        let uds_path = std::env::var("NIMINO_UDS_PATH")
             .ok()
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty());
 
-        let health_port = std::env::var("BUZZ_HEALTH_PORT")
+        let health_port = std::env::var("NIMINO_HEALTH_PORT")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(8080);
 
-        let metrics_port = std::env::var("BUZZ_METRICS_PORT")
+        let metrics_port = std::env::var("NIMINO_METRICS_PORT")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(9102);
 
-        let s3_addressing_style = match std::env::var("BUZZ_S3_ADDRESSING_STYLE") {
+        let s3_addressing_style = match std::env::var("NIMINO_S3_ADDRESSING_STYLE") {
             Ok(value) => value.parse().map_err(ConfigError::InvalidValue)?,
             Err(std::env::VarError::NotPresent) => buzz_media::config::S3AddressingStyle::default(),
             Err(std::env::VarError::NotUnicode(_)) => {
                 return Err(ConfigError::InvalidValue(
-                    "BUZZ_S3_ADDRESSING_STYLE must be valid Unicode and one of 'path' or 'virtual'"
+                    "NIMINO_S3_ADDRESSING_STYLE must be valid Unicode and one of 'path' or 'virtual'"
                         .to_string(),
                 ));
             }
         };
         let media = buzz_media::MediaConfig {
-            s3_endpoint: std::env::var("BUZZ_S3_ENDPOINT")
+            s3_endpoint: std::env::var("NIMINO_S3_ENDPOINT")
                 .unwrap_or_else(|_| "http://localhost:9000".to_string()),
-            s3_access_key: std::env::var("BUZZ_S3_ACCESS_KEY")
-                .unwrap_or_else(|_| "buzz_dev".to_string()),
-            s3_secret_key: std::env::var("BUZZ_S3_SECRET_KEY")
-                .unwrap_or_else(|_| "buzz_dev_secret".to_string()),
-            s3_bucket: std::env::var("BUZZ_S3_BUCKET").unwrap_or_else(|_| "buzz-media".to_string()),
-            s3_region: std::env::var("BUZZ_S3_REGION")
+            s3_access_key: std::env::var("NIMINO_S3_ACCESS_KEY")
+                .unwrap_or_else(|_| "nimino_dev".to_string()),
+            s3_secret_key: std::env::var("NIMINO_S3_SECRET_KEY")
+                .unwrap_or_else(|_| "nimino_dev_secret".to_string()),
+            s3_bucket: std::env::var("NIMINO_S3_BUCKET")
+                .unwrap_or_else(|_| "nimino-media".to_string()),
+            s3_region: std::env::var("NIMINO_S3_REGION")
                 .or_else(|_| std::env::var("AWS_REGION"))
                 .unwrap_or_else(|_| "us-east-1".to_string()),
             s3_addressing_style,
-            max_image_bytes: std::env::var("BUZZ_MAX_IMAGE_BYTES")
+            max_image_bytes: std::env::var("NIMINO_MAX_IMAGE_BYTES")
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(50 * 1024 * 1024),
-            max_gif_bytes: std::env::var("BUZZ_MAX_GIF_BYTES")
+            max_gif_bytes: std::env::var("NIMINO_MAX_GIF_BYTES")
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(10 * 1024 * 1024),
-            max_video_bytes: std::env::var("BUZZ_MAX_VIDEO_BYTES")
+            max_video_bytes: std::env::var("NIMINO_MAX_VIDEO_BYTES")
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(500 * 1024 * 1024),
-            max_file_bytes: std::env::var("BUZZ_MAX_FILE_BYTES")
+            max_file_bytes: std::env::var("NIMINO_MAX_FILE_BYTES")
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .unwrap_or(100 * 1024 * 1024),
-            public_base_url: std::env::var("BUZZ_MEDIA_BASE_URL")
+            public_base_url: std::env::var("NIMINO_MEDIA_BASE_URL")
                 .unwrap_or_else(|_| "http://localhost:3000/media".to_string()),
             // Per-upload-event records (`_uploads/` moderation side channel).
             // Off by default; coherence between the three knobs is enforced in
             // MediaConfig::validate at startup.
-            upload_records_enabled: std::env::var("BUZZ_MEDIA_UPLOAD_RECORDS")
+            upload_records_enabled: std::env::var("NIMINO_MEDIA_UPLOAD_RECORDS")
                 .map(|v| v == "true" || v == "1")
                 .unwrap_or(false),
-            upload_ip_header: std::env::var("BUZZ_MEDIA_UPLOAD_IP_HEADER")
+            upload_ip_header: std::env::var("NIMINO_MEDIA_UPLOAD_IP_HEADER")
                 .ok()
                 .map(|s| s.trim().to_lowercase())
                 .filter(|s| !s.is_empty()),
-            upload_port_header: std::env::var("BUZZ_MEDIA_UPLOAD_PORT_HEADER")
+            upload_port_header: std::env::var("NIMINO_MEDIA_UPLOAD_PORT_HEADER")
                 .ok()
                 .map(|s| s.trim().to_lowercase())
                 .filter(|s| !s.is_empty()),
         };
         let media_max_concurrent_uploads: usize =
-            std::env::var("BUZZ_MEDIA_MAX_CONCURRENT_UPLOADS")
+            std::env::var("NIMINO_MEDIA_MAX_CONCURRENT_UPLOADS")
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .filter(|&v| v > 0)
                 .unwrap_or(8);
         let media_max_concurrent_uploads_per_pubkey: u32 =
-            std::env::var("BUZZ_MEDIA_MAX_CONCURRENT_UPLOADS_PER_PUBKEY")
+            std::env::var("NIMINO_MEDIA_MAX_CONCURRENT_UPLOADS_PER_PUBKEY")
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .filter(|&v| v > 0)
                 .unwrap_or(2)
                 .min(u32::try_from(media_max_concurrent_uploads).unwrap_or(u32::MAX));
-        let media_uploads_per_minute: u32 = std::env::var("BUZZ_MEDIA_UPLOADS_PER_MINUTE")
+        let media_uploads_per_minute: u32 = std::env::var("NIMINO_MEDIA_UPLOADS_PER_MINUTE")
             .ok()
             .and_then(|v| v.parse().ok())
             .filter(|&v| v > 0)
@@ -772,55 +773,55 @@ impl Config {
             );
         }
 
-        let ephemeral_ttl_override = std::env::var("BUZZ_EPHEMERAL_TTL_OVERRIDE")
+        let ephemeral_ttl_override = std::env::var("NIMINO_EPHEMERAL_TTL_OVERRIDE")
             .ok()
             .and_then(|v| v.parse::<i32>().ok())
             .filter(|&v| v > 0);
 
         if let Some(ttl) = ephemeral_ttl_override {
             warn!(
-                "BUZZ_EPHEMERAL_TTL_OVERRIDE={ttl}s — all ephemeral channels will use \
+                "NIMINO_EPHEMERAL_TTL_OVERRIDE={ttl}s — all ephemeral channels will use \
                  this TTL instead of the client-provided value."
             );
         }
 
         // Git server config
         let git_repo_path = ensure_git_repo_path(
-            std::env::var("BUZZ_GIT_REPO_PATH").unwrap_or_else(|_| "./repos".to_string()),
+            std::env::var("NIMINO_GIT_REPO_PATH").unwrap_or_else(|_| "./repos".to_string()),
         )?;
         let git_pack_cache_path = ensure_git_path(
-            "BUZZ_GIT_PACK_CACHE_PATH",
-            std::env::var("BUZZ_GIT_PACK_CACHE_PATH")
+            "NIMINO_GIT_PACK_CACHE_PATH",
+            std::env::var("NIMINO_GIT_PACK_CACHE_PATH")
                 .map(std::path::PathBuf::from)
                 .unwrap_or_else(|_| git_repo_path.join(".pack-cache")),
         )?;
-        let git_max_pack_bytes: u64 = std::env::var("BUZZ_GIT_MAX_PACK_BYTES")
+        let git_max_pack_bytes: u64 = std::env::var("NIMINO_GIT_MAX_PACK_BYTES")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(500 * 1024 * 1024); // 500 MB
-        let git_max_repo_bytes: u64 = std::env::var("BUZZ_GIT_MAX_REPO_BYTES")
+        let git_max_repo_bytes: u64 = std::env::var("NIMINO_GIT_MAX_REPO_BYTES")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or_else(|| git_max_pack_bytes.saturating_mul(2)); // 1 GB at defaults
-        let git_pack_cache_max_bytes: u64 = std::env::var("BUZZ_GIT_PACK_CACHE_MAX_BYTES")
+        let git_pack_cache_max_bytes: u64 = std::env::var("NIMINO_GIT_PACK_CACHE_MAX_BYTES")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or_else(|| git_max_repo_bytes.saturating_mul(5)); // 5 GB at defaults
         let git_pack_cache_max_concurrent_populations: usize =
-            std::env::var("BUZZ_GIT_PACK_CACHE_MAX_CONCURRENT_POPULATIONS")
+            std::env::var("NIMINO_GIT_PACK_CACHE_MAX_CONCURRENT_POPULATIONS")
                 .ok()
                 .and_then(|v| v.parse().ok())
                 .filter(|value| *value > 0)
                 .unwrap_or(2);
-        let git_max_repos_per_pubkey: u32 = std::env::var("BUZZ_GIT_MAX_REPOS_PER_PUBKEY")
+        let git_max_repos_per_pubkey: u32 = std::env::var("NIMINO_GIT_MAX_REPOS_PER_PUBKEY")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(100);
-        let git_max_concurrent_ops: usize = std::env::var("BUZZ_GIT_MAX_CONCURRENT_OPS")
+        let git_max_concurrent_ops: usize = std::env::var("NIMINO_GIT_MAX_CONCURRENT_OPS")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(20);
-        let git_hook_hmac_secret: String = std::env::var("BUZZ_GIT_HOOK_HMAC_SECRET")
+        let git_hook_hmac_secret: String = std::env::var("NIMINO_GIT_HOOK_HMAC_SECRET")
             .unwrap_or_else(|_| {
                 // Generate a random secret if not configured (dev mode).
                 let secret: [u8; 32] = rand::random();
@@ -842,10 +843,10 @@ impl Config {
             }
             Ok(value)
         };
-        let terms_markdown = read_policy_markdown("BUZZ_TERMS_OF_SERVICE_MARKDOWN")?;
-        let privacy_markdown = read_policy_markdown("BUZZ_PRIVACY_POLICY_MARKDOWN")?;
-        let age_attestation_required = parse_optional_bool("BUZZ_AGE_ATTESTATION_REQUIRED")?;
-        let audit_enabled = parse_bool("BUZZ_AUDIT_ENABLED", true)?;
+        let terms_markdown = read_policy_markdown("NIMINO_TERMS_OF_SERVICE_MARKDOWN")?;
+        let privacy_markdown = read_policy_markdown("NIMINO_PRIVACY_POLICY_MARKDOWN")?;
+        let age_attestation_required = parse_optional_bool("NIMINO_AGE_ATTESTATION_REQUIRED")?;
+        let audit_enabled = parse_bool("NIMINO_AUDIT_ENABLED", true)?;
         let join_policy = if terms_markdown.is_none()
             && privacy_markdown.is_none()
             && !age_attestation_required
@@ -866,7 +867,7 @@ impl Config {
         };
 
         // Read-only deployment-admin surface. The route is absent when the host is unset.
-        let admin = match std::env::var("BUZZ_ADMIN_HOST")
+        let admin = match std::env::var("NIMINO_ADMIN_HOST")
             .ok()
             .map(|value| value.trim().to_owned())
             .filter(|value| !value.is_empty())
@@ -875,17 +876,17 @@ impl Config {
             Some(host) => {
                 if host.contains(['/', '\\', '@']) {
                     return Err(ConfigError::InvalidValue(
-                        "BUZZ_ADMIN_HOST must be an exact authority".to_string(),
+                        "NIMINO_ADMIN_HOST must be an exact authority".to_string(),
                     ));
                 }
-                let web_dir = std::env::var("BUZZ_ADMIN_WEB_DIR")
+                let web_dir = std::env::var("NIMINO_ADMIN_WEB_DIR")
                     .ok()
                     .map(|value| std::path::PathBuf::from(value.trim()))
                     .filter(|value| !value.as_os_str().is_empty());
                 if let Some(ref dir) = web_dir {
                     if !dir.join("index.html").is_file() {
                         return Err(ConfigError::InvalidValue(format!(
-                            "BUZZ_ADMIN_WEB_DIR={} does not contain index.html",
+                            "NIMINO_ADMIN_WEB_DIR={} does not contain index.html",
                             dir.display()
                         )));
                     }
@@ -895,31 +896,34 @@ impl Config {
         };
 
         // Web UI static file serving
-        let web_dir = std::env::var("BUZZ_WEB_DIR")
+        let web_dir = std::env::var("NIMINO_WEB_DIR")
             .ok()
             .map(|s| s.trim().to_string())
             .filter(|s| !s.is_empty())
             .map(std::path::PathBuf::from);
-        let serve_git_web_gui = std::env::var("BUZZ_SERVE_GIT_WEB_GUI")
+        let serve_git_web_gui = std::env::var("NIMINO_SERVE_GIT_WEB_GUI")
             .map(|value| value == "true" || value == "1")
             .unwrap_or(false);
 
         if let Some(ref dir) = web_dir {
             if !dir.join("index.html").is_file() {
                 return Err(ConfigError::InvalidValue(format!(
-                    "BUZZ_WEB_DIR={} does not contain index.html",
+                    "NIMINO_WEB_DIR={} does not contain index.html",
                     dir.display()
                 )));
             }
-            tracing::info!("BUZZ_WEB_DIR={} — serving web UI from relay", dir.display());
+            tracing::info!(
+                "NIMINO_WEB_DIR={} — serving web UI from relay",
+                dir.display()
+            );
         }
 
         // Reject explicitly-configured secrets that are too short.
         // The auto-generated fallback is always 64 hex chars (32 bytes), so this
-        // only fires when someone sets BUZZ_GIT_HOOK_HMAC_SECRET to a weak value.
-        if std::env::var("BUZZ_GIT_HOOK_HMAC_SECRET").is_ok() && git_hook_hmac_secret.len() < 32 {
+        // only fires when someone sets NIMINO_GIT_HOOK_HMAC_SECRET to a weak value.
+        if std::env::var("NIMINO_GIT_HOOK_HMAC_SECRET").is_ok() && git_hook_hmac_secret.len() < 32 {
             return Err(ConfigError::InvalidValue(
-                "BUZZ_GIT_HOOK_HMAC_SECRET must be at least 32 characters (16 bytes hex)"
+                "NIMINO_GIT_HOOK_HMAC_SECRET must be at least 32 characters (16 bytes hex)"
                     .to_string(),
             ));
         }
@@ -1004,13 +1008,13 @@ mod tests {
     fn inert_media_read_auth_vars_are_reported_even_when_false() {
         let found = inert_env_vars(
             &INERT_MEDIA_READ_AUTH_VARS,
-            env_of(&[("BUZZ_REQUIRE_MEDIA_GET_AUTH", "false")]),
+            env_of(&[("NIMINO_REQUIRE_MEDIA_GET_AUTH", "false")]),
         );
 
-        assert_eq!(found, vec!["BUZZ_REQUIRE_MEDIA_GET_AUTH"]);
+        assert_eq!(found, vec!["NIMINO_REQUIRE_MEDIA_GET_AUTH"]);
     }
 
-    /// `BUZZ_REQUIRE_MEDIA_READ_AUTH` was advertised in `.env.example` as an
+    /// `NIMINO_REQUIRE_MEDIA_READ_AUTH` was advertised in `.env.example` as an
     /// accepted alias but the relay never read it, so operators may hold it
     /// today. It warns too.
     #[test]
@@ -1018,16 +1022,16 @@ mod tests {
         let found = inert_env_vars(
             &INERT_MEDIA_READ_AUTH_VARS,
             env_of(&[
-                ("BUZZ_REQUIRE_MEDIA_GET_AUTH", "true"),
-                ("BUZZ_REQUIRE_MEDIA_READ_AUTH", "false"),
+                ("NIMINO_REQUIRE_MEDIA_GET_AUTH", "true"),
+                ("NIMINO_REQUIRE_MEDIA_READ_AUTH", "false"),
             ]),
         );
 
         assert_eq!(
             found,
             vec![
-                "BUZZ_REQUIRE_MEDIA_GET_AUTH",
-                "BUZZ_REQUIRE_MEDIA_READ_AUTH"
+                "NIMINO_REQUIRE_MEDIA_GET_AUTH",
+                "NIMINO_REQUIRE_MEDIA_READ_AUTH"
             ]
         );
     }
@@ -1036,7 +1040,7 @@ mod tests {
     fn inert_media_read_auth_vars_stay_quiet_when_unset() {
         let found = inert_env_vars(
             &INERT_MEDIA_READ_AUTH_VARS,
-            env_of(&[("BUZZ_REQUIRE_RELAY_MEMBERSHIP", "true")]),
+            env_of(&[("NIMINO_REQUIRE_RELAY_MEMBERSHIP", "true")]),
         );
 
         assert!(found.is_empty(), "unrelated vars must not warn: {found:?}");
@@ -1097,28 +1101,28 @@ mod tests {
     #[test]
     fn s3_addressing_style_env_accepts_virtual_and_rejects_invalid_values() {
         let _guard = ENV_MUTEX.lock().unwrap();
-        let previous = std::env::var_os("BUZZ_S3_ADDRESSING_STYLE");
+        let previous = std::env::var_os("NIMINO_S3_ADDRESSING_STYLE");
 
-        std::env::set_var("BUZZ_S3_ADDRESSING_STYLE", "virtual");
+        std::env::set_var("NIMINO_S3_ADDRESSING_STYLE", "virtual");
         let configured = Config::from_env()
             .expect("virtual style config")
             .media
             .s3_addressing_style;
 
-        std::env::set_var("BUZZ_S3_ADDRESSING_STYLE", "auto");
+        std::env::set_var("NIMINO_S3_ADDRESSING_STYLE", "auto");
         let invalid = Config::from_env();
 
         if let Some(value) = previous {
-            std::env::set_var("BUZZ_S3_ADDRESSING_STYLE", value);
+            std::env::set_var("NIMINO_S3_ADDRESSING_STYLE", value);
         } else {
-            std::env::remove_var("BUZZ_S3_ADDRESSING_STYLE");
+            std::env::remove_var("NIMINO_S3_ADDRESSING_STYLE");
         }
 
         assert_eq!(configured, buzz_media::config::S3AddressingStyle::Virtual);
         assert!(matches!(
             invalid,
             Err(ConfigError::InvalidValue(ref message))
-                if message.contains("BUZZ_S3_ADDRESSING_STYLE must be 'path' or 'virtual'")
+                if message.contains("NIMINO_S3_ADDRESSING_STYLE must be 'path' or 'virtual'")
         ));
     }
 
@@ -1128,18 +1132,18 @@ mod tests {
         use std::os::unix::ffi::OsStringExt;
 
         let _guard = ENV_MUTEX.lock().unwrap();
-        let previous = std::env::var_os("BUZZ_S3_ADDRESSING_STYLE");
+        let previous = std::env::var_os("NIMINO_S3_ADDRESSING_STYLE");
         std::env::set_var(
-            "BUZZ_S3_ADDRESSING_STYLE",
+            "NIMINO_S3_ADDRESSING_STYLE",
             std::ffi::OsString::from_vec(vec![0xff]),
         );
 
         let invalid = Config::from_env();
 
         if let Some(value) = previous {
-            std::env::set_var("BUZZ_S3_ADDRESSING_STYLE", value);
+            std::env::set_var("NIMINO_S3_ADDRESSING_STYLE", value);
         } else {
-            std::env::remove_var("BUZZ_S3_ADDRESSING_STYLE");
+            std::env::remove_var("NIMINO_S3_ADDRESSING_STYLE");
         }
 
         assert!(matches!(
@@ -1152,21 +1156,21 @@ mod tests {
     #[test]
     fn redis_pool_size_env_override_and_invalid_fallback() {
         let _guard = ENV_MUTEX.lock().unwrap();
-        let previous = std::env::var_os("BUZZ_REDIS_POOL_SIZE");
+        let previous = std::env::var_os("NIMINO_REDIS_POOL_SIZE");
 
-        std::env::set_var("BUZZ_REDIS_POOL_SIZE", "32");
+        std::env::set_var("NIMINO_REDIS_POOL_SIZE", "32");
         let overridden = Config::from_env().expect("config").redis_pool_size;
 
-        std::env::set_var("BUZZ_REDIS_POOL_SIZE", "0");
+        std::env::set_var("NIMINO_REDIS_POOL_SIZE", "0");
         let zero = Config::from_env().expect("config").redis_pool_size;
 
-        std::env::set_var("BUZZ_REDIS_POOL_SIZE", "not-a-number");
+        std::env::set_var("NIMINO_REDIS_POOL_SIZE", "not-a-number");
         let junk = Config::from_env().expect("config").redis_pool_size;
 
         if let Some(value) = previous {
-            std::env::set_var("BUZZ_REDIS_POOL_SIZE", value);
+            std::env::set_var("NIMINO_REDIS_POOL_SIZE", value);
         } else {
-            std::env::remove_var("BUZZ_REDIS_POOL_SIZE");
+            std::env::remove_var("NIMINO_REDIS_POOL_SIZE");
         }
 
         assert_eq!(overridden, 32);
@@ -1177,21 +1181,21 @@ mod tests {
     #[test]
     fn db_pool_size_env_override_and_invalid_fallback() {
         let _guard = ENV_MUTEX.lock().unwrap();
-        let previous = std::env::var_os("BUZZ_DB_POOL_SIZE");
+        let previous = std::env::var_os("NIMINO_DB_POOL_SIZE");
 
-        std::env::set_var("BUZZ_DB_POOL_SIZE", "80");
+        std::env::set_var("NIMINO_DB_POOL_SIZE", "80");
         let overridden = Config::from_env().expect("config").db_pool_size;
 
-        std::env::set_var("BUZZ_DB_POOL_SIZE", "0");
+        std::env::set_var("NIMINO_DB_POOL_SIZE", "0");
         let zero = Config::from_env().expect("config").db_pool_size;
 
-        std::env::set_var("BUZZ_DB_POOL_SIZE", "not-a-number");
+        std::env::set_var("NIMINO_DB_POOL_SIZE", "not-a-number");
         let junk = Config::from_env().expect("config").db_pool_size;
 
         if let Some(value) = previous {
-            std::env::set_var("BUZZ_DB_POOL_SIZE", value);
+            std::env::set_var("NIMINO_DB_POOL_SIZE", value);
         } else {
-            std::env::remove_var("BUZZ_DB_POOL_SIZE");
+            std::env::remove_var("NIMINO_DB_POOL_SIZE");
         }
 
         assert_eq!(overridden, 80);
@@ -1202,24 +1206,24 @@ mod tests {
     #[test]
     fn db_read_pool_size_env_override_and_invalid_fallback() {
         let _guard = ENV_MUTEX.lock().unwrap();
-        let previous = std::env::var_os("BUZZ_DB_READ_POOL_SIZE");
+        let previous = std::env::var_os("NIMINO_DB_READ_POOL_SIZE");
 
-        std::env::remove_var("BUZZ_DB_READ_POOL_SIZE");
+        std::env::remove_var("NIMINO_DB_READ_POOL_SIZE");
         let unset = Config::from_env().expect("config").db_read_pool_size;
 
-        std::env::set_var("BUZZ_DB_READ_POOL_SIZE", "40");
+        std::env::set_var("NIMINO_DB_READ_POOL_SIZE", "40");
         let overridden = Config::from_env().expect("config").db_read_pool_size;
 
-        std::env::set_var("BUZZ_DB_READ_POOL_SIZE", "0");
+        std::env::set_var("NIMINO_DB_READ_POOL_SIZE", "0");
         let zero = Config::from_env().expect("config").db_read_pool_size;
 
-        std::env::set_var("BUZZ_DB_READ_POOL_SIZE", "not-a-number");
+        std::env::set_var("NIMINO_DB_READ_POOL_SIZE", "not-a-number");
         let junk = Config::from_env().expect("config").db_read_pool_size;
 
         if let Some(value) = previous {
-            std::env::set_var("BUZZ_DB_READ_POOL_SIZE", value);
+            std::env::set_var("NIMINO_DB_READ_POOL_SIZE", value);
         } else {
-            std::env::remove_var("BUZZ_DB_READ_POOL_SIZE");
+            std::env::remove_var("NIMINO_DB_READ_POOL_SIZE");
         }
 
         assert_eq!(unset, None, "unset must inherit the writer pool sizing");
@@ -1239,7 +1243,10 @@ mod tests {
         std::env::set_var("READ_DATABASE_URL", "   ");
         let blank = Config::from_env().expect("config").read_database_url;
 
-        std::env::set_var("READ_DATABASE_URL", "postgres://buzz:pw@replica:5432/buzz"); // sadscan:disable np.postgres.1
+        std::env::set_var(
+            "READ_DATABASE_URL",
+            "postgres://nimino:pw@replica:5432/nimino",
+        ); // sadscan:disable np.postgres.1
         let set = Config::from_env().expect("config").read_database_url;
 
         if let Some(value) = previous {
@@ -1252,44 +1259,44 @@ mod tests {
         assert_eq!(blank, None, "blank READ_DATABASE_URL must disable routing");
         assert_eq!(
             set.as_deref(),
-            Some("postgres://buzz:pw@replica:5432/buzz") // sadscan:disable np.postgres.1
+            Some("postgres://nimino:pw@replica:5432/nimino") // sadscan:disable np.postgres.1
         );
     }
 
     #[test]
     fn replica_read_max_age_defaults_off_and_rejects_junk() {
         let _guard = ENV_MUTEX.lock().unwrap();
-        let previous = std::env::var_os("BUZZ_REPLICA_READ_MAX_AGE_MS");
-        let previous_old = std::env::var_os("BUZZ_REPLICA_HEAD_MAX_AGE_SECS");
-        std::env::remove_var("BUZZ_REPLICA_HEAD_MAX_AGE_SECS");
+        let previous = std::env::var_os("NIMINO_REPLICA_READ_MAX_AGE_MS");
+        let previous_old = std::env::var_os("NIMINO_REPLICA_HEAD_MAX_AGE_SECS");
+        std::env::remove_var("NIMINO_REPLICA_HEAD_MAX_AGE_SECS");
 
-        std::env::remove_var("BUZZ_REPLICA_READ_MAX_AGE_MS");
+        std::env::remove_var("NIMINO_REPLICA_READ_MAX_AGE_MS");
         let unset = Config::from_env().expect("config").replica_read_max_age_ms;
 
-        std::env::set_var("BUZZ_REPLICA_READ_MAX_AGE_MS", "1000");
+        std::env::set_var("NIMINO_REPLICA_READ_MAX_AGE_MS", "1000");
         let set = Config::from_env().expect("config").replica_read_max_age_ms;
 
-        std::env::set_var("BUZZ_REPLICA_READ_MAX_AGE_MS", "0");
+        std::env::set_var("NIMINO_REPLICA_READ_MAX_AGE_MS", "0");
         let zero = Config::from_env().expect("config").replica_read_max_age_ms;
 
-        std::env::set_var("BUZZ_REPLICA_READ_MAX_AGE_MS", "soon");
+        std::env::set_var("NIMINO_REPLICA_READ_MAX_AGE_MS", "soon");
         let junk = Config::from_env();
 
         // The retired seconds-denominated name must be a hard startup
         // error even alongside a valid new-name value: silently ignoring
         // it (or honouring it) would mean 1000x the intended budget.
-        std::env::set_var("BUZZ_REPLICA_READ_MAX_AGE_MS", "1000");
-        std::env::set_var("BUZZ_REPLICA_HEAD_MAX_AGE_SECS", "5");
+        std::env::set_var("NIMINO_REPLICA_READ_MAX_AGE_MS", "1000");
+        std::env::set_var("NIMINO_REPLICA_HEAD_MAX_AGE_SECS", "5");
         let old_name = Config::from_env();
 
-        std::env::remove_var("BUZZ_REPLICA_HEAD_MAX_AGE_SECS");
+        std::env::remove_var("NIMINO_REPLICA_HEAD_MAX_AGE_SECS");
         if let Some(value) = previous {
-            std::env::set_var("BUZZ_REPLICA_READ_MAX_AGE_MS", value);
+            std::env::set_var("NIMINO_REPLICA_READ_MAX_AGE_MS", value);
         } else {
-            std::env::remove_var("BUZZ_REPLICA_READ_MAX_AGE_MS");
+            std::env::remove_var("NIMINO_REPLICA_READ_MAX_AGE_MS");
         }
         if let Some(value) = previous_old {
-            std::env::set_var("BUZZ_REPLICA_HEAD_MAX_AGE_SECS", value);
+            std::env::set_var("NIMINO_REPLICA_HEAD_MAX_AGE_SECS", value);
         }
 
         assert_eq!(unset, 0, "replica read routing must default off");
@@ -1301,7 +1308,7 @@ mod tests {
         );
         match old_name {
             Err(ConfigError::InvalidValue(message)) => assert!(
-                message.contains("BUZZ_REPLICA_READ_MAX_AGE_MS"),
+                message.contains("NIMINO_REPLICA_READ_MAX_AGE_MS"),
                 "the error must name the replacement env var, got: {message}"
             ),
             other => panic!("old env name must hard-fail startup, got {other:?}"),
@@ -1311,37 +1318,37 @@ mod tests {
     #[test]
     fn drain_jitter_defaults_off_and_rejects_junk() {
         let _guard = ENV_MUTEX.lock().unwrap();
-        let previous = std::env::var_os("BUZZ_DRAIN_JITTER_MS");
+        let previous = std::env::var_os("NIMINO_DRAIN_JITTER_MS");
 
-        std::env::remove_var("BUZZ_DRAIN_JITTER_MS");
+        std::env::remove_var("NIMINO_DRAIN_JITTER_MS");
         let unset = Config::from_env().expect("config").drain_jitter_ms;
 
-        std::env::set_var("BUZZ_DRAIN_JITTER_MS", "20000");
+        std::env::set_var("NIMINO_DRAIN_JITTER_MS", "20000");
         let set = Config::from_env().expect("config").drain_jitter_ms;
 
-        std::env::set_var("BUZZ_DRAIN_JITTER_MS", "60000");
+        std::env::set_var("NIMINO_DRAIN_JITTER_MS", "60000");
         let capped = Config::from_env().expect("config").drain_jitter_ms;
 
-        std::env::set_var("BUZZ_DRAIN_JITTER_MS", "0");
+        std::env::set_var("NIMINO_DRAIN_JITTER_MS", "0");
         let zero = Config::from_env().expect("config").drain_jitter_ms;
 
-        std::env::set_var("BUZZ_DRAIN_JITTER_MS", "soon");
+        std::env::set_var("NIMINO_DRAIN_JITTER_MS", "soon");
         let junk = Config::from_env();
 
-        std::env::set_var("BUZZ_DRAIN_JITTER_MS", "");
+        std::env::set_var("NIMINO_DRAIN_JITTER_MS", "");
         let empty = Config::from_env()
             .expect("empty is a valid kill switch")
             .drain_jitter_ms;
 
-        std::env::set_var("BUZZ_DRAIN_JITTER_MS", "   ");
+        std::env::set_var("NIMINO_DRAIN_JITTER_MS", "   ");
         let blank = Config::from_env()
             .expect("whitespace-only is a valid kill switch")
             .drain_jitter_ms;
 
         if let Some(value) = previous {
-            std::env::set_var("BUZZ_DRAIN_JITTER_MS", value);
+            std::env::set_var("NIMINO_DRAIN_JITTER_MS", value);
         } else {
-            std::env::remove_var("BUZZ_DRAIN_JITTER_MS");
+            std::env::remove_var("NIMINO_DRAIN_JITTER_MS");
         }
 
         assert_eq!(unset, 0, "drain jitter must default off");
@@ -1365,66 +1372,66 @@ mod tests {
     #[test]
     fn audit_logging_defaults_on_and_accepts_explicit_off() {
         let _guard = ENV_MUTEX.lock().unwrap();
-        let previous = std::env::var_os("BUZZ_AUDIT_ENABLED");
-        std::env::remove_var("BUZZ_AUDIT_ENABLED");
-        assert!(parse_bool("BUZZ_AUDIT_ENABLED", true).unwrap());
-        std::env::set_var("BUZZ_AUDIT_ENABLED", "false");
-        assert!(!parse_bool("BUZZ_AUDIT_ENABLED", true).unwrap());
+        let previous = std::env::var_os("NIMINO_AUDIT_ENABLED");
+        std::env::remove_var("NIMINO_AUDIT_ENABLED");
+        assert!(parse_bool("NIMINO_AUDIT_ENABLED", true).unwrap());
+        std::env::set_var("NIMINO_AUDIT_ENABLED", "false");
+        assert!(!parse_bool("NIMINO_AUDIT_ENABLED", true).unwrap());
         if let Some(value) = previous {
-            std::env::set_var("BUZZ_AUDIT_ENABLED", value);
+            std::env::set_var("NIMINO_AUDIT_ENABLED", value);
         } else {
-            std::env::remove_var("BUZZ_AUDIT_ENABLED");
+            std::env::remove_var("NIMINO_AUDIT_ENABLED");
         }
     }
 
     #[test]
     fn audit_logging_rejects_invalid_boolean() {
         let _guard = ENV_MUTEX.lock().unwrap();
-        let previous = std::env::var_os("BUZZ_AUDIT_ENABLED");
-        std::env::set_var("BUZZ_AUDIT_ENABLED", "sometimes");
-        let result = parse_bool("BUZZ_AUDIT_ENABLED", true);
+        let previous = std::env::var_os("NIMINO_AUDIT_ENABLED");
+        std::env::set_var("NIMINO_AUDIT_ENABLED", "sometimes");
+        let result = parse_bool("NIMINO_AUDIT_ENABLED", true);
         if let Some(value) = previous {
-            std::env::set_var("BUZZ_AUDIT_ENABLED", value);
+            std::env::set_var("NIMINO_AUDIT_ENABLED", value);
         } else {
-            std::env::remove_var("BUZZ_AUDIT_ENABLED");
+            std::env::remove_var("NIMINO_AUDIT_ENABLED");
         }
         assert!(matches!(
             result,
             Err(ConfigError::InvalidValue(ref message))
-                if message.contains("BUZZ_AUDIT_ENABLED")
+                if message.contains("NIMINO_AUDIT_ENABLED")
         ));
     }
 
     #[test]
     fn join_policy_age_attestation_rejects_invalid_boolean() {
         let _guard = ENV_MUTEX.lock().unwrap();
-        let previous = std::env::var_os("BUZZ_AGE_ATTESTATION_REQUIRED");
-        std::env::set_var("BUZZ_AGE_ATTESTATION_REQUIRED", "sometimes");
-        let result = parse_optional_bool("BUZZ_AGE_ATTESTATION_REQUIRED");
+        let previous = std::env::var_os("NIMINO_AGE_ATTESTATION_REQUIRED");
+        std::env::set_var("NIMINO_AGE_ATTESTATION_REQUIRED", "sometimes");
+        let result = parse_optional_bool("NIMINO_AGE_ATTESTATION_REQUIRED");
         if let Some(value) = previous {
-            std::env::set_var("BUZZ_AGE_ATTESTATION_REQUIRED", value);
+            std::env::set_var("NIMINO_AGE_ATTESTATION_REQUIRED", value);
         } else {
-            std::env::remove_var("BUZZ_AGE_ATTESTATION_REQUIRED");
+            std::env::remove_var("NIMINO_AGE_ATTESTATION_REQUIRED");
         }
         assert!(matches!(
             result,
             Err(ConfigError::InvalidValue(ref message))
-                if message.contains("BUZZ_AGE_ATTESTATION_REQUIRED")
+                if message.contains("NIMINO_AGE_ATTESTATION_REQUIRED")
         ));
     }
 
     #[test]
     fn rate_limits_can_be_overridden() {
         let _guard = ENV_MUTEX.lock().unwrap();
-        std::env::set_var("BUZZ_RATE_LIMIT_HUMAN_MESSAGES_PER_MIN", "1001");
-        std::env::set_var("BUZZ_RATE_LIMIT_HUMAN_API_CALLS_PER_MIN", "1002");
-        std::env::set_var("BUZZ_RATE_LIMIT_HUMAN_WS_EVENTS_PER_SEC", "1003");
+        std::env::set_var("NIMINO_RATE_LIMIT_HUMAN_MESSAGES_PER_MIN", "1001");
+        std::env::set_var("NIMINO_RATE_LIMIT_HUMAN_API_CALLS_PER_MIN", "1002");
+        std::env::set_var("NIMINO_RATE_LIMIT_HUMAN_WS_EVENTS_PER_SEC", "1003");
 
         let config = Config::from_env().expect("config");
 
-        std::env::remove_var("BUZZ_RATE_LIMIT_HUMAN_MESSAGES_PER_MIN");
-        std::env::remove_var("BUZZ_RATE_LIMIT_HUMAN_API_CALLS_PER_MIN");
-        std::env::remove_var("BUZZ_RATE_LIMIT_HUMAN_WS_EVENTS_PER_SEC");
+        std::env::remove_var("NIMINO_RATE_LIMIT_HUMAN_MESSAGES_PER_MIN");
+        std::env::remove_var("NIMINO_RATE_LIMIT_HUMAN_API_CALLS_PER_MIN");
+        std::env::remove_var("NIMINO_RATE_LIMIT_HUMAN_WS_EVENTS_PER_SEC");
         assert_eq!(config.auth.rate_limits.human_messages_per_min, 1001);
         assert_eq!(config.auth.rate_limits.human_api_calls_per_min, 1002);
         assert_eq!(config.auth.rate_limits.human_ws_events_per_sec, 1003);
@@ -1433,14 +1440,14 @@ mod tests {
     #[test]
     fn rate_limit_overrides_reject_zero() {
         let _guard = ENV_MUTEX.lock().unwrap();
-        std::env::set_var("BUZZ_RATE_LIMIT_HUMAN_WS_EVENTS_PER_SEC", "0");
+        std::env::set_var("NIMINO_RATE_LIMIT_HUMAN_WS_EVENTS_PER_SEC", "0");
         let result = Config::from_env();
-        std::env::remove_var("BUZZ_RATE_LIMIT_HUMAN_WS_EVENTS_PER_SEC");
+        std::env::remove_var("NIMINO_RATE_LIMIT_HUMAN_WS_EVENTS_PER_SEC");
 
         assert!(matches!(
             result,
             Err(ConfigError::InvalidValue(ref message))
-                if message.contains("BUZZ_RATE_LIMIT_HUMAN_WS_EVENTS_PER_SEC")
+                if message.contains("NIMINO_RATE_LIMIT_HUMAN_WS_EVENTS_PER_SEC")
         ));
     }
 
@@ -1453,7 +1460,7 @@ mod tests {
         );
         std::env::set_var(
             "RELAY_OPERATOR_API_ORIGIN",
-            "http://buzz.mesh.bb-production.com",
+            "http://nimino.mesh.bb-production.com",
         );
         let config = Config::from_env().expect("config");
         std::env::remove_var("RELAY_OPERATOR_PUBKEYS");
@@ -1501,7 +1508,10 @@ mod tests {
     #[test]
     fn relay_operator_api_origin_rejects_paths() {
         let _guard = ENV_MUTEX.lock().unwrap();
-        std::env::set_var("RELAY_OPERATOR_API_ORIGIN", "https://buzz.example/operator");
+        std::env::set_var(
+            "RELAY_OPERATOR_API_ORIGIN",
+            "https://nimino.example/operator",
+        );
         let result = Config::from_env();
         std::env::remove_var("RELAY_OPERATOR_API_ORIGIN");
 
@@ -1514,12 +1524,12 @@ mod tests {
     #[test]
     fn huddle_audio_available_can_be_disabled_for_horizontal_scaling() {
         let _guard = ENV_MUTEX.lock().unwrap();
-        std::env::set_var("BUZZ_HUDDLE_AUDIO_AVAILABLE", "false");
+        std::env::set_var("NIMINO_HUDDLE_AUDIO_AVAILABLE", "false");
         let config = Config::from_env().expect("config");
-        std::env::remove_var("BUZZ_HUDDLE_AUDIO_AVAILABLE");
+        std::env::remove_var("NIMINO_HUDDLE_AUDIO_AVAILABLE");
         assert!(
             !config.huddle_audio_available,
-            "BUZZ_HUDDLE_AUDIO_AVAILABLE=false must disable huddle audio (multi-pod deployments)"
+            "NIMINO_HUDDLE_AUDIO_AVAILABLE=false must disable huddle audio (multi-pod deployments)"
         );
     }
 
@@ -1534,28 +1544,28 @@ mod tests {
     #[test]
     fn pairing_relay_url_accepts_websocket_urls_and_rejects_http() {
         let _guard = ENV_MUTEX.lock().unwrap();
-        std::env::set_var("BUZZ_PAIRING_RELAY_URL", "wss://pairing.buzz.xyz");
+        std::env::set_var("NIMINO_PAIRING_RELAY_URL", "wss://pairing.buzz.xyz");
         let config = Config::from_env().expect("config");
         assert_eq!(
             config.pairing_relay_url.as_deref(),
             Some("wss://pairing.buzz.xyz")
         );
 
-        std::env::set_var("BUZZ_PAIRING_RELAY_URL", "https://pairing.buzz.xyz");
+        std::env::set_var("NIMINO_PAIRING_RELAY_URL", "https://pairing.buzz.xyz");
         let result = Config::from_env();
-        std::env::remove_var("BUZZ_PAIRING_RELAY_URL");
+        std::env::remove_var("NIMINO_PAIRING_RELAY_URL");
         assert!(matches!(
             result,
-            Err(ConfigError::InvalidValue(ref msg)) if msg.contains("BUZZ_PAIRING_RELAY_URL")
+            Err(ConfigError::InvalidValue(ref msg)) if msg.contains("NIMINO_PAIRING_RELAY_URL")
         ));
     }
 
     #[test]
     fn max_frame_bytes_can_be_configured() {
         let _guard = ENV_MUTEX.lock().unwrap();
-        std::env::set_var("BUZZ_MAX_FRAME_BYTES", "262144");
+        std::env::set_var("NIMINO_MAX_FRAME_BYTES", "262144");
         let config = Config::from_env().expect("config");
-        std::env::remove_var("BUZZ_MAX_FRAME_BYTES");
+        std::env::remove_var("NIMINO_MAX_FRAME_BYTES");
         assert_eq!(config.max_frame_bytes, 262_144);
     }
 
@@ -1574,9 +1584,9 @@ mod tests {
         let nested = base.join("nested").join("repos");
         assert!(!nested.exists(), "test precondition: path must not exist");
 
-        std::env::set_var("BUZZ_GIT_REPO_PATH", &nested);
+        std::env::set_var("NIMINO_GIT_REPO_PATH", &nested);
         let result = Config::from_env();
-        std::env::remove_var("BUZZ_GIT_REPO_PATH");
+        std::env::remove_var("NIMINO_GIT_REPO_PATH");
 
         let config = result.expect("config should self-bootstrap missing git_repo_path");
         assert_eq!(config.git_repo_path, nested);
@@ -1597,8 +1607,8 @@ mod tests {
         let bogus = std::path::PathBuf::from("/dev/null/cannot-create-here");
         let result = ensure_git_repo_path(&bogus);
         assert!(
-            matches!(result, Err(ConfigError::InvalidValue(ref msg)) if msg.contains("BUZZ_GIT_REPO_PATH")),
-            "expected InvalidValue mentioning BUZZ_GIT_REPO_PATH, got {result:?}"
+            matches!(result, Err(ConfigError::InvalidValue(ref msg)) if msg.contains("NIMINO_GIT_REPO_PATH")),
+            "expected InvalidValue mentioning NIMINO_GIT_REPO_PATH, got {result:?}"
         );
     }
 }

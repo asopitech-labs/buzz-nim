@@ -451,10 +451,10 @@ fn orphaned_persona_link_yields_empty_persona_tiers() {
 #[test]
 fn reserved_key_in_inherited_persona_env_is_stripped() {
     let mut persona = persona_with_model("model");
-    // BUZZ_PRIVATE_KEY is a reserved key — must be stripped.
+    // NIMINO_PRIVATE_KEY is a reserved key — must be stripped.
     persona
         .env_vars
-        .insert("BUZZ_PRIVATE_KEY".to_string(), "nsec-secret".to_string());
+        .insert("NIMINO_PRIVATE_KEY".to_string(), "nsec-secret".to_string());
     // A safe key — must survive.
     persona
         .env_vars
@@ -465,7 +465,7 @@ fn reserved_key_in_inherited_persona_env_is_stripped() {
     let tiers = build_inherited_tiers(Some("persona-1"), None, &personas, &global);
 
     assert!(
-        !tiers.persona_env.contains_key("BUZZ_PRIVATE_KEY"),
+        !tiers.persona_env.contains_key("NIMINO_PRIVATE_KEY"),
         "reserved key must be stripped from persona env tier"
     );
     assert!(
@@ -482,13 +482,13 @@ fn reserved_key_in_inherited_persona_env_is_stripped() {
 fn reserved_key_in_definition_env_shaped_map_is_stripped_by_sanitize() {
     // Exercise sanitize_inherited_env directly with a definition-env-shaped map.
     let mut raw = std::collections::BTreeMap::new();
-    raw.insert("BUZZ_PRIVATE_KEY".to_string(), "nsec-secret".to_string());
+    raw.insert("NIMINO_PRIVATE_KEY".to_string(), "nsec-secret".to_string());
     raw.insert("GOOSE_MODEL".to_string(), "harness-model".to_string());
 
     let sanitized = sanitize_inherited_env(&raw);
 
     assert!(
-        !sanitized.contains_key("BUZZ_PRIVATE_KEY"),
+        !sanitized.contains_key("NIMINO_PRIVATE_KEY"),
         "reserved key must be stripped by sanitize_inherited_env"
     );
     assert!(
@@ -548,9 +548,9 @@ fn baked_env_from_map(map: &[(&str, &str)]) -> Vec<BakedEnvEntry> {
 
 #[test]
 fn baked_env_non_secret_key_shows_real_value() {
-    let entries = baked_env_from_map(&[("BUZZ_AGENT_PROVIDER", "databricks_v2")]);
+    let entries = baked_env_from_map(&[("NIMINO_AGENT_PROVIDER", "databricks_v2")]);
     assert_eq!(entries.len(), 1);
-    assert_eq!(entries[0].key, "BUZZ_AGENT_PROVIDER");
+    assert_eq!(entries[0].key, "NIMINO_AGENT_PROVIDER");
     assert_eq!(entries[0].value, "databricks_v2");
     assert!(!entries[0].masked);
 }
@@ -586,15 +586,15 @@ fn baked_env_password_key_is_masked() {
 
 #[test]
 fn baked_env_empty_value_filtered_out() {
-    let entries = baked_env_from_map(&[("BUZZ_AGENT_PROVIDER", "")]);
+    let entries = baked_env_from_map(&[("NIMINO_AGENT_PROVIDER", "")]);
     assert!(entries.is_empty());
 }
 
 #[test]
 fn baked_env_mixed_keys_correct_masking() {
     let entries = baked_env_from_map(&[
-        ("BUZZ_AGENT_PROVIDER", "databricks_v2"),
-        ("BUZZ_AGENT_MODEL", "goose-claude-opus-4-8"),
+        ("NIMINO_AGENT_PROVIDER", "databricks_v2"),
+        ("NIMINO_AGENT_MODEL", "goose-claude-opus-4-8"),
         ("DATABRICKS_HOST", "https://example.com"),
         ("DATABRICKS_TOKEN", "dapi-secret"),
     ]);
@@ -602,14 +602,14 @@ fn baked_env_mixed_keys_correct_masking() {
 
     let provider = entries
         .iter()
-        .find(|e| e.key == "BUZZ_AGENT_PROVIDER")
+        .find(|e| e.key == "NIMINO_AGENT_PROVIDER")
         .unwrap();
     assert_eq!(provider.value, "databricks_v2");
     assert!(!provider.masked);
 
     let model = entries
         .iter()
-        .find(|e| e.key == "BUZZ_AGENT_MODEL")
+        .find(|e| e.key == "NIMINO_AGENT_MODEL")
         .unwrap();
     assert_eq!(model.value, "goose-claude-opus-4-8");
     assert!(!model.masked);
@@ -628,12 +628,12 @@ fn baked_env_mixed_keys_correct_masking() {
 
 #[test]
 fn baked_env_thinking_effort_is_unmasked() {
-    // BUZZ_AGENT_THINKING_EFFORT is a non-secret enum — must not be masked.
-    let entries = baked_env_from_map(&[("BUZZ_AGENT_THINKING_EFFORT", "medium")]);
+    // NIMINO_AGENT_THINKING_EFFORT is a non-secret enum — must not be masked.
+    let entries = baked_env_from_map(&[("NIMINO_AGENT_THINKING_EFFORT", "medium")]);
     assert_eq!(entries.len(), 1);
     let effort = entries
         .iter()
-        .find(|e| e.key == "BUZZ_AGENT_THINKING_EFFORT")
+        .find(|e| e.key == "NIMINO_AGENT_THINKING_EFFORT")
         .unwrap();
     assert_eq!(effort.value, "medium");
     assert!(!effort.masked);
@@ -641,12 +641,12 @@ fn baked_env_thinking_effort_is_unmasked() {
 
 #[test]
 fn baked_env_thinking_summary_is_unmasked() {
-    // BUZZ_AGENT_THINKING_SUMMARY is a non-secret enum — must not be masked.
-    let entries = baked_env_from_map(&[("BUZZ_AGENT_THINKING_SUMMARY", "detailed")]);
+    // NIMINO_AGENT_THINKING_SUMMARY is a non-secret enum — must not be masked.
+    let entries = baked_env_from_map(&[("NIMINO_AGENT_THINKING_SUMMARY", "detailed")]);
     assert_eq!(entries.len(), 1);
     let summary = entries
         .iter()
-        .find(|e| e.key == "BUZZ_AGENT_THINKING_SUMMARY")
+        .find(|e| e.key == "NIMINO_AGENT_THINKING_SUMMARY")
         .unwrap();
     assert_eq!(summary.value, "detailed");
     assert!(!summary.masked);
@@ -655,14 +655,14 @@ fn baked_env_thinking_summary_is_unmasked() {
 #[test]
 fn baked_env_allowlist_is_case_insensitive() {
     // Known-safe keys — case-insensitive match must allow them.
-    assert!(super::is_safe_to_reveal("buzz_agent_provider"));
-    assert!(super::is_safe_to_reveal("BUZZ_AGENT_PROVIDER"));
-    assert!(super::is_safe_to_reveal("buzz_agent_model"));
-    assert!(super::is_safe_to_reveal("BUZZ_AGENT_MODEL"));
-    assert!(super::is_safe_to_reveal("buzz_agent_thinking_effort"));
-    assert!(super::is_safe_to_reveal("BUZZ_AGENT_THINKING_EFFORT"));
-    assert!(super::is_safe_to_reveal("buzz_agent_thinking_summary"));
-    assert!(super::is_safe_to_reveal("BUZZ_AGENT_THINKING_SUMMARY"));
+    assert!(super::is_safe_to_reveal("nimino_agent_provider"));
+    assert!(super::is_safe_to_reveal("NIMINO_AGENT_PROVIDER"));
+    assert!(super::is_safe_to_reveal("nimino_agent_model"));
+    assert!(super::is_safe_to_reveal("NIMINO_AGENT_MODEL"));
+    assert!(super::is_safe_to_reveal("nimino_agent_thinking_effort"));
+    assert!(super::is_safe_to_reveal("NIMINO_AGENT_THINKING_EFFORT"));
+    assert!(super::is_safe_to_reveal("nimino_agent_thinking_summary"));
+    assert!(super::is_safe_to_reveal("NIMINO_AGENT_THINKING_SUMMARY"));
     assert!(super::is_safe_to_reveal("databricks_host"));
     assert!(super::is_safe_to_reveal("DATABRICKS_HOST"));
     assert!(super::is_safe_to_reveal("databricks_model"));

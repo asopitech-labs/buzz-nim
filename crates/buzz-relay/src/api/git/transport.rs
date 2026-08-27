@@ -411,7 +411,7 @@ fn acquire_git_permit(
         .try_acquire_owned()
         .map_err(|_| {
             metrics::counter!(
-                "buzz_git_semaphore_rejections_total",
+                "nimino_git_semaphore_rejections_total",
                 "operation" => operation
             )
             .increment(1);
@@ -523,7 +523,7 @@ async fn authorize_git_read(
                 return Err((
                     StatusCode::NOT_FOUND,
                     format!(
-                        "run: buzz repos bind --id {repo_name} --channel <channel-uuid> — repository {repo_name:?} has no channel binding, so the relay cannot authorize access"
+                        "run: nimino repos bind --id {repo_name} --channel <channel-uuid> — repository {repo_name:?} has no channel binding, so the relay cannot authorize access"
                     ),
                 )
                     .into_response());
@@ -1150,18 +1150,18 @@ pub async fn receive_pack(
     );
     let hooks_dir = repo.path().join("hooks").display().to_string();
     let mut hook_env = vec![
-        ("BUZZ_HOOK_URL", hook_url),
+        ("NIMINO_HOOK_URL", hook_url),
         (
-            "BUZZ_HOOK_SECRET",
+            "NIMINO_HOOK_SECRET",
             state.config.git_hook_hmac_secret.clone(),
         ),
-        ("BUZZ_REPO_ID", repo_name.to_string()),
-        ("BUZZ_REPO_OWNER", params.owner.clone()),
+        ("NIMINO_REPO_ID", repo_name.to_string()),
+        ("NIMINO_REPO_OWNER", params.owner.clone()),
         (
-            "BUZZ_COMMUNITY_ID",
+            "NIMINO_COMMUNITY_ID",
             auth.tenant.community().as_uuid().to_string(),
         ),
-        ("BUZZ_PUSHER_PUBKEY", pusher_hex.clone()),
+        ("NIMINO_PUSHER_PUBKEY", pusher_hex.clone()),
     ];
     hook_env.extend(receive_pack_git_config(hooks_dir));
 
@@ -1605,7 +1605,7 @@ where
         }
         if self.deadline.as_mut().poll(cx).is_ready() {
             self.finished = true;
-            metrics::counter!("buzz_git_upload_pack_timeouts_total").increment(1);
+            metrics::counter!("nimino_git_upload_pack_timeouts_total").increment(1);
             warn!("git upload-pack stream timed out");
             return std::task::Poll::Ready(Some(Err(std::io::Error::new(
                 std::io::ErrorKind::TimedOut,
@@ -1630,9 +1630,10 @@ where
 
 impl<S> Drop for TimedByteStream<S> {
     fn drop(&mut self) {
-        metrics::histogram!("buzz_git_upload_pack_stream_seconds")
+        metrics::histogram!("nimino_git_upload_pack_stream_seconds")
             .record(self.started_at.elapsed().as_secs_f64());
-        metrics::histogram!("buzz_git_upload_pack_stream_bytes").record(self.streamed_bytes as f64);
+        metrics::histogram!("nimino_git_upload_pack_stream_bytes")
+            .record(self.streamed_bytes as f64);
     }
 }
 
@@ -2276,11 +2277,11 @@ mod track_c_tests {
     }
 
     async fn finalize_test_state() -> (Arc<AppState>, sqlx::PgPool) {
-        const TEST_DB_URL: &str = "postgres://buzz:buzz_dev@localhost:5432/buzz"; // sadscan:disable np.postgres.1
+        const TEST_DB_URL: &str = "postgres://nimino:nimino_dev@localhost:5432/nimino"; // sadscan:disable np.postgres.1
         let mut config = crate::config::Config::from_env().expect("default config loads");
         config.require_relay_membership = false;
         config.redis_url = "redis://127.0.0.1:1".to_string();
-        config.database_url = std::env::var("BUZZ_TEST_DATABASE_URL")
+        config.database_url = std::env::var("NIMINO_TEST_DATABASE_URL")
             .or_else(|_| std::env::var("DATABASE_URL"))
             .unwrap_or_else(|_| TEST_DB_URL.to_string());
         let pool = sqlx::PgPool::connect(&config.database_url)
@@ -3198,10 +3199,10 @@ mod sec005_read_gate_tests {
 
     // ── authorize_git_read matrix (requires Postgres) ────────────────────
 
-    const TEST_DB_URL: &str = "postgres://buzz:buzz_dev@localhost:5432/buzz"; // sadscan:disable np.postgres.1
+    const TEST_DB_URL: &str = "postgres://nimino:nimino_dev@localhost:5432/nimino"; // sadscan:disable np.postgres.1
 
     async fn setup_db() -> buzz_db::Db {
-        let url = std::env::var("BUZZ_TEST_DATABASE_URL")
+        let url = std::env::var("NIMINO_TEST_DATABASE_URL")
             .or_else(|_| std::env::var("DATABASE_URL"))
             .unwrap_or_else(|_| TEST_DB_URL.to_string());
         let pool = sqlx::PgPool::connect(&url).await.expect("connect test DB");
@@ -3465,7 +3466,7 @@ mod sec005_read_gate_tests {
             .expect("read remediation body");
         let body = String::from_utf8(bytes.to_vec()).expect("utf-8 body");
         assert!(
-            body.starts_with(&format!("run: buzz repos bind --id {}", f.repo)),
+            body.starts_with(&format!("run: nimino repos bind --id {}", f.repo)),
             "remediation must lead with the actionable command (got {body:?})"
         );
         assert_ne!(body, GENERIC_DENIAL);
@@ -3622,7 +3623,7 @@ mod sec005_read_gate_tests {
     #[tokio::test]
     #[ignore = "requires Postgres"]
     async fn ban_gate_fails_closed_with_503_when_the_store_is_unreachable() {
-        let url = std::env::var("BUZZ_TEST_DATABASE_URL")
+        let url = std::env::var("NIMINO_TEST_DATABASE_URL")
             .or_else(|_| std::env::var("DATABASE_URL"))
             .unwrap_or_else(|_| TEST_DB_URL.to_string());
         let pool = sqlx::PgPool::connect(&url).await.expect("connect test DB");

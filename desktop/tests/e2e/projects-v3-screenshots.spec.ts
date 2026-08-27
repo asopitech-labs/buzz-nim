@@ -65,7 +65,7 @@ async function openBuzzProject(page: import("@playwright/test").Page) {
 
 test("projects activity overview screenshot", async ({ page }) => {
   await page.addInitScript(() => {
-    window.localStorage.setItem("buzz-theme", "light");
+    window.localStorage.setItem("nimino-theme", "light");
   });
   await installMockBridge(page);
   await page.goto("/", { waitUntil: "domcontentloaded" });
@@ -172,7 +172,7 @@ test("restricted repositories keep event work visible and offer access help", as
   page,
 }) => {
   await page.addInitScript((owner) => {
-    window.__BUZZ_E2E_PROJECT_OWNER_OVERRIDE__ = owner;
+    window.__NIMINO_E2E_PROJECT_OWNER_OVERRIDE__ = owner;
   }, TEST_IDENTITIES.alice.pubkey);
   await installMockBridge(page, {
     projectAccessChannelId: "11111111-1111-4111-8111-111111111111",
@@ -709,11 +709,14 @@ test("projects v3 workspace screenshot states", async ({ page }) => {
     async ({ channelId, parentEventId }) => {
       if (!channelId)
         throw new Error("Project agent DM channel was not recorded.");
-      await window.__BUZZ_E2E_INVOKE_MOCK_COMMAND__?.("send_channel_message", {
-        channelId,
-        content: "A persisted threaded agent response.",
-        parentEventId: parentEventId ?? undefined,
-      });
+      await window.__NIMINO_E2E_INVOKE_MOCK_COMMAND__?.(
+        "send_channel_message",
+        {
+          channelId,
+          content: "A persisted threaded agent response.",
+          parentEventId: parentEventId ?? undefined,
+        },
+      );
     },
     { channelId: projectAgentChannelId, parentEventId: projectAgentMessageId },
   );
@@ -1177,7 +1180,7 @@ test("projects v3 workspace screenshot states", async ({ page }) => {
 
 test("projects v3 work-item list metadata", async ({ page }) => {
   await page.addInitScript(() => {
-    window.localStorage.setItem("buzz.projects.viewMode", "list");
+    window.localStorage.setItem("nimino.projects.viewMode", "list");
   });
   await installMockBridge(page);
   await page.goto("/", { waitUntil: "domcontentloaded" });

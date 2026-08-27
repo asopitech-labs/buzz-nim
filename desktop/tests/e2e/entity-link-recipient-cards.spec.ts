@@ -31,7 +31,7 @@ test("agent-style Buzz links stay chip-only with metadata tooltips", async ({
   await page.addInitScript(
     ({ repoAddress, prId, issueId, alicePubkey, prSubject, issueSubject }) => {
       const createdAt = Math.floor(Date.now() / 1000) - 60;
-      window.__BUZZ_E2E_EXTRA_PROJECT_EVENTS__ = [
+      window.__NIMINO_E2E_EXTRA_PROJECT_EVENTS__ = [
         {
           id: prId,
           kind: 1618, // KIND_GIT_PULL_REQUEST
@@ -73,25 +73,25 @@ test("agent-style Buzz links stay chip-only with metadata tooltips", async ({
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await page.getByTestId("channel-general").click();
   await page.waitForFunction(
-    () => typeof window.__BUZZ_E2E_EMIT_MOCK_MESSAGE__ === "function",
+    () => typeof window.__NIMINO_E2E_EMIT_MOCK_MESSAGE__ === "function",
   );
 
   // Simulate an agent/CLI sender: plain kind-9 message with angle-bracket
-  // buzz:// URLs in a Markdown list and NO link-preview snapshot tags.
+  // nimino:// URLs in a Markdown list and NO link-preview snapshot tags.
   await page.evaluate(
     ({ prId, issueId, alicePubkey, externalHref, cloneHref }) => {
-      window.__BUZZ_E2E_EMIT_MOCK_MESSAGE__?.({
+      window.__NIMINO_E2E_EMIT_MOCK_MESSAGE__?.({
         channelName: "general",
         pubkey: alicePubkey,
         content: [
           "PR is up — review when you can:",
           "",
-          `- Pull request with enough leading context to wrap: <buzz://pr?id=${prId}&owner=${alicePubkey}&d=relay-tools>`,
-          `- Issue: <buzz://issue?id=${issueId}&owner=${alicePubkey}&d=relay-tools>`,
-          `- Repository: <buzz://repo?owner=${alicePubkey}&d=relay-tools>`,
-          `- Labeled issue: [triage this issue](buzz://issue?id=${issueId}&owner=${alicePubkey}&d=relay-tools)`,
+          `- Pull request with enough leading context to wrap: <nimino://pr?id=${prId}&owner=${alicePubkey}&d=relay-tools>`,
+          `- Issue: <nimino://issue?id=${issueId}&owner=${alicePubkey}&d=relay-tools>`,
+          `- Repository: <nimino://repo?owner=${alicePubkey}&d=relay-tools>`,
+          `- Labeled issue: [triage this issue](nimino://issue?id=${issueId}&owner=${alicePubkey}&d=relay-tools)`,
           `- Labeled clone: [clone relay-tools](${cloneHref})`,
-          `- Missing repo: <buzz://repo?owner=${alicePubkey}&d=missing-repo>`,
+          `- Missing repo: <nimino://repo?owner=${alicePubkey}&d=missing-repo>`,
           `- External control: <${externalHref}>`,
         ].join("\n"),
         extraTags: [
@@ -293,7 +293,7 @@ test("issue chip width is metadata-independent while the title loads", async ({
 }) => {
   await page.addInitScript(
     ({ repoAddress, issueId, alicePubkey, issueSubject }) => {
-      window.__BUZZ_E2E_EXTRA_PROJECT_EVENTS__ = [
+      window.__NIMINO_E2E_EXTRA_PROJECT_EVENTS__ = [
         {
           id: issueId,
           kind: 1621, // KIND_GIT_ISSUE
@@ -321,14 +321,14 @@ test("issue chip width is metadata-independent while the title loads", async ({
   // result and never recovers, which would hide the resolved-title half of
   // this invariant. Natural relay latency supplies the pending window.
   await page.waitForFunction(
-    () => typeof window.__BUZZ_E2E_EMIT_MOCK_MESSAGE__ === "function",
+    () => typeof window.__NIMINO_E2E_EMIT_MOCK_MESSAGE__ === "function",
   );
   await page.evaluate(
     ({ issueId, alicePubkey }) => {
-      window.__BUZZ_E2E_EMIT_MOCK_MESSAGE__?.({
+      window.__NIMINO_E2E_EMIT_MOCK_MESSAGE__?.({
         channelName: "general",
         pubkey: alicePubkey,
-        content: `Issue link: buzz://issue?id=${issueId}&owner=${alicePubkey}&d=relay-tools`,
+        content: `Issue link: nimino://issue?id=${issueId}&owner=${alicePubkey}&d=relay-tools`,
       });
     },
     { issueId: ISSUE_ID, alicePubkey: ALICE_PUBKEY },
@@ -376,16 +376,16 @@ test("entity tooltip uses project context while relay metadata is delayed", asyn
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await page.getByTestId("channel-general").click();
   await page.evaluate(() =>
-    window.__BUZZ_E2E_ACTIVATE_RELAY_RATE_LIMIT__?.(300),
+    window.__NIMINO_E2E_ACTIVATE_RELAY_RATE_LIMIT__?.(300),
   );
   await page.waitForFunction(
-    () => typeof window.__BUZZ_E2E_EMIT_MOCK_MESSAGE__ === "function",
+    () => typeof window.__NIMINO_E2E_EMIT_MOCK_MESSAGE__ === "function",
   );
   await page.evaluate(
     ({ issueId, owner }) => {
-      window.__BUZZ_E2E_EMIT_MOCK_MESSAGE__?.({
+      window.__NIMINO_E2E_EMIT_MOCK_MESSAGE__?.({
         channelName: "general",
-        content: `Delayed issue: buzz://issue?id=${issueId}&owner=${owner}&d=buzz`,
+        content: `Delayed issue: nimino://issue?id=${issueId}&owner=${owner}&d=buzz`,
       });
     },
     { issueId: ISSUE_ID, owner: DEFAULT_MOCK_PUBKEY },
@@ -410,7 +410,7 @@ test("desktop composer and sent message keep Buzz entities chip-only", async ({
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await page.getByTestId("channel-general").click();
 
-  const repoLink = `buzz://repo?owner=${ALICE_PUBKEY}&d=relay-tools`;
+  const repoLink = `nimino://repo?owner=${ALICE_PUBKEY}&d=relay-tools`;
   await page.getByTestId("message-input").fill(`Check out ${repoLink}`);
 
   // Buzz-native links do not enter the standalone composer-preview surface.
@@ -500,7 +500,7 @@ test("composer classifies a same-relay clone URL as a repository chip, not a car
   ).toContainText("Relay, desktop, and mobile clients");
 
   // The chip navigates in-app, proving the clone URL resolved onto the
-  // canonical buzz://repo target rather than being handed to the OS.
+  // canonical nimino://repo target rather than being handed to the OS.
   await repoChip.click();
   await expect(page.locator("[data-project-detail-screen]")).toBeVisible();
 });
@@ -512,7 +512,7 @@ test("reopening the same entity link reapplies its workspace state", async ({
   await page.addInitScript(
     ({ issueId, issueSubject, prId, prSubject, repoAddress, owner }) => {
       const createdAt = Math.floor(Date.now() / 1000) - 60;
-      window.__BUZZ_E2E_EXTRA_PROJECT_EVENTS__ = [
+      window.__NIMINO_E2E_EXTRA_PROJECT_EVENTS__ = [
         {
           id: prId,
           kind: 1618, // KIND_GIT_PULL_REQUEST
@@ -551,9 +551,9 @@ test("reopening the same entity link reapplies its workspace state", async ({
   await installMockBridge(page);
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.getByTestId("open-projects-view")).toBeVisible();
-  const repoLink = `buzz://repo?owner=${DEFAULT_MOCK_PUBKEY}&d=buzz&tab=prs`;
-  const prLink = `buzz://pr?id=${PR_ID}&owner=${DEFAULT_MOCK_PUBKEY}&d=buzz`;
-  const issueLink = `buzz://issue?id=${ISSUE_ID}&owner=${DEFAULT_MOCK_PUBKEY}&d=buzz`;
+  const repoLink = `nimino://repo?owner=${DEFAULT_MOCK_PUBKEY}&d=buzz&tab=prs`;
+  const prLink = `nimino://pr?id=${PR_ID}&owner=${DEFAULT_MOCK_PUBKEY}&d=buzz`;
+  const issueLink = `nimino://issue?id=${ISSUE_ID}&owner=${DEFAULT_MOCK_PUBKEY}&d=buzz`;
   const emitEntityLink = async (link: string) => {
     await page.waitForFunction(
       () => typeof window.__TAURI_INTERNALS__?.invoke === "function",
@@ -621,15 +621,15 @@ test("deleted reply links identify deletion and fall back to their thread root",
   const deletedReplyId = "c".repeat(64);
   const threadRootId = "b".repeat(64);
   const channelId = "9dae0116-799b-5071-a0a8-fdd30a91a35d";
-  const link = `buzz://message?channel=${channelId}&id=${deletedReplyId}&thread=${threadRootId}`;
+  const link = `nimino://message?channel=${channelId}&id=${deletedReplyId}&thread=${threadRootId}`;
   await installMockBridge(page, { deletedEventIds: [deletedReplyId] });
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await page.waitForFunction(
-    () => typeof window.__BUZZ_E2E_EMIT_MOCK_MESSAGE__ === "function",
+    () => typeof window.__NIMINO_E2E_EMIT_MOCK_MESSAGE__ === "function",
   );
   await page.evaluate(
     ({ id }) => {
-      window.__BUZZ_E2E_EMIT_MOCK_MESSAGE__?.({
+      window.__NIMINO_E2E_EMIT_MOCK_MESSAGE__?.({
         channelName: "random",
         content: "Surviving thread root",
         id,
@@ -664,7 +664,7 @@ test("deleted top-level message links identify deletion and fall back to channel
 }) => {
   const missingMessageId = "d".repeat(64);
   const channelId = "9dae0116-799b-5071-a0a8-fdd30a91a35d";
-  const link = `buzz://message?channel=${channelId}&id=${missingMessageId}`;
+  const link = `nimino://message?channel=${channelId}&id=${missingMessageId}`;
   await installMockBridge(page, { deletedEventIds: [missingMessageId] });
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await page.getByTestId("channel-general").click();
@@ -696,7 +696,7 @@ test("deleted top-level message links identify deletion and fall back to channel
 test("cold-start entity links drain after the React listener mounts", async ({
   page,
 }) => {
-  const href = `buzz://repo?owner=${DEFAULT_MOCK_PUBKEY}&d=buzz&tab=prs`;
+  const href = `nimino://repo?owner=${DEFAULT_MOCK_PUBKEY}&d=buzz&tab=prs`;
   await installMockBridge(page, {
     pendingEntityDeepLinks: [{ id: "cold-start-project", href }],
   });

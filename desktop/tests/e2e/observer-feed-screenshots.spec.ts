@@ -22,7 +22,7 @@ const MANAGED_AGENTS = [
 // Helper: wait until the seed hook is available in the page.
 async function waitForSeedHook(page: import("@playwright/test").Page) {
   await page.waitForFunction(
-    () => typeof window.__BUZZ_E2E_SEED_OBSERVER_EVENTS__ === "function",
+    () => typeof window.__NIMINO_E2E_SEED_OBSERVER_EVENTS__ === "function",
     null,
     { timeout: 10_000 },
   );
@@ -79,7 +79,7 @@ async function seedObserverEvents(
 ) {
   await page.evaluate(
     ({ pubkey, evts }) => {
-      window.__BUZZ_E2E_SEED_OBSERVER_EVENTS__?.({
+      window.__NIMINO_E2E_SEED_OBSERVER_EVENTS__?.({
         agentPubkey: pubkey,
         events: evts,
       });

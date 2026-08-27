@@ -16,7 +16,7 @@ import { TEST_IDENTITIES } from "./bridge";
 // surface empty/wrong summaries — a false green. See
 // PLANS/GUI_OVERHAUL_TEST_HARNESS_DAWN.md.
 //
-// Transport auth: the test relay runs BUZZ_REQUIRE_AUTH_TOKEN=false
+// Transport auth: the test relay runs NIMINO_REQUIRE_AUTH_TOKEN=false
 // (start-relay-for-tests.sh), so `POST /events` accepts a plain `X-Pubkey`
 // header (bridge.rs verify_bridge_auth dev fallback). The EVENT is still fully
 // signed — only the per-request NIP-98 auth envelope is skipped. `POST /events`
@@ -41,7 +41,7 @@ const KIND_REACTION = 7;
 const KIND_DELETION = 5;
 
 const DEFAULT_RELAY_HTTP =
-  process.env.BUZZ_E2E_RELAY_URL ?? "http://localhost:3000";
+  process.env.NIMINO_E2E_RELAY_URL ?? "http://localhost:3000";
 
 type IdentityName = keyof typeof TEST_IDENTITIES;
 

@@ -62,15 +62,15 @@ where
 
 #[derive(Parser)]
 #[command(
-    name = "buzz",
-    about = "Buzz CLI — interact with a Buzz relay",
+    name = "nimino",
+    about = "Nimino CLI — interact with a Nimino relay",
     long_about = "\
-Buzz CLI — interact with a Buzz relay
+Nimino CLI — interact with a Nimino relay
 
 Configuration (flags override env vars):
-  BUZZ_RELAY_URL     Relay base URL        [default: http://localhost:3000]
-  BUZZ_PRIVATE_KEY   Nostr private key (hex or nsec)  [required]
-  BUZZ_AUTH_TAG      NIP-OA auth tag JSON  [optional]
+  NIMINO_RELAY_URL     Relay base URL        [default: http://localhost:3000]
+  NIMINO_PRIVATE_KEY   Nostr private key (hex or nsec)  [required]
+  NIMINO_AUTH_TAG      NIP-OA auth tag JSON  [optional]
 
 The 'pack' subcommand runs locally and does not require a relay connection.
 
@@ -78,16 +78,20 @@ Exit codes: 0=ok  1=bad input  2=relay/network error  3=auth error  4=other  5=w
 Errors are JSON on stderr: {\"error\": \"<category>\", \"message\": \"<detail>\"}"
 )]
 struct Cli {
-    /// Relay URL (http:// or https://). Overrides BUZZ_RELAY_URL env var.
-    #[arg(long, env = "BUZZ_RELAY_URL", default_value = "http://localhost:3000")]
+    /// Relay URL (http:// or https://). Overrides NIMINO_RELAY_URL env var.
+    #[arg(
+        long,
+        env = "NIMINO_RELAY_URL",
+        default_value = "http://localhost:3000"
+    )]
     relay: String,
 
     /// Nostr private key (hex or nsec). This is the CLI's identity.
-    #[arg(long, env = "BUZZ_PRIVATE_KEY", hide_env_values = true)]
+    #[arg(long, env = "NIMINO_PRIVATE_KEY", hide_env_values = true)]
     private_key: Option<String>,
 
     /// NIP-OA auth tag JSON (owner attestation). Injected into every signed event.
-    #[arg(long, env = "BUZZ_AUTH_TAG", hide_env_values = true)]
+    #[arg(long, env = "NIMINO_AUTH_TAG", hide_env_values = true)]
     auth_tag: Option<String>,
 
     /// Output format: 'json' (default, full fields) or 'compact' (reduced fields).
@@ -305,12 +309,12 @@ republish in progress). If the retry also fails, the command exits with an error
 Suggested --reason codes (unknown values are allowed): rotated, retired, \
 bot-rebuilt, left-organization, spam\n\n\
 Archiving a third-party identity is a human owner/admin action: an agent \
-running under BUZZ_AUTH_TAG signs as itself, so it can only ever satisfy \
+running under NIMINO_AUTH_TAG signs as itself, so it can only ever satisfy \
 the self path (target == signer) — not the owner-of-agent path for another \
 identity.\n\n\
 Examples:\n  \
-buzz agents archive <PUBKEY> --reason retired\n  \
-buzz agents archive <PUBKEY> --reason bot-rebuilt --replaced-by <NEW_PUBKEY>"
+nimino agents archive <PUBKEY> --reason retired\n  \
+nimino agents archive <PUBKEY> --reason bot-rebuilt --replaced-by <NEW_PUBKEY>"
     )]
     Archive {
         /// Target identity pubkey (hex)
@@ -337,7 +341,7 @@ buzz agents archive <PUBKEY> --reason bot-rebuilt --replaced-by <NEW_PUBKEY>"
 extraction failure, then exits with an error if still unresolvable. Use --admin to bypass \
 for relay-admin callers.\n\n\
 Examples:\n  \
-buzz agents unarchive <PUBKEY> --reason returned"
+nimino agents unarchive <PUBKEY> --reason returned"
     )]
     Unarchive {
         /// Target identity pubkey (hex)
@@ -362,7 +366,7 @@ and NIP-70 `-` protection tag before trusting it. Any trust failure is a \
 nonzero-exit error, never a false-empty success — this command's whole \
 purpose is verification.\n\n\
 Examples:\n  \
-buzz agents archived"
+nimino agents archived"
     )]
     Archived,
 }
@@ -371,10 +375,10 @@ buzz agents archived"
 pub enum MessagesCmd {
     /// Send a message to a channel
     #[command(
-        after_help = "Examples:\n  buzz messages send --channel <UUID> --content \"hello\"\n  buzz messages send --channel <UUID> --content \"@alice check this\"\n  echo \"hello from stdin\" | buzz messages send --channel <UUID> --content -"
+        after_help = "Examples:\n  nimino messages send --channel <UUID> --content \"hello\"\n  nimino messages send --channel <UUID> --content \"@alice check this\"\n  echo \"hello from stdin\" | nimino messages send --channel <UUID> --content -"
     )]
     Send {
-        /// Channel UUID (from 'buzz channels list')
+        /// Channel UUID (from 'nimino channels list')
         #[arg(long)]
         channel: String,
         /// Message text — supports @mentions and markdown. Use '-' to read from stdin.
@@ -461,7 +465,7 @@ pub enum MessagesCmd {
     },
     /// Retrieve messages from a channel
     #[command(
-        after_help = "Examples:\n  buzz messages get --channel <UUID>\n  buzz messages get --channel <UUID> --limit 50 --kinds 1,1984"
+        after_help = "Examples:\n  nimino messages get --channel <UUID>\n  nimino messages get --channel <UUID> --limit 50 --kinds 1,1984"
     )]
     Get {
         /// Channel UUID
@@ -482,7 +486,7 @@ pub enum MessagesCmd {
     },
     /// Get the containing thread for a message or Buzz message link
     #[command(
-        after_help = "Examples:\n  buzz messages thread --channel <UUID> --event <EVENT_ID>\n  buzz messages thread --link 'buzz://message?channel=<UUID>&id=<EVENT_ID>&thread=<ROOT_ID>'"
+        after_help = "Examples:\n  nimino messages thread --channel <UUID> --event <EVENT_ID>\n  nimino messages thread --link 'nimino://message?channel=<UUID>&id=<EVENT_ID>&thread=<ROOT_ID>'"
     )]
     Thread {
         /// Channel UUID; required unless --link is supplied
@@ -491,7 +495,7 @@ pub enum MessagesCmd {
         /// Message event ID (64-char hex); required unless --link is supplied
         #[arg(long, required_unless_present = "link", conflicts_with = "link")]
         event: Option<String>,
-        /// Canonical buzz://message deep link; uses the configured relay and identity
+        /// Canonical nimino://message deep link; uses the configured relay and identity
         #[arg(long, conflicts_with_all = ["channel", "event"])]
         link: Option<String>,
         /// Maximum number of results to return
@@ -503,7 +507,7 @@ pub enum MessagesCmd {
     },
     /// Full-text search across messages
     #[command(
-        after_help = "Examples:\n  buzz messages search --query checkout\n  buzz messages search --author npub1... --since 1783497600\n  buzz messages search --author Aaron --query checkout --limit 20"
+        after_help = "Examples:\n  nimino messages search --query checkout\n  nimino messages search --author npub1... --since 1783497600\n  nimino messages search --author Aaron --query checkout --limit 20"
     )]
     Search {
         /// Search query string (optional when --author is given)
@@ -534,7 +538,7 @@ pub enum MessagesCmd {
 pub enum ChannelsCmd {
     /// List channels visible to the current identity
     #[command(
-        after_help = "Examples:\n  buzz channels list\n  buzz channels list --visibility open"
+        after_help = "Examples:\n  nimino channels list\n  nimino channels list --visibility open"
     )]
     List {
         /// Filter by visibility
@@ -555,7 +559,7 @@ pub enum ChannelsCmd {
     },
     /// Search channels by human-readable name
     #[command(
-        after_help = "Examples:\n  buzz channels search --query composer\n  buzz channels search --query buzz-chat-composer --exact\n  buzz channels search --query design --include-archived"
+        after_help = "Examples:\n  nimino channels search --query composer\n  nimino channels search --query buzz-chat-composer --exact\n  nimino channels search --query design --include-archived"
     )]
     Search {
         /// Search query (case-insensitive substring of channel name)
@@ -573,7 +577,7 @@ pub enum ChannelsCmd {
     },
     /// Create a new channel
     #[command(
-        after_help = "Examples:\n  buzz channels create --name general --type stream --visibility open\n  buzz channels create --name design --type forum --visibility open --description \"Design discussions\"\n  buzz channels create --name standup --type stream --visibility open --ttl 3600  # ephemeral, archived after 1h idle\n  buzz channels create --name project-x --template \"Buzz Team\"  # type/visibility/canvas/roster from the template; explicit flags override"
+        after_help = "Examples:\n  nimino channels create --name general --type stream --visibility open\n  nimino channels create --name design --type forum --visibility open --description \"Design discussions\"\n  nimino channels create --name standup --type stream --visibility open --ttl 3600  # ephemeral, archived after 1h idle\n  nimino channels create --name project-x --template \"Buzz Team\"  # type/visibility/canvas/roster from the template; explicit flags override"
     )]
     Create {
         /// Channel name
@@ -605,7 +609,7 @@ pub enum ChannelsCmd {
     },
     /// Update channel name, description, visibility, or ephemeral TTL
     #[command(
-        after_help = "Examples:\n  buzz channels update --channel <uuid> --name general\n  buzz channels update --channel <uuid> --visibility open\n  buzz channels update --channel <uuid> --visibility private"
+        after_help = "Examples:\n  nimino channels update --channel <uuid> --name general\n  nimino channels update --channel <uuid> --visibility open\n  nimino channels update --channel <uuid> --visibility private"
     )]
     Update {
         /// Channel UUID
@@ -938,7 +942,7 @@ pub enum WorkflowsCmd {
     },
     /// Trigger a workflow run
     #[command(
-        after_help = "Examples:\n  buzz workflows trigger --workflow <UUID>\n  buzz workflows trigger --workflow <UUID> --inputs '{\"key\":\"value\"}'"
+        after_help = "Examples:\n  nimino workflows trigger --workflow <UUID>\n  nimino workflows trigger --workflow <UUID> --inputs '{\"key\":\"value\"}'"
     )]
     Trigger {
         /// Workflow UUID
@@ -959,7 +963,7 @@ pub enum WorkflowsCmd {
     },
     /// Approve or deny a workflow step
     #[command(
-        after_help = "Examples:\n  buzz workflows approve --token <UUID>\n  buzz workflows approve --token <UUID> --approved false --note \"needs revision\""
+        after_help = "Examples:\n  nimino workflows approve --token <UUID>\n  nimino workflows approve --token <UUID> --approved false --note \"needs revision\""
     )]
     Approve {
         /// The approval token UUID (from the approval request)
@@ -1170,7 +1174,7 @@ pub enum ReposCmd {
         relays: Vec<String>,
         /// Channel UUID to bind the repo to. The `buzz-channel` tag is the
         /// git ACL: without it the relay 404s every clone/fetch/push until
-        /// the author runs `buzz repos bind` (issue #3527).
+        /// the author runs `nimino repos bind` (issue #3527).
         #[arg(long)]
         channel: Option<String>,
     },
@@ -1489,7 +1493,7 @@ pub enum PatchesCmd {
 pub enum PrCmd {
     /// Open a git pull request (NIP-34 kind:1618)
     #[command(
-        after_help = "Examples:\n  buzz pr open --repo-owner <hex> --repo-id myrepo --subject 'Fix bug' --body-file - --commit $(git rev-parse HEAD) --clone https://relay/git/owner/myrepo --branch-name fix-bug\n  buzz pr update --repo-owner <hex> --repo-id myrepo --pr <event> --pr-author <hex> --commit $(git rev-parse HEAD) --clone https://relay/git/owner/myrepo"
+        after_help = "Examples:\n  nimino pr open --repo-owner <hex> --repo-id myrepo --subject 'Fix bug' --body-file - --commit $(git rev-parse HEAD) --clone https://relay/git/owner/myrepo --branch-name fix-bug\n  nimino pr update --repo-owner <hex> --repo-id myrepo --pr <event> --pr-author <hex> --commit $(git rev-parse HEAD) --clone https://relay/git/owner/myrepo"
     )]
     Open {
         /// Repo owner pubkey (64-char hex)
@@ -1767,12 +1771,12 @@ pub enum MediaCmd {
     },
 }
 
-/// Subcommands for `buzz mem`.
+/// Subcommands for `nimino mem`.
 #[derive(Subcommand)]
 pub enum MemCmd {
     /// List non-tombstoned memory entries
     Ls {
-        /// Owner pubkey (hex). Overrides BUZZ_AUTH_TAG.
+        /// Owner pubkey (hex). Overrides NIMINO_AUTH_TAG.
         #[arg(long)]
         owner: Option<String>,
         /// Agent pubkey (hex) to read as this key's owner.
@@ -1823,8 +1827,8 @@ pub enum MemCmd {
         #[arg(long)]
         patch_file: Option<String>,
         /// sha256 hex digest (lowercase) of the value the patch was generated
-        /// against. Hashes the exact UTF-8 bytes returned by `buzz mem get`,
-        /// not normalized lines. Run `buzz mem hash <slug>` to capture this
+        /// against. Hashes the exact UTF-8 bytes returned by `nimino mem get`,
+        /// not normalized lines. Run `nimino mem hash <slug>` to capture this
         /// before editing.
         #[arg(long)]
         base_hash: Option<String>,
@@ -1868,7 +1872,7 @@ pub enum PackCmd {
 /// Community moderation commands.
 ///
 /// The community (tenant) is selected by the relay host in `--relay` /
-/// `BUZZ_RELAY_URL` — moderation commands are community-global and carry no
+/// `NIMINO_RELAY_URL` — moderation commands are community-global and carry no
 /// channel scope. The signing key must be a community owner/admin; the relay
 /// authorizes every command.
 #[derive(Subcommand)]
@@ -1961,7 +1965,7 @@ pub enum ModerationCmd {
     },
 }
 
-/// Normalize hand-authored `BUZZ_AUTH_TAG` input to strict JSON.
+/// Normalize hand-authored `NIMINO_AUTH_TAG` input to strict JSON.
 ///
 /// `.env` files and shell exports sometimes carry the tag in the unquoted
 /// shorthand `[auth,<hex>,<conditions>,<hex>]` (quotes dropped by hand).
@@ -2010,14 +2014,14 @@ async fn run(cli: Cli) -> Result<(), CliError> {
     // Auth: private key is required for all relay operations.
     // The keypair IS the identity — no tokens, no other auth.
     let private_key_str = cli.private_key.ok_or_else(|| {
-        CliError::Auth("BUZZ_PRIVATE_KEY is required (use --private-key or set env var)".into())
+        CliError::Auth("NIMINO_PRIVATE_KEY is required (use --private-key or set env var)".into())
     })?;
     let keys = Keys::parse(&private_key_str)
-        .map_err(|e| CliError::Key(format!("invalid BUZZ_PRIVATE_KEY: {e}")))?;
+        .map_err(|e| CliError::Key(format!("invalid NIMINO_PRIVATE_KEY: {e}")))?;
 
     // NIP-OA: parse and verify the auth tag if provided.
     //
-    // `BUZZ_AUTH_TAG` is hand-authored configuration, so the unquoted raw
+    // `NIMINO_AUTH_TAG` is hand-authored configuration, so the unquoted raw
     // shorthand `[auth,hex,,hex]` is normalized to JSON here — at this input
     // edge only. The SDK grammar and the `x-auth-tag` wire format stay strict
     // JSON; all validation and signature verification happen on the strict
@@ -2026,17 +2030,18 @@ async fn run(cli: Cli) -> Result<(), CliError> {
         Some(ref input) if !input.is_empty() => {
             let json = normalize_auth_tag_input(input);
             let tag = buzz_sdk::nip_oa::parse_auth_tag(&json)
-                .map_err(|e| CliError::Auth(format!("BUZZ_AUTH_TAG is malformed: {e}")))?;
+                .map_err(|e| CliError::Auth(format!("NIMINO_AUTH_TAG is malformed: {e}")))?;
             buzz_sdk::nip_oa::verify_auth_tag(&json, &keys.public_key()).map_err(|e| {
                 CliError::Auth(format!(
-                    "BUZZ_AUTH_TAG verification failed for pubkey {}: {e}",
+                    "NIMINO_AUTH_TAG verification failed for pubkey {}: {e}",
                     keys.public_key().to_hex()
                 ))
             })?;
             // Canonical wire form derives from the parsed-and-verified tag
             // (same shape as buzz-acp's RestClient), never from raw input.
-            let canonical = serde_json::to_string(tag.as_slice())
-                .map_err(|e| CliError::Auth(format!("BUZZ_AUTH_TAG serialization failed: {e}")))?;
+            let canonical = serde_json::to_string(tag.as_slice()).map_err(|e| {
+                CliError::Auth(format!("NIMINO_AUTH_TAG serialization failed: {e}"))
+            })?;
             (Some(tag), Some(canonical))
         }
         _ => (None, None),
@@ -2074,6 +2079,9 @@ async fn run(cli: Cli) -> Result<(), CliError> {
 mod tests {
     use super::*;
     use clap::CommandFactory;
+    use std::sync::Mutex;
+
+    static CLI_ENV_LOCK: Mutex<()> = Mutex::new(());
 
     /// Raw shorthand `[auth,hex,,hex]` normalizes to strict JSON; the empty
     /// conditions field becomes `""`.
@@ -2127,16 +2135,61 @@ mod tests {
     }
 
     #[test]
+    fn nimino_private_key_env_is_exclusive() {
+        let _guard = CLI_ENV_LOCK.lock().expect("CLI env test lock");
+        let canonical_name = "NIMINO_PRIVATE_KEY";
+        let legacy_name = ["BU", "ZZ_PRIVATE_KEY"].concat();
+        let prior_canonical = std::env::var_os(canonical_name);
+        let prior_legacy = std::env::var_os(&legacy_name);
+
+        std::env::set_var(canonical_name, "nimino-key");
+        std::env::remove_var(&legacy_name);
+        let canonical_value = Cli::try_parse_from(["nimino", "channels", "list"])
+            .ok()
+            .and_then(|cli| cli.private_key);
+
+        std::env::remove_var(canonical_name);
+        std::env::set_var(&legacy_name, "legacy-key");
+        let legacy_value = Cli::try_parse_from(["nimino", "channels", "list"])
+            .ok()
+            .and_then(|cli| cli.private_key);
+
+        match prior_canonical {
+            Some(value) => std::env::set_var(canonical_name, value),
+            None => std::env::remove_var(canonical_name),
+        }
+        match prior_legacy {
+            Some(value) => std::env::set_var(&legacy_name, value),
+            None => std::env::remove_var(&legacy_name),
+        }
+
+        assert_eq!(canonical_value.as_deref(), Some("nimino-key"));
+        assert_eq!(legacy_value, None);
+    }
+
+    #[test]
+    fn cli_help_uses_nimino_namespace() {
+        let help = match Cli::try_parse_from(["nimino", "--help"]) {
+            Err(error) => error.to_string(),
+            Ok(_) => panic!("--help must stop parsing"),
+        };
+
+        assert!(help.contains("Nimino CLI — interact with a Nimino relay"));
+        assert!(help.contains("NIMINO_PRIVATE_KEY"));
+        assert!(!help.contains("Buzz CLI"));
+    }
+
+    #[test]
     fn messages_thread_accepts_link_or_explicit_identifiers() {
         let channel = "123e4567-e89b-12d3-a456-426614174000";
         let event = "a".repeat(64);
-        let link = format!("buzz://message?channel={channel}&id={event}");
+        let link = format!("nimino://message?channel={channel}&id={event}");
 
         assert!(
-            Cli::try_parse_from(["buzz", "messages", "thread", "--link", link.as_str(),]).is_ok()
+            Cli::try_parse_from(["nimino", "messages", "thread", "--link", link.as_str(),]).is_ok()
         );
         assert!(Cli::try_parse_from([
-            "buzz",
+            "nimino",
             "messages",
             "thread",
             "--channel",
@@ -2151,12 +2204,14 @@ mod tests {
     fn messages_thread_rejects_partial_or_mixed_targets() {
         let channel = "123e4567-e89b-12d3-a456-426614174000";
         let event = "a".repeat(64);
-        let link = format!("buzz://message?channel={channel}&id={event}");
+        let link = format!("nimino://message?channel={channel}&id={event}");
 
-        assert!(Cli::try_parse_from(["buzz", "messages", "thread"]).is_err());
-        assert!(Cli::try_parse_from(["buzz", "messages", "thread", "--channel", channel]).is_err());
+        assert!(Cli::try_parse_from(["nimino", "messages", "thread"]).is_err());
+        assert!(
+            Cli::try_parse_from(["nimino", "messages", "thread", "--channel", channel]).is_err()
+        );
         assert!(Cli::try_parse_from([
-            "buzz",
+            "nimino",
             "messages",
             "thread",
             "--link",
@@ -2170,7 +2225,7 @@ mod tests {
     #[test]
     fn set_status_clear_rejects_text_and_emoji() {
         for extra in [["--text", "busy"], ["--emoji", "🎶"]] {
-            let args = ["buzz", "users", "set-status", "--clear"]
+            let args = ["nimino", "users", "set-status", "--clear"]
                 .into_iter()
                 .chain(extra);
             assert!(
@@ -2183,12 +2238,12 @@ mod tests {
 
     #[test]
     fn set_status_requires_text_or_clear() {
-        assert!(Cli::try_parse_from(["buzz", "users", "set-status"]).is_err());
+        assert!(Cli::try_parse_from(["nimino", "users", "set-status"]).is_err());
         assert!(
-            Cli::try_parse_from(["buzz", "users", "set-status", "--emoji", "🎶"]).is_err(),
+            Cli::try_parse_from(["nimino", "users", "set-status", "--emoji", "🎶"]).is_err(),
             "--emoji alone must not imply a status"
         );
-        assert!(Cli::try_parse_from(["buzz", "users", "set-status", "--clear"]).is_ok());
+        assert!(Cli::try_parse_from(["nimino", "users", "set-status", "--clear"]).is_ok());
     }
 
     #[test]
@@ -2490,7 +2545,7 @@ mod tests {
     fn projects_update_multi_field_is_accepted() {
         assert!(
             Cli::try_parse_from([
-                "buzz",
+                "nimino",
                 "projects",
                 "update",
                 "my-slug",
@@ -2509,7 +2564,7 @@ mod tests {
     fn projects_update_setter_with_other_clearer_is_accepted() {
         assert!(
             Cli::try_parse_from([
-                "buzz",
+                "nimino",
                 "projects",
                 "update",
                 "my-slug",
@@ -2527,7 +2582,7 @@ mod tests {
     fn projects_update_setter_with_own_clearer_is_rejected() {
         assert!(
             Cli::try_parse_from([
-                "buzz",
+                "nimino",
                 "projects",
                 "update",
                 "my-slug",
@@ -2549,7 +2604,7 @@ mod tests {
         // kind is not a runtime/auth failure — Cli::try_parse_from returns Err
         // immediately for argument violations.
         assert!(
-            Cli::try_parse_from(["buzz", "projects", "update", "my-slug"]).is_err(),
+            Cli::try_parse_from(["nimino", "projects", "update", "my-slug"]).is_err(),
             "update with no setters or clearers must be rejected at parse time"
         );
     }
@@ -2559,12 +2614,12 @@ mod tests {
     fn projects_create_invalid_visibility_is_rejected_by_clap() {
         assert!(
             Cli::try_parse_from([
-                "buzz",
+                "nimino",
                 "projects",
                 "create",
                 "my-slug",
                 "--repo",
-                "buzz",
+                "nimino",
                 "--visibility",
                 "chartreuse",
             ])
@@ -2578,7 +2633,7 @@ mod tests {
     fn projects_update_invalid_visibility_is_rejected_by_clap() {
         assert!(
             Cli::try_parse_from([
-                "buzz",
+                "nimino",
                 "projects",
                 "update",
                 "my-slug",

@@ -17,7 +17,7 @@
 //! * **Desktop is the ONLY readiness source.** `buzz-acp` trusts the payload
 //!   passed by the desktop and does NOT re-derive readiness.
 //! * **Normal startup gains no second readiness path.** The early branch is
-//!   entered only when `BUZZ_ACP_SETUP_PAYLOAD` is set.
+//!   entered only when `NIMINO_ACP_SETUP_PAYLOAD` is set.
 //! * `spawn_key_refusal`-class identity failures are outside this path: no
 //!   valid key → no safe process to post as the agent.
 //!
@@ -80,7 +80,7 @@ use crate::{
 // ── Payload ───────────────────────────────────────────────────────────────────
 
 /// Env var carrying the JSON-encoded setup payload.
-pub(crate) const SETUP_PAYLOAD_ENV_VAR: &str = "BUZZ_ACP_SETUP_PAYLOAD";
+pub(crate) const SETUP_PAYLOAD_ENV_VAR: &str = "NIMINO_ACP_SETUP_PAYLOAD";
 
 /// A single missing requirement, surface-discriminated so the nudge copy
 /// names exactly what to set and where.
@@ -315,8 +315,8 @@ pub(crate) async fn run_setup_listener(config: Config, payload: SetupPayload) ->
 
     let pubkey_hex = config.keys.public_key().to_hex();
 
-    // Parse BUZZ_AUTH_TAG for relay membership / NIP-OA.
-    let relay_auth_tag: Option<nostr::Tag> = std::env::var("BUZZ_AUTH_TAG")
+    // Parse NIMINO_AUTH_TAG for relay membership / NIP-OA.
+    let relay_auth_tag: Option<nostr::Tag> = std::env::var("NIMINO_AUTH_TAG")
         .ok()
         .filter(|s| !s.is_empty())
         .and_then(|s| buzz_sdk::nip_oa::parse_auth_tag(&s).ok());

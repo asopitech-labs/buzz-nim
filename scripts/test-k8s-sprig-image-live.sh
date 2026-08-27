@@ -5,20 +5,20 @@
 # that the kubelet's container runtime can resolve the same name and digest.
 set -euo pipefail
 
-: "${BUZZ_K8S_TEST_CONTEXT:?set the explicit disposable/local kubectl context}"
-: "${BUZZ_SPRIG_IMAGE:?set an immutable image reference (name@sha256:<64 hex>)}"
+: "${NIMINO_K8S_TEST_CONTEXT:?set the explicit disposable/local kubectl context}"
+: "${NIMINO_SPRIG_IMAGE:?set an immutable image reference (name@sha256:<64 hex>)}"
 
-if [[ ! "$BUZZ_SPRIG_IMAGE" =~ ^[^[:space:]@]+@sha256:[0-9a-fA-F]{64}$ ]]; then
-    echo "error: BUZZ_SPRIG_IMAGE must be name@sha256:<64 hex>" >&2
+if [[ ! "$NIMINO_SPRIG_IMAGE" =~ ^[^[:space:]@]+@sha256:[0-9a-fA-F]{64}$ ]]; then
+    echo "error: NIMINO_SPRIG_IMAGE must be name@sha256:<64 hex>" >&2
     exit 2
 fi
 
-CONTEXT="$BUZZ_K8S_TEST_CONTEXT"
-IMAGE="$BUZZ_SPRIG_IMAGE"
-PULL_POLICY="${BUZZ_K8S_TEST_PULL_POLICY:-IfNotPresent}"
+CONTEXT="$NIMINO_K8S_TEST_CONTEXT"
+IMAGE="$NIMINO_SPRIG_IMAGE"
+PULL_POLICY="${NIMINO_K8S_TEST_PULL_POLICY:-IfNotPresent}"
 case "$PULL_POLICY" in
     Always|IfNotPresent|Never) ;;
-    *) echo "error: invalid BUZZ_K8S_TEST_PULL_POLICY: $PULL_POLICY" >&2; exit 2 ;;
+    *) echo "error: invalid NIMINO_K8S_TEST_PULL_POLICY: $PULL_POLICY" >&2; exit 2 ;;
 esac
 
 MANAGED_BY="buzz-backend-kubernetes"
