@@ -197,6 +197,15 @@ nimino-data-ops-contract:
 nimino-data-ops-scenarios:
     cargo test -p nimino-data-ops --test convergence_scenarios -- --test-threads=1
 
+# Verify MCP capability, audit, timeout, cancellation, and output boundaries
+nimino-mcp-execution-contract:
+    node scripts/test-nimino-mcp-execution-contract.mjs
+
+# Exercise real MCP stdio framing and a capability denial
+nimino-mcp-framing:
+    cargo build -p buzz-dev-mcp
+    node scripts/test-nimino-mcp-framing.mjs target/debug/buzz-dev-mcp
+
 # Verify complete legacy mesh/Redis ownership and hard-cut dispositions
 legacy-control-manifest-contract:
     node scripts/check-legacy-control-manifest.mjs
@@ -484,6 +493,7 @@ test-unit:
         cargo nextest run -p nimino-store
         cargo nextest run -p nimino-object-store
         cargo nextest run -p nimino-data-ops
+        cargo nextest run -p buzz-dev-mcp
         # buzz-agent model-capabilities corpus: the Rust half of the
         # cross-language drift guard. `model_capabilities.rs` embeds
         # scripts/model-capabilities.json + scripts/normative-corpus.json via
@@ -492,6 +502,8 @@ test-unit:
         # `cargo test --workspace`; without this step a manifest edit that
         # diverges Rust from the corpus ships green.
         cargo nextest run -p buzz-agent --lib
+        cargo build -p buzz-dev-mcp
+        node scripts/test-nimino-mcp-framing.mjs target/debug/buzz-dev-mcp
     else
         ./scripts/run-tests.sh unit
     fi

@@ -13,6 +13,8 @@ use tokio::io::{AsyncRead, AsyncReadExt};
 use tokio::process::Command;
 use tokio_util::sync::CancellationToken;
 
+use crate::capability::{Capability, CapabilityPolicy};
+
 const DEFAULT_TIMEOUT_MS: u64 = 120_000;
 const MAX_TIMEOUT_MS: u64 = 600_000;
 const MAX_COMMAND_BYTES: usize = 1_000_000;
@@ -33,11 +35,21 @@ pub struct SharedState {
     /// bootstrap hint and every `run()` call read the SAME resolution — no drift.
     pub resolved_shell: Result<(PathBuf, String), String>,
     pub artifacts: Mutex<VecDeque<PathBuf>>,
+    pub(crate) capabilities: CapabilityPolicy,
     next_call_id: Mutex<u64>,
 }
 
 impl SharedState {
     pub fn new(cwd: PathBuf, shim: Shim) -> std::io::Result<Self> {
+        let capabilities = CapabilityPolicy::from_env()?;
+        Self::with_capabilities(cwd, shim, capabilities)
+    }
+
+    pub(crate) fn with_capabilities(
+        cwd: PathBuf,
+        shim: Shim,
+        capabilities: CapabilityPolicy,
+    ) -> std::io::Result<Self> {
         let session_dir = tempfile::Builder::new()
             .prefix("buzz-dev-mcp-session-")
             .tempdir()?;
@@ -58,6 +70,7 @@ impl SharedState {
             bootstrap_instructions,
             resolved_shell,
             artifacts: Mutex::new(VecDeque::with_capacity(ARTIFACT_RING_SIZE)),
+            capabilities,
             next_call_id: Mutex::new(0),
         })
     }
@@ -133,6 +146,9 @@ pub async fn run(
     p: ShellParams,
     ct: CancellationToken,
 ) -> Result<CallToolResult, ErrorData> {
+    state
+        .capabilities
+        .authorize("shell", Capability::ProcessExec, "host-process")?;
     if p.command.len() > MAX_COMMAND_BYTES {
         return Err(ErrorData::invalid_params(
             format!("command exceeds {MAX_COMMAND_BYTES} byte limit"),
@@ -991,7 +1007,34 @@ mod tests {
 
     fn make_state(cwd: &std::path::Path) -> SharedState {
         let shim = Shim::install().expect("shim install");
-        SharedState::new(cwd.to_path_buf(), shim).expect("state new")
+        SharedState::with_capabilities(cwd.to_path_buf(), shim, CapabilityPolicy::all_for_test())
+            .expect("state new")
+    }
+
+    #[tokio::test(flavor = "current_thread")]
+    async fn missing_process_capability_rejects_before_spawn() {
+        let dir = tempdir().expect("tempdir");
+        let shim = Shim::install().expect("shim install");
+        let state = SharedState::with_capabilities(
+            dir.path().to_path_buf(),
+            shim,
+            CapabilityPolicy::only(&[Capability::FilesystemRead]),
+        )
+        .expect("state");
+        let marker = dir.path().join("must-not-exist");
+        let err = run(
+            &state,
+            ShellParams {
+                command: format!("touch {}", marker.display()),
+                workdir: None,
+                timeout_ms: Some(5_000),
+            },
+            CancellationToken::new(),
+        )
+        .await
+        .expect_err("process capability must be denied");
+        assert!(err.message.contains(crate::capability::CAPABILITY_DENIED));
+        assert!(!marker.exists());
     }
 
     /// Pull the JSON body out of a CallToolResult so tests can assert on fields.
@@ -1047,6 +1090,64 @@ mod tests {
         let v = body(r);
         assert_eq!(v["timed_out"], true);
         assert_eq!(v["exit_code"], 124);
+    }
+
+    #[cfg(not(windows))]
+    #[tokio::test(flavor = "current_thread")]
+    async fn cancellation_stops_running_command() {
+        let dir = tempdir().expect("tempdir");
+        let state = make_state(dir.path());
+        let token = CancellationToken::new();
+        let cancel = token.clone();
+        tokio::spawn(async move {
+            tokio::time::sleep(Duration::from_millis(100)).await;
+            cancel.cancel();
+        });
+        let result = run(
+            &state,
+            ShellParams {
+                command: "sleep 5".into(),
+                workdir: None,
+                timeout_ms: Some(5_000),
+            },
+            token,
+        )
+        .await
+        .expect("cancellation result");
+        let text = result
+            .content
+            .first()
+            .and_then(|content| content.as_text())
+            .expect("text result");
+        assert_eq!(text.text, "cancelled");
+    }
+
+    #[cfg(not(windows))]
+    #[tokio::test(flavor = "current_thread")]
+    async fn large_output_is_truncated_and_saved() {
+        let dir = tempdir().expect("tempdir");
+        let state = make_state(dir.path());
+        let result = run(
+            &state,
+            ShellParams {
+                command: "for i in {1..3000}; do echo line-$i; done".into(),
+                workdir: None,
+                timeout_ms: Some(5_000),
+            },
+            CancellationToken::new(),
+        )
+        .await
+        .expect("shell result");
+        let value = body(result);
+        assert_eq!(value["stdout_truncated"], true);
+        assert!(value["stdout"]
+            .as_str()
+            .unwrap_or("")
+            .contains("[truncated:"));
+        let artifact = value["stdout_artifact"]
+            .as_str()
+            .expect("large output artifact");
+        assert!(std::path::Path::new(artifact).is_file());
     }
 
     #[tokio::test(flavor = "current_thread")]
@@ -1275,7 +1376,12 @@ mod windows_resolver_tests {
         env::set_var("NIMINO_SHELL", &fake_pwsh);
 
         let shim = crate::shim::Shim::install().expect("shim");
-        let state = SharedState::new(dir.path().to_path_buf(), shim).expect("state");
+        let state = SharedState::with_capabilities(
+            dir.path().to_path_buf(),
+            shim,
+            CapabilityPolicy::all_for_test(),
+        )
+        .expect("state");
 
         env::remove_var("NIMINO_SHELL");
 

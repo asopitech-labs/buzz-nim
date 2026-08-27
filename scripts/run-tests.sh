@@ -113,6 +113,15 @@ run_unit_tests() {
   run_test_step "nimino-store transaction and recovery tests" \
     cargo test -p nimino-store -- --nocapture
 
+  run_test_step "buzz-dev-mcp capability and execution tests" \
+    cargo test -p buzz-dev-mcp -- --nocapture
+
+  run_test_step "build buzz-dev-mcp for framing" \
+    cargo build -p buzz-dev-mcp
+
+  run_test_step "buzz-dev-mcp stdio framing test" \
+    node scripts/test-nimino-mcp-framing.mjs target/debug/buzz-dev-mcp
+
   # buzz-agent model-capabilities corpus: the Rust half of the cross-language
   # drift guard. model_capabilities.rs embeds scripts/model-capabilities.json +
   # scripts/normative-corpus.json via include_str! and replays the full locked

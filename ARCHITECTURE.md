@@ -182,6 +182,11 @@ them. The target has no shared Redis dependency and no forwarding wrapper;
 Chirps remains transport/negotiation only, while Nim owns authority, sync,
 convergence, projection, and effect policy.
 
+The [`Nimino MCP execution contract`](contracts/nimino-mcp-execution/README.md)
+keeps process, filesystem, and image I/O in a bounded Rust adapter. Explicit
+operation capabilities are checked and audited before side effects; process
+trees are cancelled or timed out as a unit, and every output class is capped.
+
 The versioned [`Nimino data contract`](contracts/nimino-data/README.md)
 classifies canonical truth, rebuildable caches, and append-only logs, and fixes
 the transaction, query, and projection-rebuild intents used by the data-plane

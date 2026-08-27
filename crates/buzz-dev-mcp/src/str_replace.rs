@@ -23,6 +23,16 @@ pub struct StrReplaceParams {
 }
 
 pub fn run(state: &SharedState, p: StrReplaceParams) -> Result<String, ErrorData> {
+    state.capabilities.authorize(
+        "str_replace",
+        crate::capability::Capability::FilesystemRead,
+        "host-filesystem",
+    )?;
+    state.capabilities.authorize(
+        "str_replace",
+        crate::capability::Capability::FilesystemWrite,
+        "host-filesystem",
+    )?;
     if p.old_str.is_empty() {
         return Err(ErrorData::invalid_params(
             "old_str must not be empty".to_string(),
@@ -99,10 +109,10 @@ pub fn run(state: &SharedState, p: StrReplaceParams) -> Result<String, ErrorData
     } else {
         format!("{count} occurrence(s)")
     };
-    Ok(format!(
+    Ok(crate::output::bounded_text(format!(
         "Replaced {label} in {}.\n\n{diff}",
         target.display()
-    ))
+    )))
 }
 
 pub(crate) fn count_occurrences_capped(text: &str, pattern: &str) -> usize {
@@ -230,7 +240,41 @@ mod tests {
 
     fn make_state(cwd: &std::path::Path) -> SharedState {
         let shim = crate::shim::Shim::install().expect("shim install");
-        SharedState::new(cwd.to_path_buf(), shim).expect("state new")
+        SharedState::with_capabilities(
+            cwd.to_path_buf(),
+            shim,
+            crate::capability::CapabilityPolicy::all_for_test(),
+        )
+        .expect("state new")
+    }
+
+    #[test]
+    fn missing_write_capability_leaves_file_unchanged() {
+        let dir = tempdir().expect("tempdir");
+        let file = dir.path().join("a.txt");
+        fs::write(&file, "before\n").expect("write");
+        let shim = crate::shim::Shim::install().expect("shim install");
+        let state = SharedState::with_capabilities(
+            dir.path().to_path_buf(),
+            shim,
+            crate::capability::CapabilityPolicy::only(&[
+                crate::capability::Capability::FilesystemRead,
+            ]),
+        )
+        .expect("state");
+        let err = run(
+            &state,
+            StrReplaceParams {
+                path: "a.txt".into(),
+                old_str: "before".into(),
+                new_str: "after".into(),
+                replace_all: false,
+                workdir: None,
+            },
+        )
+        .expect_err("write capability must be denied");
+        assert!(err.message.contains(crate::capability::CAPABILITY_DENIED));
+        assert_eq!(fs::read_to_string(file).expect("read"), "before\n");
     }
 
     #[test]

@@ -331,6 +331,20 @@ check(
   "data verify/repair contract and scenarios must remain in CI",
 );
 check(
+  /^nimino-mcp-execution-contract:\n    node scripts\/test-nimino-mcp-execution-contract\.mjs$/m.test(
+    justfile,
+  ) &&
+    /^nimino-mcp-framing:\n    cargo build -p buzz-dev-mcp\n    node scripts\/test-nimino-mcp-framing\.mjs target\/debug\/buzz-dev-mcp$/m.test(
+      justfile,
+    ) &&
+    workflow.includes("run: just nimino-mcp-execution-contract") &&
+    justfile.includes("cargo nextest run -p buzz-dev-mcp") &&
+    justfile.includes("node scripts/test-nimino-mcp-framing.mjs target/debug/buzz-dev-mcp") &&
+    rustTests.includes("cargo test -p buzz-dev-mcp") &&
+    rustTests.includes("node scripts/test-nimino-mcp-framing.mjs target/debug/buzz-dev-mcp"),
+  "MCP execution contract, framing, and unit tests must remain in CI",
+);
+check(
   /^legacy-control-manifest-contract:\n    node scripts\/check-legacy-control-manifest\.mjs$/m.test(
     justfile,
   ) && workflow.includes("run: just legacy-control-manifest-contract"),

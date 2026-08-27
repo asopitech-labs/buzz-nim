@@ -86,6 +86,7 @@ const PASSTHROUGH_ENV: &[&str] = &[
     "NIMINO_PRIVATE_KEY",
     "NIMINO_RELAY_URL",
     "NIMINO_AUTH_TAG",
+    "NIMINO_MCP_CAPABILITIES",
     // Agent display name — dev-mcp uses it as the git author name. On the
     // Desktop path this arrives via the wire `mcpServers[].env` declaration
     // (which wins here anyway); the allowlist entry covers ACP clients that
@@ -1039,6 +1040,7 @@ mod content_tests {
     #[test]
     fn passthrough_includes_buzz_owner_attestation() {
         assert!(PASSTHROUGH_ENV.contains(&"NIMINO_AUTH_TAG"));
+        assert!(PASSTHROUGH_ENV.contains(&"NIMINO_MCP_CAPABILITIES"));
     }
 
     #[test]

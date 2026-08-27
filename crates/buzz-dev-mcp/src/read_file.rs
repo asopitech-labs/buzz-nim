@@ -21,6 +21,11 @@ pub struct ReadFileParams {
 }
 
 pub fn run(state: &SharedState, p: ReadFileParams) -> Result<String, ErrorData> {
+    state.capabilities.authorize(
+        "read_file",
+        crate::capability::Capability::FilesystemRead,
+        "host-filesystem",
+    )?;
     let (_target, content) = crate::paths::read_text_file(state, &p.path, p.workdir.as_deref())?;
 
     let all_lines: Vec<&str> = content.lines().collect();
@@ -62,7 +67,7 @@ pub fn run(state: &SharedState, p: ReadFileParams) -> Result<String, ErrorData> 
         ));
     }
 
-    Ok(out)
+    Ok(crate::output::bounded_text(out))
 }
 
 #[cfg(test)]
@@ -73,7 +78,12 @@ mod tests {
 
     fn make_state(cwd: &std::path::Path) -> SharedState {
         let shim = crate::shim::Shim::install().expect("shim install");
-        SharedState::new(cwd.to_path_buf(), shim).expect("state new")
+        SharedState::with_capabilities(
+            cwd.to_path_buf(),
+            shim,
+            crate::capability::CapabilityPolicy::all_for_test(),
+        )
+        .expect("state new")
     }
 
     #[test]
@@ -99,6 +109,30 @@ mod tests {
             !out.contains("[showing lines"),
             "full file should have no truncation footer: {out}"
         );
+    }
+
+    #[test]
+    fn missing_read_capability_rejects_access() {
+        let dir = tempdir().expect("tempdir");
+        fs::write(dir.path().join("private.txt"), "secret\n").expect("write");
+        let shim = crate::shim::Shim::install().expect("shim install");
+        let state = SharedState::with_capabilities(
+            dir.path().to_path_buf(),
+            shim,
+            crate::capability::CapabilityPolicy::only(&[]),
+        )
+        .expect("state");
+        let err = run(
+            &state,
+            ReadFileParams {
+                path: "private.txt".into(),
+                offset: None,
+                limit: None,
+                workdir: None,
+            },
+        )
+        .expect_err("read capability must be denied");
+        assert!(err.message.contains(crate::capability::CAPABILITY_DENIED));
     }
 
     #[test]
@@ -180,6 +214,25 @@ mod tests {
         let err = run(&state, p).unwrap_err();
         let msg = format!("{err:?}");
         assert!(msg.contains("too large"), "msg: {msg}");
+    }
+
+    #[test]
+    fn read_output_is_bounded() {
+        let dir = tempdir().expect("tempdir");
+        fs::write(dir.path().join("wide.txt"), "x".repeat(512 * 1024)).expect("write");
+        let state = make_state(dir.path());
+        let out = run(
+            &state,
+            ReadFileParams {
+                path: "wide.txt".into(),
+                offset: None,
+                limit: None,
+                workdir: None,
+            },
+        )
+        .expect("read");
+        assert!(out.len() <= crate::output::MAX_TEXT_RESULT_BYTES);
+        assert!(out.contains("output truncated"));
     }
 
     #[test]

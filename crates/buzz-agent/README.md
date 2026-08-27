@@ -296,7 +296,7 @@ The trust boundary is **the operator who launched the agent**. The harness, MCP 
 | Boundary | Mechanism |
 |---|---|
 | Stdout discipline | Single-consumer `mpsc` channel feeding stdout. No two tasks can interleave bytes. All logs go to stderr. |
-| MCP child env | Whitelist (`PATH`, `HOME`, `TERM`, `LANG`, `LC_ALL`, `TMPDIR`) plus what the client explicitly passes. Your `ANTHROPIC_API_KEY` does not leak into MCP children. |
+| MCP child env | Whitelist (`PATH`, locale/temp, proxy/TLS, Nimino identity and capability grants) plus what the client explicitly passes. Your `ANTHROPIC_API_KEY` does not leak into MCP children. |
 | MCP child lifetime | Process group via `setpgid(0,0)` in `pre_exec`. On transport break or shutdown: `killpg(SIGKILL)`. Grandchildren die too. |
 | Server poisoning | After a timeout or transport break, the offending server is marked dead. Future calls trigger a lazy restart with exponential backoff. Other servers keep working. |
 | Frame size | `NIMINO_AGENT_MAX_LINE_BYTES` (default 4 MiB). Oversize → connection killed. |

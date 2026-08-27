@@ -130,6 +130,11 @@ async fn load_source(
         }
         Ok((bytes, "data:URL".to_string()))
     } else if src.starts_with("http://") || src.starts_with("https://") {
+        state.capabilities.authorize(
+            "view_image",
+            crate::capability::Capability::NetworkRead,
+            "remote-url",
+        )?;
         let bytes = fetch_url(src).await?;
         Ok((bytes, src.to_string()))
     } else if src.contains("://") {
@@ -139,6 +144,11 @@ async fn load_source(
             "unsupported URL scheme in `source`: {src}",
         )))
     } else {
+        state.capabilities.authorize(
+            "view_image",
+            crate::capability::Capability::FilesystemRead,
+            "host-filesystem",
+        )?;
         let workspace_root = match p.workdir.as_deref() {
             Some(w) => PathBuf::from(w),
             None => state.cwd.clone(),
@@ -683,7 +693,37 @@ mod tests {
 
     fn make_state(cwd: &std::path::Path) -> SharedState {
         let shim = crate::shim::Shim::install().expect("shim install");
-        SharedState::new(cwd.to_path_buf(), shim).expect("state new")
+        SharedState::with_capabilities(
+            cwd.to_path_buf(),
+            shim,
+            crate::capability::CapabilityPolicy::all_for_test(),
+        )
+        .expect("state new")
+    }
+
+    #[tokio::test]
+    async fn missing_network_capability_rejects_before_fetch() {
+        let dir = tempdir().expect("tempdir");
+        let shim = crate::shim::Shim::install().expect("shim install");
+        let state = SharedState::with_capabilities(
+            dir.path().to_path_buf(),
+            shim,
+            crate::capability::CapabilityPolicy::only(&[
+                crate::capability::Capability::FilesystemRead,
+            ]),
+        )
+        .expect("state");
+        let err = run(
+            &state,
+            ViewImageParams {
+                source: "https://example.invalid/image.png".into(),
+                max_dim: None,
+                workdir: None,
+            },
+        )
+        .await
+        .expect_err("network capability must be denied");
+        assert!(err.message.contains(crate::capability::CAPABILITY_DENIED));
     }
 
     fn write_png_rgba(path: &std::path::Path, w: u32, h: u32) -> Vec<u8> {
