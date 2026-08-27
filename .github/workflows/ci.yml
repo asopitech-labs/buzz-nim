@@ -162,6 +162,8 @@ jobs:
         run: just nimino-effect-ledger-contract
       - name: Nimino data operations contract
         run: just nimino-data-ops-contract
+      - name: Legacy mesh and Redis replacement manifest
+        run: just legacy-control-manifest-contract
       - name: Nimino data contract
         run: node scripts/test-nimino-data-contract.mjs
       - name: Nimino event policy contract

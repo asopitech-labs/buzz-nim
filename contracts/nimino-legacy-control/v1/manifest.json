@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.legacy-control-replacement",
+  "version": 1,
+  "compatibilityMode": false,
+  "publicationState": "cutover-ready",
+  "physicalRemovalOwner": 66,
+  "mesh": {
+    "crateFiles": [
+      {"path": "crates/buzz-relay-mesh/src/endpoint.rs", "action": "replace", "ownerIssue": 43, "target": "nimino-chirps authenticated UDP/QUIC endpoint"},
+      {"path": "crates/buzz-relay-mesh/src/gossip.rs", "action": "replace", "ownerIssue": 48, "target": "Chirps negotiation facts plus Nim cluster lifecycle"},
+      {"path": "crates/buzz-relay-mesh/src/lib.rs", "action": "delete", "ownerIssue": 66, "target": "no compatibility wrapper"},
+      {"path": "crates/buzz-relay-mesh/src/membership.rs", "action": "replace", "ownerIssue": 48, "target": "Nim cluster admission and lifecycle"},
+      {"path": "crates/buzz-relay-mesh/src/peer.rs", "action": "replace", "ownerIssue": 43, "target": "nimino-chirps bounded message adapter"},
+      {"path": "crates/buzz-relay-mesh/src/registry.rs", "action": "replace", "ownerIssue": 51, "target": "Nim replicated control state"},
+      {"path": "crates/buzz-relay-mesh/src/runtime.rs", "action": "replace", "ownerIssue": 43, "target": "nimino-chirps runtime adapter"},
+      {"path": "crates/buzz-relay-mesh/src/status.rs", "action": "replace", "ownerIssue": 48, "target": "Nim lifecycle facts and adapter metrics"},
+      {"path": "crates/buzz-relay-mesh/src/wire.rs", "action": "replace", "ownerIssue": 43, "target": "Chirps frames carrying opaque Nimino protocol payloads"}
+    ],
+    "consumers": [
+      {"path": "crates/buzz-relay/src/api/mesh_demo.rs", "action": "delete", "ownerIssue": 66, "target": "no legacy mesh demo surface"},
+      {"path": "crates/buzz-relay/src/audio/handler.rs", "action": "replace", "ownerIssue": 52, "target": "fenced Nimino route plus nimino-chirps transport"},
+      {"path": "crates/buzz-relay/src/audio/join.rs", "action": "replace", "ownerIssue": 52, "target": "fenced Nimino route plus nimino-chirps transport"},
+      {"path": "crates/buzz-relay/src/audio/mesh.rs", "action": "replace", "ownerIssue": 43, "target": "nimino-chirps message lanes"},
+      {"path": "crates/buzz-relay/src/config.rs", "action": "replace", "ownerIssue": 66, "target": "Nimino node and Chirps configuration only"},
+      {"path": "crates/buzz-relay/src/mesh_boot.rs", "action": "replace", "ownerIssue": 66, "target": "Nimino cluster composition root"},
+      {"path": "crates/buzz-relay/src/tunnel/directory.rs", "action": "replace", "ownerIssue": 52, "target": "Nim-owned lease and route facts"},
+      {"path": "crates/buzz-relay/src/tunnel/reliable.rs", "action": "replace", "ownerIssue": 43, "target": "nimino-chirps reliable bounded frames"}
+    ]
+  },
+  "redis": {
+    "sharedTargetTopologyAllowed": false,
+    "crateFiles": [
+      {"path": "crates/buzz-pubsub/src/cache_invalidation.rs", "action": "replace", "ownerIssue": 55, "target": "checkpoint-bound rebuildable local cache"},
+      {"path": "crates/buzz-pubsub/src/conn_control.rs", "action": "replace", "ownerIssue": 88, "target": "replicated moderation state and local socket action"},
+      {"path": "crates/buzz-pubsub/src/error.rs", "action": "delete", "ownerIssue": 66, "target": "typed Nimino adapter errors"},
+      {"path": "crates/buzz-pubsub/src/lib.rs", "action": "delete", "ownerIssue": 66, "target": "no Redis compatibility wrapper"},
+      {"path": "crates/buzz-pubsub/src/nip98_replay.rs", "action": "replace", "ownerIssue": 53, "target": "replicated canonical replay marker"},
+      {"path": "crates/buzz-pubsub/src/presence.rs", "action": "replace", "ownerIssue": 10, "target": "optional non-authoritative node-local TTL cache"},
+      {"path": "crates/buzz-pubsub/src/publisher.rs", "action": "replace", "ownerIssue": 50, "target": "canonical sync plus process-local subscriber delivery"},
+      {"path": "crates/buzz-pubsub/src/rate_limiter.rs", "action": "replace", "ownerIssue": 10, "target": "optional non-authoritative node-local admission cache"},
+      {"path": "crates/buzz-pubsub/src/subscriber.rs", "action": "replace", "ownerIssue": 50, "target": "canonical sync plus process-local subscriber delivery"},
+      {"path": "crates/buzz-pubsub/src/topic.rs", "action": "replace", "ownerIssue": 50, "target": "community-scoped Nimino sync routes"}
+    ],
+    "consumers": [
+      {"path": "crates/buzz-admin/src/main.rs", "action": "replace", "ownerIssue": 66, "target": "canonical commit and local delivery adapter"},
+      {"path": "crates/buzz-relay/src/api/admin/mod.rs", "action": "replace", "ownerIssue": 66, "target": "Nimino composition test fixture"},
+      {"path": "crates/buzz-relay/src/api/bridge.rs", "action": "replace", "ownerIssue": 66, "target": "Nimino replay facts and local delivery"},
+      {"path": "crates/buzz-relay/src/api/git/policy.rs", "action": "replace", "ownerIssue": 66, "target": "Nimino composition test fixture"},
+      {"path": "crates/buzz-relay/src/api/git/transport.rs", "action": "replace", "ownerIssue": 66, "target": "Nimino composition test fixture"},
+      {"path": "crates/buzz-relay/src/api/invites.rs", "action": "replace", "ownerIssue": 66, "target": "Nimino composition test fixture"},
+      {"path": "crates/buzz-relay/src/api/media.rs", "action": "replace", "ownerIssue": 66, "target": "Nimino composition test fixture"},
+      {"path": "crates/buzz-relay/src/api/operator.rs", "action": "replace", "ownerIssue": 66, "target": "Nimino composition test fixture"},
+      {"path": "crates/buzz-relay/src/audio/handler.rs", "action": "replace", "ownerIssue": 50, "target": "canonical sync and process-local delivery"},
+      {"path": "crates/buzz-relay/src/connection.rs", "action": "replace", "ownerIssue": 66, "target": "process-local subscription registry"},
+      {"path": "crates/buzz-relay/src/error.rs", "action": "replace", "ownerIssue": 66, "target": "Nimino adapter error"},
+      {"path": "crates/buzz-relay/src/handlers/close.rs", "action": "replace", "ownerIssue": 66, "target": "process-local subscription registry"},
+      {"path": "crates/buzz-relay/src/handlers/event.rs", "action": "replace", "ownerIssue": 50, "target": "canonical sync and process-local delivery"},
+      {"path": "crates/buzz-relay/src/handlers/identity_archive.rs", "action": "replace", "ownerIssue": 66, "target": "Nimino composition test fixture"},
+      {"path": "crates/buzz-relay/src/handlers/relay_admin.rs", "action": "replace", "ownerIssue": 66, "target": "Nimino composition test fixture"},
+      {"path": "crates/buzz-relay/src/handlers/req.rs", "action": "replace", "ownerIssue": 66, "target": "process-local subscription registry"},
+      {"path": "crates/buzz-relay/src/handlers/side_effects.rs", "action": "replace", "ownerIssue": 50, "target": "canonical sync and process-local delivery"},
+      {"path": "crates/buzz-relay/src/main.rs", "action": "replace", "ownerIssue": 66, "target": "Nimino composition root without Redis"},
+      {"path": "crates/buzz-relay/src/state.rs", "action": "replace", "ownerIssue": 66, "target": "Nimino node-local state"},
+      {"path": "crates/buzz-relay/src/workflow_sink.rs", "action": "replace", "ownerIssue": 57, "target": "replicated workflow effect ledger"}
+    ],
+    "optionalLocalCaches": [
+      {"surface": "presence-and-typing", "authoritative": false, "scope": "single-node", "ownerIssue": 10},
+      {"surface": "admission-rate-window", "authoritative": false, "scope": "single-node", "ownerIssue": 10}
+    ]
+  },
+  "buildWiring": [
+    {"path": "Cargo.toml", "action": "delete", "ownerIssue": 66, "target": "remove buzz-relay-mesh and Redis workspace wiring"},
+    {"path": "Cargo.lock", "action": "replace", "ownerIssue": 66, "target": "regenerate without legacy mesh and Redis-only graph"},
+    {"path": "crates/buzz-relay/Cargo.toml", "action": "replace", "ownerIssue": 66, "target": "nimino-chirps and node-local adapters only"}
+  ],
+  "forbiddenTargetSymbols": [
+    "buzz_relay_mesh",
+    "buzz-relay-mesh",
+    "PubSubManager",
+    "RedisNip98ReplayGuard",
+    "RedisRateLimiter",
+    "NIMINO_MESH",
+    "REDIS_URL"
+  ],
+  "ownerReview": {
+    "decisionSource": "fork-owner hard-cut and Chirps responsibility directives",
+    "status": "ready-for-owner-review-at-issue-66"
+  }
+}

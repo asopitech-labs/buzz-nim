@@ -197,6 +197,10 @@ nimino-data-ops-contract:
 nimino-data-ops-scenarios:
     cargo test -p nimino-data-ops --test convergence_scenarios -- --test-threads=1
 
+# Verify complete legacy mesh/Redis ownership and hard-cut dispositions
+legacy-control-manifest-contract:
+    node scripts/check-legacy-control-manifest.mjs
+
 # Verify the fixed 1/3/5-node real-mesh scenario definition and ownership
 nimino-cluster-scenario-contract:
     node scripts/test-nimino-cluster-scenario-contract.mjs

@@ -331,6 +331,12 @@ check(
   "data verify/repair contract and scenarios must remain in CI",
 );
 check(
+  /^legacy-control-manifest-contract:\n    node scripts\/check-legacy-control-manifest\.mjs$/m.test(
+    justfile,
+  ) && workflow.includes("run: just legacy-control-manifest-contract"),
+  "legacy mesh and Redis replacement manifest must remain in CI",
+);
+check(
   /^nimino-cluster-scenario-contract:\n    node scripts\/test-nimino-cluster-scenario-contract\.mjs$/m.test(
     justfile,
   ) &&

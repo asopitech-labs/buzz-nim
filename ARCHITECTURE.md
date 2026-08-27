@@ -176,6 +176,12 @@ divergent replica. Nim owns the repair decision and durable lifecycle; the
 `nimino-data-ops` Rust CLI only verifies digests, resumes verified object copies,
 and atomically swaps an explicitly selected source into a no-clobber target.
 
+The [`legacy control replacement manifest`](contracts/nimino-legacy-control/README.md)
+classifies every `buzz-relay-mesh` and Redis control path before #66 removes
+them. The target has no shared Redis dependency and no forwarding wrapper;
+Chirps remains transport/negotiation only, while Nim owns authority, sync,
+convergence, projection, and effect policy.
+
 The versioned [`Nimino data contract`](contracts/nimino-data/README.md)
 classifies canonical truth, rebuildable caches, and append-only logs, and fixes
 the transaction, query, and projection-rebuild intents used by the data-plane
