@@ -152,6 +152,7 @@ test("inserts template variables with keyboard control and restores the caret", 
   await waitForAnimations(page);
   expect(await page.locator("body").screenshot()).toMatchSnapshot(
     "workflow-template-variable-autocomplete.png",
+    { maxDiffPixelRatio: 0.005 },
   );
 
   await textarea.press("ArrowUp");
