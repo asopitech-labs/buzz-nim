@@ -6011,6 +6011,9 @@ name = "nimino-chirps"
 version = "0.1.0"
 dependencies = [
  "alopex-chirps",
+ "rcgen",
+ "tempfile",
+ "tokio",
 ]
 
 [[package]]

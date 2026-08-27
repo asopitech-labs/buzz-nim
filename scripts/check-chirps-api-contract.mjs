@@ -277,6 +277,29 @@ const publicCode = codeOnly(
     .join("\n"),
 );
 const wrapperCode = `${adapterCode}\n${publicCode}`;
+const identity = contract.productionIdentity;
+check(
+  identity.mtlsRequired === true &&
+    JSON.stringify(identity.identityByteLengths) === JSON.stringify([16, 24]) &&
+    identity.unixSecretMode === "0600" &&
+    identity.runtimeMessagingOwner === 43 &&
+    identity.admissionPolicyOwner === 48,
+  "production identity ownership contract drifted",
+);
+check(
+  JSON.stringify(contract.publicIdentityApi) ===
+    JSON.stringify(["NodeConfig", "NodeConfigError", "NodeId", "NodeIdentity"]),
+  "public identity API contract drifted",
+);
+for (const type of contract.publicIdentityApi) {
+  check(
+    new RegExp(`\\bpub\\s+(?:struct|enum)\\s+${type}\\b`).test(publicCode),
+    `missing public identity API: ${type}`,
+  );
+}
+for (const error of identity.typedErrors) {
+  check(new RegExp(`\\b${error}\\b`).test(publicCode), `missing typed identity error: ${error}`);
+}
 check(
   !publicCode.includes("alopex_chirps"),
   "raw Chirps types must stay in the private adapter module",
@@ -366,5 +389,5 @@ checkFeatureTree();
 if (desktopUsesWrapper) checkFeatureTree("desktop/src-tauri/Cargo.toml");
 
 console.log(
-  `Chirps contract passed: ${contract.upstream.package} ${contract.upstream.requirement}, default-features=false, features=[]`,
+  `Chirps contract passed: ${contract.upstream.package} ${contract.upstream.requirement}, explicit production mTLS identity`,
 );

@@ -18,6 +18,31 @@
     "UserMessage",
     "start"
   ],
+  "publicIdentityApi": [
+    "NodeConfig",
+    "NodeConfigError",
+    "NodeId",
+    "NodeIdentity"
+  ],
+  "productionIdentity": {
+    "mtlsRequired": true,
+    "identityByteLengths": [16, 24],
+    "unixSecretMode": "0600",
+    "typedErrors": [
+      "CertificateMissing",
+      "InsecureIdentityPermissions",
+      "InsecurePrivateKeyPermissions",
+      "InvalidIdentity",
+      "InvalidMaterial",
+      "Io",
+      "PrivateKeyMissing",
+      "TrustAnchorMissing",
+      "TrustAnchorsRequired",
+      "UpstreamConfig"
+    ],
+    "runtimeMessagingOwner": 43,
+    "admissionPolicyOwner": 48
+  },
   "forbiddenDirectPackages": [
     "alopex-chirps-core",
     "alopex-chirps-file-transfer",

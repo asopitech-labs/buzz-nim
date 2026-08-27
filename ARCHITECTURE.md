@@ -173,7 +173,12 @@ features are disabled, and the lock checksum is part of the versioned contract.
 The wrapper may use only node identity, configuration, membership, and secure
 user-message primitives; Raft, file transfer, snapshots, TSO, durable profiles,
 and memory policy are rejected by `just chirps-contract`. Runtime composition is
-owned by the focused node-lifecycle and messaging-adapter work, not this pin.
+owned by the focused messaging-adapter work, not this pin. Its production
+`NodeConfig` requires an explicit DER certificate, PKCS#8 DER private key, at
+least one DER trust anchor, and a stable identity path. It creates or reads the
+Chirps-compatible identity with owner-only Unix permissions and returns typed
+material, permission, and persistence failures. This is transport identity
+mechanics only: runtime messaging is #43 and node admission authority is #48.
 Chirps v0.6.3 still resolves its own unconditional Raft/file-transfer packages;
 their presence in `Cargo.lock` is not an authorized Nimino API or responsibility.
 
