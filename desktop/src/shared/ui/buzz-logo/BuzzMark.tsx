@@ -1,20 +1,26 @@
 import { useId } from "react";
 
 /**
- * The finished Buzz mark as a plain static SVG — no SMIL, no scripting, no
- * animation machinery. Geometry matches the final keyframe of the
- * BuzzLogoAnimation morph (v8 variant), rendered in `currentColor`, so it
- * paints complete on the very first frame regardless of animation support.
+ * The finished mark as a plain static SVG — no SMIL, scripting, or animation
+ * machinery. It renders in `currentColor` and paints complete on first frame.
  */
-export function BuzzMark({ className }: { className?: string }) {
+export function BuzzMark({
+  ariaLabel,
+  className,
+}: {
+  ariaLabel?: string;
+  className?: string;
+}) {
   const maskId = `buzz-mark-cutouts-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
   return (
     <svg
-      aria-hidden="true"
+      aria-hidden={ariaLabel ? undefined : "true"}
+      aria-label={ariaLabel}
       className={["buzz-mark", className].filter(Boolean).join(" ")}
       viewBox="0 0 466 309"
       fill="currentColor"
+      role={ariaLabel ? "img" : undefined}
     >
       <defs>
         <mask

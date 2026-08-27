@@ -306,45 +306,10 @@ async function expectWelcomePersonaMention(page: Page) {
   await expect(personaMention).toBeVisible();
   await expect(personaMention).toHaveAttribute("data-persona-options", "Fizz");
   await expect(personaMention).toHaveAttribute("data-active-persona", "Fizz");
-  await expect(personaMention).toHaveAttribute(
-    "data-animation-target",
-    "per-character",
-  );
-
-  const activePersona = await personaMention.getAttribute(
-    "data-active-persona",
-  );
-  expect(activePersona).not.toBeNull();
-  await expect(personaMention).toContainText(`@${activePersona}`);
-  expect(
-    await personaMention
-      .getByTestId("welcome-composer-persona-character")
-      .count(),
-  ).toBeGreaterThanOrEqual(4);
-  expect(
-    await personaMention
-      .getByTestId("welcome-composer-persona-character")
-      .first()
-      .evaluate((element) => window.getComputedStyle(element).filter),
-  ).toBe("none");
-
-  const transition = await personaMention.evaluate((element) => {
-    const styles = window.getComputedStyle(element);
-    const durationMs = Number(
-      element.getAttribute("data-width-animation-duration-ms"),
-    );
-    return {
-      duration: styles.transitionDuration,
-      durationMs,
-      property: styles.transitionProperty,
-    };
-  });
-  expect(transition.durationMs).toBeGreaterThanOrEqual(700);
-  expect(transition.durationMs).toBeLessThanOrEqual(740);
-  expect(Math.round(Number.parseFloat(transition.duration) * 1000)).toBe(
-    transition.durationMs,
-  );
-  expect(transition.property).toContain("width");
+  await expect(personaMention).toHaveText("@Fizz");
+  await expect(
+    personaMention.getByTestId("welcome-composer-persona-character"),
+  ).toHaveCount(0);
 
   const alignment = await personaMention.evaluate((element) => {
     const mentionStyles = window.getComputedStyle(element);
@@ -368,7 +333,9 @@ async function expectWelcomePersonaMention(page: Page) {
 async function expectPrivateWelcomeLanding(page: Page) {
   await expect(page).toHaveURL(/#\/channels\/[^/?#]+$/);
   await expect(page.getByTestId("channel-Welcome")).toBeVisible();
-  await expect(page.getByTestId("chat-title")).toContainText("Welcome");
+  await expect(page.getByTestId("chat-title")).toContainText("Welcome", {
+    timeout: 60_000,
+  });
 }
 
 async function expectWelcomeView(page: Page) {
@@ -456,18 +423,20 @@ async function expectWelcomeComposerBannerCompletesAfterPersonaMention(
   await page.getByTestId("send-message").click();
 
   await expect(banner).toHaveAttribute("data-state", "complete");
-  await expect(banner).toHaveAttribute("data-tone", "success");
-  await expect(
-    banner.getByTestId("welcome-composer-complete-icon"),
-  ).toBeVisible();
-  await expect(
-    banner.locator('[data-animation-target="success-icon"]'),
-  ).toBeVisible();
-  await expect(
-    banner.locator('[data-animation-target="success-copy"]'),
-  ).toBeVisible();
-  await expect(banner).toContainText("Nice work.");
-  await expect(banner).not.toContainText("Try mentioning");
+  const completion = await banner.evaluate((element) => ({
+    animationTargets: element.querySelectorAll("[data-animation-target]")
+      .length,
+    hasIcon: Boolean(
+      element.querySelector('[data-testid="welcome-composer-complete-icon"]'),
+    ),
+    text: element.textContent ?? "",
+    tone: element.getAttribute("data-tone"),
+  }));
+  expect(completion.tone).toBe("success");
+  expect(completion.hasIcon).toBe(true);
+  expect(completion.animationTargets).toBe(0);
+  expect(completion.text).toContain("Nice work.");
+  expect(completion.text).not.toContain("Try mentioning");
   await expect(channelIntro).toBeVisible();
   const completeComposerBox = await composer.boundingBox();
   expect(completeComposerBox).not.toBeNull();

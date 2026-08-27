@@ -2,7 +2,6 @@ import * as React from "react";
 
 import { isWelcomeSetupSystemMessage } from "@/features/channels/ui/ChannelPane.helpers";
 import type { TimelineMessage } from "@/features/messages/types";
-import { WelcomeKickoffStage } from "@/features/onboarding/ui/WelcomeKickoffStage";
 import {
   isWelcomeKickoffSettingUp,
   useWelcomeKickoffStage,
@@ -33,7 +32,7 @@ export function useWelcomeKickoffStagePresence(
       timelineMessages.some((message) => !isWelcomeSetupSystemMessage(message)),
     [timelineMessages],
   );
-  const { phase, handleExitComplete } = useWelcomeKickoffStage(
+  const { phase } = useWelcomeKickoffStage(
     activeChannel,
     hasVisibleTimelineMessages,
     isTimelineLoading,
@@ -50,12 +49,8 @@ export function useWelcomeKickoffStagePresence(
     announcedChannelIdRef.current = channelId;
     notifyWelcomeSurfaceReady(channelId);
   }, [activeChannel, channelId, isTimelineLoading]);
-  const welcomeKickoffStage =
-    phase !== "hidden" ? (
-      <WelcomeKickoffStage onExitComplete={handleExitComplete} phase={phase} />
-    ) : null;
   return {
-    welcomeKickoffStage,
+    welcomeKickoffStage: null,
     welcomeKickoffSettingUp: isWelcomeKickoffSettingUp(phase),
   };
 }

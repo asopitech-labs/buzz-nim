@@ -53,7 +53,7 @@ export function ComposerUploadProgressPill({
               opacity: 1,
               transition: reducedMotion
                 ? { duration: 0 }
-                : { duration: 0.22, ease: "easeIn" },
+                : { duration: 0.18, ease: "easeIn" },
               y: 0,
             },
           }}

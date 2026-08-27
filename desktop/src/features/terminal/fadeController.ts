@@ -1,5 +1,5 @@
-export const REVEAL_DURATION_MS = 360;
-export const CONCEAL_DURATION_MS = 210;
+export const REVEAL_DURATION_MS = 180;
+export const CONCEAL_DURATION_MS = 105;
 export const FADE_EASING = "cubic-bezier(.2,.8,.2,1)";
 
 type Direction = "reveal" | "conceal";

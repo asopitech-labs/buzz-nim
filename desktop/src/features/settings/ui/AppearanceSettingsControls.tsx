@@ -480,7 +480,7 @@ export function GlassBackgroundSetting() {
               initial={{ height: 0, opacity: 0, y: -6 }}
               key="glass-opacity"
               transition={{
-                duration: 0.25,
+                duration: 0.18,
                 ease: [0.23, 1, 0.32, 1],
               }}
             >

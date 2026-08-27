@@ -16,7 +16,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/shared/ui/popover";
-import { Shimmer } from "@/shared/ui/Shimmer";
 import { UserAvatar } from "@/shared/ui/UserAvatar";
 
 export type BotActivityAgent = Pick<ManagedAgent, "pubkey" | "name">;
@@ -210,9 +209,9 @@ export function BotActivityComposerAction({
             )}
           >
             {isInline ? (
-              <Shimmer className="-my-px truncate py-px">
+              <span className="-my-px truncate py-px">
                 {visibleStatusLabel}
-              </Shimmer>
+              </span>
             ) : (
               "working"
             )}

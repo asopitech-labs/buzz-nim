@@ -84,7 +84,7 @@ const SCRIM_EXIT_SECONDS = 0.12;
  */
 const ENTER_TRANSITION = {
   opacity: { duration: 0.09, ease: "linear" },
-  x: { duration: 0.28, ease: ENTER_EASE },
+  x: { duration: 0.18, ease: ENTER_EASE },
 } as const;
 
 /**

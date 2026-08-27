@@ -7,7 +7,6 @@ import {
 import { ProfileAvatar } from "@/features/profile/ui/ProfileAvatar";
 import type { Channel } from "@/shared/api/types";
 import { cn } from "@/shared/lib/cn";
-import { Shimmer } from "@/shared/ui/Shimmer";
 import { truncatePubkey } from "@/shared/lib/pubkey";
 
 type TypingIndicatorRowProps = {
@@ -132,7 +131,7 @@ export function TypingIndicatorRow({
             )}
             data-testid="message-typing-indicator-label"
           >
-            <Shimmer>{formatTypingLabel(labels)}</Shimmer>
+            {formatTypingLabel(labels)}
           </p>
         </div>
       )}

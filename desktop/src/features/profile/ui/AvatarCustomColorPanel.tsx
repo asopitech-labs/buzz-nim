@@ -17,7 +17,7 @@ import {
 } from "./ProfileAvatarEditor.utils";
 
 const PANEL_MOTION_TRANSITION = {
-  duration: 0.25,
+  duration: 0.18,
   ease: "easeOut",
 } as const;
 

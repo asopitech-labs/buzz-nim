@@ -39,7 +39,7 @@ function AddressedAgentAvatar({
     void controls.start({
       scale: [1, 1.3, 0.96, 1.08, 1],
       y: [0, -4, 1, -1, 0],
-      transition: { duration: 0.48, ease: "easeOut" },
+      transition: { duration: 0.18, ease: "easeOut" },
     });
   }, [controls, pulseVersion, shouldReduceMotion]);
 
@@ -51,7 +51,7 @@ function AddressedAgentAvatar({
     controls.set({ scale: 1, x: 0, y: 0 });
     void controls.start({
       x: [0, -4, 4, -3, 3, -1.5, 1.5, 0],
-      transition: { duration: 0.42, ease: "easeOut" },
+      transition: { duration: 0.18, ease: "easeOut" },
     });
   }, [controls, shakeVersion, shouldReduceMotion]);
 

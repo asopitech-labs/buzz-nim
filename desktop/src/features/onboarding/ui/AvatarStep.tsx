@@ -57,12 +57,12 @@ const NEUTRAL_EMOJI_PICKER_THEME_VARS = {
 } as React.CSSProperties;
 
 const AVATAR_ACTIONS_MOTION_TRANSITION = {
-  duration: 0.25,
+  duration: 0.18,
   ease: "easeOut",
 } as const;
 
 const AVATAR_POSITION_MOTION_TRANSITION = {
-  duration: 0.25,
+  duration: 0.18,
   ease: "easeOut",
 } as const;
 

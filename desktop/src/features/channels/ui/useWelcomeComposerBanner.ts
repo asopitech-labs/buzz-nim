@@ -3,8 +3,7 @@ import * as React from "react";
 import {
   WELCOME_COMPOSER_BANNER_DISMISS_DURATION_SECONDS,
   WELCOME_COMPOSER_BANNER_HIDE_BUFFER_MS,
-  WELCOME_COMPOSER_BANNER_SUCCESS_SETTLE_MS,
-  WELCOME_PERSONA_ROTATION_MS,
+  WELCOME_COMPOSER_BANNER_SUCCESS_DISPLAY_MS,
   type WelcomeComposerBannerState,
 } from "@/features/channels/ui/WelcomeComposerBanner";
 
@@ -84,7 +83,7 @@ export function useWelcomeComposerBanner(
       setBannerState("dismissing");
       dismissTimerRef.current = null;
       scheduleHide();
-    }, WELCOME_PERSONA_ROTATION_MS + WELCOME_COMPOSER_BANNER_SUCCESS_SETTLE_MS);
+    }, WELCOME_COMPOSER_BANNER_SUCCESS_DISPLAY_MS);
   }, [
     activeChannelId,
     clearTimers,
