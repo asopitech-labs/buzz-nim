@@ -4,7 +4,7 @@ when defined(niminoBoundaryTestHooks):
   import std/os
 
 import nimino_core
-import nimino_core/boundary/[event_policy_codec, framing, protocol]
+import nimino_core/boundary/[community_policy_codec, event_policy_codec, framing, protocol]
 
 proc helloResult(): JsonNode =
   result = newJObject()
@@ -14,7 +14,9 @@ proc helloResult(): JsonNode =
   result["maxInflight"] = %BoundaryMaxInflight
   result["schemaHash"] = %BoundarySchemaHash
   result["workerRole"] = %BoundaryWorkerRole
-  result["capabilities"] = %*["boundary.echo", "domain.event.policy"]
+  result["capabilities"] = %*[
+    "boundary.echo", "domain.event.policy", "domain.community.policy"
+  ]
 
 proc execute(request: BoundaryRequest; negotiated: var bool): string =
   if request.operation.kind == boHello:
@@ -88,6 +90,12 @@ proc execute(request: BoundaryRequest; negotiated: var bool): string =
       request.requestId,
       request.operationName,
       executeEventPolicy(request.operation.data, request.requestId),
+    )
+  of boCommunityPolicy:
+    result = encodeSuccess(
+      request.requestId,
+      request.operationName,
+      executeCommunityPolicy(request.operation.data, request.requestId),
     )
   else:
     result = encodeFailure(

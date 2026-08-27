@@ -137,6 +137,47 @@
         }
       ]
     },
+    "communityPolicyResult": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "action", "error"],
+          "properties": {
+            "decision": { "const": "lifecycle" },
+            "action": {
+              "enum": ["reject", "create", "archive", "unarchive", "noop"]
+            },
+            "error": {
+              "enum": [
+                "none",
+                "not_operator",
+                "not_owner",
+                "owner_required",
+                "owner_limit",
+                "host_reserved",
+                "protected_community",
+                "invalid_state",
+                "resource_missing",
+                "tenant_mismatch"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "allowed", "error"],
+          "properties": {
+            "decision": { "const": "scope" },
+            "allowed": { "type": "boolean" },
+            "error": {
+              "enum": ["none", "resource_missing", "tenant_mismatch"]
+            }
+          }
+        }
+      ]
+    },
     "fault": {
       "type": "object",
       "additionalProperties": false,
@@ -241,6 +282,13 @@
             "maxInflight": { "const": 1 },
             "capabilities": {
               "type": "array",
+              "items": {
+                "enum": [
+                  "boundary.echo",
+                  "domain.event.policy",
+                  "domain.community.policy"
+                ]
+              },
               "contains": { "const": "domain.event.policy" }
             }
           }
@@ -290,6 +338,26 @@
         "operation": { "const": "domain.event.policy" },
         "status": { "const": "ok" },
         "result": { "$ref": "#/$defs/eventPolicyResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol",
+        "version",
+        "requestId",
+        "operation",
+        "status",
+        "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.community.policy" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/communityPolicyResult" }
       }
     },
     {
