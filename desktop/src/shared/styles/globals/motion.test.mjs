@@ -105,7 +105,7 @@ test("Web Animation durations stay within 200ms", () => {
 test("reduced motion settles every animation and transition immediately", () => {
   assert.match(
     motionCss,
-    /@media \(prefers-reduced-motion: reduce\)[\s\S]*\*,[\s\S]*\*::before,[\s\S]*\*::after[\s\S]*animation-duration:\s*0\.01ms !important;[\s\S]*animation-iteration-count:\s*1 !important;[\s\S]*transition-duration:\s*0\.01ms !important;/,
+    /@media \(prefers-reduced-motion: reduce\)[\s\S]*\*,[\s\S]*\*::before,[\s\S]*\*::after[\s\S]*animation-duration:\s*0ms !important;[\s\S]*animation-iteration-count:\s*1 !important;[\s\S]*transition-duration:\s*0ms !important;/,
   );
 });
 
