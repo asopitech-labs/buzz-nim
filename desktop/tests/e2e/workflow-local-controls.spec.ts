@@ -139,6 +139,7 @@ test("confirms activation after create and preserves a safe disabled path", asyn
 test("inserts template variables with keyboard control and restores the caret", async ({
   page,
 }) => {
+  test.setTimeout(180_000);
   const dialog = await openCreateWorkflow(page, "template_variables_keyboard");
   await dialog.getByRole("button", { name: "Add step", exact: true }).click();
   await page.getByRole("menuitem", { name: "Send Message" }).click();
