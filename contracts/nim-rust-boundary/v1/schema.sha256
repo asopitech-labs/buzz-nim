@@ -1,6 +1,6 @@
-# bundle-sha256: 8b2ddbbb0fd4b20aa227511187428c03d2334f0a0b2f666c98a3a1db17172182
+# bundle-sha256: eab348b5046af71c011889d0e17c1837011fef4ca2f1440fb240edca1876424a
 # Bundle input is the sha256sum output for the files below in this order.
 9db78a5facb59d631c7f885079e563c4b575afc99cc10124782a9976fba10ae1  errors.json
 6ab28651a82955e41a9c74edf6ef4974fcd0d37d9f1ed32ca5f93e2a71219792  lifecycle.json
-494882299c01e5e87102e959338b542d527b2438b5f0c595a8e7ab205ea27a53  request.schema.json
-386d0547eabb1da9945c92e0f605faf5fe60dc9ef4d2af1f9f77eb8c62c96c91  response.schema.json
+dc70cc41538f7731f00126176362bc79e402c7ae93817fb3aaec7f1c9b9bba05  request.schema.json
+626997a8cff2c47c8ffe4cb0f5d2088c099fc7c42651f2a67d7f46406e2d05a1  response.schema.json

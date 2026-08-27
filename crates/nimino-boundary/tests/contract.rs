@@ -1,7 +1,8 @@
 use nimino_boundary::{
     BoundaryFault, BoundaryRequest, BoundaryResponse, BoundaryResult, CommunityAction,
     CommunityPolicyError, CommunityPolicyResult, EchoPayload, EventDisposition, EventPolicyError,
-    EventPolicyResult, RemoteErrorCode, RetryDisposition, HOST_ERROR_CODES, PROTOCOL_NAME,
+    EventPolicyResult, MembershipAction, MembershipPolicyError, MembershipPolicyResult,
+    MembershipRole, RemoteErrorCode, RetryDisposition, HOST_ERROR_CODES, PROTOCOL_NAME,
     PROTOCOL_VERSION,
 };
 use serde_json::json;
@@ -39,6 +40,28 @@ fn community_policy_fixtures_use_the_typed_operation_variant() {
         BoundaryResult::CommunityPolicy(CommunityPolicyResult::Lifecycle {
             action: CommunityAction::Archive,
             error: CommunityPolicyError::None,
+        })
+    );
+}
+
+#[test]
+fn membership_policy_fixtures_use_the_typed_operation_variant() {
+    let request: BoundaryRequest = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/membership-policy.request.json"
+    ))
+    .expect("valid membership policy request");
+    assert_eq!(request.operation_name(), "domain.membership.policy");
+
+    let response: BoundaryResponse = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/membership-policy.response.json"
+    ))
+    .expect("valid membership policy response");
+    assert_eq!(
+        response.into_result().expect("policy success"),
+        BoundaryResult::MembershipPolicy(MembershipPolicyResult::Relay {
+            action: MembershipAction::Insert,
+            error: MembershipPolicyError::None,
+            effective_role: MembershipRole::Admin,
         })
     );
 }

@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.membership-policy",
+  "owner": "nim/nimino_core/src/nimino_core/domain/membership_policy.nim",
+  "boundaryOperation": "domain.membership.policy",
+  "compatibilityMode": false,
+  "cutoverOwner": 12,
+  "decisions": ["channel", "relay", "invite", "ownership-transfer"],
+  "rustAdapters": [
+    "crates/nimino-boundary/src/membership.rs",
+    "crates/nimino-boundary/src/contract.rs",
+    "crates/nimino-boundary/src/runtime.rs"
+  ],
+  "rustPolicySitesToShrink": [
+    {
+      "path": "crates/buzz-relay/src/handlers/side_effects.rs",
+      "symbols": ["validate_admin_event", "handle_join_request", "handle_leave_request"]
+    },
+    {
+      "path": "crates/buzz-db/src/channel.rs",
+      "symbols": ["add_member", "remove_member"]
+    },
+    {
+      "path": "crates/buzz-relay/src/handlers/relay_admin.rs",
+      "symbols": ["execute_relay_admin_command"]
+    },
+    {
+      "path": "crates/buzz-db/src/relay_members.rs",
+      "symbols": [
+        "add_relay_member",
+        "remove_relay_member",
+        "remove_relay_member_if_role",
+        "update_relay_member_role",
+        "transfer_ownership"
+      ]
+    },
+    {
+      "path": "crates/buzz-relay/src/api/invites.rs",
+      "symbols": ["validate_mint_request", "mint_invite", "claim_invite"]
+    },
+    {
+      "path": "crates/buzz-db/src/relay_invite.rs",
+      "symbols": ["validate_mint_inputs", "claim_relay_invite"]
+    },
+    {
+      "path": "crates/buzz-relay/src/api/operator.rs",
+      "symbols": ["transfer_community"]
+    }
+  ],
+  "rustCompatibilityPathsToDelete": [
+    {
+      "path": "crates/buzz-relay/src/api/invites.rs",
+      "marker": "v1 HMAC path (stateless tokens, drain window)"
+    }
+  ],
+  "cutoverRule": "Issue #12 routes the existing adapters through Nimino, shrinks Rust to validation/crypto/I/O/effects, and deletes the v1 invite drain path without fallback.",
+  "outOfScope": {
+    "directMessages": 87,
+    "moderation": 88,
+    "clusterAdmission": 9
+  }
+}

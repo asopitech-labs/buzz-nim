@@ -108,8 +108,9 @@ nimino-chirps       (sole direct Alopex Chirps dependency; no product policy)
 
 For the cutover target, the Nim/Rust process contract is fixed. Event/message
 policy is exposed as `domain.event.policy`; community lifecycle and tenant
-isolation are exposed as `domain.community.policy`. `nimino-boundary` owns no
-product, DB, replication, sync, or cluster-authority rule. Timeout,
+isolation are exposed as `domain.community.policy`; channel/relay membership,
+invite, and ownership transfer are exposed as `domain.membership.policy`.
+`nimino-boundary` owns no product, DB, replication, sync, or cluster-authority rule. Timeout,
 cancellation, crash, or corrupt stdout recycles the stateless worker before
 another request. See
 [`docs/adr/nim-rust-boundary-v1.md`](docs/adr/nim-rust-boundary-v1.md) for the
@@ -122,9 +123,15 @@ deletion inventory, not a fallback; the relay switches to Nimino atomically.
 
 The [`Nimino community policy`](contracts/nimino-community/README.md) owns
 create/archive/unarchive transitions and exact equality between the
-host-derived request community and resource provenance. Membership, ownership
-transfer, DM, and moderation remain in their focused contracts. Existing Rust
-HTTP and DB branches are registered for the Issue #12 incompatible cutover.
+host-derived request community and resource provenance. Existing Rust HTTP and
+DB branches are registered for the Issue #12 incompatible cutover.
+
+The [`Nimino membership policy`](contracts/nimino-membership/README.md) owns the
+role capability matrix, channel join/leave and agent-owner decisions,
+relay-roster delegation, invite expiry/claim rules, and atomic ownership
+transfer. Rust retains identity and receipt verification, clock and locked-DB
+fact acquisition, and effect execution. DM and moderation remain in #87 and
+#88; the stateless v1 invite drain path is deleted by #12 without fallback.
 
 The versioned [`Nimino data contract`](contracts/nimino-data/README.md)
 classifies canonical truth, rebuildable caches, and append-only logs, and fixes

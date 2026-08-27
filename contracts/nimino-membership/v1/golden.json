@@ -1,0 +1,410 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "name": "open-channel-self-join",
+      "invariant": "Channel.Join.Open",
+      "input": {
+        "decision": "channel",
+        "request": {
+          "command": "join",
+          "visibility": "open",
+          "actorRole": "none",
+          "targetRole": "none",
+          "requestedRole": "none",
+          "actorIsTarget": true,
+          "actorOwnsTargetAgent": false,
+          "targetIsAgent": false,
+          "targetAddPolicy": "anyone",
+          "ownerCount": 1
+        }
+      },
+      "expected": {
+        "decision": "channel",
+        "action": "insert",
+        "error": "none",
+        "effectiveRole": "member"
+      }
+    },
+    {
+      "name": "private-channel-self-join-denied",
+      "invariant": "Channel.Join.InviteRequired",
+      "input": {
+        "decision": "channel",
+        "request": {
+          "command": "join",
+          "visibility": "private",
+          "actorRole": "none",
+          "targetRole": "none",
+          "requestedRole": "none",
+          "actorIsTarget": true,
+          "actorOwnsTargetAgent": false,
+          "targetIsAgent": false,
+          "targetAddPolicy": "anyone",
+          "ownerCount": 1
+        }
+      },
+      "expected": {
+        "decision": "channel",
+        "action": "reject",
+        "error": "invite_required",
+        "effectiveRole": "none"
+      }
+    },
+    {
+      "name": "last-owner-cannot-leave",
+      "invariant": "Channel.LastOwner",
+      "input": {
+        "decision": "channel",
+        "request": {
+          "command": "leave",
+          "visibility": "private",
+          "actorRole": "owner",
+          "targetRole": "owner",
+          "requestedRole": "none",
+          "actorIsTarget": true,
+          "actorOwnsTargetAgent": false,
+          "targetIsAgent": false,
+          "targetAddPolicy": "anyone",
+          "ownerCount": 1
+        }
+      },
+      "expected": {
+        "decision": "channel",
+        "action": "reject",
+        "error": "last_owner",
+        "effectiveRole": "none"
+      }
+    },
+    {
+      "name": "member-removes-owned-agent",
+      "invariant": "Channel.AgentOwner",
+      "input": {
+        "decision": "channel",
+        "request": {
+          "command": "remove",
+          "visibility": "private",
+          "actorRole": "member",
+          "targetRole": "bot",
+          "requestedRole": "none",
+          "actorIsTarget": false,
+          "actorOwnsTargetAgent": true,
+          "targetIsAgent": true,
+          "targetAddPolicy": "owner_only",
+          "ownerCount": 1
+        }
+      },
+      "expected": {
+        "decision": "channel",
+        "action": "remove",
+        "error": "none",
+        "effectiveRole": "bot"
+      }
+    },
+    {
+      "name": "nonmember-cannot-remove-owned-agent",
+      "invariant": "Channel.AgentOwner.RequiresMembership",
+      "input": {
+        "decision": "channel",
+        "request": {
+          "command": "remove",
+          "visibility": "private",
+          "actorRole": "none",
+          "targetRole": "bot",
+          "requestedRole": "none",
+          "actorIsTarget": false,
+          "actorOwnsTargetAgent": true,
+          "targetIsAgent": true,
+          "targetAddPolicy": "owner_only",
+          "ownerCount": 1
+        }
+      },
+      "expected": {
+        "decision": "channel",
+        "action": "reject",
+        "error": "not_authorized",
+        "effectiveRole": "none"
+      }
+    },
+    {
+      "name": "ordinary-member-cannot-grant-admin",
+      "invariant": "Channel.ElevatedGrant",
+      "input": {
+        "decision": "channel",
+        "request": {
+          "command": "add",
+          "visibility": "private",
+          "actorRole": "member",
+          "targetRole": "none",
+          "requestedRole": "admin",
+          "actorIsTarget": false,
+          "actorOwnsTargetAgent": false,
+          "targetIsAgent": false,
+          "targetAddPolicy": "anyone",
+          "ownerCount": 1
+        }
+      },
+      "expected": {
+        "decision": "channel",
+        "action": "reject",
+        "error": "not_authorized",
+        "effectiveRole": "none"
+      }
+    },
+    {
+      "name": "relay-admin-adds-member",
+      "invariant": "Relay.Admin.AddMember",
+      "input": {
+        "decision": "relay",
+        "request": {
+          "command": "add",
+          "actorRole": "admin",
+          "targetRole": "none",
+          "requestedRole": "member",
+          "actorIsTarget": false
+        }
+      },
+      "expected": {
+        "decision": "relay",
+        "action": "insert",
+        "error": "none",
+        "effectiveRole": "member"
+      }
+    },
+    {
+      "name": "relay-admin-cannot-grant-admin",
+      "invariant": "Relay.OwnerDelegatesAdmin",
+      "input": {
+        "decision": "relay",
+        "request": {
+          "command": "add",
+          "actorRole": "admin",
+          "targetRole": "none",
+          "requestedRole": "admin",
+          "actorIsTarget": false
+        }
+      },
+      "expected": {
+        "decision": "relay",
+        "action": "reject",
+        "error": "not_authorized",
+        "effectiveRole": "none"
+      }
+    },
+    {
+      "name": "relay-owner-demotes-admin",
+      "invariant": "Relay.Owner.ChangesRole",
+      "input": {
+        "decision": "relay",
+        "request": {
+          "command": "change_role",
+          "actorRole": "owner",
+          "targetRole": "admin",
+          "requestedRole": "member",
+          "actorIsTarget": false
+        }
+      },
+      "expected": {
+        "decision": "relay",
+        "action": "update_role",
+        "error": "none",
+        "effectiveRole": "member"
+      }
+    },
+    {
+      "name": "relay-owner-is-protected",
+      "invariant": "Relay.LastOwner",
+      "input": {
+        "decision": "relay",
+        "request": {
+          "command": "remove",
+          "actorRole": "owner",
+          "targetRole": "owner",
+          "requestedRole": "none",
+          "actorIsTarget": false
+        }
+      },
+      "expected": {
+        "decision": "relay",
+        "action": "reject",
+        "error": "owner_protected",
+        "effectiveRole": "none"
+      }
+    },
+    {
+      "name": "owner-mints-bounded-invite",
+      "invariant": "Invite.Mint.AuthorityAndBounds",
+      "input": {
+        "decision": "invite",
+        "request": {
+          "command": "mint",
+          "actorRole": "owner",
+          "inviteState": "valid",
+          "ttlSeconds": 3600,
+          "maxUses": 5,
+          "alreadyMember": false,
+          "policyRequired": false,
+          "policyAccepted": false
+        }
+      },
+      "expected": {
+        "decision": "invite",
+        "action": "mint",
+        "error": "none",
+        "effectiveRole": "none"
+      }
+    },
+    {
+      "name": "member-cannot-mint-invite",
+      "invariant": "Invite.Mint.AdminAuthority",
+      "input": {
+        "decision": "invite",
+        "request": {
+          "command": "mint",
+          "actorRole": "member",
+          "inviteState": "valid",
+          "ttlSeconds": 3600,
+          "maxUses": null,
+          "alreadyMember": false,
+          "policyRequired": false,
+          "policyAccepted": false
+        }
+      },
+      "expected": {
+        "decision": "invite",
+        "action": "reject",
+        "error": "not_authorized",
+        "effectiveRole": "none"
+      }
+    },
+    {
+      "name": "expired-invite-fails-closed",
+      "invariant": "Invite.Expiry",
+      "input": {
+        "decision": "invite",
+        "request": {
+          "command": "claim",
+          "actorRole": "none",
+          "inviteState": "expired",
+          "ttlSeconds": 0,
+          "maxUses": null,
+          "alreadyMember": false,
+          "policyRequired": false,
+          "policyAccepted": false
+        }
+      },
+      "expected": {
+        "decision": "invite",
+        "action": "reject",
+        "error": "invite_expired",
+        "effectiveRole": "none"
+      }
+    },
+    {
+      "name": "unaccepted-policy-blocks-claim",
+      "invariant": "Invite.PolicyReceipt",
+      "input": {
+        "decision": "invite",
+        "request": {
+          "command": "claim",
+          "actorRole": "none",
+          "inviteState": "valid",
+          "ttlSeconds": 0,
+          "maxUses": null,
+          "alreadyMember": false,
+          "policyRequired": true,
+          "policyAccepted": false
+        }
+      },
+      "expected": {
+        "decision": "invite",
+        "action": "reject",
+        "error": "policy_required",
+        "effectiveRole": "none"
+      }
+    },
+    {
+      "name": "valid-invite-joins-member",
+      "invariant": "Invite.Claim",
+      "input": {
+        "decision": "invite",
+        "request": {
+          "command": "claim",
+          "actorRole": "none",
+          "inviteState": "valid",
+          "ttlSeconds": 0,
+          "maxUses": null,
+          "alreadyMember": false,
+          "policyRequired": true,
+          "policyAccepted": true
+        }
+      },
+      "expected": {
+        "decision": "invite",
+        "action": "join",
+        "error": "none",
+        "effectiveRole": "member"
+      }
+    },
+    {
+      "name": "operator-transfers-ownership",
+      "invariant": "Ownership.AtomicTransfer",
+      "input": {
+        "decision": "ownership_transfer",
+        "request": {
+          "actorIsOperator": true,
+          "ownerPresent": true,
+          "expectedOwnerMatches": true,
+          "newOwnerIsCurrentOwner": false,
+          "newOwnerAtLimit": false
+        }
+      },
+      "expected": {
+        "decision": "ownership_transfer",
+        "action": "transfer",
+        "error": "none",
+        "effectiveRole": "owner"
+      }
+    },
+    {
+      "name": "non-operator-cannot-transfer-ownership",
+      "invariant": "Ownership.OperatorAuthority",
+      "input": {
+        "decision": "ownership_transfer",
+        "request": {
+          "actorIsOperator": false,
+          "ownerPresent": true,
+          "expectedOwnerMatches": true,
+          "newOwnerIsCurrentOwner": false,
+          "newOwnerAtLimit": false
+        }
+      },
+      "expected": {
+        "decision": "ownership_transfer",
+        "action": "reject",
+        "error": "not_operator",
+        "effectiveRole": "none"
+      }
+    },
+    {
+      "name": "stale-owner-transfer-fails-closed",
+      "invariant": "Ownership.CompareAndSwap",
+      "input": {
+        "decision": "ownership_transfer",
+        "request": {
+          "actorIsOperator": true,
+          "ownerPresent": true,
+          "expectedOwnerMatches": false,
+          "newOwnerIsCurrentOwner": false,
+          "newOwnerAtLimit": false
+        }
+      },
+      "expected": {
+        "decision": "ownership_transfer",
+        "action": "reject",
+        "error": "owner_conflict",
+        "effectiveRole": "none"
+      }
+    }
+  ]
+}
