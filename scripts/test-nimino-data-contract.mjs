@@ -35,6 +35,13 @@ function nimRecordTypes(name) {
 
 check(contract.protocol === "nimino.data", "wrong data protocol");
 check(contract.version === 1, "wrong data contract version");
+check(
+  contract.transactionIntents["cache.replace"].replacementTarget ===
+    "recordType is mandatory even when the replacement writes are empty" &&
+    nim.includes("recordType*: string") &&
+    nim.includes("dceRecordTypeRequired"),
+  "cache replacement must retain an explicit target for empty clears",
+);
 check(fixture.schemaVersion === 33, "wrong PostgreSQL fixture version");
 check(
   nim.includes(`DataProtocolName* = "${contract.protocol}"`) &&

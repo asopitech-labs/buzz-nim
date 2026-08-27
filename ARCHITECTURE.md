@@ -102,6 +102,7 @@ nimino_core         (Nim product/domain core; typed operations grow by owning is
     └── nimino-boundary (Rust spawn/frame/queue/timeout/cancel/kill/reap adapter)
 
 nimino-chirps       (sole direct Alopex Chirps dependency; no product policy)
+nimino-store        (swappable local store port + redb transaction/file adapter)
 ```
 
 **Key architectural principle:** The relay is the single source of truth. `buzz-relay` orchestrates all subsystems by calling them directly — it imports `buzz-db`, `buzz-auth`, `buzz-pubsub`, `buzz-search`, `buzz-audit`, and `buzz-workflow`. However, those subsystems are isolated from each other: `buzz-workflow` never calls `buzz-pubsub`, `buzz-search` never calls `buzz-db`, etc. Cross-subsystem coordination happens only through the relay. In multi-community mode, the relay also owns propagation of `TenantContext`; service crates should receive community-scoped inputs rather than independently deriving tenancy from client-controlled event tags.
@@ -165,7 +166,11 @@ The effect ledger is #57; all Rust workflow-policy branches are removed by #12.
 The versioned [`Nimino data contract`](contracts/nimino-data/README.md)
 classifies canonical truth, rebuildable caches, and append-only logs, and fixes
 the transaction, query, and projection-rebuild intents used by the data-plane
-issues. It contains no Postgres, Rust, or Chirps runtime compatibility path.
+issues. `nimino-store` physically separates those lifecycles, persists exact
+checkpoint-CAS and idempotency receipts atomically, and provides crash reopen
+plus no-clobber backup/restore. It is an I/O adapter only: record classification
+and acceptance remain in Nim, while replication and projection remain #50/#55.
+There is no Postgres or Chirps compatibility path in this target.
 
 `nimino-chirps` is the only workspace package permitted to depend directly on
 Alopex Chirps. The registry release is pinned to `=0.6.3`, default and optional

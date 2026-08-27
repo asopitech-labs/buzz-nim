@@ -7,6 +7,7 @@ const justfile = readFileSync("Justfile", "utf8");
 const hooks = readFileSync("lefthook.yml", "utf8");
 const nimFeedback = readFileSync("scripts/measure-nim-feedback.sh", "utf8");
 const nimBootstrap = readFileSync("scripts/test-nim-bootstrap-contract.sh", "utf8");
+const rustTests = readFileSync("scripts/run-tests.sh", "utf8");
 
 function check(condition, message) {
   if (!condition) throw new Error(message);
@@ -167,6 +168,11 @@ check(
 check(
   job("changes").includes("run: node scripts/test-nimino-data-contract.mjs"),
   "changed-path gate must verify the Nimino data contract",
+);
+check(
+  justfile.includes("cargo nextest run -p nimino-store") &&
+    rustTests.includes("cargo test -p nimino-store"),
+  "both Rust unit runners must execute nimino-store recovery tests",
 );
 check(
   job("changes").includes("run: node scripts/test-nimino-event-contract.mjs"),

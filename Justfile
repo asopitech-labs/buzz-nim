@@ -433,6 +433,7 @@ test-unit:
         # because nothing in CI runs `cargo test --workspace` — workspace
         # membership alone buys clippy/check, not a single executed test.
         cargo nextest run -p buzz-backend-kubernetes
+        cargo nextest run -p nimino-store
         # buzz-agent model-capabilities corpus: the Rust half of the
         # cross-language drift guard. `model_capabilities.rs` embeds
         # scripts/model-capabilities.json + scripts/normative-corpus.json via

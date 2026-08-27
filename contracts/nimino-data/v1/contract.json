@@ -65,7 +65,8 @@
       "deletion": "tombstone record with a JSON null value"
     },
     "cache.replace": {
-      "scope": "one community and one source checkpoint",
+      "scope": "one community, one cache record type, and one source checkpoint",
+      "replacementTarget": "recordType is mandatory even when the replacement writes are empty",
       "precondition": "exact canonical source checkpoint",
       "commit": "replace the supplied cache set atomically",
       "deletion": "empty replacement clears the cache"

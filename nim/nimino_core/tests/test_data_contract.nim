@@ -54,8 +54,23 @@ suite "Nimino data contract v1":
       intentId: "rebuild-thread",
       communityId: "community-a",
       checkpoint: some(42'u64),
+      recordType: "thread_index",
     )
     check validate(clearCache) == dceNone
+
+    var missingTarget = clearCache
+    missingTarget.recordType = ""
+    check validate(missingTarget) == dceRecordTypeRequired
+
+    var wrongTarget = clearCache
+    wrongTarget.recordType = "event"
+    check validate(wrongTarget) == dceClassMismatch
+
+    var mixedReplacement = clearCache
+    mixedReplacement.writes = @[
+      RecordWrite(recordType: "feed_index", key: "event-42", value: %*{})
+    ]
+    check validate(mixedReplacement) == dceClassMismatch
 
     let appendLog = WriteIntent(
       kind: wiLogAppend,

@@ -85,6 +85,7 @@ type
     dceKeyRequired
     dceValueRequired
     dceWritesRequired
+    dceRecordTypeRequired
     dceUnknownRecordType
     dceClassMismatch
     dceCheckpointRequired
@@ -110,6 +111,9 @@ type
     ## Optimistic canonical revision or cache source checkpoint. Log appends
     ## forbid it because logs do not replace prior state.
     checkpoint*: Option[uint64]
+    ## Cache record type being replaced. It remains mandatory for an empty
+    ## replacement so the adapter can identify the cache set to clear.
+    recordType*: string
     writes*: seq[RecordWrite]
 
   QueryIntent* = object
@@ -191,6 +195,13 @@ proc validate*(intent: WriteIntent): DataContractError =
   of wiCacheReplace:
     if intent.checkpoint.isNone:
       return dceCheckpointRequired
+    if intent.recordType.len == 0:
+      return dceRecordTypeRequired
+    let replacementClass = classifyRecord(intent.recordType)
+    if replacementClass.isNone:
+      return dceUnknownRecordType
+    if replacementClass.get() != dcCache:
+      return dceClassMismatch
   of wiLogAppend:
     if intent.checkpoint.isSome:
       return dceCheckpointForbidden
@@ -203,6 +214,8 @@ proc validate*(intent: WriteIntent): DataContractError =
     if error != dceNone:
       return error
     if classifyRecord(write.recordType).get() != expectedClass:
+      return dceClassMismatch
+    if intent.kind == wiCacheReplace and write.recordType != intent.recordType:
       return dceClassMismatch
     if write.deleted and intent.kind != wiCanonicalCommit:
       return dceDeleteForbidden

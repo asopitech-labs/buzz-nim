@@ -14,7 +14,8 @@ the contract.
    adapter applies the mandatory community scope and bounded page contract.
 3. A projection builder receives ordered canonical records through an exact
    checkpoint and digest. It emits one deterministic search, thread, or feed
-   cache replacement carrying the same source identity.
+   cache replacement carrying the same source identity. Every cache replacement
+   names one `recordType`, including an empty replacement that clears it.
 
 ## Responsibility map
 
@@ -49,6 +50,7 @@ absent.
 
 Pure validators live in `nim/nimino_core/tests/test_data_contract.nim`.
 `scripts/test-nimino-data-contract.mjs` keeps the JSON contract, Nim record
-types, and all 36 active logical tables in `schema/schema.sql` aligned. Storage
-integration and rebuild scenario tests belong to their owning downstream
-issues.
+types, and all 36 active logical tables in `schema/schema.sql` aligned.
+`crates/nimino-store` implements the replaceable port and local `redb` adapter;
+its transaction, crash-recovery, schema, backup, and restore tests run in the
+Rust unit lane. Projection rebuild scenarios remain owned by #55.

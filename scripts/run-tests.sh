@@ -110,6 +110,9 @@ run_unit_tests() {
   run_test_step "buzz-backend-kubernetes tests" \
     cargo test -p buzz-backend-kubernetes -- --nocapture
 
+  run_test_step "nimino-store transaction and recovery tests" \
+    cargo test -p nimino-store -- --nocapture
+
   # buzz-agent model-capabilities corpus: the Rust half of the cross-language
   # drift guard. model_capabilities.rs embeds scripts/model-capabilities.json +
   # scripts/normative-corpus.json via include_str! and replays the full locked
