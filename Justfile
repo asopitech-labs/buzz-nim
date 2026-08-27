@@ -173,6 +173,10 @@ nimino-lease-contract:
 nimino-sync-contract:
     node scripts/test-nimino-sync-contract.mjs
 
+# Verify deterministic conflict, tombstone, restriction, and retention merges
+nimino-convergence-contract:
+    node scripts/test-nimino-convergence-contract.mjs
+
 # Exhaustively check the bounded 3-node control-log state graph with TLC
 control-model-check: control-model-contract
     tlc -workers auto -config formal/scenarios/NiminoControlLog_3Node.cfg formal/tla/cluster/NiminoControlLog.tla

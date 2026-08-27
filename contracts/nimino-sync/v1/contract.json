@@ -44,6 +44,7 @@
     "duplicateFinalBatch": "idempotent-ack"
   },
   "communityIsolationEveryFrame": true,
+  "conflictContract": "nimino.convergence/v1",
   "conflictResolutionOwner": 53,
   "scenarioHarnessOwner": 56,
   "legacyRemovalOwner": 12

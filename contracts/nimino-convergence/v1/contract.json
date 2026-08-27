@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.convergence",
+  "version": 1,
+  "compatibilityMode": false,
+  "publicationState": "cutover-ready",
+  "owner": "nimino-core",
+  "module": "nim/nimino_core/src/nimino_core/domain/convergence_policy.nim",
+  "syncContract": "nimino.sync/v1",
+  "eventPolicyContract": "nimino.event-policy/v1",
+  "moderationPolicyContract": "nimino.moderation-policy/v1",
+  "identity": {
+    "key": ["communityId", "recordId"],
+    "sameIdDifferentDigest": "quarantine-and-remove-from-canonical-truth",
+    "evidence": "bounded-lexicographic-digest-extrema"
+  },
+  "replaceableOrder": [
+    "permanent-tombstone",
+    "higher-logical-time",
+    "tombstone-at-equal-time",
+    "lower-record-id"
+  ],
+  "tombstones": {
+    "versioned": "dominates-stale-and-equal-live-state",
+    "permanent": "dominates-all-live-state",
+    "staleReplayCanResurrect": false
+  },
+  "restrictions": {
+    "primaryOrder": "higher-revision",
+    "equalRevisionOrder": ["ban", "timeout", "release"],
+    "laterAuthorizedReleaseAllowed": true
+  },
+  "retention": {
+    "merge": "component-wise-max",
+    "invariant": "prunedThrough<=tombstoneProtectedThrough"
+  },
+  "properties": ["commutative", "associative", "idempotent"],
+  "propertyDomain": "valid-non-colliding-inputs",
+  "projectionRebuildOwner": 55,
+  "scenarioHarnessOwner": 56,
+  "legacyRemovalOwner": 12
+}

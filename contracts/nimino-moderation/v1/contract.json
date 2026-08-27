@@ -4,6 +4,7 @@
   "owner": "nim/nimino_core/src/nimino_core/domain/moderation_policy.nim",
   "boundaryOperation": "domain.moderation.policy",
   "compatibilityMode": false,
+  "convergenceContract": "nimino.convergence/v1",
   "cutoverOwner": 12,
   "decisions": ["report", "restriction", "resolution", "enforcement"],
   "rustAdapters": [

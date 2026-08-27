@@ -4,6 +4,7 @@
   "owner": "nim/nimino_core/src/nimino_core/domain/event_policy.nim",
   "boundaryOperation": "domain.event.policy",
   "compatibilityMode": false,
+  "convergenceContract": "nimino.convergence/v1",
   "cutoverOwner": 12,
   "decisions": [
     "event-classification",

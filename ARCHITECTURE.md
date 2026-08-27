@@ -180,6 +180,14 @@ after an exact-checkpoint commit. Rust verifies SHA-256 over the canonical
 record range, performs store I/O, and carries opaque bounded frames through Chirps.
 Conflict winners and tombstone convergence remain #53.
 
+The [`Nimino convergence contract`](contracts/nimino-convergence/README.md)
+closes that #53 boundary. Identity collisions are quarantined without selecting
+either payload; replaceable records share the event-policy time/ID order;
+tombstones and restriction revisions add explicit anti-resurrection priority;
+and retention watermarks merge monotonically without pruning beyond durable
+tombstone protection. Rust persists the chosen result and quarantine evidence
+but does not choose a winner.
+
 The same crate exposes a separate `ControlLogStorePort` for #49. Its metadata,
 ordered log, and snapshot tables are disjoint from canonical event
 anti-entropy. Rust persists opaque entries and validates local prefix shape;

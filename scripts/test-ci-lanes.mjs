@@ -289,6 +289,12 @@ check(
   ) && workflow.includes("run: just nimino-sync-contract"),
   "bounded anti-entropy contract must remain in CI",
 );
+check(
+  /^nimino-convergence-contract:\n    node scripts\/test-nimino-convergence-contract\.mjs$/m.test(
+    justfile,
+  ) && workflow.includes("run: just nimino-convergence-contract"),
+  "deterministic convergence contract must remain in CI",
+);
 
 const boundaryJob = job("boundary");
 check(
