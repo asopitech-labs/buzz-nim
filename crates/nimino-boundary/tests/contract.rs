@@ -1,7 +1,8 @@
 use nimino_boundary::{
-    BoundaryFault, BoundaryRequest, BoundaryResponse, BoundaryResult, CommunityAction,
-    CommunityPolicyError, CommunityPolicyResult, DmPolicyError, DmPolicyResult, EchoPayload,
-    EventDisposition, EventPolicyError, EventPolicyResult, MembershipAction, MembershipPolicyError,
+    BoundaryFault, BoundaryRequest, BoundaryResponse, BoundaryResult, ClusterLifecycleError,
+    ClusterLifecyclePolicyResult, ClusterNodeState, CommunityAction, CommunityPolicyError,
+    CommunityPolicyResult, DmPolicyError, DmPolicyResult, EchoPayload, EventDisposition,
+    EventPolicyError, EventPolicyResult, LifecycleEffect, MembershipAction, MembershipPolicyError,
     MembershipPolicyResult, MembershipRole, ModerationAuditAction, ModerationAuthority,
     ModerationEffect, ModerationPolicyError, ModerationPolicyResult, RemoteErrorCode,
     RetryDisposition, WorkflowPolicyError, WorkflowPolicyResult, WorkflowPortEffect,
@@ -135,6 +136,28 @@ fn workflow_policy_fixtures_use_the_typed_operation_variant() {
                 revision: 4,
             },
             port_effect: WorkflowPortEffect::PersistTransition,
+        })
+    );
+}
+
+#[test]
+fn cluster_lifecycle_fixtures_use_the_typed_operation_variant() {
+    let request: BoundaryRequest = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/cluster-lifecycle.request.json"
+    ))
+    .expect("valid cluster lifecycle request");
+    assert_eq!(request.operation_name(), "domain.cluster.lifecycle");
+
+    let response: BoundaryResponse = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/cluster-lifecycle.response.json"
+    ))
+    .expect("valid cluster lifecycle response");
+    assert_eq!(
+        response.into_result().expect("policy success"),
+        BoundaryResult::ClusterLifecycle(ClusterLifecyclePolicyResult::Transition {
+            effect: LifecycleEffect::EnterReady,
+            next_state: ClusterNodeState::Ready,
+            error: ClusterLifecycleError::None,
         })
     );
 }

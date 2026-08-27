@@ -2,6 +2,7 @@ use serde::{de::Error as _, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
 use uuid::Uuid;
 
+use crate::cluster::{ClusterLifecyclePolicyRequest, ClusterLifecyclePolicyResult};
 use crate::community::{CommunityPolicyRequest, CommunityPolicyResult};
 use crate::dm::{DmPolicyRequest, DmPolicyResult};
 use crate::membership::{MembershipPolicyRequest, MembershipPolicyResult};
@@ -13,7 +14,7 @@ pub const PROTOCOL_NAME: &str = "nimino.core.boundary";
 /// The only accepted boundary version. No downgrade path exists.
 pub const PROTOCOL_VERSION: u16 = 1;
 /// SHA-256 of the checked-in v1 contract bundle.
-pub const SCHEMA_HASH: &str = "7ee3f5ecd9696588c753c255b85279da5361f43ed6a52fee5afc43a592d75746";
+pub const SCHEMA_HASH: &str = "448511ec424284413bdc7dd4cae017571edb71d1a9c74b5bd3913faaa47aa532";
 /// Role required during the exact-match startup handshake.
 pub const WORKER_ROLE: &str = "nimino-core";
 /// Maximum JSON payload length accepted by the frame codec.
@@ -495,6 +496,8 @@ pub enum BoundaryResult {
     ModerationPolicy(ModerationPolicyResult),
     /// Definition, condition, planning, and transition decision owned by Nimino.
     WorkflowPolicy(WorkflowPolicyResult),
+    /// Cluster admission, lifecycle, and lane decision owned by Nimino.
+    ClusterLifecycle(ClusterLifecyclePolicyResult),
     /// Test-only operation result; never present in a production build.
     #[cfg(feature = "test-hooks")]
     Test(Value),
@@ -531,6 +534,8 @@ pub(crate) enum BoundaryOperation {
     ModerationPolicy(ModerationPolicyRequest),
     /// Workflow definition, condition, planning, and transition policy.
     WorkflowPolicy(WorkflowPolicyRequest),
+    /// Cluster admission, lifecycle, and lane policy.
+    ClusterLifecycle(ClusterLifecyclePolicyRequest),
     /// Deterministic blocking operation available only to boundary tests.
     #[cfg(feature = "test-hooks")]
     TestSleep(SleepPayload),
@@ -565,6 +570,7 @@ impl BoundaryOperation {
             Self::DmPolicy(_) => "domain.dm.policy",
             Self::ModerationPolicy(_) => "domain.moderation.policy",
             Self::WorkflowPolicy(_) => "domain.workflow.policy",
+            Self::ClusterLifecycle(_) => "domain.cluster.lifecycle",
             #[cfg(feature = "test-hooks")]
             Self::TestSleep(_) => "boundary.test.sleep",
             #[cfg(feature = "test-hooks")]
@@ -592,6 +598,7 @@ impl BoundaryOperation {
             Self::DmPolicy(payload) => serde_json::to_value(payload),
             Self::ModerationPolicy(payload) => serde_json::to_value(payload),
             Self::WorkflowPolicy(payload) => serde_json::to_value(payload),
+            Self::ClusterLifecycle(payload) => serde_json::to_value(payload),
             #[cfg(feature = "test-hooks")]
             Self::TestSleep(payload) => serde_json::to_value(payload),
             #[cfg(feature = "test-hooks")]
@@ -618,6 +625,9 @@ impl BoundaryOperation {
                 serde_json::from_value(payload).map(Self::ModerationPolicy)
             }
             "domain.workflow.policy" => serde_json::from_value(payload).map(Self::WorkflowPolicy),
+            "domain.cluster.lifecycle" => {
+                serde_json::from_value(payload).map(Self::ClusterLifecycle)
+            }
             #[cfg(feature = "test-hooks")]
             "boundary.test.sleep" => serde_json::from_value(payload).map(Self::TestSleep),
             #[cfg(feature = "test-hooks")]
@@ -759,6 +769,11 @@ impl BoundaryRequest {
     /// Constructs a typed workflow policy decision.
     pub fn workflow_policy(request: WorkflowPolicyRequest) -> Self {
         Self::from_operation(BoundaryOperation::WorkflowPolicy(request))
+    }
+
+    /// Constructs a typed cluster admission, lifecycle, or lane decision.
+    pub fn cluster_lifecycle(request: ClusterLifecyclePolicyRequest) -> Self {
+        Self::from_operation(BoundaryOperation::ClusterLifecycle(request))
     }
 
     /// Returns the exact protocol identifier carried by this request.
@@ -915,6 +930,9 @@ impl<'de> Deserialize<'de> for BoundaryResponse {
                         .map_err(D::Error::custom)?,
                     "domain.workflow.policy" => serde_json::from_value(result)
                         .map(BoundaryResult::WorkflowPolicy)
+                        .map_err(D::Error::custom)?,
+                    "domain.cluster.lifecycle" => serde_json::from_value(result)
+                        .map(BoundaryResult::ClusterLifecycle)
                         .map_err(D::Error::custom)?,
                     #[cfg(feature = "test-hooks")]
                     name if name.starts_with("boundary.test.") => BoundaryResult::Test(result),

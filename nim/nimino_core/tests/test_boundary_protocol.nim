@@ -1,5 +1,6 @@
 import std/[json, strutils, unicode, unittest]
 import nimino_core/boundary/[
+  cluster_lifecycle_codec,
   community_policy_codec,
   dm_policy_codec,
   event_policy_codec,
@@ -291,3 +292,28 @@ suite "Nim/Rust boundary protocol v1":
     ))
     expect BoundaryProtocolError:
       discard executeWorkflowPolicy(invalidRequest.operation.data, "request-29-invalid")
+
+  test "routes typed cluster lifecycle transitions and rejects unknown fields":
+    let raw = """{
+      "protocol":"nimino.core.boundary",
+      "version":1,
+      "requestId":"request-48",
+      "operation":"domain.cluster.lifecycle",
+      "payload":{"decision":"transition","request":{"command":"mark_ready","currentState":"syncing","authenticated":true,"revoked":false,"identityUnique":true,"productCapability":"nimino-v1","controlProtocolVersion":1,"dataProtocolVersion":1,"controlDecisionCommitted":true,"snapshotInstalled":true,"checkpointMatches":true,"requiredVoterEpoch":2,"observedVoterEpoch":2,"activeWork":0}}
+    }"""
+    let request = decodeRequest(raw)
+    check request.operation.kind == boClusterLifecycle
+    check executeClusterLifecycle(request.operation.data, request.requestId) == %*{
+      "decision": "transition",
+      "effect": "enter_ready",
+      "nextState": "ready",
+      "error": "none",
+    }
+
+    let invalidRequest = decodeRequest(raw.replace(
+      "\"activeWork\":0", "\"activeWork\":0,\"legacyMode\":true"
+    ))
+    expect BoundaryProtocolError:
+      discard executeClusterLifecycle(
+        invalidRequest.operation.data, "request-48-invalid"
+      )

@@ -5,6 +5,7 @@ when defined(niminoBoundaryTestHooks):
 
 import nimino_core
 import nimino_core/boundary/[
+  cluster_lifecycle_codec,
   community_policy_codec,
   dm_policy_codec,
   event_policy_codec,
@@ -31,6 +32,7 @@ proc helloResult(): JsonNode =
     "domain.dm.policy",
     "domain.moderation.policy",
     "domain.workflow.policy",
+    "domain.cluster.lifecycle",
   ]
 
 proc execute(request: BoundaryRequest; negotiated: var bool): string =
@@ -136,6 +138,12 @@ proc execute(request: BoundaryRequest; negotiated: var bool): string =
       request.requestId,
       request.operationName,
       executeWorkflowPolicy(request.operation.data, request.requestId),
+    )
+  of boClusterLifecycle:
+    result = encodeSuccess(
+      request.requestId,
+      request.operationName,
+      executeClusterLifecycle(request.operation.data, request.requestId),
     )
   else:
     result = encodeFailure(

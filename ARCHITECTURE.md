@@ -197,6 +197,14 @@ trigger an election term but cannot authorize or commit. TLC evidence fixes the
 bounded model; runtime admission, persistence, replicated application, and
 lease/fencing remain separately owned by #48, #49, #51, and #52.
 
+The [`Nimino cluster lifecycle contract`](contracts/nimino-cluster/README.md)
+owns exact admission compatibility, the
+`offline → joining → syncing → ready → draining → offline` sequence, and lane
+eligibility. Pre-ready and draining nodes cannot serve clients or enter the
+lease lane; ready requires committed control state, an installed snapshot, a
+matching checkpoint, and the current voter epoch. Rust supplies verified facts
+and executes returned effects but contains no lifecycle fallback.
+
 ---
 
 ## 2. The Protocol

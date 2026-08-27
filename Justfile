@@ -165,6 +165,10 @@ control-model-contract:
 control-model-check: control-model-contract
     tlc -workers auto -config formal/scenarios/NiminoControlLog_3Node.cfg formal/tla/cluster/NiminoControlLog.tla
 
+# Verify Nim-owned cluster admission, lifecycle, lane gates, and corpus coverage
+nimino-cluster-contract:
+    node scripts/test-nimino-cluster-contract.mjs
+
 # Verify the canonical Nimino names and generate the legacy Buzz denylist
 naming-contract:
     node scripts/check-nimino-naming-contract.mjs

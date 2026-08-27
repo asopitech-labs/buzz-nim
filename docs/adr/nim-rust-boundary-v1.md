@@ -204,9 +204,15 @@ Linux x86_64 is verified here. WSL2, Linux ARM64, macOS x64, and macOS ARM64
 runtime certification remain unverified by this issue and must be supplied by
 their platform/release issues before the final release gate can pass.
 
-## Workflow-policy amendment
+## Domain-operation amendments
 
 Issue #29 adds the typed `domain.workflow.policy` request/result variant after
-event, community, membership, DM, and moderation policy. The current contract
-bundle hash is
-`7ee3f5ecd9696588c753c255b85279da5361f43ed6a52fee5afc43a592d75746`.
+event, community, membership, DM, and moderation policy.
+
+Issue #48 adds `domain.cluster.lifecycle` for pure admission, strict node-state
+transitions, and per-state lane gates. Chirps authentication facts enter as
+typed input but peer reachability never becomes authority. Rust retains only
+process transport and execution of accepted persistence/network effects. The
+current bundle hash includes both amendments and their fixtures:
+`448511ec424284413bdc7dd4cae017571edb71d1a9c74b5bd3913faaa47aa532`;
+the hash in the immutable original decision section records its initial state.

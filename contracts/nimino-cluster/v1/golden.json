@@ -1,0 +1,244 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "name": "unauthenticated join is rejected",
+      "invariant": "transport reachability is not admission",
+      "input": {
+        "decision": "transition",
+        "request": {
+          "command": "join", "currentState": "offline",
+          "authenticated": false, "revoked": false, "identityUnique": true,
+          "productCapability": "nimino-v1", "controlProtocolVersion": 1,
+          "dataProtocolVersion": 1, "controlDecisionCommitted": true,
+          "snapshotInstalled": true, "checkpointMatches": true,
+          "requiredVoterEpoch": 1, "observedVoterEpoch": 1, "activeWork": 0
+        }
+      },
+      "expected": {
+        "decision": "transition", "effect": "reject", "nextState": "offline",
+        "error": "unauthenticated"
+      }
+    },
+    {
+      "name": "legacy capability is rejected",
+      "invariant": "no Buzz compatibility mode",
+      "input": {
+        "decision": "transition",
+        "request": {
+          "command": "join", "currentState": "offline",
+          "authenticated": true, "revoked": false, "identityUnique": true,
+          "productCapability": "other-v1", "controlProtocolVersion": 1,
+          "dataProtocolVersion": 1, "controlDecisionCommitted": true,
+          "snapshotInstalled": true, "checkpointMatches": true,
+          "requiredVoterEpoch": 1, "observedVoterEpoch": 1, "activeWork": 0
+        }
+      },
+      "expected": {
+        "decision": "transition", "effect": "reject", "nextState": "offline",
+        "error": "capability_mismatch"
+      }
+    },
+    {
+      "name": "compatible identity enters joining",
+      "invariant": "join starts but does not skip synchronization",
+      "input": {
+        "decision": "transition",
+        "request": {
+          "command": "join", "currentState": "offline",
+          "authenticated": true, "revoked": false, "identityUnique": true,
+          "productCapability": "nimino-v1", "controlProtocolVersion": 1,
+          "dataProtocolVersion": 1, "controlDecisionCommitted": true,
+          "snapshotInstalled": true, "checkpointMatches": true,
+          "requiredVoterEpoch": 1, "observedVoterEpoch": 1, "activeWork": 0
+        }
+      },
+      "expected": {
+        "decision": "transition", "effect": "enter_joining",
+        "nextState": "joining", "error": "none"
+      }
+    },
+    {
+      "name": "sync requires committed admission",
+      "invariant": "uncommitted control state cannot advance lifecycle",
+      "input": {
+        "decision": "transition",
+        "request": {
+          "command": "start_sync", "currentState": "joining",
+          "authenticated": true, "revoked": false, "identityUnique": true,
+          "productCapability": "nimino-v1", "controlProtocolVersion": 1,
+          "dataProtocolVersion": 1, "controlDecisionCommitted": false,
+          "snapshotInstalled": true, "checkpointMatches": true,
+          "requiredVoterEpoch": 1, "observedVoterEpoch": 1, "activeWork": 0
+        }
+      },
+      "expected": {
+        "decision": "transition", "effect": "reject", "nextState": "joining",
+        "error": "transition_uncommitted"
+      }
+    },
+    {
+      "name": "committed admission enters syncing",
+      "invariant": "joining advances one state",
+      "input": {
+        "decision": "transition",
+        "request": {
+          "command": "start_sync", "currentState": "joining",
+          "authenticated": true, "revoked": false, "identityUnique": true,
+          "productCapability": "nimino-v1", "controlProtocolVersion": 1,
+          "dataProtocolVersion": 1, "controlDecisionCommitted": true,
+          "snapshotInstalled": false, "checkpointMatches": false,
+          "requiredVoterEpoch": 1, "observedVoterEpoch": 0, "activeWork": 0
+        }
+      },
+      "expected": {
+        "decision": "transition", "effect": "enter_syncing",
+        "nextState": "syncing", "error": "none"
+      }
+    },
+    {
+      "name": "ready requires synchronized snapshot",
+      "invariant": "syncing node cannot serve early",
+      "input": {
+        "decision": "transition",
+        "request": {
+          "command": "mark_ready", "currentState": "syncing",
+          "authenticated": true, "revoked": false, "identityUnique": true,
+          "productCapability": "nimino-v1", "controlProtocolVersion": 1,
+          "dataProtocolVersion": 1, "controlDecisionCommitted": true,
+          "snapshotInstalled": false, "checkpointMatches": true,
+          "requiredVoterEpoch": 2, "observedVoterEpoch": 2, "activeWork": 0
+        }
+      },
+      "expected": {
+        "decision": "transition", "effect": "reject", "nextState": "syncing",
+        "error": "sync_incomplete"
+      }
+    },
+    {
+      "name": "ready requires current voter epoch",
+      "invariant": "stale voter configuration cannot become ready",
+      "input": {
+        "decision": "transition",
+        "request": {
+          "command": "mark_ready", "currentState": "syncing",
+          "authenticated": true, "revoked": false, "identityUnique": true,
+          "productCapability": "nimino-v1", "controlProtocolVersion": 1,
+          "dataProtocolVersion": 1, "controlDecisionCommitted": true,
+          "snapshotInstalled": true, "checkpointMatches": true,
+          "requiredVoterEpoch": 2, "observedVoterEpoch": 1, "activeWork": 0
+        }
+      },
+      "expected": {
+        "decision": "transition", "effect": "reject", "nextState": "syncing",
+        "error": "epoch_mismatch"
+      }
+    },
+    {
+      "name": "synchronized node enters ready",
+      "invariant": "ready requires committed synchronized current state",
+      "input": {
+        "decision": "transition",
+        "request": {
+          "command": "mark_ready", "currentState": "syncing",
+          "authenticated": true, "revoked": false, "identityUnique": true,
+          "productCapability": "nimino-v1", "controlProtocolVersion": 1,
+          "dataProtocolVersion": 1, "controlDecisionCommitted": true,
+          "snapshotInstalled": true, "checkpointMatches": true,
+          "requiredVoterEpoch": 2, "observedVoterEpoch": 2, "activeWork": 0
+        }
+      },
+      "expected": {
+        "decision": "transition", "effect": "enter_ready",
+        "nextState": "ready", "error": "none"
+      }
+    },
+    {
+      "name": "ready node begins committed drain",
+      "invariant": "drain advances one state",
+      "input": {
+        "decision": "transition",
+        "request": {
+          "command": "begin_drain", "currentState": "ready",
+          "authenticated": true, "revoked": false, "identityUnique": true,
+          "productCapability": "nimino-v1", "controlProtocolVersion": 1,
+          "dataProtocolVersion": 1, "controlDecisionCommitted": true,
+          "snapshotInstalled": true, "checkpointMatches": true,
+          "requiredVoterEpoch": 2, "observedVoterEpoch": 2, "activeWork": 0
+        }
+      },
+      "expected": {
+        "decision": "transition", "effect": "enter_draining",
+        "nextState": "draining", "error": "none"
+      }
+    },
+    {
+      "name": "active work blocks offline",
+      "invariant": "draining must finish work before offline",
+      "input": {
+        "decision": "transition",
+        "request": {
+          "command": "mark_offline", "currentState": "draining",
+          "authenticated": true, "revoked": false, "identityUnique": true,
+          "productCapability": "nimino-v1", "controlProtocolVersion": 1,
+          "dataProtocolVersion": 1, "controlDecisionCommitted": true,
+          "snapshotInstalled": true, "checkpointMatches": true,
+          "requiredVoterEpoch": 2, "observedVoterEpoch": 2, "activeWork": 1
+        }
+      },
+      "expected": {
+        "decision": "transition", "effect": "reject", "nextState": "draining",
+        "error": "drain_incomplete"
+      }
+    },
+    {
+      "name": "clean drain enters offline",
+      "invariant": "offline has no active work and a matching checkpoint",
+      "input": {
+        "decision": "transition",
+        "request": {
+          "command": "mark_offline", "currentState": "draining",
+          "authenticated": true, "revoked": false, "identityUnique": true,
+          "productCapability": "nimino-v1", "controlProtocolVersion": 1,
+          "dataProtocolVersion": 1, "controlDecisionCommitted": true,
+          "snapshotInstalled": true, "checkpointMatches": true,
+          "requiredVoterEpoch": 2, "observedVoterEpoch": 2, "activeWork": 0
+        }
+      },
+      "expected": {
+        "decision": "transition", "effect": "enter_offline",
+        "nextState": "offline", "error": "none"
+      }
+    },
+    {
+      "name": "syncing allows data sync",
+      "invariant": "sync lane is available before ready",
+      "input": {"decision": "lane", "request": {"state": "syncing", "lane": "data_sync"}},
+      "expected": {"decision": "lane", "effect": "allow_lane", "nextState": "syncing", "error": "none"}
+    },
+    {
+      "name": "joining denies client reads",
+      "invariant": "pre-ready node cannot serve",
+      "input": {"decision": "lane", "request": {"state": "joining", "lane": "client_read"}},
+      "expected": {"decision": "lane", "effect": "deny_lane", "nextState": "joining", "error": "lane_not_allowed"}
+    },
+    {
+      "name": "ready allows lease lane",
+      "invariant": "only ready state is eligible for lease semantics",
+      "input": {"decision": "lane", "request": {"state": "ready", "lane": "lease"}},
+      "expected": {"decision": "lane", "effect": "allow_lane", "nextState": "ready", "error": "none"}
+    },
+    {
+      "name": "draining denies client writes",
+      "invariant": "drain accepts no new serving work",
+      "input": {"decision": "lane", "request": {"state": "draining", "lane": "client_write"}},
+      "expected": {"decision": "lane", "effect": "deny_lane", "nextState": "draining", "error": "lane_not_allowed"}
+    },
+    {
+      "name": "offline denies negotiation lane",
+      "invariant": "offline permits no cluster lane",
+      "input": {"decision": "lane", "request": {"state": "offline", "lane": "negotiation"}},
+      "expected": {"decision": "lane", "effect": "deny_lane", "nextState": "offline", "error": "lane_not_allowed"}
+    }
+  ]
+}

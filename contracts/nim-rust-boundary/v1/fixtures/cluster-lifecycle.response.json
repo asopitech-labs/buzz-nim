@@ -1,0 +1,13 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0048",
+  "operation": "domain.cluster.lifecycle",
+  "status": "ok",
+  "result": {
+    "decision": "transition",
+    "effect": "enter_ready",
+    "nextState": "ready",
+    "error": "none"
+  }
+}

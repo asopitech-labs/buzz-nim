@@ -406,6 +406,48 @@
         }
       ]
     },
+    "clusterNodeState": {
+      "enum": ["offline", "joining", "syncing", "ready", "draining"]
+    },
+    "clusterLifecycleEffect": {
+      "enum": [
+        "reject", "enter_joining", "enter_syncing", "enter_ready",
+        "enter_draining", "enter_offline", "allow_lane", "deny_lane"
+      ]
+    },
+    "clusterLifecycleError": {
+      "enum": [
+        "none", "unauthenticated", "revoked", "identity_conflict",
+        "capability_mismatch", "control_version_mismatch",
+        "data_version_mismatch", "invalid_transition",
+        "transition_uncommitted", "sync_incomplete", "epoch_mismatch",
+        "drain_incomplete", "lane_not_allowed", "fact_conflict"
+      ]
+    },
+    "clusterLifecycleResult": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "effect", "nextState", "error"],
+          "properties": {
+            "decision": { "const": "transition" },
+            "effect": { "$ref": "#/$defs/clusterLifecycleEffect" },
+            "nextState": { "$ref": "#/$defs/clusterNodeState" },
+            "error": { "$ref": "#/$defs/clusterLifecycleError" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "effect", "nextState", "error"],
+          "properties": {
+            "decision": { "const": "lane" },
+            "effect": { "$ref": "#/$defs/clusterLifecycleEffect" },
+            "nextState": { "$ref": "#/$defs/clusterNodeState" },
+            "error": { "$ref": "#/$defs/clusterLifecycleError" }
+          }
+        }
+      ]
+    },
     "workflowPolicyError": {
       "enum": [
         "none", "name_required", "steps_required", "invalid_step",
@@ -622,7 +664,8 @@
                   "domain.membership.policy",
                   "domain.dm.policy",
                   "domain.moderation.policy",
-                  "domain.workflow.policy"
+                  "domain.workflow.policy",
+                  "domain.cluster.lifecycle"
                 ]
               },
               "contains": { "const": "domain.event.policy" }
@@ -769,6 +812,21 @@
         "operation": { "const": "domain.workflow.policy" },
         "status": { "const": "ok" },
         "result": { "$ref": "#/$defs/workflowPolicyResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol", "version", "requestId", "operation", "status", "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.cluster.lifecycle" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/clusterLifecycleResult" }
       }
     },
     {

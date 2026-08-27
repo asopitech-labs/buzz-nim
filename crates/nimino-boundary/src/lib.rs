@@ -6,6 +6,7 @@
 
 #![deny(missing_docs)]
 
+mod cluster;
 mod codec;
 mod community;
 mod contract;
@@ -16,6 +17,11 @@ mod moderation;
 mod runtime;
 mod workflow;
 
+pub use cluster::{
+    ClusterLane, ClusterLaneRequest, ClusterLifecycleError, ClusterLifecyclePolicyRequest,
+    ClusterLifecyclePolicyResult, ClusterNodeState, LifecycleCommand, LifecycleEffect,
+    LifecycleTransitionRequest,
+};
 pub use community::{
     CommunityAction, CommunityCommand, CommunityLifecycleRequest, CommunityPolicyError,
     CommunityPolicyRequest, CommunityPolicyResult, CommunityScopeRequest, CommunityState,

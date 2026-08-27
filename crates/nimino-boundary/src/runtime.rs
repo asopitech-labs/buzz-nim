@@ -560,6 +560,10 @@ fn ready_matches_contract(ready: &ReadyPayload) -> bool {
             .capabilities
             .iter()
             .any(|name| name == "domain.workflow.policy")
+        && ready
+            .capabilities
+            .iter()
+            .any(|name| name == "domain.cluster.lifecycle")
         && !ready.worker_version.is_empty()
 }
 
@@ -583,6 +587,7 @@ mod tests {
                 "domain.dm.policy".to_owned(),
                 "domain.moderation.policy".to_owned(),
                 "domain.workflow.policy".to_owned(),
+                "domain.cluster.lifecycle".to_owned(),
             ],
         }
     }
@@ -638,6 +643,11 @@ mod tests {
         candidate
             .capabilities
             .retain(|name| name != "domain.workflow.policy");
+        assert!(!ready_matches_contract(&candidate));
+        let mut candidate = ready();
+        candidate
+            .capabilities
+            .retain(|name| name != "domain.cluster.lifecycle");
         assert!(!ready_matches_contract(&candidate));
         let mut candidate = ready();
         candidate.worker_version.clear();

@@ -696,6 +696,74 @@
         }
       ]
     },
+    "clusterNodeState": {
+      "enum": ["offline", "joining", "syncing", "ready", "draining"]
+    },
+    "clusterTransitionRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command", "currentState", "authenticated", "revoked",
+        "identityUnique", "productCapability", "controlProtocolVersion",
+        "dataProtocolVersion", "controlDecisionCommitted",
+        "snapshotInstalled", "checkpointMatches", "requiredVoterEpoch",
+        "observedVoterEpoch", "activeWork"
+      ],
+      "properties": {
+        "command": {
+          "enum": [
+            "join", "start_sync", "mark_ready", "begin_drain", "mark_offline"
+          ]
+        },
+        "currentState": { "$ref": "#/$defs/clusterNodeState" },
+        "authenticated": { "type": "boolean" },
+        "revoked": { "type": "boolean" },
+        "identityUnique": { "type": "boolean" },
+        "productCapability": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "controlProtocolVersion": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "dataProtocolVersion": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "controlDecisionCommitted": { "type": "boolean" },
+        "snapshotInstalled": { "type": "boolean" },
+        "checkpointMatches": { "type": "boolean" },
+        "requiredVoterEpoch": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+        "observedVoterEpoch": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+        "activeWork": { "type": "integer", "minimum": 0, "maximum": 2147483647 }
+      }
+    },
+    "clusterLaneRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "lane"],
+      "properties": {
+        "state": { "$ref": "#/$defs/clusterNodeState" },
+        "lane": {
+          "enum": [
+            "negotiation", "control", "data_sync", "client_read",
+            "client_write", "lease"
+          ]
+        }
+      }
+    },
+    "clusterLifecyclePayload": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "transition" },
+            "request": { "$ref": "#/$defs/clusterTransitionRequest" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "lane" },
+            "request": { "$ref": "#/$defs/clusterLaneRequest" }
+          }
+        }
+      ]
+    },
     "workflowValue": {
       "oneOf": [
         { "type": "null" },
@@ -983,6 +1051,18 @@
         "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
         "operation": { "const": "domain.workflow.policy" },
         "payload": { "$ref": "#/$defs/workflowPolicyPayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.cluster.lifecycle" },
+        "payload": { "$ref": "#/$defs/clusterLifecyclePayload" }
       }
     }
   ]

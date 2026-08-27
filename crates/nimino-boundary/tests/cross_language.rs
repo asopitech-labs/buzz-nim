@@ -4,8 +4,10 @@ use std::{path::PathBuf, process::Stdio, time::Duration};
 
 use nimino_boundary::{
     BoundaryConfig, BoundaryError, BoundaryRequest, BoundaryResponse, BoundaryResult,
-    BoundaryRuntime, CallContext, CommunityPolicyRequest, CommunityPolicyResult, DmPolicyRequest,
-    DmPolicyResult, EchoPayload, EventPolicyRequest, EventPolicyResult, MembershipPolicyRequest,
+    BoundaryRuntime, CallContext, ClusterLifecycleError, ClusterLifecyclePolicyRequest,
+    ClusterLifecyclePolicyResult, ClusterNodeState, CommunityPolicyRequest, CommunityPolicyResult,
+    DmPolicyRequest, DmPolicyResult, EchoPayload, EventPolicyRequest, EventPolicyResult,
+    LifecycleCommand, LifecycleEffect, LifecycleTransitionRequest, MembershipPolicyRequest,
     MembershipPolicyResult, ModerationPolicyRequest, ModerationPolicyResult, RemoteErrorCode,
     WorkflowPolicyRequest, WorkflowPolicyResult, MAX_FRAME_BYTES, MAX_INFLIGHT, PROTOCOL_NAME,
     PROTOCOL_VERSION, SCHEMA_HASH, WORKER_ROLE,
@@ -371,6 +373,134 @@ async fn workflow_policy_golden_corpus_crosses_the_real_worker_boundary() {
             "{}",
             case.name
         );
+    }
+    runtime.shutdown().await.expect("clean shutdown");
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct ClusterLifecycleCorpus {
+    schema_version: u16,
+    cases: Vec<ClusterLifecycleCase>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct ClusterLifecycleCase {
+    name: String,
+    invariant: String,
+    input: ClusterLifecyclePolicyRequest,
+    expected: ClusterLifecyclePolicyResult,
+}
+
+fn lifecycle_transition(
+    command: LifecycleCommand,
+    current_state: ClusterNodeState,
+) -> ClusterLifecyclePolicyRequest {
+    ClusterLifecyclePolicyRequest::Transition {
+        request: LifecycleTransitionRequest {
+            command,
+            current_state,
+            authenticated: true,
+            revoked: false,
+            identity_unique: true,
+            product_capability: "nimino-v1".to_owned(),
+            control_protocol_version: 1,
+            data_protocol_version: 1,
+            control_decision_committed: true,
+            snapshot_installed: true,
+            checkpoint_matches: true,
+            required_voter_epoch: 2,
+            observed_voter_epoch: 2,
+            active_work: 0,
+        },
+    }
+}
+
+#[tokio::test]
+#[ignore = "requires the Nim test worker; run `just nim-boundary-test`"]
+async fn cluster_lifecycle_golden_corpus_crosses_the_real_worker_boundary() {
+    let corpus: ClusterLifecycleCorpus = serde_json::from_str(include_str!(
+        "../../../contracts/nimino-cluster/v1/golden.json"
+    ))
+    .expect("valid cluster lifecycle corpus");
+    assert_eq!(corpus.schema_version, 1);
+
+    let runtime = runtime(8).await;
+    let client = runtime.client();
+    for case in corpus.cases {
+        assert!(!case.invariant.is_empty(), "{} has no invariant", case.name);
+        let result = client
+            .call(
+                BoundaryRequest::cluster_lifecycle(case.input),
+                CallContext::with_timeout(Duration::from_secs(2)),
+            )
+            .await
+            .unwrap_or_else(|error| panic!("{} failed: {error}", case.name));
+        assert_eq!(
+            result,
+            BoundaryResult::ClusterLifecycle(case.expected),
+            "{}",
+            case.name
+        );
+    }
+    runtime.shutdown().await.expect("clean shutdown");
+}
+
+#[tokio::test]
+#[ignore = "requires the Nim test worker; run `just nim-boundary-test`"]
+async fn real_worker_completes_join_drain_and_rejoin_without_skips() {
+    let runtime = runtime(8).await;
+    let client = runtime.client();
+    let mut state = ClusterNodeState::Offline;
+    for (command, expected, effect) in [
+        (
+            LifecycleCommand::Join,
+            ClusterNodeState::Joining,
+            LifecycleEffect::EnterJoining,
+        ),
+        (
+            LifecycleCommand::StartSync,
+            ClusterNodeState::Syncing,
+            LifecycleEffect::EnterSyncing,
+        ),
+        (
+            LifecycleCommand::MarkReady,
+            ClusterNodeState::Ready,
+            LifecycleEffect::EnterReady,
+        ),
+        (
+            LifecycleCommand::BeginDrain,
+            ClusterNodeState::Draining,
+            LifecycleEffect::EnterDraining,
+        ),
+        (
+            LifecycleCommand::MarkOffline,
+            ClusterNodeState::Offline,
+            LifecycleEffect::EnterOffline,
+        ),
+        (
+            LifecycleCommand::Join,
+            ClusterNodeState::Joining,
+            LifecycleEffect::EnterJoining,
+        ),
+    ] {
+        let result = client
+            .call(
+                BoundaryRequest::cluster_lifecycle(lifecycle_transition(command, state)),
+                CallContext::with_timeout(Duration::from_secs(2)),
+            )
+            .await
+            .expect("real worker lifecycle call");
+        assert_eq!(
+            result,
+            BoundaryResult::ClusterLifecycle(ClusterLifecyclePolicyResult::Transition {
+                effect,
+                next_state: expected,
+                error: ClusterLifecycleError::None,
+            })
+        );
+        state = expected;
     }
     runtime.shutdown().await.expect("clean shutdown");
 }
