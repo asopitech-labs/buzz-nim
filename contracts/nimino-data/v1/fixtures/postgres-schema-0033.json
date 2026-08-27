@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 33,
+  "purpose": "One-time cutover evidence from the last additive PostgreSQL schema; not a runtime compatibility map",
+  "tables": [
+    { "table": "communities", "class": "canonical", "recordType": "community" },
+    { "table": "channels", "class": "canonical", "recordType": "channel" },
+    {
+      "table": "channel_members",
+      "class": "canonical",
+      "recordType": "membership"
+    },
+    { "table": "users", "class": "canonical", "recordType": "profile" },
+    { "table": "events", "class": "canonical", "recordType": "event" },
+    {
+      "table": "event_mentions",
+      "class": "cache",
+      "recordType": "mention_index"
+    },
+    {
+      "table": "subscriptions",
+      "class": "canonical",
+      "recordType": "subscription"
+    },
+    {
+      "table": "delivery_log",
+      "class": "log",
+      "recordType": "delivery_attempt"
+    },
+    { "table": "workflows", "class": "canonical", "recordType": "workflow" },
+    {
+      "table": "workflow_runs",
+      "class": "canonical",
+      "recordType": "workflow_run"
+    },
+    {
+      "table": "workflow_approvals",
+      "class": "canonical",
+      "recordType": "workflow_approval"
+    },
+    {
+      "table": "scheduled_workflow_fires",
+      "class": "canonical",
+      "recordType": "scheduled_workflow_fire"
+    },
+    { "table": "api_tokens", "class": "canonical", "recordType": "api_token" },
+    {
+      "table": "rate_limit_violations",
+      "class": "log",
+      "recordType": "rate_limit_violation"
+    },
+    {
+      "table": "thread_metadata",
+      "class": "cache",
+      "recordType": "thread_index"
+    },
+    { "table": "reactions", "class": "cache", "recordType": "reaction_index" },
+    {
+      "table": "pubkey_allowlist",
+      "class": "canonical",
+      "recordType": "allowlist_entry"
+    },
+    {
+      "table": "relay_members",
+      "class": "canonical",
+      "recordType": "relay_member"
+    },
+    {
+      "table": "join_policy_acceptances",
+      "class": "canonical",
+      "recordType": "join_policy_acceptance"
+    },
+    {
+      "table": "relay_invites",
+      "class": "canonical",
+      "recordType": "relay_invite"
+    },
+    {
+      "table": "archived_identities",
+      "class": "canonical",
+      "recordType": "identity_archive"
+    },
+    { "table": "audit_log", "class": "log", "recordType": "audit_entry" },
+    {
+      "table": "moderation_reports",
+      "class": "canonical",
+      "recordType": "moderation_case"
+    },
+    {
+      "table": "community_bans",
+      "class": "canonical",
+      "recordType": "restriction"
+    },
+    {
+      "table": "moderation_actions",
+      "class": "log",
+      "recordType": "moderation_action"
+    },
+    {
+      "table": "git_repo_names",
+      "class": "canonical",
+      "recordType": "repository_name"
+    },
+    {
+      "table": "parameterized_event_watermarks",
+      "class": "canonical",
+      "recordType": "retention_watermark"
+    },
+    {
+      "table": "product_feedback",
+      "class": "canonical",
+      "recordType": "product_feedback"
+    },
+    {
+      "table": "replica_heartbeat",
+      "class": "cache",
+      "recordType": "replica_heartbeat"
+    },
+    {
+      "table": "community_deletion_requests",
+      "class": "canonical",
+      "recordType": "deletion_job"
+    },
+    {
+      "table": "community_deletion_approvals",
+      "class": "canonical",
+      "recordType": "deletion_approval"
+    },
+    {
+      "table": "community_deletion_checkpoints",
+      "class": "canonical",
+      "recordType": "deletion_checkpoint"
+    },
+    {
+      "table": "community_deletion_manifest_keys",
+      "class": "canonical",
+      "recordType": "deletion_manifest_key"
+    },
+    {
+      "table": "storage_taxonomy_sweeps",
+      "class": "log",
+      "recordType": "taxonomy_sweep"
+    },
+    {
+      "table": "community_serving_write_leases",
+      "class": "cache",
+      "recordType": "serving_write_lease"
+    },
+    {
+      "table": "community_deletion_executor_heartbeats",
+      "class": "cache",
+      "recordType": "executor_heartbeat"
+    }
+  ],
+  "embedded": [
+    {
+      "source": "events.search_tsv",
+      "class": "cache",
+      "recordType": "search_index"
+    },
+    { "source": "feed queries", "class": "cache", "recordType": "feed_index" },
+    {
+      "source": "workflow_runs.execution_trace",
+      "class": "log",
+      "recordType": "workflow_execution_entry"
+    }
+  ],
+  "excluded": [
+    {
+      "source": "events_* and delivery_log_* partitions",
+      "reason": "physical layout, not logical records"
+    },
+    {
+      "source": "_operator_global_tables",
+      "reason": "schema lint metadata, not runtime data"
+    },
+    {
+      "source": "push_* tables",
+      "reason": "physically removed by migration 0033"
+    }
+  ]
+}

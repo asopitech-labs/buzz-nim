@@ -113,6 +113,11 @@ or corrupt stdout recycles the stateless worker before another request. See
 [`docs/adr/nim-rust-boundary-v1.md`](docs/adr/nim-rust-boundary-v1.md) for the
 contract source, responsibility map, failure semantics, and benchmark evidence.
 
+The versioned [`Nimino data contract`](contracts/nimino-data/README.md)
+classifies canonical truth, rebuildable caches, and append-only logs, and fixes
+the transaction, query, and projection-rebuild intents used by the data-plane
+issues. It contains no Postgres, Rust, or Chirps runtime compatibility path.
+
 `nimino-chirps` is the only workspace package permitted to depend directly on
 Alopex Chirps. The registry release is pinned to `=0.6.3`, default and optional
 features are disabled, and the lock checksum is part of the versioned contract.

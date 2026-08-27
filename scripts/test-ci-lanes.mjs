@@ -134,6 +134,10 @@ check(
   Object.keys(filters).every((group) => !matches(group, "mobile/lib/main.dart")),
   "Mobile changes must not select a CI product lane",
 );
+check(
+  job("changes").includes("run: node scripts/test-nimino-data-contract.mjs"),
+  "changed-path gate must verify the Nimino data contract",
+);
 
 const nimJob = job("nim");
 check(
