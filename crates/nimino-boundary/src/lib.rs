@@ -6,6 +6,7 @@
 
 #![deny(missing_docs)]
 
+mod agent;
 mod cli;
 mod cluster;
 mod codec;
@@ -18,6 +19,12 @@ mod moderation;
 mod runtime;
 mod workflow;
 
+pub use agent::{
+    AgentEventFacts, AgentLifecycleAction, AgentLifecycleCommand, AgentLifecycleRequest,
+    AgentLifecycleState, AgentPhase, AgentPolicyError, AgentPolicyRequest, AgentPolicyResult,
+    AgentTriggerRule, PersonaBehavior, PersonaTriggers, ResolvedPersonaBehavior,
+    ResolvedPersonaTriggers,
+};
 pub use cli::{
     CliCommandError, CliFailureCategory, CliFailureKind, CliIoMode, CliPolicyOperation,
     CliPolicyRequest, CliPolicyResult,

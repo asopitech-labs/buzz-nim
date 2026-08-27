@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.agent-policy",
+  "owner": "nim/nimino_core/src/nimino_core/domain/agent_policy.nim",
+  "boundaryOperation": "domain.agent.policy",
+  "compatibilityMode": false,
+  "decisions": ["persona", "trigger", "lifecycle"],
+  "acpAdapter": {
+    "owner": "crates/buzz-acp/src/acp.rs",
+    "transport": "json-rpc-2.0-ndjson",
+    "maxLineBytes": 10000000,
+    "rustResponsibilities": [
+      "frame-codec", "stdio-io", "process-spawn", "deadline",
+      "cancel-write-and-drain", "process-group-kill-and-reap"
+    ]
+  },
+  "personaPrecedence": ["persona", "pack-default", "built-in"],
+  "triggerSemantics": "ordered-first-match-fail-closed",
+  "retry": {"initialMs": 5000, "maximumMs": 300000},
+  "rustPolicySitesToDelete": [
+    {
+      "path": "crates/buzz-persona/src/merge.rs",
+      "symbols": ["merge_behavioral_config", "resolve_persona_config"]
+    },
+    {
+      "path": "crates/buzz-persona/src/resolve.rs",
+      "symbols": ["resolve_loaded_pack", "resolve_triggers"]
+    },
+    {
+      "path": "crates/buzz-acp/src/filter.rs",
+      "symbols": ["evaluate_filter", "match_event"]
+    },
+    {
+      "path": "crates/buzz-acp/src/pool_lifecycle.rs",
+      "symbols": ["PoolLifecycle", "retry_delay"]
+    }
+  ],
+  "physicalRemovalOwner": 66,
+  "cutoverOwner": 12,
+  "outOfScope": {"workflowEngine": 29, "toolExecution": 32}
+}

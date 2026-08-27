@@ -1,5 +1,6 @@
 import std/[json, strutils, unicode, unittest]
 import nimino_core/boundary/[
+  agent_policy_codec,
   cluster_lifecycle_codec,
   community_policy_codec,
   dm_policy_codec,
@@ -292,6 +293,35 @@ suite "Nim/Rust boundary protocol v1":
     ))
     expect BoundaryProtocolError:
       discard executeWorkflowPolicy(invalidRequest.operation.data, "request-29-invalid")
+
+  test "routes typed agent lifecycle and rejects unknown fields":
+    let raw = """{
+      "protocol":"nimino.core.boundary",
+      "version":1,
+      "requestId":"request-40",
+      "operation":"domain.agent.policy",
+      "payload":{"decision":"lifecycle","request":{"state":{"phase":"running","attempt":0,"retryAtMs":0,"turnId":"turn-1"},"command":"cancel","commandAttempt":0,"commandTurnId":"turn-1","pendingWork":true,"nowMs":100}}
+    }"""
+    let request = decodeRequest(raw)
+    check request.operation.kind == boAgentPolicy
+    check executeAgentPolicy(request.operation.data, request.requestId) == %*{
+      "decision": "lifecycle",
+      "allowed": true,
+      "error": "none",
+      "action": "send_cancel",
+      "nextState": {
+        "phase": "cancelling", "attempt": 0, "retryAtMs": 0,
+        "turnId": "turn-1",
+      },
+    }
+
+    let invalidRequest = decodeRequest(raw.replace(
+      "\"nowMs\":100", "\"nowMs\":100,\"legacyMode\":true"
+    ))
+    expect BoundaryProtocolError:
+      discard executeAgentPolicy(
+        invalidRequest.operation.data, "request-40-invalid"
+      )
 
   test "routes typed cluster lifecycle transitions and rejects unknown fields":
     let raw = """{

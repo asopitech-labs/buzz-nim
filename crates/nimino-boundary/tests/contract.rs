@@ -167,6 +167,24 @@ fn cli_policy_fixtures_use_the_typed_operation_variant() {
 }
 
 #[test]
+fn agent_policy_fixtures_use_the_typed_operation_variant() {
+    let request: BoundaryRequest = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/agent-policy.request.json"
+    ))
+    .expect("agent policy request fixture");
+    assert_eq!(request.operation_name(), "domain.agent.policy");
+
+    let response: BoundaryResponse = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/agent-policy.response.json"
+    ))
+    .expect("agent policy response fixture");
+    assert!(matches!(
+        response.into_result().expect("policy success"),
+        BoundaryResult::AgentPolicy(_)
+    ));
+}
+
+#[test]
 fn cluster_lifecycle_fixtures_use_the_typed_operation_variant() {
     let request: BoundaryRequest = serde_json::from_str(include_str!(
         "../../../contracts/nim-rust-boundary/v1/fixtures/cluster-lifecycle.request.json"

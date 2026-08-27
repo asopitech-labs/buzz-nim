@@ -118,6 +118,8 @@ evaluation, step planning, effect selection, and versioned run transitions are
 exposed as `domain.workflow.policy`; canonical command paths, local/read/write
 classification, authentication requirements, downstream policy selection, and
 error/exit semantics are exposed as `domain.cli.policy`.
+Persona precedence, ordered event-trigger selection, and cancel/restart state
+transitions are exposed as `domain.agent.policy`.
 `nimino-boundary` owns no product, DB, replication, sync, or cluster-authority rule. Timeout,
 cancellation, crash, or corrupt stdout recycles the stateless worker before
 another request. See
@@ -172,6 +174,15 @@ argument codecs, signing, HTTP/WebSocket, filesystem, and process I/O. Workflow
 commands select the existing Nim workflow/event policies rather than duplicating
 domain decisions. #66 deletes the registered Rust command-policy sites and #12
 performs the incompatible public cutover; there is no `buzz` alias.
+
+The [`Nimino agent policy`](contracts/nimino-agent/README.md) owns persona
+behavioral precedence, first-match/fail-closed trigger routing, and the complete
+agent cancel/restart state machine. Rust retains persona file parsing, verified
+Nostr fact extraction, bounded ACP NDJSON framing, process supervision, MCP/LLM
+I/O, and execution of returned lifecycle actions. Stale start/turn identifiers
+are rejected and an undrained cancellation must be killed and reaped before a
+replacement can start. #66 deletes the registered Rust policy sites and #12
+performs the incompatible public cutover.
 
 The [`Nimino effect ledger`](contracts/nimino-effect-ledger/README.md) closes
 that #57 lifecycle with replicated canonical `workflow_effect` records. A live

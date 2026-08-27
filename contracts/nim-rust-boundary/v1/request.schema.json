@@ -792,6 +792,118 @@
         }
       ]
     },
+    "agentStringList": {
+      "type": "array", "maxItems": 256,
+      "items": {"type": "string", "maxLength": 4096}
+    },
+    "personaTriggers": {
+      "type": "object", "additionalProperties": false,
+      "required": ["mentions", "keywords", "allMessages"],
+      "properties": {
+        "mentions": {"type": ["boolean", "null"]},
+        "keywords": {"oneOf": [{"$ref": "#/$defs/agentStringList"}, {"type": "null"}]},
+        "allMessages": {"type": ["boolean", "null"]}
+      }
+    },
+    "personaBehavior": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "model", "temperature", "maxContextTokens", "subscribe", "triggers",
+        "threadReplies", "broadcastReplies"
+      ],
+      "properties": {
+        "model": {"type": ["string", "null"], "maxLength": 4096},
+        "temperature": {"type": ["number", "null"]},
+        "maxContextTokens": {"type": ["integer", "null"], "minimum": 0},
+        "subscribe": {"oneOf": [{"$ref": "#/$defs/agentStringList"}, {"type": "null"}]},
+        "triggers": {"oneOf": [{"$ref": "#/$defs/personaTriggers"}, {"type": "null"}]},
+        "threadReplies": {"type": ["boolean", "null"]},
+        "broadcastReplies": {"type": ["boolean", "null"]}
+      }
+    },
+    "agentEventFacts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["content", "author", "kind", "channelId", "timestamp", "mentioned"],
+      "properties": {
+        "content": {"type": "string", "maxLength": 4096},
+        "author": {"type": "string", "maxLength": 4096},
+        "kind": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "channelId": {"type": "string", "maxLength": 4096},
+        "timestamp": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807},
+        "mentioned": {"type": "boolean"}
+      }
+    },
+    "agentTriggerRule": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "name", "allChannels", "channels", "kinds", "requireMention",
+        "filter", "promptTag"
+      ],
+      "properties": {
+        "name": {"type": "string", "maxLength": 4096},
+        "allChannels": {"type": "boolean"},
+        "channels": {"$ref": "#/$defs/agentStringList"},
+        "kinds": {
+          "type": "array", "maxItems": 256,
+          "items": {"type": "integer", "minimum": 0, "maximum": 4294967295}
+        },
+        "requireMention": {"type": "boolean"},
+        "filter": {"type": "string", "maxLength": 4096},
+        "promptTag": {"type": "string", "maxLength": 4096}
+      }
+    },
+    "agentLifecycleState": {
+      "type": "object", "additionalProperties": false,
+      "required": ["phase", "attempt", "retryAtMs", "turnId"],
+      "properties": {
+        "phase": {"enum": ["absent", "starting", "ready", "running", "cancelling", "restart_wait", "stopped"]},
+        "attempt": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807},
+        "retryAtMs": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807},
+        "turnId": {"type": "string", "maxLength": 4096}
+      }
+    },
+    "agentLifecycleRequest": {
+      "type": "object", "additionalProperties": false,
+      "required": ["state", "command", "commandAttempt", "commandTurnId", "pendingWork", "nowMs"],
+      "properties": {
+        "state": {"$ref": "#/$defs/agentLifecycleState"},
+        "command": {"enum": ["start", "started", "start_failed", "begin_turn", "cancel", "turn_finished", "cancel_timeout", "process_exited", "retry", "shutdown"]},
+        "commandAttempt": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807},
+        "commandTurnId": {"type": "string", "maxLength": 4096},
+        "pendingWork": {"type": "boolean"},
+        "nowMs": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807}
+      }
+    },
+    "agentPolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "persona", "defaults"],
+          "properties": {
+            "decision": {"const": "persona"},
+            "persona": {"$ref": "#/$defs/personaBehavior"},
+            "defaults": {"$ref": "#/$defs/personaBehavior"}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "event", "rules"],
+          "properties": {
+            "decision": {"const": "trigger"},
+            "event": {"$ref": "#/$defs/agentEventFacts"},
+            "rules": {"type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/agentTriggerRule"}}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": {"const": "lifecycle"},
+            "request": {"$ref": "#/$defs/agentLifecycleRequest"}
+          }
+        }
+      ]
+    },
     "workflowValue": {
       "oneOf": [
         { "type": "null" },
@@ -1091,6 +1203,18 @@
         "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
         "operation": { "const": "domain.cli.policy" },
         "payload": { "$ref": "#/$defs/cliPolicyPayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.agent.policy" },
+        "payload": { "$ref": "#/$defs/agentPolicyPayload" }
       }
     },
     {

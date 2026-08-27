@@ -3,15 +3,15 @@
 use std::{path::PathBuf, process::Stdio, time::Duration};
 
 use nimino_boundary::{
-    BoundaryConfig, BoundaryError, BoundaryRequest, BoundaryResponse, BoundaryResult,
-    BoundaryRuntime, CallContext, CliPolicyRequest, CliPolicyResult, ClusterLifecycleError,
-    ClusterLifecyclePolicyRequest, ClusterLifecyclePolicyResult, ClusterNodeState,
-    CommunityPolicyRequest, CommunityPolicyResult, DmPolicyRequest, DmPolicyResult, EchoPayload,
-    EventPolicyRequest, EventPolicyResult, LifecycleCommand, LifecycleEffect,
-    LifecycleTransitionRequest, MembershipPolicyRequest, MembershipPolicyResult,
-    ModerationPolicyRequest, ModerationPolicyResult, RemoteErrorCode, WorkflowPolicyRequest,
-    WorkflowPolicyResult, MAX_FRAME_BYTES, MAX_INFLIGHT, PROTOCOL_NAME, PROTOCOL_VERSION,
-    SCHEMA_HASH, WORKER_ROLE,
+    AgentPolicyRequest, AgentPolicyResult, BoundaryConfig, BoundaryError, BoundaryRequest,
+    BoundaryResponse, BoundaryResult, BoundaryRuntime, CallContext, CliPolicyRequest,
+    CliPolicyResult, ClusterLifecycleError, ClusterLifecyclePolicyRequest,
+    ClusterLifecyclePolicyResult, ClusterNodeState, CommunityPolicyRequest, CommunityPolicyResult,
+    DmPolicyRequest, DmPolicyResult, EchoPayload, EventPolicyRequest, EventPolicyResult,
+    LifecycleCommand, LifecycleEffect, LifecycleTransitionRequest, MembershipPolicyRequest,
+    MembershipPolicyResult, ModerationPolicyRequest, ModerationPolicyResult, RemoteErrorCode,
+    WorkflowPolicyRequest, WorkflowPolicyResult, MAX_FRAME_BYTES, MAX_INFLIGHT, PROTOCOL_NAME,
+    PROTOCOL_VERSION, SCHEMA_HASH, WORKER_ROLE,
 };
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -416,6 +416,52 @@ async fn cli_policy_golden_corpus_crosses_the_real_worker_boundary() {
         assert_eq!(
             result,
             BoundaryResult::CliPolicy(case.expected),
+            "{}",
+            case.name
+        );
+    }
+    runtime.shutdown().await.expect("clean shutdown");
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct AgentPolicyCorpus {
+    schema_version: u16,
+    cases: Vec<AgentPolicyCase>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct AgentPolicyCase {
+    name: String,
+    invariant: String,
+    input: AgentPolicyRequest,
+    expected: AgentPolicyResult,
+}
+
+#[tokio::test]
+#[ignore = "requires the Nim test worker; run `just nim-boundary-test`"]
+async fn agent_policy_golden_corpus_crosses_the_real_worker_boundary() {
+    let corpus: AgentPolicyCorpus = serde_json::from_str(include_str!(
+        "../../../contracts/nimino-agent/v1/golden.json"
+    ))
+    .expect("valid agent policy corpus");
+    assert_eq!(corpus.schema_version, 1);
+
+    let runtime = runtime(8).await;
+    let client = runtime.client();
+    for case in corpus.cases {
+        assert!(!case.invariant.is_empty(), "{} has no invariant", case.name);
+        let result = client
+            .call(
+                BoundaryRequest::agent_policy(case.input),
+                CallContext::with_timeout(Duration::from_secs(2)),
+            )
+            .await
+            .unwrap_or_else(|error| panic!("{} failed: {error}", case.name));
+        assert_eq!(
+            result,
+            BoundaryResult::AgentPolicy(case.expected),
             "{}",
             case.name
         );

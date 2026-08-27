@@ -147,6 +147,13 @@ check(
   "CLI policy changes must run Nim and real boundary golden tests",
 );
 check(
+  matches("nim", "nim/nimino_core/src/nimino_core/domain/agent_policy.nim") &&
+    matches("boundary", "nim/nimino_core/src/nimino_core/domain/agent_policy.nim") &&
+    matches("boundary", "contracts/nimino-agent/v1/contract.json") &&
+    matches("boundary", "scripts/test-nimino-agent-contract.mjs"),
+  "agent policy changes must run Nim and real boundary golden tests",
+);
+check(
   matches("nim", "nim/nimino_core/src/nimino_core/domain/cluster_lifecycle.nim") &&
     matches("boundary", "nim/nimino_core/src/nimino_core/domain/cluster_lifecycle.nim"),
   "cluster lifecycle changes must run Nim and real boundary golden tests",
@@ -204,6 +211,10 @@ check(
 check(
   job("changes").includes("run: just nimino-cli-contract"),
   "changed-path gate must verify the Nimino CLI contract",
+);
+check(
+  job("changes").includes("run: just nimino-agent-contract"),
+  "changed-path gate must verify the Nimino agent contract",
 );
 check(
   job("changes").includes("run: just nimino-cluster-contract"),
@@ -359,6 +370,11 @@ check(
   /^nimino-cli-contract:\n    node scripts\/test-nimino-cli-contract\.mjs$/m.test(justfile) &&
     workflow.includes("run: just nimino-cli-contract"),
   "CLI grammar and exit contract must remain in CI",
+);
+check(
+  /^nimino-agent-contract:\n    node scripts\/test-nimino-agent-contract\.mjs$/m.test(justfile) &&
+    workflow.includes("run: just nimino-agent-contract"),
+  "agent/persona contract must remain in CI",
 );
 check(
   /^legacy-control-manifest-contract:\n    node scripts\/check-legacy-control-manifest\.mjs$/m.test(

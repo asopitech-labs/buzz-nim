@@ -145,6 +145,10 @@ nim-boundary-contract:
 nimino-cli-contract:
     node scripts/test-nimino-cli-contract.mjs
 
+# Verify persona precedence, trigger routing, and cancel/restart policy
+nimino-agent-contract:
+    node scripts/test-nimino-agent-contract.mjs
+
 # Run Rust unit contracts and real Rust↔Nim process lifecycle scenarios
 nim-boundary-test: nim-boundary-contract nim-boundary-build nim-boundary-test-workers
     cargo test -p nimino-boundary --lib --test contract

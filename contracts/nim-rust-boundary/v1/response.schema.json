@@ -493,6 +493,70 @@
         }
       ]
     },
+    "resolvedPersonaTriggers": {
+      "type": "object", "additionalProperties": false,
+      "required": ["mentions", "keywords", "allMessages"],
+      "properties": {
+        "mentions": {"type": "boolean"},
+        "keywords": {"type": "array", "maxItems": 256, "items": {"type": "string", "maxLength": 4096}},
+        "allMessages": {"type": "boolean"}
+      }
+    },
+    "resolvedPersonaBehavior": {
+      "type": "object", "additionalProperties": false,
+      "required": ["model", "temperature", "maxContextTokens", "subscribe", "triggers", "threadReplies", "broadcastReplies"],
+      "properties": {
+        "model": {"type": ["string", "null"], "maxLength": 4096},
+        "temperature": {"type": ["number", "null"]},
+        "maxContextTokens": {"type": ["integer", "null"], "minimum": 0},
+        "subscribe": {"oneOf": [{"type": "array", "maxItems": 256, "items": {"type": "string", "maxLength": 4096}}, {"type": "null"}]},
+        "triggers": {"oneOf": [{"$ref": "#/$defs/resolvedPersonaTriggers"}, {"type": "null"}]},
+        "threadReplies": {"type": "boolean"},
+        "broadcastReplies": {"type": "boolean"}
+      }
+    },
+    "agentLifecycleState": {
+      "type": "object", "additionalProperties": false,
+      "required": ["phase", "attempt", "retryAtMs", "turnId"],
+      "properties": {
+        "phase": {"enum": ["absent", "starting", "ready", "running", "cancelling", "restart_wait", "stopped"]},
+        "attempt": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807},
+        "retryAtMs": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807},
+        "turnId": {"type": "string", "maxLength": 4096}
+      }
+    },
+    "agentPolicyError": {"enum": ["none", "invalid_rule", "invalid_filter", "invalid_transition", "stale_attempt", "invalid_turn"]},
+    "agentPolicyResult": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "behavior"],
+          "properties": {"decision": {"const": "persona"}, "behavior": {"$ref": "#/$defs/resolvedPersonaBehavior"}}
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "matched", "ruleIndex", "promptTag", "error"],
+          "properties": {
+            "decision": {"const": "trigger"},
+            "matched": {"type": "boolean"},
+            "ruleIndex": {"type": "integer", "minimum": -1, "maximum": 255},
+            "promptTag": {"type": "string", "maxLength": 4096},
+            "error": {"$ref": "#/$defs/agentPolicyError"}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "allowed", "error", "action", "nextState"],
+          "properties": {
+            "decision": {"const": "lifecycle"},
+            "allowed": {"type": "boolean"},
+            "error": {"$ref": "#/$defs/agentPolicyError"},
+            "action": {"enum": ["reject", "noop", "spawn", "accept_start", "begin_turn", "send_cancel", "return_ready", "reap_and_wait", "stop"]},
+            "nextState": {"$ref": "#/$defs/agentLifecycleState"}
+          }
+        }
+      ]
+    },
     "workflowPolicyError": {
       "enum": [
         "none", "name_required", "steps_required", "invalid_step",
@@ -711,6 +775,7 @@
                   "domain.moderation.policy",
                   "domain.workflow.policy",
                   "domain.cli.policy",
+                  "domain.agent.policy",
                   "domain.cluster.lifecycle"
                 ]
               },
@@ -873,6 +938,21 @@
         "operation": { "const": "domain.cli.policy" },
         "status": { "const": "ok" },
         "result": { "$ref": "#/$defs/cliPolicyResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol", "version", "requestId", "operation", "status", "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.agent.policy" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/agentPolicyResult" }
       }
     },
     {
