@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -62,7 +62,7 @@ const excluded = new Set([
 const files = execFileSync("git", ["ls-files", "-z"], { cwd: root })
   .toString()
   .split("\0")
-  .filter((path) => path && !excluded.has(path));
+  .filter((path) => path && !excluded.has(path) && existsSync(join(root, path)));
 
 const legacyRuntimePatterns = [
   [/(^|[^A-Z0-9_])BUZZ_[A-Z0-9_]+/m, "legacy environment prefix"],
