@@ -91,8 +91,10 @@ function valid(schema, value, root = schema) {
 for (const [schemaName, fixtureName] of [
   ["request.schema.json", "echo.request.json"],
   ["request.schema.json", "event-policy.request.json"],
+  ["request.schema.json", "community-policy.request.json"],
   ["response.schema.json", "echo.response.json"],
   ["response.schema.json", "event-policy.response.json"],
+  ["response.schema.json", "community-policy.response.json"],
   ["response.schema.json", "unknown-operation.response.json"],
 ]) {
   const schema = JSON.parse(fs.readFileSync(path.join(root, schemaName), "utf8"));
@@ -137,6 +139,7 @@ fi
 if rg -n 'println!|print!' \
   "$repo_root/crates/nimino-boundary/src/lib.rs" \
   "$repo_root/crates/nimino-boundary/src/codec.rs" \
+  "$repo_root/crates/nimino-boundary/src/community.rs" \
   "$repo_root/crates/nimino-boundary/src/contract.rs" \
   "$repo_root/crates/nimino-boundary/src/error.rs" \
   "$repo_root/crates/nimino-boundary/src/runtime.rs"; then

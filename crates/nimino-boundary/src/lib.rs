@@ -7,10 +7,15 @@
 #![deny(missing_docs)]
 
 mod codec;
+mod community;
 mod contract;
 mod error;
 mod runtime;
 
+pub use community::{
+    CommunityAction, CommunityCommand, CommunityLifecycleRequest, CommunityPolicyError,
+    CommunityPolicyRequest, CommunityPolicyResult, CommunityScopeRequest, CommunityState,
+};
 pub use contract::{
     BoundaryFault, BoundaryRequest, BoundaryResponse, BoundaryResult, DeletionAction,
     DeletionRequest, DeletionTargetFacts, EchoPayload, EventDisposition, EventPolicyError,

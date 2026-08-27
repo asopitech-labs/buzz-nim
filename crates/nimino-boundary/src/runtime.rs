@@ -540,6 +540,10 @@ fn ready_matches_contract(ready: &ReadyPayload) -> bool {
             .capabilities
             .iter()
             .any(|name| name == "domain.event.policy")
+        && ready
+            .capabilities
+            .iter()
+            .any(|name| name == "domain.community.policy")
         && !ready.worker_version.is_empty()
 }
 
@@ -555,7 +559,11 @@ mod tests {
             worker_role: WORKER_ROLE.to_owned(),
             max_frame_bytes: MAX_FRAME_BYTES,
             max_inflight: MAX_INFLIGHT,
-            capabilities: vec!["boundary.echo".to_owned(), "domain.event.policy".to_owned()],
+            capabilities: vec![
+                "boundary.echo".to_owned(),
+                "domain.event.policy".to_owned(),
+                "domain.community.policy".to_owned(),
+            ],
         }
     }
 
@@ -585,6 +593,11 @@ mod tests {
         candidate
             .capabilities
             .retain(|name| name != "domain.event.policy");
+        assert!(!ready_matches_contract(&candidate));
+        let mut candidate = ready();
+        candidate
+            .capabilities
+            .retain(|name| name != "domain.community.policy");
         assert!(!ready_matches_contract(&candidate));
         let mut candidate = ready();
         candidate.worker_version.clear();

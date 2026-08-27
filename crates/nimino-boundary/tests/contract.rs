@@ -1,7 +1,8 @@
 use nimino_boundary::{
-    BoundaryFault, BoundaryRequest, BoundaryResponse, BoundaryResult, EchoPayload,
-    EventDisposition, EventPolicyError, EventPolicyResult, RemoteErrorCode, RetryDisposition,
-    HOST_ERROR_CODES, PROTOCOL_NAME, PROTOCOL_VERSION,
+    BoundaryFault, BoundaryRequest, BoundaryResponse, BoundaryResult, CommunityAction,
+    CommunityPolicyError, CommunityPolicyResult, EchoPayload, EventDisposition, EventPolicyError,
+    EventPolicyResult, RemoteErrorCode, RetryDisposition, HOST_ERROR_CODES, PROTOCOL_NAME,
+    PROTOCOL_VERSION,
 };
 use serde_json::json;
 
@@ -18,6 +19,27 @@ fn request_fixture_round_trips_without_losing_contract_fields() {
     assert_eq!(
         request.echo_data(),
         Some(&json!({"message": "hello from Rust"}))
+    );
+}
+
+#[test]
+fn community_policy_fixtures_use_the_typed_operation_variant() {
+    let request: BoundaryRequest = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/community-policy.request.json"
+    ))
+    .expect("valid community policy request");
+    assert_eq!(request.operation_name(), "domain.community.policy");
+
+    let response: BoundaryResponse = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/community-policy.response.json"
+    ))
+    .expect("valid community policy response");
+    assert_eq!(
+        response.into_result().expect("policy success"),
+        BoundaryResult::CommunityPolicy(CommunityPolicyResult::Lifecycle {
+            action: CommunityAction::Archive,
+            error: CommunityPolicyError::None,
+        })
     );
 }
 

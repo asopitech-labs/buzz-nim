@@ -3,11 +3,11 @@
 Status: active. Nim 2.2.10 is pinned, the Rust-independent development lane is
 available, and the versioned Nim/Rust worker boundary is accepted and tested.
 
-This lane is the development foundation for moving high-change product and
-domain policy into Nim. It deliberately contains no migrated domain behavior
-or Chirps runtime integration. A separate `nimino-chirps` package pins and
-guards the Rust dependency; the process boundary contains transport and
-lifecycle mechanics only. Later focused issues own each typed operation.
+This lane owns migrated event/message, data-contract, and community policy in
+Nim. It deliberately contains no Chirps runtime integration. A separate
+`nimino-chirps` package pins and guards the Rust dependency; the process
+boundary contains transport and lifecycle mechanics only. Focused issues own
+each typed operation.
 
 ## Quick start
 
@@ -71,7 +71,8 @@ bin/.nim-2.2.10.pkg           Hermit package selector
 nim/nimino_core/
   nimino_core.nimble          package metadata and compiler constraint
   nim.cfg                     source, cache, and output paths
-  src/nimino_core.nim         package root; no domain policy yet
+  src/nimino_core.nim         package root and version metadata
+  src/nimino_core/domain/     pure product/domain decisions
   src/nimino_core_worker.nim  long-lived worker composition root
   src/nimino_core/boundary/   strict v1 protocol and length framing
   tests/                      package and boundary unit tests
@@ -113,6 +114,7 @@ budget only after representative domain modules exist.
 | `nim/nimino_core/` | Importable package skeleton | Owner of high-change product and domain policy | keep | Never as part of the current cutover | `just nim-ci` |
 | `contracts/nim-rust-boundary/v1/` | Exact schema/error/lifecycle bundle | Canonical cross-language contract | keep | Explicit new-version cutover | checksum and fixture gates |
 | `contracts/nimino-event/v1/` | Event policy corpus and Rust deletion inventory | Canonical event/message decision contract | keep | Explicit new-version cutover | Nim unit and real worker golden tests |
+| `contracts/nimino-community/v1/` | Community lifecycle/isolation corpus and Rust policy inventory | Canonical community decision contract | keep | Explicit new-version cutover | Nim unit and real worker golden tests |
 | `crates/nimino-boundary/` | Supervised process adapter | Spawn/frame/queue/timeout/cancel/kill/reap only | keep narrow | Explicit replacement boundary | dependency deny and cross-language tests |
 | `.github/workflows/ci.yml` (`Nim Core`) | Path-scoped Nim verification and timing | Independent Nim CI lane | keep | Superseded by the independent release pipeline | bootstrap contract test and CI artifact |
 | Rust workspace | Existing product and adapter implementation | Stable host and adapter boundary | shrink | Per later responsibility-manifest issues | Not changed by this bootstrap |

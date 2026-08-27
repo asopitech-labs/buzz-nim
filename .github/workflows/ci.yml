@@ -58,8 +58,10 @@ jobs:
               - 'nim/nimino_core/src/nimino_core_worker.nim'
               - 'nim/nimino_core/src/nimino_core/boundary/**'
               - 'nim/nimino_core/src/nimino_core/domain/event_policy.nim'
+              - 'nim/nimino_core/src/nimino_core/domain/community_policy.nim'
               - 'nim/nimino_core/tests/test_boundary_protocol.nim'
               - 'nim/nimino_core/tests/test_event_policy.nim'
+              - 'nim/nimino_core/tests/test_community_policy.nim'
               - 'hermit-packages/nim.hcl'
               - 'bin/hermit.hcl'
               - 'bin/.nim-*.pkg'
@@ -69,8 +71,10 @@ jobs:
               - 'Justfile'
               - 'scripts/test-nim-boundary-contract.sh'
               - 'scripts/test-nimino-event-contract.mjs'
+              - 'scripts/test-nimino-community-contract.mjs'
               - 'contracts/nim-rust-boundary/**'
               - 'contracts/nimino-event/**'
+              - 'contracts/nimino-community/**'
               - 'crates/nimino-boundary/**'
               - 'Cargo.toml'
               - 'Cargo.lock'
@@ -121,6 +125,8 @@ jobs:
         run: node scripts/test-nimino-data-contract.mjs
       - name: Nimino event policy contract
         run: node scripts/test-nimino-event-contract.mjs
+      - name: Nimino community policy contract
+        run: node scripts/test-nimino-community-contract.mjs
       - name: Nimino runtime namespace contract
         run: just runtime-namespace-contract
       - name: GUI surface contract

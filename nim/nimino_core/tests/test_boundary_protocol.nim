@@ -1,5 +1,5 @@
 import std/[json, strutils, unicode, unittest]
-import nimino_core/boundary/[event_policy_codec, protocol]
+import nimino_core/boundary/[community_policy_codec, event_policy_codec, protocol]
 
 suite "Nim/Rust boundary protocol v1":
   test "decodes the canonical request envelope":
@@ -114,4 +114,30 @@ suite "Nim/Rust boundary protocol v1":
           "legacyMode": true,
         },
         "request-31-invalid",
+      )
+
+  test "routes typed community policy payloads and rejects unknown fields":
+    let request = decodeRequest("""{
+      "protocol":"nimino.core.boundary",
+      "version":1,
+      "requestId":"request-85",
+      "operation":"domain.community.policy",
+      "payload":{"decision":"scope","request":{"requestCommunity":"018f5e5a-9b7d-7c01-a7bb-46fbe46d0001","resourceCommunity":null}}
+    }""")
+    check request.operation.kind == boCommunityPolicy
+    check executeCommunityPolicy(request.operation.data, request.requestId) == %*{
+      "decision": "scope", "allowed": false, "error": "resource_missing"
+    }
+
+    expect BoundaryProtocolError:
+      discard executeCommunityPolicy(
+        %*{
+          "decision": "scope",
+          "request": {
+            "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+            "resourceCommunity": nil,
+          },
+          "legacyMode": true,
+        },
+        "request-85-invalid",
       )
