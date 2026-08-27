@@ -188,6 +188,13 @@ and retention watermarks merge monotonically without pruning beyond durable
 tombstone protection. Rust persists the chosen result and quarantine evidence
 but does not choose a winner.
 
+The [`Nimino object sync contract`](contracts/nimino-object-sync/README.md)
+applies bounded synchronization to media, Git packs, and Git manifests. Nim
+owns validated manifests, eager/lazy selection, revisioned pins, deterministic
+origin choice, and cross-community-safe GC. The `nimino-object-store` Rust
+adapter streams resumable 1 MiB partials, verifies size and SHA-256, fsyncs, and
+atomically installs without overwrite. It contains no retention or fetch policy.
+
 The same crate exposes a separate `ControlLogStorePort` for #49. Its metadata,
 ordered log, and snapshot tables are disjoint from canonical event
 anti-entropy. Rust persists opaque entries and validates local prefix shape;

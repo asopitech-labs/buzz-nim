@@ -37,6 +37,9 @@ const
     "deletion_approval",
     "deletion_checkpoint",
     "deletion_manifest_key",
+    "object_manifest",
+    "object_pin",
+    "object_gc_watermark",
   ]
   CacheRecordTypes* = [
     "mention_index",

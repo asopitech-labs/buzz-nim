@@ -295,6 +295,12 @@ check(
   ) && workflow.includes("run: just nimino-convergence-contract"),
   "deterministic convergence contract must remain in CI",
 );
+check(
+  /^nimino-object-sync-contract:\n    node scripts\/test-nimino-object-sync-contract\.mjs$/m.test(
+    justfile,
+  ) && workflow.includes("run: just nimino-object-sync-contract"),
+  "object sync contract must remain in CI",
+);
 
 const boundaryJob = job("boundary");
 check(

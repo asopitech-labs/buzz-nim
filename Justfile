@@ -177,6 +177,10 @@ nimino-sync-contract:
 nimino-convergence-contract:
     node scripts/test-nimino-convergence-contract.mjs
 
+# Verify content-addressed manifest, fetch, pin, partial install, and GC policy
+nimino-object-sync-contract:
+    node scripts/test-nimino-object-sync-contract.mjs
+
 # Exhaustively check the bounded 3-node control-log state graph with TLC
 control-model-check: control-model-contract
     tlc -workers auto -config formal/scenarios/NiminoControlLog_3Node.cfg formal/tla/cluster/NiminoControlLog.tla
