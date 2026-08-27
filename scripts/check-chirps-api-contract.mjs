@@ -322,6 +322,8 @@ check(
     messaging.maxMessageBytes === 1024 * 1024 &&
     messaging.maxQueueCapacity === 4096 &&
     messaging.shutdownIsolation === "dedicated-tokio-runtime-thread" &&
+    JSON.stringify(messaging.identityFacts) ===
+      JSON.stringify(["node_id", "incarnation"]) &&
     JSON.stringify(messaging.commands) ===
       JSON.stringify(["start", "send", "broadcast", "subscribe", "peers", "stop"]) &&
     messaging.controlProtocolOwner === 9 &&

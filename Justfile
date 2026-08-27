@@ -151,7 +151,7 @@ nim-boundary-benchmark output="target/nim/nimino-boundary-benchmark.json": nim-b
     cargo run --release -p nimino-boundary --features test-hooks --bin boundary-bench -- "{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker" "{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker-test" "{{output}}"
 
 # Complete cross-language gate; the separate nim-ci lane remains Rust-free
-nim-boundary-ci: nim-boundary-test nim-boundary-benchmark
+nim-boundary-ci: nim-boundary-test nim-boundary-benchmark nimino-cluster-scenarios
 
 # Verify the pinned Chirps dependency and its narrow Rust API boundary
 chirps-contract:
@@ -184,6 +184,14 @@ nimino-object-sync-contract:
 # Verify resumable search/thread/feed rebuild ownership and atomic publication
 nimino-projection-contract:
     node scripts/test-nimino-projection-contract.mjs
+
+# Verify the fixed 1/3/5-node real-mesh scenario definition and ownership
+nimino-cluster-scenario-contract:
+    node scripts/test-nimino-cluster-scenario-contract.mjs
+
+# Run the deterministic Chirps UDP/QUIC + Nim lifecycle scenario suite
+nimino-cluster-scenarios output="target/nim/nimino-cluster-scenarios.json": nimino-cluster-scenario-contract nim-boundary-build
+    NIMINO_BOUNDARY_WORKER="{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker" NIMINO_CLUSTER_EVIDENCE="{{justfile_directory()}}/{{output}}" cargo test -p nimino-chirps --test lifecycle_scenarios -- --ignored --test-threads=1
 
 # Exhaustively check the bounded 3-node control-log state graph with TLC
 control-model-check: control-model-contract

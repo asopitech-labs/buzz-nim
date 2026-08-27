@@ -11,5 +11,8 @@ alopex-chirps = { workspace = true }
 tokio = { workspace = true }
 
 [dev-dependencies]
+nimino-boundary = { path = "../nimino-boundary" }
 rcgen = "0.12"
+serde = { workspace = true }
+serde_json = { workspace = true }
 tempfile = "3"

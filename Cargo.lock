@@ -6011,7 +6011,10 @@ name = "nimino-chirps"
 version = "0.1.0"
 dependencies = [
  "alopex-chirps",
+ "nimino-boundary",
  "rcgen",
+ "serde",
+ "serde_json",
  "tempfile",
  "tokio",
 ]

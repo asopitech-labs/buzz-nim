@@ -173,6 +173,7 @@ async fn stop_releases_socket_and_restart_preserves_identity() {
         .await
         .expect("first start");
     let node_id = first.local_node_id();
+    let incarnation = first.local_incarnation();
     let client = first.client();
     let mut subscription = client.subscribe();
     assert_eq!(
@@ -198,5 +199,6 @@ async fn stop_releases_socket_and_restart_preserves_identity() {
         .await
         .expect("restart");
     assert_eq!(restarted.local_node_id(), node_id);
+    assert_eq!(restarted.local_incarnation(), incarnation + 1);
     restarted.stop().await.expect("second stop");
 }

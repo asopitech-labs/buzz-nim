@@ -198,6 +198,10 @@ check(
   job("changes").includes("run: just nimino-cluster-contract"),
   "changed-path gate must verify the Nimino cluster lifecycle contract",
 );
+check(
+  job("changes").includes("run: just nimino-cluster-scenario-contract"),
+  "changed-path gate must verify the real-mesh scenario contract",
+);
 
 const nimJob = job("nim");
 check(
@@ -262,8 +266,10 @@ check(
   "nim-ci dependencies must stay Rust-free",
 );
 check(
-  /^nim-boundary-ci: nim-boundary-test nim-boundary-benchmark$/m.test(justfile),
-  "boundary CI must remain a separate focused gate",
+  /^nim-boundary-ci: nim-boundary-test nim-boundary-benchmark nimino-cluster-scenarios$/m.test(
+    justfile,
+  ),
+  "boundary CI must include the real-mesh scenario gate",
 );
 check(
   /^control-model-contract:\n    node scripts\/check-nimino-control-model\.mjs$/m.test(
@@ -306,6 +312,17 @@ check(
     justfile,
   ) && workflow.includes("run: just nimino-projection-contract"),
   "projection rebuild contract must remain in CI",
+);
+check(
+  /^nimino-cluster-scenario-contract:\n    node scripts\/test-nimino-cluster-scenario-contract\.mjs$/m.test(
+    justfile,
+  ) &&
+    /^nimino-cluster-scenarios output="target\/nim\/nimino-cluster-scenarios\.json": nimino-cluster-scenario-contract nim-boundary-build$/m.test(
+      justfile,
+    ) &&
+    workflow.includes("run: just nim-boundary-ci") &&
+    workflow.includes("path: target/nim/nimino-cluster-scenarios.json"),
+  "real-mesh scenario suite and evidence must remain in CI",
 );
 
 const boundaryJob = job("boundary");

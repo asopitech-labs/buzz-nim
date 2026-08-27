@@ -152,13 +152,14 @@ pub(crate) struct RuntimeWorker {
     pub(crate) events: broadcast::Sender<MeshMessage>,
     pub(crate) shutdown: oneshot::Receiver<()>,
     pub(crate) stopped: watch::Sender<bool>,
-    pub(crate) startup: oneshot::Sender<Result<NodeId, MeshRuntimeError>>,
+    pub(crate) startup: oneshot::Sender<Result<(NodeId, u64), MeshRuntimeError>>,
 }
 
 /// Cloneable command and subscription handle for a running mesh.
 #[derive(Clone)]
 pub struct MeshClient {
     local_node_id: NodeId,
+    local_incarnation: u64,
     commands: mpsc::Sender<RuntimeCommand>,
     events: broadcast::Sender<MeshMessage>,
     stopped: watch::Receiver<bool>,
@@ -168,6 +169,11 @@ impl MeshClient {
     /// Returns this runtime's stable node identity.
     pub fn local_node_id(&self) -> NodeId {
         self.local_node_id
+    }
+
+    /// Returns the Chirps process incarnation persisted with this identity.
+    pub fn local_incarnation(&self) -> u64 {
+        self.local_incarnation
     }
 
     /// Sends one opaque payload to a transport peer.
@@ -278,8 +284,8 @@ impl MeshRuntime {
             },
         )
         .map_err(|error| MeshRuntimeError::ThreadStart(error.to_string()))?;
-        let local_node_id = match started.await {
-            Ok(Ok(node_id)) => node_id,
+        let (local_node_id, local_incarnation) = match started.await {
+            Ok(Ok(identity)) => identity,
             Ok(Err(error)) => {
                 join_thread(worker).await?;
                 return Err(error);
@@ -292,6 +298,7 @@ impl MeshRuntime {
         Ok(Self {
             client: MeshClient {
                 local_node_id,
+                local_incarnation,
                 commands,
                 events,
                 stopped,
@@ -304,6 +311,11 @@ impl MeshRuntime {
     /// Returns this runtime's stable node identity.
     pub fn local_node_id(&self) -> NodeId {
         self.client.local_node_id()
+    }
+
+    /// Returns the Chirps process incarnation persisted with this identity.
+    pub fn local_incarnation(&self) -> u64 {
+        self.client.local_incarnation()
     }
 
     /// Returns a cloneable command/subscription handle.
@@ -368,6 +380,7 @@ mod tests {
         let (_stopped_sender, stopped) = watch::channel(false);
         let client = MeshClient {
             local_node_id: NodeId::from_bytes([0; 16]),
+            local_incarnation: 0,
             commands,
             events,
             stopped,

@@ -88,7 +88,10 @@ fn run_runtime(config: NodeConfig, command_capacity: usize, worker: RuntimeWorke
             }
         };
         let local_node_id = from_chirps_node_id(mesh.node_id());
-        if startup.send(Ok(local_node_id)).is_err() {
+        if startup
+            .send(Ok((local_node_id, mesh.incarnation())))
+            .is_err()
+        {
             return;
         }
         let mut observed_peers = BTreeSet::new();

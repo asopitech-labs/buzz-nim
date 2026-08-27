@@ -51,6 +51,7 @@
   "controlModel": "nimino.control-log/v1",
   "runtimeStateMachineOwner": 51,
   "leaseSemanticsOwner": 52,
+  "scenarioContract": "nimino.cluster-scenarios/v1",
   "scenarioHarnessOwner": 56,
   "cutoverOwner": 12
 }

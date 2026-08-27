@@ -261,6 +261,14 @@ lease lane; ready requires committed control state, an installed snapshot, a
 matching checkpoint, and the current voter epoch. Rust supplies verified facts
 and executes returned effects but contains no lifecycle fallback.
 
+The [`real-mesh scenario contract`](contracts/nimino-cluster-scenarios/README.md)
+applies that same Nim lifecycle contract to 1, 3, and 5 real Chirps UDP/QUIC
+nodes. A fixed seed selects an isolated failure node; the suite drops and
+rejoins it, requires stable identity with a strictly incremented Chirps
+incarnation, drains every node through the Nim worker, and proves all UDP
+sockets and the worker process are released. It emits a CI evidence artifact;
+data convergence remains a separate #59 assertion.
+
 ---
 
 ## 2. The Protocol

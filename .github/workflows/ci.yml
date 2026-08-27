@@ -95,7 +95,10 @@ jobs:
               - 'contracts/nimino-moderation/**'
               - 'contracts/nimino-workflow/**'
               - 'contracts/nimino-cluster/**'
+              - 'contracts/nimino-cluster-scenarios/**'
               - 'crates/nimino-boundary/**'
+              - 'crates/nimino-chirps/**'
+              - 'scripts/test-nimino-cluster-scenario-contract.mjs'
               - 'Cargo.toml'
               - 'Cargo.lock'
               - 'rust-toolchain.toml'
@@ -171,6 +174,8 @@ jobs:
         run: node scripts/test-nimino-workflow-contract.mjs
       - name: Nimino cluster lifecycle contract
         run: just nimino-cluster-contract
+      - name: Nimino real-mesh scenario contract
+        run: just nimino-cluster-scenario-contract
       - name: Nimino runtime namespace contract
         run: just runtime-namespace-contract
       - name: GUI surface contract
@@ -234,6 +239,12 @@ jobs:
         with:
           name: nim-rust-boundary-benchmark
           path: target/nim/nimino-boundary-benchmark.json
+      - name: Upload real-mesh lifecycle evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: nimino-cluster-scenarios
+          path: target/nim/nimino-cluster-scenarios.json
 
   rust-lint:
     name: Rust Lint
