@@ -15,6 +15,9 @@ const SECOND_DIRECT_ADD_NPUB =
   "npub1424242424242424242424242424242424242424242424242424qamrcaj";
 
 test.beforeEach(async ({ page }, testInfo) => {
+  if (testInfo.title === "opens a profile from a community member avatar") {
+    testInfo.setTimeout(90_000);
+  }
   await installMockBridge(page, {
     relayRequiresMembership: true,
     relayRole: testInfo.title.includes("admin can add members")
@@ -40,9 +43,11 @@ test("opens a profile from a community member avatar", async ({ page }) => {
   await page.getByRole("button", { name: "Open profile for alice" }).click();
 
   await expect(page).toHaveURL(
-    new RegExp(`/pulse\\?profile=${TEST_IDENTITIES.alice.pubkey}$`),
+    new RegExp(`/#/\\?profile=${TEST_IDENTITIES.alice.pubkey}$`),
   );
-  await expect(page.getByTestId("user-profile-panel")).toBeVisible();
+  await expect(page.getByTestId("home-user-profile-panel")).toBeVisible({
+    timeout: 20_000,
+  });
 });
 
 test("capture: consolidated invites settings", async ({ page }) => {

@@ -4,6 +4,7 @@ import type { SearchHit } from "@/shared/api/types";
 
 type SearchHitNavigationActions = {
   force?: boolean;
+  goActivity: () => Promise<unknown>;
   goChannel: (
     channelId: string,
     options?: {
@@ -43,6 +44,10 @@ export async function openSearchHitWithNavigation(
     // Delay community-scoped writes for notification routing until async
     // destination resolution completes and its owner is still current.
     cacheSearchHitEvent(hit);
+  }
+
+  if (destination.kind === "activity") {
+    return actions.goActivity();
   }
 
   if (destination.kind === "forum-post") {

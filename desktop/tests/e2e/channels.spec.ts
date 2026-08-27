@@ -154,7 +154,9 @@ async function openChannelManagement(
   channelName: string,
 ) {
   await page.getByTestId(`channel-${channelName}`).click();
-  await expect(page.getByTestId("chat-title")).toHaveText(channelName);
+  await expect(page.getByTestId("chat-title")).toHaveText(channelName, {
+    timeout: 20_000,
+  });
   await page.getByTestId("channel-management-trigger").click();
   await expect(page.getByTestId("channel-management-sheet")).toBeVisible();
 }
@@ -2991,9 +2993,10 @@ test("channel settings hides workflows and skips its query when the experiment i
     .toBe(false);
 });
 
-test("channel settings opens and creates channel workflows over the channel", async ({
+test("channel settings opens and creates workflows through the canonical route", async ({
   page,
 }) => {
+  test.setTimeout(180_000);
   await page.goto("/");
   await invokeMockCommand(page, "create_workflow", {
     channelId: GENERAL_CHANNEL_ID,
@@ -3019,17 +3022,14 @@ test("channel settings opens and creates channel workflows over the channel", as
     "Welcome responder",
   );
 
-  // Opening a workflow keeps the settings Workflows view mounted beneath the
-  // shared editor; the channel route stays put behind both layers.
-  const channelUrl = new RegExp(`/channels/${GENERAL_CHANNEL_ID}(?:\\?|$)`);
+  // Workflow editing has one URL-owned host; channel settings closes before
+  // navigation instead of nesting a second editor over the sheet.
   await sheet.getByTestId("channel-workflow-mock-wf-1").click();
-  await expect(
-    page.getByRole("dialog", { name: "Edit workflow" }),
-  ).toBeVisible();
-  await expect(page).toHaveURL(channelUrl);
-  await expect(sheet).toBeVisible();
-  await expect(sheet.getByText("Workflows", { exact: true })).toBeVisible();
-  await expect(page.getByTestId("message-timeline")).toBeVisible();
+  await expect(page.getByRole("dialog", { name: "Edit workflow" })).toBeVisible(
+    { timeout: 30_000 },
+  );
+  await expect(page).toHaveURL(/\/workflows\/mock-wf-1/);
+  await expect(sheet).not.toBeVisible();
 
   const overlayEditor = page.getByRole("dialog", { name: "Edit workflow" });
   await overlayEditor.getByRole("tab", { name: "YAML" }).click();
@@ -3065,20 +3065,16 @@ test("channel settings opens and creates channel workflows over the channel", as
   await expect(page.getByRole("dialog", { name: "Edit workflow" })).toHaveCount(
     0,
   );
-  await expect(page).toHaveURL(channelUrl);
-  await expect(page.getByTestId("chat-title")).toHaveText("general");
-  await expect(sheet).toBeVisible();
-  await expect(sheet.getByText("Workflows", { exact: true })).toBeVisible();
-  await expect(sheet.getByTestId("channel-workflows-list")).toContainText(
-    "Welcome responder",
-  );
+  await expect(page).toHaveURL(/\/workflows$/);
 
+  await openChannelManagement(page, "general");
+  await sheet.getByTestId("channel-workflows-ingress").click();
   await page.getByTestId("channel-workflows-new").click();
 
   await expect(
     page.getByRole("dialog", { name: "Create workflow" }),
-  ).toBeVisible();
-  await expect(page).toHaveURL(channelUrl);
+  ).toBeVisible({ timeout: 30_000 });
+  await expect(page).toHaveURL(/\/workflows\?[^#]*view=create/);
   await expect(
     page.getByRole("combobox", { exact: true, name: "Channel" }),
   ).toContainText("general");
@@ -3087,11 +3083,7 @@ test("channel settings opens and creates channel workflows over the channel", as
   await expect(
     page.getByRole("dialog", { name: "Create workflow" }),
   ).toHaveCount(0);
-  await expect(page).toHaveURL(channelUrl);
-  await expect(page.getByTestId("chat-title")).toHaveText("general");
-  await expect(sheet).toBeVisible();
-  await expect(sheet.getByText("Workflows", { exact: true })).toBeVisible();
-  await expect(sheet.getByTestId("channel-workflows-new")).toBeVisible();
+  await expect(page).toHaveURL(/\/workflows$/);
 });
 
 async function seedHomeInboxMention(

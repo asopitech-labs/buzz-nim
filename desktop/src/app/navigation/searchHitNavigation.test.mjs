@@ -32,11 +32,30 @@ const plainMessage = {
   threadRootId: "thread-root",
 };
 
+const publicNote = {
+  ...plainMessage,
+  channelId: null,
+  eventId: "public-note",
+  kind: 1,
+};
+
+test("public-note search hits open Home activity", async () => {
+  const calls = [];
+  await openSearchHitWithNavigation(publicNote, {
+    goActivity: async () => calls.push("activity"),
+    goChannel: async () => calls.push("channel"),
+    goForumPost: async () => calls.push("forum"),
+  });
+
+  assert.deepEqual(calls, ["activity"]);
+});
+
 test("search-hit navigation preserves forced message routing while active", async () => {
   clearSearchHitEventCache();
   const calls = [];
   const result = await openSearchHitWithNavigation(plainMessage, {
     force: true,
+    goActivity: async () => false,
     goChannel: async (channelId, options) => {
       calls.push({ channelId, options });
       return true;
@@ -69,6 +88,7 @@ test("cancelled search-hit navigation cannot repopulate cache or route", async (
   const navigation = openSearchHitWithNavigation(
     forumComment,
     {
+      goActivity: async () => calls.push("activity"),
       goChannel: async () => calls.push("channel"),
       goForumPost: async () => calls.push("forum"),
       signal: controller.signal,
@@ -108,6 +128,7 @@ test("queue cancellation fences an in-flight forum-comment activation", async ()
             hit,
             {
               force: behavior?.force,
+              goActivity: async () => calls.push("activity"),
               goChannel: async () => calls.push("channel"),
               goForumPost: async () => calls.push("forum"),
               signal: behavior?.signal,

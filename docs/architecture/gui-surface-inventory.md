@@ -5,7 +5,7 @@ machine-readable authority is
 [`contracts/gui-surface-v1.json`](../../contracts/gui-surface-v1.json); CI
 rejects unclassified feature roots and routes through
 [`scripts/check-gui-surface-contract.mjs`](../../scripts/check-gui-surface-contract.mjs).
-Mobile is intentionally outside this contract and is removed by #18/#33/#28.
+Mobile is intentionally outside this contract and was removed by #18/#33/#28.
 
 ## Decision summary
 
@@ -37,21 +37,34 @@ aliases below are removed by their implementation owner.
 
 ## Route dispositions
 
-Most routes remain canonical. The non-keep routes are the complete exception
-list:
+Most routes remain canonical. The removed and pending non-keep routes are the
+complete exception list.
+
+### Desktop — completed by #34
+
+| Removed route | Decision | Canonical destination | Preserved data |
+|---|---|---|---|
+| `/pulse` | merge | Home Activity (`/?view=activity`), Conversations, Search | Timelines, publishing, actions, agent cards |
+| `/reminders` | delete | Home, then select Reminders | Due state and badges; the old route never selected the filter |
+| `/messages/new` | merge | New Message inside the Conversations shell | Participant-scoped DM creation |
+
+The route manifest no longer contains these paths or compatibility aliases.
+Home owns Inbox and Activity tabs, New Message is shell-local state, and channel
+workflow actions open the canonical `/workflows` route instead of a duplicate
+editor overlay. The GUI contract and Desktop keyboard E2E enforce this shape.
+
+### Web and Admin — owned by #39
 
 | Current route | Decision | Canonical destination | Preserved data |
 |---|---|---|---|
-| Desktop `/pulse` | merge | Home / Conversations / Search | Timelines, publishing, actions, agent cards |
-| Desktop `/reminders` | delete | Home, then select Reminders | Due state and badges; the old route never selected the filter |
-| Desktop `/messages/new` | merge | Conversations | Participant-scoped DM creation |
 | Web `/repos` | delete | `/` | Repository list |
 | Admin `/` | delete | `/reports` | Moderation inbox |
 | Admin `/feedback` | merge | Operator inbox | Typed feedback payload and acted-on state |
 | Admin `/feedback/$feedbackId` | merge | Operator inbox detail | Typed feedback payload |
 
-There are no compatibility aliases in the target topology. A route is removed
-only after its destination is reachable and its negative route test exists.
+There are no compatibility aliases in the target topology. Pending routes are
+removed only after their destination is reachable and their negative route test
+exists.
 
 ## Pulse capability handoff
 
