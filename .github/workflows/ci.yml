@@ -113,6 +113,8 @@ jobs:
         run: just naming-contract
       - name: Nimino protocol contract
         run: just protocol-contract
+      - name: Nimino data contract
+        run: node scripts/test-nimino-data-contract.mjs
       - name: Nimino runtime namespace contract
         run: just runtime-namespace-contract
       - name: GUI surface contract
