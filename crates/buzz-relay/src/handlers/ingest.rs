@@ -2017,8 +2017,8 @@ fn validate_event_reminder(event: &Event) -> Result<(), &'static str> {
     // omit it. The ordering check only applies when both are present.
     if let Some(nb) = not_before {
         // Reject reminders scheduled beyond the configured horizon. The same
-        // SPROUT_MAX_NOT_BEFORE_DELTA env var is advertised in NIP-11.
-        let max_delta: u64 = std::env::var("SPROUT_MAX_NOT_BEFORE_DELTA")
+        // NIMINO_MAX_NOT_BEFORE_DELTA is advertised in NIP-11.
+        let max_delta: u64 = std::env::var("NIMINO_MAX_NOT_BEFORE_DELTA")
             .ok()
             .and_then(|v| v.parse().ok())
             .unwrap_or(31_536_000); // 1 year default

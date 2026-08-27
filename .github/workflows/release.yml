@@ -86,7 +86,7 @@ jobs:
       - name: Generate release config
         run: cd desktop && node scripts/build-release-config.mjs
         env:
-          NIMINO_UPDATER_PUBLIC_KEY: ${{ secrets.NIMINO_UPDATER_PUBLIC_KEY || secrets.SPROUT_UPDATER_PUBLIC_KEY }}
+          NIMINO_UPDATER_PUBLIC_KEY: ${{ secrets.NIMINO_UPDATER_PUBLIC_KEY }}
           NIMINO_UPDATER_ENDPOINT: https://github.com/block/buzz/releases/download/buzz-desktop-latest/latest.json
 
       - name: Build sidecars
@@ -137,7 +137,7 @@ jobs:
       - name: Build unsigned Tauri app
         run: cd desktop && pnpm tauri build --verbose --no-sign --features mesh-llm --config src-tauri/tauri.release.conf.json
         env:
-          NIMINO_UPDATER_PUBLIC_KEY: ${{ secrets.NIMINO_UPDATER_PUBLIC_KEY || secrets.SPROUT_UPDATER_PUBLIC_KEY }}
+          NIMINO_UPDATER_PUBLIC_KEY: ${{ secrets.NIMINO_UPDATER_PUBLIC_KEY }}
           NIMINO_UPDATER_ENDPOINT: https://github.com/block/buzz/releases/download/buzz-desktop-latest/latest.json
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
@@ -303,7 +303,7 @@ jobs:
       - name: Generate release config
         run: cd desktop && node scripts/build-release-config.mjs
         env:
-          NIMINO_UPDATER_PUBLIC_KEY: ${{ secrets.NIMINO_UPDATER_PUBLIC_KEY || secrets.SPROUT_UPDATER_PUBLIC_KEY }}
+          NIMINO_UPDATER_PUBLIC_KEY: ${{ secrets.NIMINO_UPDATER_PUBLIC_KEY }}
           NIMINO_UPDATER_ENDPOINT: https://github.com/block/buzz/releases/download/buzz-desktop-latest/latest.json
 
       - name: Build sidecars
@@ -314,7 +314,7 @@ jobs:
       - name: Build unsigned Tauri app
         run: cd desktop && pnpm tauri build --verbose --no-sign --target "$TARGET" --config src-tauri/tauri.release.conf.json
         env:
-          NIMINO_UPDATER_PUBLIC_KEY: ${{ secrets.NIMINO_UPDATER_PUBLIC_KEY || secrets.SPROUT_UPDATER_PUBLIC_KEY }}
+          NIMINO_UPDATER_PUBLIC_KEY: ${{ secrets.NIMINO_UPDATER_PUBLIC_KEY }}
           NIMINO_UPDATER_ENDPOINT: https://github.com/block/buzz/releases/download/buzz-desktop-latest/latest.json
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
@@ -569,13 +569,13 @@ jobs:
       - name: Generate release config
         run: cd desktop && node scripts/build-release-config.mjs
         env:
-          NIMINO_UPDATER_PUBLIC_KEY: ${{ secrets.NIMINO_UPDATER_PUBLIC_KEY || secrets.SPROUT_UPDATER_PUBLIC_KEY }}
+          NIMINO_UPDATER_PUBLIC_KEY: ${{ secrets.NIMINO_UPDATER_PUBLIC_KEY }}
           NIMINO_UPDATER_ENDPOINT: https://github.com/block/buzz/releases/download/buzz-desktop-latest/latest.json
 
       - name: Build Linux Tauri app
         run: cd desktop && pnpm tauri build --verbose --ci --bundles deb,appimage --features mesh-llm --config src-tauri/tauri.release.conf.json
         env:
-          NIMINO_UPDATER_PUBLIC_KEY: ${{ secrets.NIMINO_UPDATER_PUBLIC_KEY || secrets.SPROUT_UPDATER_PUBLIC_KEY }}
+          NIMINO_UPDATER_PUBLIC_KEY: ${{ secrets.NIMINO_UPDATER_PUBLIC_KEY }}
           NIMINO_UPDATER_ENDPOINT: https://github.com/block/buzz/releases/download/buzz-desktop-latest/latest.json
           CMAKE_POLICY_VERSION_MINIMUM: "3.5"
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -706,7 +706,7 @@ jobs:
         shell: bash
         run: cd desktop && node scripts/build-release-config.mjs
         env:
-          NIMINO_UPDATER_PUBLIC_KEY: ${{ secrets.NIMINO_UPDATER_PUBLIC_KEY || secrets.SPROUT_UPDATER_PUBLIC_KEY }}
+          NIMINO_UPDATER_PUBLIC_KEY: ${{ secrets.NIMINO_UPDATER_PUBLIC_KEY }}
           NIMINO_UPDATER_ENDPOINT: https://github.com/block/buzz/releases/download/buzz-desktop-latest/latest.json
 
       - name: Build sidecars
@@ -719,7 +719,7 @@ jobs:
         shell: bash
         run: cd desktop && pnpm tauri build --verbose --target "$TARGET" --bundles nsis --config src-tauri/tauri.release.conf.json
         env:
-          NIMINO_UPDATER_PUBLIC_KEY: ${{ secrets.NIMINO_UPDATER_PUBLIC_KEY || secrets.SPROUT_UPDATER_PUBLIC_KEY }}
+          NIMINO_UPDATER_PUBLIC_KEY: ${{ secrets.NIMINO_UPDATER_PUBLIC_KEY }}
           NIMINO_UPDATER_ENDPOINT: https://github.com/block/buzz/releases/download/buzz-desktop-latest/latest.json
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}

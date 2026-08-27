@@ -109,50 +109,22 @@ fn resolve_linked(
     }
 }
 
-/// The API key value the relay-mesh preset wrote before the Jun-11 rename
-/// window (#960, `8f580f308`) changed `RELAY_MESH_API_KEY_PLACEHOLDER` from
-/// `"sprout-mesh-local"` to its current value. The old string is persisted as a
-/// *value* in `env_vars` on records created before that, and no migration ever
-/// rewrote it.
-const LEGACY_MESH_API_KEY_PLACEHOLDER: &str = "sprout-mesh-local";
-
-/// The provider key the preset wrote before #971 (`8c8312932`) renamed it to
-/// `NIMINO_AGENT_PROVIDER`. That commit changed source literals only — persisted
-/// `env_vars` keys were never migrated.
-const LEGACY_MESH_PROVIDER_ENV_KEY: &str = "SPROUT_AGENT_PROVIDER";
-
-/// The legacy env discriminator: recognizes the relay-mesh preset purely from
-/// the env vars a pre-typed-field record carries, returning its served model id.
+/// Recognize the current relay-mesh preset from a pre-typed-field record.
 ///
 /// All three sentinels must match — the local base URL alone is not enough,
 /// since a user may point their own OpenAI-compatible provider at the same
-/// port. The placeholder API key is what makes this Buzz's own preset.
-///
-/// Two of those sentinels were renamed in the same Jun-11 window, in separate
-/// commits, with neither migrating persisted records: the provider env *key*
-/// (#971) and the API key *value* (#960). Each is therefore accepted under
-/// either spelling, independently — a record straddling the window carries one
-/// old and one new. In both cases the current spelling is authoritative when
-/// present, so a record that has since been rewritten with a non-mesh value is
-/// not resurrected by the stale leftover beside it.
-///
-/// `OPENAI_COMPAT_BASE_URL` and `OPENAI_COMPAT_MODEL` were never renamed.
-/// Nothing beyond these two either/ors is loosened: every sentinel dropped
-/// widens the false-positive surface for a user's own openai-compatible agent.
+/// port. The placeholder API key is what identifies Nimino's preset.
 fn mesh_preset_env_model_id(env_vars: &BTreeMap<String, String>) -> Option<String> {
     let base_url = env_vars.get("OPENAI_COMPAT_BASE_URL")?.trim();
     if base_url.trim_end_matches('/') != RELAY_MESH_API_BASE_URL {
         return None;
     }
-    let provider = env_vars
-        .get("NIMINO_AGENT_PROVIDER")
-        .or_else(|| env_vars.get(LEGACY_MESH_PROVIDER_ENV_KEY))?
-        .trim();
+    let provider = env_vars.get("NIMINO_AGENT_PROVIDER")?.trim();
     if provider != "openai" {
         return None;
     }
     let api_key = env_vars.get("OPENAI_COMPAT_API_KEY")?.trim();
-    if api_key != RELAY_MESH_API_KEY_PLACEHOLDER && api_key != LEGACY_MESH_API_KEY_PLACEHOLDER {
+    if api_key != RELAY_MESH_API_KEY_PLACEHOLDER {
         return None;
     }
     non_blank(env_vars.get("OPENAI_COMPAT_MODEL").map(String::as_str)).map(str::to_owned)

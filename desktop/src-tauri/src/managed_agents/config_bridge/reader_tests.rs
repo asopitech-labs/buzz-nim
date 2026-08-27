@@ -560,14 +560,14 @@ fn extra_env_vars_appear_in_advanced_as_buzz_explicit() {
     // Non-normalized key — MUST appear in advanced.
     record
         .env_vars
-        .insert("SPROUT_ACP_MEMORY".to_string(), "mem-value".to_string());
+        .insert("CUSTOM_ACP_MEMORY".to_string(), "mem-value".to_string());
     let runtime = test_runtime();
 
     let surface = read_config_surface(&record, Some(runtime), None, &no_tiers(), None);
 
     let advanced_keys: Vec<&str> = surface.advanced.iter().map(|f| f.key.as_str()).collect();
     assert!(
-        advanced_keys.contains(&"SPROUT_ACP_MEMORY"),
+        advanced_keys.contains(&"CUSTOM_ACP_MEMORY"),
         "extra env var must appear in advanced"
     );
     assert!(
@@ -582,13 +582,13 @@ fn extra_env_vars_appear_in_advanced_as_buzz_explicit() {
     let field = surface
         .advanced
         .iter()
-        .find(|f| f.key == "SPROUT_ACP_MEMORY")
+        .find(|f| f.key == "CUSTOM_ACP_MEMORY")
         .unwrap();
     assert_eq!(field.value.as_deref(), Some("mem-value"));
     assert_eq!(field.origin, ConfigOrigin::BuzzExplicit);
     assert!(matches!(
         field.write_via,
-        ConfigWriteMechanism::RespawnWithEnvVar { ref env_key } if env_key == "SPROUT_ACP_MEMORY"
+        ConfigWriteMechanism::RespawnWithEnvVar { ref env_key } if env_key == "CUSTOM_ACP_MEMORY"
     ));
 }
 

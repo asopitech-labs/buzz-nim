@@ -66,6 +66,12 @@ const files = execFileSync("git", ["ls-files", "-z"], { cwd: root })
 
 const legacyRuntimePatterns = [
   [/(^|[^A-Z0-9_])BUZZ_[A-Z0-9_]+/m, "legacy environment prefix"],
+  [
+    /\bSPROUT_(?:AGENT_PROVIDER|MAX_NOT_BEFORE_DELTA|REMINDER_SCHEDULER_(?:INTERVAL_SECS|BATCH_LIMIT)|UPDATER_PUBLIC_KEY)\b/,
+    "legacy Sprout environment variable",
+  ],
+  [/sprout-mesh-local/, "legacy mesh credential"],
+  [/Take me to Buzz/, "legacy onboarding branding"],
   [/buzz:\/\//, "legacy deep-link scheme"],
   [/buzz:\\\/\\\//, "legacy escaped deep-link scheme"],
   [/(?:url\.protocol|[A-Z_]*LINK_SCHEME)[^\n]*"buzz:"/, "legacy deep-link protocol"],
@@ -180,6 +186,24 @@ const mediaConfig = readFileSync(
 check(
   mediaConfig.includes(`"${surface("storage.object-bucket").canonical}"`),
   "media bucket default is not Nimino",
+);
+
+for (const path of ["docker-compose.yml", "docker-compose.harness.yml"]) {
+  const compose = readFileSync(join(root, path), "utf8");
+  check(
+    compose.includes("local/nimino-media") &&
+      !compose.includes("local/buzz-media"),
+    `${path} object-store bootstrap is not Nimino-only`,
+  );
+}
+
+const relayTestLauncher = readFileSync(
+  join(root, "scripts", "start-relay-for-tests.sh"),
+  "utf8",
+);
+check(
+  relayTestLauncher.includes("for bin in nimino-relay git-credential-nostr"),
+  "relay test launcher does not require the Nimino binary",
 );
 
 for (const path of [

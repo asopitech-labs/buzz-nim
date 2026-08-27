@@ -617,7 +617,7 @@ jobs:
             NIMINO_RATE_LIMIT_HUMAN_API_CALLS_PER_MIN=100000 \
             NIMINO_RATE_LIMIT_HUMAN_WS_EVENTS_PER_SEC=10000 \
             NIMINO_GIT_PROBE_WRITERS=8 \
-            SPROUT_REMINDER_SCHEDULER_INTERVAL_SECS=1 \
+            NIMINO_REMINDER_SCHEDULER_INTERVAL_SECS=1 \
             ./target/ci/nimino-relay > /tmp/nimino-relay.log 2>&1 &
           echo $! > /tmp/nimino-relay.pid
           for attempt in $(seq 1 60); do
@@ -774,7 +774,7 @@ jobs:
             NIMINO_REQUIRE_AUTH_TOKEN=false \
             NIMINO_RECONCILE_CHANNELS=true \
             NIMINO_GIT_PROBE_WRITERS=8 \
-            SPROUT_REMINDER_SCHEDULER_INTERVAL_SECS=1 \
+            NIMINO_REMINDER_SCHEDULER_INTERVAL_SECS=1 \
             ./target/ci/nimino-relay > /tmp/nimino-relay.log 2>&1 &
           echo $! > /tmp/nimino-relay.pid
           for attempt in $(seq 1 60); do
