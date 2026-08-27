@@ -4,9 +4,11 @@ use std::{path::PathBuf, process::Stdio, time::Duration};
 
 use nimino_boundary::{
     BoundaryConfig, BoundaryError, BoundaryRequest, BoundaryResponse, BoundaryResult,
-    BoundaryRuntime, CallContext, EchoPayload, RemoteErrorCode, MAX_FRAME_BYTES, MAX_INFLIGHT,
-    PROTOCOL_NAME, PROTOCOL_VERSION, SCHEMA_HASH, WORKER_ROLE,
+    BoundaryRuntime, CallContext, EchoPayload, EventPolicyRequest, EventPolicyResult,
+    RemoteErrorCode, MAX_FRAME_BYTES, MAX_INFLIGHT, PROTOCOL_NAME, PROTOCOL_VERSION, SCHEMA_HASH,
+    WORKER_ROLE,
 };
+use serde::Deserialize;
 use serde_json::{json, Value};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio_util::sync::CancellationToken;
@@ -89,6 +91,56 @@ async fn rust_and_nim_round_trip_and_preserve_typed_remote_failure() {
         BoundaryError::Remote(ref fault) if fault.code == RemoteErrorCode::UnknownOperation
     ));
 
+    runtime.shutdown().await.expect("clean shutdown");
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct EventPolicyCorpus {
+    schema_version: u16,
+    cases: Vec<EventPolicyCase>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct EventPolicyCase {
+    name: String,
+    standard: String,
+    input: EventPolicyRequest,
+    expected: EventPolicyResult,
+}
+
+#[tokio::test]
+#[ignore = "requires the Nim test worker; run `just nim-boundary-test`"]
+async fn event_policy_golden_corpus_crosses_the_real_worker_boundary() {
+    let corpus: EventPolicyCorpus = serde_json::from_str(include_str!(
+        "../../../contracts/nimino-event/v1/golden.json"
+    ))
+    .expect("valid event policy corpus");
+    assert_eq!(corpus.schema_version, 1);
+
+    let runtime = runtime(8).await;
+    let client = runtime.client();
+    for case in corpus.cases {
+        assert!(
+            !case.standard.is_empty(),
+            "{} has no NIP reference",
+            case.name
+        );
+        let result = client
+            .call(
+                BoundaryRequest::event_policy(case.input),
+                CallContext::with_timeout(Duration::from_secs(2)),
+            )
+            .await
+            .unwrap_or_else(|error| panic!("{} failed: {error}", case.name));
+        assert_eq!(
+            result,
+            BoundaryResult::EventPolicy(case.expected),
+            "{}",
+            case.name
+        );
+    }
     runtime.shutdown().await.expect("clean shutdown");
 }
 

@@ -2,11 +2,218 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://asopitech.com/nimino/contracts/nim-rust-boundary/v1/response.schema.json",
   "title": "NiminoBoundaryResponseV1",
+  "$defs": {
+    "policyError": {
+      "enum": [
+        "none",
+        "unsupported_kind",
+        "auth_not_storable",
+        "d_tag_required",
+        "d_tag_cardinality",
+        "d_tag_too_long",
+        "thread_parent_missing",
+        "thread_parent_mismatch",
+        "thread_channel_mismatch",
+        "thread_root_mismatch",
+        "thread_depth_exceeded",
+        "delete_target_cardinality",
+        "delete_target_missing",
+        "delete_target_mismatch",
+        "delete_author_mismatch",
+        "delete_coordinate_invalid",
+        "reaction_target_missing",
+        "reaction_emoji_invalid"
+      ]
+    },
+    "threadPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rootId",
+        "parentId",
+        "rootCreatedAt",
+        "parentCreatedAt",
+        "depth",
+        "broadcast",
+        "parentReplyDelta",
+        "rootDescendantDelta"
+      ],
+      "properties": {
+        "rootId": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "parentId": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "rootCreatedAt": { "type": "integer" },
+        "parentCreatedAt": { "type": "integer" },
+        "depth": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "broadcast": { "type": "boolean" },
+        "parentReplyDelta": { "const": 1 },
+        "rootDescendantDelta": { "const": 1 }
+      }
+    },
+    "eventPolicyResult": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "disposition", "error"],
+          "properties": {
+            "decision": { "const": "classify" },
+            "disposition": {
+              "enum": [
+                "rejected",
+                "stored",
+                "ephemeral",
+                "replaceable",
+                "parameterized"
+              ]
+            },
+            "error": { "$ref": "#/$defs/policyError" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "action"],
+          "properties": {
+            "decision": { "const": "replacement" },
+            "action": { "enum": ["insert", "replace", "duplicate", "stale"] }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "error", "plan"],
+          "properties": {
+            "decision": { "const": "thread" },
+            "error": { "$ref": "#/$defs/policyError" },
+            "plan": {
+              "oneOf": [{ "$ref": "#/$defs/threadPlan" }, { "type": "null" }]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision",
+            "error",
+            "action",
+            "parentReplyDelta",
+            "rootDescendantDelta"
+          ],
+          "properties": {
+            "decision": { "const": "deletion" },
+            "error": { "$ref": "#/$defs/policyError" },
+            "action": {
+              "enum": [
+                "reject",
+                "noop",
+                "delete_event",
+                "delete_coordinate",
+                "keep_newer"
+              ]
+            },
+            "parentReplyDelta": {
+              "type": "integer",
+              "minimum": -1,
+              "maximum": 0
+            },
+            "rootDescendantDelta": {
+              "type": "integer",
+              "minimum": -1,
+              "maximum": 0
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "error", "action", "emoji"],
+          "properties": {
+            "decision": { "const": "reaction" },
+            "error": { "$ref": "#/$defs/policyError" },
+            "action": { "enum": ["reject", "duplicate", "insert"] },
+            "emoji": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "fault": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "retry"],
+      "properties": {
+        "code": {
+          "enum": [
+            "INVALID_REQUEST",
+            "UNSUPPORTED_VERSION",
+            "CONTRACT_MISMATCH",
+            "HANDSHAKE_REQUIRED",
+            "UNKNOWN_OPERATION",
+            "FRAME_TOO_LARGE",
+            "INTERNAL_ERROR"
+          ]
+        },
+        "message": { "type": "string", "maxLength": 1024 },
+        "retry": { "enum": ["never", "idempotent_only", "after_refresh"] }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "code": { "const": "INVALID_REQUEST" },
+            "retry": { "const": "never" }
+          }
+        },
+        {
+          "properties": {
+            "code": { "const": "UNSUPPORTED_VERSION" },
+            "retry": { "const": "never" }
+          }
+        },
+        {
+          "properties": {
+            "code": { "const": "CONTRACT_MISMATCH" },
+            "retry": { "const": "never" }
+          }
+        },
+        {
+          "properties": {
+            "code": { "const": "HANDSHAKE_REQUIRED" },
+            "retry": { "const": "after_refresh" }
+          }
+        },
+        {
+          "properties": {
+            "code": { "const": "UNKNOWN_OPERATION" },
+            "retry": { "const": "never" }
+          }
+        },
+        {
+          "properties": {
+            "code": { "const": "FRAME_TOO_LARGE" },
+            "retry": { "const": "never" }
+          }
+        },
+        {
+          "properties": {
+            "code": { "const": "INTERNAL_ERROR" },
+            "retry": { "const": "idempotent_only" }
+          }
+        }
+      ]
+    }
+  },
   "oneOf": [
     {
       "type": "object",
       "additionalProperties": false,
-      "required": ["protocol", "version", "requestId", "operation", "status", "result"],
+      "required": [
+        "protocol",
+        "version",
+        "requestId",
+        "operation",
+        "status",
+        "result"
+      ],
       "properties": {
         "protocol": { "const": "nimino.core.boundary" },
         "version": { "const": 1 },
@@ -16,7 +223,15 @@
         "result": {
           "type": "object",
           "additionalProperties": false,
-          "required": ["workerVersion", "protocolVersion", "schemaHash", "workerRole", "maxFrameBytes", "maxInflight", "capabilities"],
+          "required": [
+            "workerVersion",
+            "protocolVersion",
+            "schemaHash",
+            "workerRole",
+            "maxFrameBytes",
+            "maxInflight",
+            "capabilities"
+          ],
           "properties": {
             "workerVersion": { "type": "string", "minLength": 1 },
             "protocolVersion": { "const": 1 },
@@ -26,7 +241,7 @@
             "maxInflight": { "const": 1 },
             "capabilities": {
               "type": "array",
-              "contains": { "const": "boundary.echo" }
+              "contains": { "const": "domain.event.policy" }
             }
           }
         }
@@ -35,7 +250,14 @@
     {
       "type": "object",
       "additionalProperties": false,
-      "required": ["protocol", "version", "requestId", "operation", "status", "result"],
+      "required": [
+        "protocol",
+        "version",
+        "requestId",
+        "operation",
+        "status",
+        "result"
+      ],
       "properties": {
         "protocol": { "const": "nimino.core.boundary" },
         "version": { "const": 1 },
@@ -53,36 +275,41 @@
     {
       "type": "object",
       "additionalProperties": false,
-      "required": ["protocol", "version", "requestId", "operation", "status", "error"],
+      "required": [
+        "protocol",
+        "version",
+        "requestId",
+        "operation",
+        "status",
+        "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.event.policy" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/eventPolicyResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol",
+        "version",
+        "requestId",
+        "operation",
+        "status",
+        "error"
+      ],
       "properties": {
         "protocol": { "const": "nimino.core.boundary" },
         "version": { "const": 1 },
         "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
         "operation": { "type": "string", "minLength": 1, "maxLength": 128 },
         "status": { "const": "error" },
-        "error": {
-          "type": "object",
-          "additionalProperties": false,
-          "required": ["code", "message", "retry"],
-          "properties": {
-            "code": {
-              "enum": ["INVALID_REQUEST", "UNSUPPORTED_VERSION", "CONTRACT_MISMATCH", "HANDSHAKE_REQUIRED", "UNKNOWN_OPERATION", "FRAME_TOO_LARGE", "INTERNAL_ERROR"]
-            },
-            "message": { "type": "string", "maxLength": 1024 },
-            "retry": {
-              "enum": ["never", "idempotent_only", "after_refresh"]
-            }
-          },
-          "oneOf": [
-            { "properties": { "code": { "const": "INVALID_REQUEST" }, "retry": { "const": "never" } } },
-            { "properties": { "code": { "const": "UNSUPPORTED_VERSION" }, "retry": { "const": "never" } } },
-            { "properties": { "code": { "const": "CONTRACT_MISMATCH" }, "retry": { "const": "never" } } },
-            { "properties": { "code": { "const": "HANDSHAKE_REQUIRED" }, "retry": { "const": "after_refresh" } } },
-            { "properties": { "code": { "const": "UNKNOWN_OPERATION" }, "retry": { "const": "never" } } },
-            { "properties": { "code": { "const": "FRAME_TOO_LARGE" }, "retry": { "const": "never" } } },
-            { "properties": { "code": { "const": "INTERNAL_ERROR" }, "retry": { "const": "idempotent_only" } } }
-          ]
-        }
+        "error": { "$ref": "#/$defs/fault" }
       }
     }
   ]

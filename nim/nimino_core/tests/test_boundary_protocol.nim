@@ -1,5 +1,5 @@
 import std/[json, strutils, unicode, unittest]
-import nimino_core/boundary/protocol
+import nimino_core/boundary/[event_policy_codec, protocol]
 
 suite "Nim/Rust boundary protocol v1":
   test "decodes the canonical request envelope":
@@ -90,3 +90,28 @@ suite "Nim/Rust boundary protocol v1":
     ]:
       expect BoundaryProtocolError:
         discard decodeRequest(malformed)
+
+  test "routes typed event policy payloads and rejects unknown fields":
+    let request = decodeRequest("""{
+      "protocol":"nimino.core.boundary",
+      "version":1,
+      "requestId":"request-31",
+      "operation":"domain.event.policy",
+      "payload":{"decision":"classify","kind":30023,"dTagCount":1,"dTagLen":4}
+    }""")
+    check request.operation.kind == boEventPolicy
+    check executeEventPolicy(request.operation.data, request.requestId) == %*{
+      "decision": "classify", "disposition": "parameterized", "error": "none"
+    }
+
+    expect BoundaryProtocolError:
+      discard executeEventPolicy(
+        %*{
+          "decision": "classify",
+          "kind": 9,
+          "dTagCount": 0,
+          "dTagLen": 0,
+          "legacyMode": true,
+        },
+        "request-31-invalid",
+      )

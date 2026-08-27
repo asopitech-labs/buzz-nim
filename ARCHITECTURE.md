@@ -106,12 +106,18 @@ nimino-chirps       (sole direct Alopex Chirps dependency; no product policy)
 
 **Key architectural principle:** The relay is the single source of truth. `buzz-relay` orchestrates all subsystems by calling them directly — it imports `buzz-db`, `buzz-auth`, `buzz-pubsub`, `buzz-search`, `buzz-audit`, and `buzz-workflow`. However, those subsystems are isolated from each other: `buzz-workflow` never calls `buzz-pubsub`, `buzz-search` never calls `buzz-db`, etc. Cross-subsystem coordination happens only through the relay. In multi-community mode, the relay also owns propagation of `TenantContext`; service crates should receive community-scoped inputs rather than independently deriving tenancy from client-controlled event tags.
 
-For the cutover target, the Nim/Rust process contract is already fixed even
-though domain behavior has not yet migrated. `nimino-boundary` owns no product,
-DB, replication, sync, or cluster-authority rule. Timeout, cancellation, crash,
-or corrupt stdout recycles the stateless worker before another request. See
+For the cutover target, the Nim/Rust process contract is fixed and the event
+acceptance/message policy is available as the typed `domain.event.policy`
+operation. `nimino-boundary` owns no product, DB, replication, sync, or
+cluster-authority rule. Timeout, cancellation, crash, or corrupt stdout recycles
+the stateless worker before another request. See
 [`docs/adr/nim-rust-boundary-v1.md`](docs/adr/nim-rust-boundary-v1.md) for the
 contract source, responsibility map, failure semantics, and benchmark evidence.
+
+The [`Nimino event policy`](contracts/nimino-event/README.md) owns kind
+classification, replacement ordering, NIP-10 thread plans, NIP-09 deletion
+plans, and NIP-25 reaction plans. Its Rust duplicates are an explicit Issue #12
+deletion inventory, not a fallback; the relay switches to Nimino atomically.
 
 The versioned [`Nimino data contract`](contracts/nimino-data/README.md)
 classifies canonical truth, rebuildable caches, and append-only logs, and fixes

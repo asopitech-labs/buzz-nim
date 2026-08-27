@@ -1,6 +1,7 @@
 use nimino_boundary::{
-    BoundaryFault, BoundaryRequest, BoundaryResponse, BoundaryResult, EchoPayload, RemoteErrorCode,
-    RetryDisposition, HOST_ERROR_CODES, PROTOCOL_NAME, PROTOCOL_VERSION,
+    BoundaryFault, BoundaryRequest, BoundaryResponse, BoundaryResult, EchoPayload,
+    EventDisposition, EventPolicyError, EventPolicyResult, RemoteErrorCode, RetryDisposition,
+    HOST_ERROR_CODES, PROTOCOL_NAME, PROTOCOL_VERSION,
 };
 use serde_json::json;
 
@@ -17,6 +18,27 @@ fn request_fixture_round_trips_without_losing_contract_fields() {
     assert_eq!(
         request.echo_data(),
         Some(&json!({"message": "hello from Rust"}))
+    );
+}
+
+#[test]
+fn event_policy_fixtures_use_the_typed_operation_variant() {
+    let request: BoundaryRequest = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/event-policy.request.json"
+    ))
+    .expect("valid event policy request");
+    assert_eq!(request.operation_name(), "domain.event.policy");
+
+    let response: BoundaryResponse = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/event-policy.response.json"
+    ))
+    .expect("valid event policy response");
+    assert_eq!(
+        response.into_result().expect("policy success"),
+        BoundaryResult::EventPolicy(EventPolicyResult::Classify {
+            disposition: EventDisposition::Parameterized,
+            error: EventPolicyError::None,
+        })
     );
 }
 

@@ -112,6 +112,7 @@ budget only after representative domain modules exist.
 | `hermit-packages/nim.hcl` | Pins the bootstrap compiler distributions | Canonical Nim toolchain definition | keep | Replaced by an explicitly approved toolchain owner | Hermit manifest validation and clean-clone install |
 | `nim/nimino_core/` | Importable package skeleton | Owner of high-change product and domain policy | keep | Never as part of the current cutover | `just nim-ci` |
 | `contracts/nim-rust-boundary/v1/` | Exact schema/error/lifecycle bundle | Canonical cross-language contract | keep | Explicit new-version cutover | checksum and fixture gates |
+| `contracts/nimino-event/v1/` | Event policy corpus and Rust deletion inventory | Canonical event/message decision contract | keep | Explicit new-version cutover | Nim unit and real worker golden tests |
 | `crates/nimino-boundary/` | Supervised process adapter | Spawn/frame/queue/timeout/cancel/kill/reap only | keep narrow | Explicit replacement boundary | dependency deny and cross-language tests |
 | `.github/workflows/ci.yml` (`Nim Core`) | Path-scoped Nim verification and timing | Independent Nim CI lane | keep | Superseded by the independent release pipeline | bootstrap contract test and CI artifact |
 | Rust workspace | Existing product and adapter implementation | Stable host and adapter boundary | shrink | Per later responsibility-manifest issues | Not changed by this bootstrap |

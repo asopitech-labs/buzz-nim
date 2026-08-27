@@ -114,6 +114,11 @@ check(
   "Nim boundary change must run both Nim and cross-language lanes",
 );
 check(
+  matches("nim", "nim/nimino_core/src/nimino_core/domain/event_policy.nim") &&
+    matches("boundary", "nim/nimino_core/src/nimino_core/domain/event_policy.nim"),
+  "event policy changes must run Nim and real boundary golden tests",
+);
+check(
   matches("boundary", "crates/nimino-boundary/src/lib.rs") &&
     !matches("rust", "crates/nimino-boundary/src/lib.rs"),
   "Rust boundary adapter must use the focused boundary lane",
@@ -137,6 +142,10 @@ check(
 check(
   job("changes").includes("run: node scripts/test-nimino-data-contract.mjs"),
   "changed-path gate must verify the Nimino data contract",
+);
+check(
+  job("changes").includes("run: node scripts/test-nimino-event-contract.mjs"),
+  "changed-path gate must verify the Nimino event policy contract",
 );
 
 const nimJob = job("nim");

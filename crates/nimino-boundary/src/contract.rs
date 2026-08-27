@@ -7,7 +7,7 @@ pub const PROTOCOL_NAME: &str = "nimino.core.boundary";
 /// The only accepted boundary version. No downgrade path exists.
 pub const PROTOCOL_VERSION: u16 = 1;
 /// SHA-256 of the checked-in v1 contract bundle.
-pub const SCHEMA_HASH: &str = "3b799b4bf7bf4fb3720de2103cf37642c781ea3746de5a98ddd9f04a5293e233";
+pub const SCHEMA_HASH: &str = "a8988099b0c514aa8dfe636ad7e0593cdf47d7744def9e0362fd45baa995ac4a";
 /// Role required during the exact-match startup handshake.
 pub const WORKER_ROLE: &str = "nimino-core";
 /// Maximum JSON payload length accepted by the frame codec.
@@ -125,6 +125,322 @@ pub struct EchoPayload {
     pub data: Value,
 }
 
+/// Verified version facts used by Nimino's replacement ordering policy.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct EventVersion {
+    /// Signed event timestamp.
+    pub created_at: i64,
+    /// Canonical event identifier.
+    pub event_id: String,
+}
+
+/// Existing thread metadata supplied by the storage adapter.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ThreadMetadataFacts {
+    /// Canonical thread root identifier.
+    pub root_id: String,
+    /// Existing reply depth.
+    pub depth: i32,
+}
+
+/// Verified parent facts used to derive a new reply plan.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ThreadParentFacts {
+    /// Parent event identifier.
+    pub event_id: String,
+    /// Parent event timestamp.
+    pub created_at: i64,
+    /// Parent community channel identifier.
+    pub channel_id: String,
+    /// Parent Nostr tags, used only when indexed metadata is absent.
+    pub tags: Vec<Vec<String>>,
+    /// Indexed ancestry, when available.
+    pub metadata: Option<ThreadMetadataFacts>,
+}
+
+/// Facts required to derive NIP-10 ancestry and counter changes.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ThreadRequest {
+    /// Incoming event identifier.
+    pub event_id: String,
+    /// Incoming event timestamp.
+    pub created_at: i64,
+    /// Incoming event channel identifier.
+    pub channel_id: String,
+    /// Incoming Nostr tags.
+    pub tags: Vec<Vec<String>>,
+    /// Verified parent facts, if a reply marker was present.
+    pub parent: Option<ThreadParentFacts>,
+    /// Verified root timestamp, when it differs from the parent timestamp.
+    pub root_created_at: Option<i64>,
+}
+
+/// Verified event target used by NIP-09 deletion policy.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct DeletionTargetFacts {
+    /// Target event identifier.
+    pub event_id: String,
+    /// Effective target author.
+    pub author: String,
+    /// Target event timestamp.
+    pub created_at: i64,
+    /// Whether the target is currently live.
+    pub active: bool,
+    /// Parent identifier for reply-counter repair.
+    pub parent_id: Option<String>,
+    /// Root identifier for descendant-counter repair.
+    pub root_id: Option<String>,
+}
+
+/// Facts required to decide a standard NIP-09 deletion.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct DeletionRequest {
+    /// Effective deletion author.
+    pub actor: String,
+    /// Deletion event timestamp.
+    pub created_at: i64,
+    /// Referenced event identifiers.
+    pub e_targets: Vec<String>,
+    /// Referenced addressable coordinates.
+    pub a_targets: Vec<String>,
+    /// Verified target event facts for an event-id deletion.
+    pub target: Option<DeletionTargetFacts>,
+}
+
+/// Facts required to decide a NIP-25 reaction mutation.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ReactionRequest {
+    /// Whether the referenced event exists in this community.
+    pub target_exists: bool,
+    /// Whether the same active actor/target/emoji tuple already exists.
+    pub active_duplicate: bool,
+    /// Reaction content; empty content means `+`.
+    pub content: String,
+    /// Nostr tags used to verify long custom emoji shortcodes.
+    pub tags: Vec<Vec<String>>,
+}
+
+/// Typed event-policy decision requested from the Nimino core.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(
+    tag = "decision",
+    rename_all = "snake_case",
+    rename_all_fields = "camelCase",
+    deny_unknown_fields
+)]
+pub enum EventPolicyRequest {
+    /// Classify a registered kind and its parameterized key shape.
+    Classify {
+        /// Nostr event kind.
+        kind: u32,
+        /// Number of `d` tags.
+        d_tag_count: u16,
+        /// UTF-8 byte length of the sole `d` tag, or zero when absent.
+        d_tag_len: u16,
+    },
+    /// Decide whether an event becomes the replaceable head.
+    Replacement {
+        /// Incoming signed event version.
+        incoming: EventVersion,
+        /// Current stored head, when one exists.
+        current: Option<EventVersion>,
+    },
+    /// Derive NIP-10 ancestry and counter mutations.
+    Thread {
+        /// Verified incoming and parent facts.
+        request: ThreadRequest,
+    },
+    /// Decide a NIP-09 event or coordinate deletion.
+    Deletion {
+        /// Verified deletion and target facts.
+        request: DeletionRequest,
+    },
+    /// Decide a NIP-25 reaction insert or duplicate.
+    Reaction {
+        /// Verified reaction target and emoji facts.
+        request: ReactionRequest,
+    },
+}
+
+/// Stable event-policy validation failures returned by Nimino.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum EventPolicyError {
+    /// The decision is valid.
+    None,
+    /// The kind is outside the Nimino v1 registry.
+    UnsupportedKind,
+    /// NIP-42 authentication must not enter event storage.
+    AuthNotStorable,
+    /// A parameterized event omitted its `d` tag.
+    DTagRequired,
+    /// A parameterized event supplied more than one `d` tag.
+    DTagCardinality,
+    /// The `d` tag exceeds the fixed v1 limit.
+    DTagTooLong,
+    /// A reply marker had no verified parent facts.
+    ThreadParentMissing,
+    /// The reply marker and supplied parent disagree.
+    ThreadParentMismatch,
+    /// The reply and parent belong to different channels.
+    ThreadChannelMismatch,
+    /// The client root disagrees with verified ancestry.
+    ThreadRootMismatch,
+    /// The derived thread depth exceeds the fixed v1 limit.
+    ThreadDepthExceeded,
+    /// A deletion did not name exactly one event or coordinate.
+    DeleteTargetCardinality,
+    /// The referenced event was missing.
+    DeleteTargetMissing,
+    /// The referenced identifier and supplied facts disagree.
+    DeleteTargetMismatch,
+    /// The actor does not own the target.
+    DeleteAuthorMismatch,
+    /// An addressable coordinate is malformed or foreign-owned.
+    DeleteCoordinateInvalid,
+    /// The reaction target was missing.
+    ReactionTargetMissing,
+    /// Reaction content violates the NIP-25/NIP-30 bounds.
+    ReactionEmojiInvalid,
+}
+
+/// Storage disposition assigned to an accepted kind.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum EventDisposition {
+    /// The event is rejected.
+    Rejected,
+    /// The event is stored normally.
+    Stored,
+    /// The event is transient and is not stored.
+    Ephemeral,
+    /// The event replaces the author's head for its kind.
+    Replaceable,
+    /// The event replaces the author's `(kind, d)` head.
+    Parameterized,
+}
+
+/// Deterministic action for a replaceable event.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ReplacementAction {
+    /// Insert when no head exists.
+    Insert,
+    /// Replace the current head.
+    Replace,
+    /// The exact event is already the head.
+    Duplicate,
+    /// A newer or tie-winning head already exists.
+    Stale,
+}
+
+/// Derived NIP-10 ancestry and materialized-counter mutations.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ThreadPlan {
+    /// Canonical root event identifier.
+    pub root_id: String,
+    /// Direct parent event identifier.
+    pub parent_id: String,
+    /// Verified root timestamp.
+    pub root_created_at: i64,
+    /// Verified parent timestamp.
+    pub parent_created_at: i64,
+    /// New reply depth.
+    pub depth: i32,
+    /// Whether the exact `broadcast=1` tag is present.
+    pub broadcast: bool,
+    /// Delta for the direct parent's reply count.
+    pub parent_reply_delta: i32,
+    /// Delta for the root's descendant count.
+    pub root_descendant_delta: i32,
+}
+
+/// Mutation selected for a deletion request.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DeletionAction {
+    /// No mutation is allowed.
+    Reject,
+    /// The target is already absent from live state.
+    Noop,
+    /// Soft-delete the named event.
+    DeleteEvent,
+    /// Soft-delete the named addressable coordinate.
+    DeleteCoordinate,
+    /// Preserve a replacement newer than the tombstone.
+    KeepNewer,
+}
+
+/// Mutation selected for a reaction request.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ReactionAction {
+    /// No mutation is allowed.
+    Reject,
+    /// The active reaction already exists.
+    Duplicate,
+    /// Insert the canonical reaction.
+    Insert,
+}
+
+/// Typed result of a Nimino event-policy decision.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(
+    tag = "decision",
+    rename_all = "snake_case",
+    rename_all_fields = "camelCase",
+    deny_unknown_fields
+)]
+pub enum EventPolicyResult {
+    /// Kind classification result.
+    Classify {
+        /// Storage disposition.
+        disposition: EventDisposition,
+        /// Validation outcome.
+        error: EventPolicyError,
+    },
+    /// Replacement ordering result.
+    Replacement {
+        /// Selected replacement action.
+        action: ReplacementAction,
+    },
+    /// Thread ancestry result.
+    Thread {
+        /// Validation outcome.
+        error: EventPolicyError,
+        /// Derived plan, absent when rejected or top-level.
+        plan: Option<ThreadPlan>,
+    },
+    /// Deletion result.
+    Deletion {
+        /// Validation outcome.
+        error: EventPolicyError,
+        /// Selected deletion action.
+        action: DeletionAction,
+        /// Delta for the direct parent's reply count.
+        parent_reply_delta: i32,
+        /// Delta for the root's descendant count.
+        root_descendant_delta: i32,
+    },
+    /// Reaction result.
+    Reaction {
+        /// Validation outcome.
+        error: EventPolicyError,
+        /// Selected reaction action.
+        action: ReactionAction,
+        /// Canonical reaction content.
+        emoji: String,
+    },
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub(crate) struct HelloPayload {
@@ -161,6 +477,8 @@ pub enum BoundaryResult {
     Ready(ReadyPayload),
     /// Diagnostic echo result.
     Echo(EchoPayload),
+    /// Event acceptance and message mutation decision owned by Nimino.
+    EventPolicy(EventPolicyResult),
     /// Test-only operation result; never present in a production build.
     #[cfg(feature = "test-hooks")]
     Test(Value),
@@ -185,6 +503,8 @@ pub(crate) enum BoundaryOperation {
     Hello(HelloPayload),
     /// Transport diagnostic that returns its typed payload unchanged.
     Echo(EchoPayload),
+    /// Event acceptance and message mutation policy.
+    EventPolicy(EventPolicyRequest),
     /// Deterministic blocking operation available only to boundary tests.
     #[cfg(feature = "test-hooks")]
     TestSleep(SleepPayload),
@@ -213,6 +533,7 @@ impl BoundaryOperation {
         match self {
             Self::Hello(_) => "system.hello",
             Self::Echo(_) => "boundary.echo",
+            Self::EventPolicy(_) => "domain.event.policy",
             #[cfg(feature = "test-hooks")]
             Self::TestSleep(_) => "boundary.test.sleep",
             #[cfg(feature = "test-hooks")]
@@ -234,6 +555,7 @@ impl BoundaryOperation {
         match self {
             Self::Hello(payload) => serde_json::to_value(payload),
             Self::Echo(payload) => serde_json::to_value(payload),
+            Self::EventPolicy(payload) => serde_json::to_value(payload),
             #[cfg(feature = "test-hooks")]
             Self::TestSleep(payload) => serde_json::to_value(payload),
             #[cfg(feature = "test-hooks")]
@@ -250,6 +572,7 @@ impl BoundaryOperation {
         match name {
             "system.hello" => serde_json::from_value(payload).map(Self::Hello),
             "boundary.echo" => serde_json::from_value(payload).map(Self::Echo),
+            "domain.event.policy" => serde_json::from_value(payload).map(Self::EventPolicy),
             #[cfg(feature = "test-hooks")]
             "boundary.test.sleep" => serde_json::from_value(payload).map(Self::TestSleep),
             #[cfg(feature = "test-hooks")]
@@ -361,6 +684,11 @@ impl BoundaryRequest {
     /// Constructs the typed diagnostic echo request.
     pub fn echo(data: Value) -> Self {
         Self::from_operation(BoundaryOperation::Echo(EchoPayload { data }))
+    }
+
+    /// Constructs a typed event acceptance or message mutation decision.
+    pub fn event_policy(request: EventPolicyRequest) -> Self {
+        Self::from_operation(BoundaryOperation::EventPolicy(request))
     }
 
     /// Returns the exact protocol identifier carried by this request.
@@ -499,6 +827,9 @@ impl<'de> Deserialize<'de> for BoundaryResponse {
                         .map_err(D::Error::custom)?,
                     "boundary.echo" => serde_json::from_value(result)
                         .map(BoundaryResult::Echo)
+                        .map_err(D::Error::custom)?,
+                    "domain.event.policy" => serde_json::from_value(result)
+                        .map(BoundaryResult::EventPolicy)
                         .map_err(D::Error::custom)?,
                     #[cfg(feature = "test-hooks")]
                     name if name.starts_with("boundary.test.") => BoundaryResult::Test(result),
