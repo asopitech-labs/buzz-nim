@@ -12,8 +12,11 @@ mod error;
 mod runtime;
 
 pub use contract::{
-    BoundaryFault, BoundaryRequest, BoundaryResponse, BoundaryResult, EchoPayload, ReadyPayload,
-    RemoteErrorCode, RetryDisposition, MAX_FRAME_BYTES, MAX_INFLIGHT, PROTOCOL_NAME,
+    BoundaryFault, BoundaryRequest, BoundaryResponse, BoundaryResult, DeletionAction,
+    DeletionRequest, DeletionTargetFacts, EchoPayload, EventDisposition, EventPolicyError,
+    EventPolicyRequest, EventPolicyResult, EventVersion, ReactionAction, ReactionRequest,
+    ReadyPayload, RemoteErrorCode, ReplacementAction, RetryDisposition, ThreadMetadataFacts,
+    ThreadParentFacts, ThreadPlan, ThreadRequest, MAX_FRAME_BYTES, MAX_INFLIGHT, PROTOCOL_NAME,
     PROTOCOL_VERSION, SCHEMA_HASH, WORKER_ROLE,
 };
 pub use error::{BoundaryError, HOST_ERROR_CODES};

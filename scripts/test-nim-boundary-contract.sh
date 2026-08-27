@@ -43,9 +43,17 @@ if (expectedBundle !== actualBundle) {
   throw new Error("boundary schema bundle hash mismatch");
 }
 
-function valid(schema, value) {
+function valid(schema, value, root = schema) {
+  if (schema.$ref) {
+    const target = schema.$ref
+      .slice(2)
+      .split("/")
+      .map((part) => part.replaceAll("~1", "/").replaceAll("~0", "~"))
+      .reduce((node, part) => node?.[part], root);
+    return target !== undefined && valid(target, value, root);
+  }
   if (schema.oneOf) {
-    if (schema.oneOf.filter((branch) => valid(branch, value)).length !== 1) return false;
+    if (schema.oneOf.filter((branch) => valid(branch, value, root)).length !== 1) return false;
   }
   if (Object.hasOwn(schema, "const") && JSON.stringify(value) !== JSON.stringify(schema.const)) {
     return false;
@@ -57,14 +65,21 @@ function valid(schema, value) {
     if (value === null || Array.isArray(value) || typeof value !== "object") return false;
     if (schema.required?.some((key) => !Object.hasOwn(value, key))) return false;
     if (schema.additionalProperties === false && Object.keys(value).some((key) => !Object.hasOwn(schema.properties ?? {}, key))) return false;
-    return Object.entries(schema.properties ?? {}).every(([key, child]) => !Object.hasOwn(value, key) || valid(child, value[key]));
+    return Object.entries(schema.properties ?? {}).every(([key, child]) => !Object.hasOwn(value, key) || valid(child, value[key], root));
   }
   if (schema.type === "array") {
     if (!Array.isArray(value)) return false;
-    return !schema.contains || value.some((item) => valid(schema.contains, item));
+    if (schema.items && !value.every((item) => valid(schema.items, item, root))) return false;
+    return !schema.contains || value.some((item) => valid(schema.contains, item, root));
   }
+  if (schema.type === "null") return value === null;
+  if (schema.type === "boolean" && typeof value !== "boolean") return false;
   if (schema.type === "string" && typeof value !== "string") return false;
   if (schema.type === "integer" && !Number.isInteger(value)) return false;
+  if (typeof value === "number") {
+    if (schema.minimum !== undefined && value < schema.minimum) return false;
+    if (schema.maximum !== undefined && value > schema.maximum) return false;
+  }
   if (typeof value === "string") {
     if (schema.minLength !== undefined && value.length < schema.minLength) return false;
     if (schema.maxLength !== undefined && value.length > schema.maxLength) return false;
@@ -75,7 +90,9 @@ function valid(schema, value) {
 
 for (const [schemaName, fixtureName] of [
   ["request.schema.json", "echo.request.json"],
+  ["request.schema.json", "event-policy.request.json"],
   ["response.schema.json", "echo.response.json"],
+  ["response.schema.json", "event-policy.response.json"],
   ["response.schema.json", "unknown-operation.response.json"],
 ]) {
   const schema = JSON.parse(fs.readFileSync(path.join(root, schemaName), "utf8"));

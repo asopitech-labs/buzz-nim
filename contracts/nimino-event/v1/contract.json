@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.event-policy",
+  "owner": "nim/nimino_core/src/nimino_core/domain/event_policy.nim",
+  "boundaryOperation": "domain.event.policy",
+  "compatibilityMode": false,
+  "cutoverOwner": 12,
+  "decisions": [
+    "event-classification",
+    "replacement-ordering",
+    "nip10-thread-plan",
+    "nip09-deletion-plan",
+    "nip25-reaction-plan"
+  ],
+  "rustAdapters": [
+    "crates/nimino-boundary/src/contract.rs",
+    "crates/nimino-boundary/src/runtime.rs"
+  ],
+  "rustDuplicatesToDelete": [
+    {
+      "path": "crates/buzz-core/src/kind.rs",
+      "symbols": [
+        "is_ephemeral",
+        "is_replaceable",
+        "is_parameterized_replaceable"
+      ]
+    },
+    {
+      "path": "crates/buzz-core/src/nip10.rs",
+      "symbols": ["parse_thread_markers", "ThreadMarkers::resolve"]
+    },
+    {
+      "path": "crates/buzz-relay/src/handlers/ingest.rs",
+      "symbols": ["resolve_nip10_thread_meta", "validate_reaction_emoji"]
+    },
+    {
+      "path": "crates/buzz-relay/src/handlers/side_effects.rs",
+      "symbols": [
+        "validate_standard_deletion_event",
+        "handle_standard_deletion_event"
+      ]
+    },
+    {
+      "path": "crates/buzz-db/src/lib.rs",
+      "symbols": ["replace_addressable_event", "replace_parameterized_event"]
+    }
+  ],
+  "deletionRule": "Issue #12 removes these Rust policy paths in the same incompatible cutover that routes relay decisions through Nimino; none is a fallback.",
+  "outOfScope": {
+    "authorization": 26,
+    "communityLifecycle": 26,
+    "workflowSemantics": 29,
+    "storageImplementation": 30
+  }
+}
