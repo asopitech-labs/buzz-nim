@@ -91,7 +91,7 @@ const legacyRuntimePatterns = [
   [/\bbuzz_dev(?:_secret|_key)?\b/, "legacy development credential"],
   [/NIMINO_S3_BUCKET[^\n]*buzz-media/, "legacy object bucket"],
   [
-    /["`]buzz:(?:text-scale|last-runtime(?:-provider)?|observer-archive-default-seeded|onboarding-welcome-(?:channel|initial-unread-suppression)\.v1)(?=["`:$])/, 
+    /["`]buzz:(?:e2e-identity-override\.v1|text-scale|last-runtime(?:-provider)?|observer-archive-default-seeded|onboarding-welcome-(?:channel|initial-unread-suppression)\.v1)(?=["`:$])/,
     "legacy colon preference",
   ],
   [

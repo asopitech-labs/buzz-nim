@@ -2,6 +2,7 @@ import type { Page } from "@playwright/test";
 import type { ChannelTemplate, RelayEvent } from "../../src/shared/api/types";
 import type { MockManagedAgentSeed } from "../../src/testing/e2eBridge";
 import { FEATURE_OVERRIDES_STORAGE_KEY, PREVIEW_FEATURE_IDS } from "./features";
+import { E2E_IDENTITY_OVERRIDE_STORAGE_KEY } from "./onboarding";
 
 export const TEST_IDENTITIES = {
   tyler: {
@@ -812,7 +813,7 @@ async function seedDefaultCommunity(
     },
     {
       fallback: fallbackPubkey,
-      identityOverrideKey: "buzz:e2e-identity-override.v1",
+      identityOverrideKey: E2E_IDENTITY_OVERRIDE_STORAGE_KEY,
       relayUrl: relayWsUrl ?? DEFAULT_RELAY_WS_URL,
     },
   );

@@ -3,6 +3,7 @@ import { decode } from "nostr-tools/nip19";
 import { getPublicKey } from "nostr-tools/pure";
 
 import { installRelayBridge } from "../helpers/bridge";
+import { E2E_IDENTITY_OVERRIDE_STORAGE_KEY } from "../helpers/onboarding";
 
 /**
  * SCROLL-BACK latency profile for one channel (#buzz-bugs) against a LIVE
@@ -38,7 +39,6 @@ const COMMUNITY_HOST = process.env.NIMINO_COMMUNITY_HOST ?? "";
 const TARGET_CHANNEL = process.env.NIMINO_PERF_CHANNEL ?? "buzz-bugs";
 const PAGES = Number(process.env.NIMINO_PERF_PAGES ?? 10);
 
-const IDENTITY_OVERRIDE_KEY = "buzz:e2e-identity-override.v1";
 const ONBOARDING_PREFIX = "nimino-onboarding-complete.v1:";
 const WELCOME_PREFIX = "nimino-welcome-channel-ensured.v2:";
 
@@ -120,7 +120,7 @@ test("MEASURE: scroll-back pagination latency in target channel", async ({
       onboardingPrefix: ONBOARDING_PREFIX,
       welcomePrefix: WELCOME_PREFIX,
       relayUrl: wsUrl,
-      overrideKey: IDENTITY_OVERRIDE_KEY,
+      overrideKey: E2E_IDENTITY_OVERRIDE_STORAGE_KEY,
     },
   );
 
