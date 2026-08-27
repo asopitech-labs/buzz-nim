@@ -169,6 +169,10 @@ nimino-control-state-contract:
 nimino-lease-contract:
     node scripts/test-nimino-lease-contract.mjs
 
+# Verify bounded community-scoped anti-entropy and durable resume ownership
+nimino-sync-contract:
+    node scripts/test-nimino-sync-contract.mjs
+
 # Exhaustively check the bounded 3-node control-log state graph with TLC
 control-model-check: control-model-contract
     tlc -workers auto -config formal/scenarios/NiminoControlLog_3Node.cfg formal/tla/cluster/NiminoControlLog.tla

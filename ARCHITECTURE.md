@@ -172,6 +172,14 @@ plus no-clobber backup/restore. It is an I/O adapter only: record classification
 and acceptance remain in Nim, while replication and projection remain #50/#55.
 There is no Postgres or Chirps compatibility path in this target.
 
+The [`Nimino bounded anti-entropy contract`](contracts/nimino-sync/README.md)
+uses that store's durable canonical checkpoint and ordered change feed for
+resume. Pure Nim owns digest/range session state, exact community scoping,
+single-batch backpressure, timeout, cancellation, and checkpoint advancement
+after an exact-checkpoint commit. Rust verifies SHA-256 over the canonical
+record range, performs store I/O, and carries opaque bounded frames through Chirps.
+Conflict winners and tombstone convergence remain #53.
+
 The same crate exposes a separate `ControlLogStorePort` for #49. Its metadata,
 ordered log, and snapshot tables are disjoint from canonical event
 anti-entropy. Rust persists opaque entries and validates local prefix shape;

@@ -283,6 +283,12 @@ check(
   ) && workflow.includes("run: just nimino-lease-contract"),
   "lease and fencing contract must remain in CI",
 );
+check(
+  /^nimino-sync-contract:\n    node scripts\/test-nimino-sync-contract\.mjs$/m.test(
+    justfile,
+  ) && workflow.includes("run: just nimino-sync-contract"),
+  "bounded anti-entropy contract must remain in CI",
+);
 
 const boundaryJob = job("boundary");
 check(

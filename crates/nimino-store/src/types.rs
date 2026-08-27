@@ -162,6 +162,12 @@ pub enum StoreError {
     /// Durable control state violates the local prefix/recovery shape.
     #[error("corrupt control store: {0}")]
     CorruptControlState(&'static str),
+    /// The canonical change feed disagrees with its durable checkpoint.
+    #[error("corrupt canonical changes: {0}")]
+    CorruptCanonicalChanges(&'static str),
+    /// A bounded sync digest scan was cancelled by its caller.
+    #[error("sync digest scan cancelled")]
+    SyncCancelled,
     /// Append-only storage already contains the supplied typed key.
     #[error("append-only log key already exists")]
     DuplicateLogKey,
