@@ -301,6 +301,12 @@ check(
   ) && workflow.includes("run: just nimino-object-sync-contract"),
   "object sync contract must remain in CI",
 );
+check(
+  /^nimino-projection-contract:\n    node scripts\/test-nimino-projection-contract\.mjs$/m.test(
+    justfile,
+  ) && workflow.includes("run: just nimino-projection-contract"),
+  "projection rebuild contract must remain in CI",
+);
 
 const boundaryJob = job("boundary");
 check(

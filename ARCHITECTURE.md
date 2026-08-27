@@ -195,6 +195,13 @@ origin choice, and cross-community-safe GC. The `nimino-object-store` Rust
 adapter streams resumable 1 MiB partials, verifies size and SHA-256, fsyncs, and
 atomically installs without overwrite. It contains no retention or fetch policy.
 
+The [`Nimino projection rebuild contract`](contracts/nimino-projection/README.md)
+recreates search, thread, and feed caches from a fixed canonical checkpoint.
+Nim owns row derivation plus source/epoch/owner/revision/cursor lifecycle;
+`nimino-store` durably stages opaque partial rows. EOF publishes through the
+existing atomic `cache.replace` intent, so projection bytes never become
+canonical truth and crash recovery can repeat the same publish safely.
+
 The same crate exposes a separate `ControlLogStorePort` for #49. Its metadata,
 ordered log, and snapshot tables are disjoint from canonical event
 anti-entropy. Rust persists opaque entries and validates local prefix shape;

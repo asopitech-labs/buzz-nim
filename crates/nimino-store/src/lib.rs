@@ -7,6 +7,7 @@
 #![deny(missing_docs)]
 
 mod control_log;
+mod projection_stage;
 mod redb_store;
 mod sync_digest;
 mod types;
@@ -14,6 +15,9 @@ mod types;
 pub use control_log::{
     ControlLogEntry, ControlLogStorePort, ControlMetadata, ControlSnapshot, RecoveredControlState,
     VersionedControlMetadata, MAX_CONTROL_SNAPSHOT_BYTES,
+};
+pub use projection_stage::{
+    ProjectionStageBatch, ProjectionStageMetadata, ProjectionStageRecovery, ProjectionStageSpec,
 };
 pub use redb_store::RedbNodeStore;
 pub use sync_digest::{

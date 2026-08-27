@@ -344,6 +344,7 @@ fn initialize(database: &Database) -> Result<(), StoreError> {
     transaction.open_table(LOG).map_err(engine)?;
     transaction.open_table(RECEIPTS).map_err(engine)?;
     crate::control_log::initialize_tables(&transaction)?;
+    crate::projection_stage::initialize_tables(&transaction)?;
     transaction.commit().map_err(engine)
 }
 

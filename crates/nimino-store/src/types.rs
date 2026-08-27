@@ -25,7 +25,7 @@ pub enum RecordClass {
 }
 
 /// One validated record mutation supplied by the Nimino core.
-#[derive(Clone, Debug, PartialEq, Serialize)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct RecordWrite {
     /// Versioned Nimino record type.
     pub record_type: String,
@@ -168,6 +168,26 @@ pub enum StoreError {
     /// A bounded sync digest scan was cancelled by its caller.
     #[error("sync digest scan cancelled")]
     SyncCancelled,
+    /// Another projection epoch already owns this community/projection stage.
+    #[error("projection stage conflicts with the active epoch")]
+    ProjectionStageConflict,
+    /// No matching projection stage exists.
+    #[error("projection stage is missing")]
+    ProjectionStageMissing,
+    /// Projection stage metadata revision compare-and-set failed.
+    #[error("projection stage revision conflict: expected {expected}, actual {actual}")]
+    ProjectionStageRevisionConflict {
+        /// Revision supplied by the caller.
+        expected: u64,
+        /// Durable current revision.
+        actual: u64,
+    },
+    /// Projection stage cursor compare-and-set failed.
+    #[error("projection stage cursor conflict")]
+    ProjectionStageCursorConflict,
+    /// A completed stage cannot accept more rows.
+    #[error("projection stage is already complete")]
+    ProjectionStageComplete,
     /// Append-only storage already contains the supplied typed key.
     #[error("append-only log key already exists")]
     DuplicateLogKey,

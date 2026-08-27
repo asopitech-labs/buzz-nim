@@ -181,6 +181,10 @@ nimino-convergence-contract:
 nimino-object-sync-contract:
     node scripts/test-nimino-object-sync-contract.mjs
 
+# Verify resumable search/thread/feed rebuild ownership and atomic publication
+nimino-projection-contract:
+    node scripts/test-nimino-projection-contract.mjs
+
 # Exhaustively check the bounded 3-node control-log state graph with TLC
 control-model-check: control-model-contract
     tlc -workers auto -config formal/scenarios/NiminoControlLog_3Node.cfg formal/tla/cluster/NiminoControlLog.tla
