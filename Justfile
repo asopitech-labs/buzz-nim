@@ -165,6 +165,10 @@ control-model-contract:
 nimino-control-state-contract:
     node scripts/test-nimino-control-state-contract.mjs
 
+# Verify committed lease activation, fencing, routing, and consumer ownership
+nimino-lease-contract:
+    node scripts/test-nimino-lease-contract.mjs
+
 # Exhaustively check the bounded 3-node control-log state graph with TLC
 control-model-check: control-model-contract
     tlc -workers auto -config formal/scenarios/NiminoControlLog_3Node.cfg formal/tla/cluster/NiminoControlLog.tla

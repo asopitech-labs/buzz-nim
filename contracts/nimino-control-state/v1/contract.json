@@ -37,6 +37,7 @@
     "containsUncommittedState": false
   },
   "leaseOwner": 52,
+  "leaseContract": "nimino.lease-fencing/v1",
   "scenarioHarnessOwner": 56,
   "cutoverOwner": 12
 }

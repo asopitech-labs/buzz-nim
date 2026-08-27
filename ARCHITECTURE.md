@@ -184,6 +184,15 @@ store action returns the exact pre-transition state. Stable phases require one
 majority, joint phase requires both old and new majorities, and configuration
 append never changes authority before quorum commit.
 
+The [`Nimino lease and fencing contract`](contracts/nimino-lease/README.md)
+is the single #52 gate for singleton ownership, routes, and effects. It
+activates grants only from committed control entries, assigns a new monotonic
+fence to every grant, and requires live quorum plus the granting term and voter
+epoch on every use. Timed leases use adapter-supplied monotonic ticks bound to a
+process epoch; recovery retains only the fence watermark and cannot revive an
+old lease. Rust performs clock reads, transport, and allowed effects without a
+second ownership policy.
+
 `nimino-chirps` is the only workspace package permitted to depend directly on
 Alopex Chirps. The registry release is pinned to `=0.6.3`, default and optional
 features are disabled, and the lock checksum is part of the versioned contract.

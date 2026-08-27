@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.lease-fencing",
+  "version": 1,
+  "compatibilityMode": false,
+  "publicationState": "cutover-ready",
+  "owner": "nimino-core",
+  "module": "nim/nimino_core/src/nimino_core/domain/lease_fencing.nim",
+  "controlStateMachine": "nimino.control-state-machine/v1",
+  "grant": {
+    "authority": "committed-control-entry",
+    "planMutatesState": false,
+    "uncommittedActivation": false,
+    "eligibleLane": "ready",
+    "selection": "lexicographically-first-normalized-node"
+  },
+  "fencing": {
+    "sequence": "strictly-increasing-by-one-per-committed-grant",
+    "stale": "typed-reject",
+    "future": "typed-reject",
+    "ownerMismatch": "typed-reject",
+    "replay": "same-transition-and-control-index-is-idempotent"
+  },
+  "serving": {
+    "routingGate": "routeSingleton",
+    "allSingletonConsumerGate": "authorizeSingletonEffect",
+    "liveQuorumRequired": true,
+    "grantingTermRequired": true,
+    "grantingVoterEpochRequired": true,
+    "leaseExpiryRequired": true
+  },
+  "clock": {
+    "source": "adapter-supplied-monotonic-ticks",
+    "wallClockAuthority": false,
+    "processEpochBound": true,
+    "recoveryReactivatesLease": false
+  },
+  "transportProvidesAuthority": false,
+  "conflictResolutionOwner": 53,
+  "scenarioHarnessOwner": 56,
+  "legacyRemovalOwner": 12
+}

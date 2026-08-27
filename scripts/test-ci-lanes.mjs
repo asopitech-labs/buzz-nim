@@ -277,6 +277,12 @@ check(
   ) && workflow.includes("run: just nimino-control-state-contract"),
   "control state-machine contract must remain in CI",
 );
+check(
+  /^nimino-lease-contract:\n    node scripts\/test-nimino-lease-contract\.mjs$/m.test(
+    justfile,
+  ) && workflow.includes("run: just nimino-lease-contract"),
+  "lease and fencing contract must remain in CI",
+);
 
 const boundaryJob = job("boundary");
 check(
