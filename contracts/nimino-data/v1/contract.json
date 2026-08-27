@@ -13,6 +13,7 @@
         "subscription",
         "workflow",
         "workflow_run",
+        "workflow_effect",
         "workflow_approval",
         "scheduled_workflow_fire",
         "api_token",
@@ -110,6 +111,7 @@
   },
   "antiEntropyContract": "nimino.sync/v1",
   "projectionLifecycleContract": "nimino.projection-lifecycle/v1",
+  "effectLedgerContract": "nimino.effect-ledger/v1",
   "invariants": [
     "community scope is mandatory and adapter-derived",
     "a transaction never mixes canonical, cache, and log records",

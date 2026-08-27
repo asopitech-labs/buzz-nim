@@ -20,6 +20,7 @@ const
     "subscription",
     "workflow",
     "workflow_run",
+    "workflow_effect",
     "workflow_approval",
     "scheduled_workflow_fire",
     "api_token",

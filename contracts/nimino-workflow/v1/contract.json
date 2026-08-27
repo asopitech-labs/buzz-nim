@@ -6,6 +6,7 @@
   "compatibilityMode": false,
   "cutoverOwner": 12,
   "effectLedgerOwner": 57,
+  "effectLedgerContract": "nimino.effect-ledger/v1",
   "decisions": ["definition", "condition", "plan", "transition"],
   "actionKinds": [
     "send_message",

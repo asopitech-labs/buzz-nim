@@ -314,6 +314,12 @@ check(
   "projection rebuild contract must remain in CI",
 );
 check(
+  /^nimino-effect-ledger-contract:\n    node scripts\/test-nimino-effect-ledger-contract\.mjs$/m.test(
+    justfile,
+  ) && workflow.includes("run: just nimino-effect-ledger-contract"),
+  "workflow effect ledger contract must remain in CI",
+);
+check(
   /^nimino-cluster-scenario-contract:\n    node scripts\/test-nimino-cluster-scenario-contract\.mjs$/m.test(
     justfile,
   ) &&

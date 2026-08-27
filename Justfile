@@ -185,6 +185,10 @@ nimino-object-sync-contract:
 nimino-projection-contract:
     node scripts/test-nimino-projection-contract.mjs
 
+# Verify fenced workflow effect claims, receipts, and manual reconciliation
+nimino-effect-ledger-contract:
+    node scripts/test-nimino-effect-ledger-contract.mjs
+
 # Verify the fixed 1/3/5-node real-mesh scenario definition and ownership
 nimino-cluster-scenario-contract:
     node scripts/test-nimino-cluster-scenario-contract.mjs

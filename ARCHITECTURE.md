@@ -163,6 +163,13 @@ codec work, scoped fact reads, scheduler clocks, effect I/O, timeouts,
 cryptographic formatting, and atomic persistence of the exact returned state.
 The effect ledger is #57; all Rust workflow-policy branches are removed by #12.
 
+The [`Nimino effect ledger`](contracts/nimino-effect-ledger/README.md) closes
+that #57 lifecycle with replicated canonical `workflow_effect` records. A live
+#52 quorum lease gates both claim and execution; the external I/O directive is
+returned only after the `executing` marker is durable. Missing receipts recover
+to `unknown`, never automatic retry. An authorized operator may attach the
+receipt outcome or explicitly retry with the same idempotency key.
+
 The versioned [`Nimino data contract`](contracts/nimino-data/README.md)
 classifies canonical truth, rebuildable caches, and append-only logs, and fixes
 the transaction, query, and projection-rebuild intents used by the data-plane

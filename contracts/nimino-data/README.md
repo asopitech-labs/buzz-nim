@@ -21,7 +21,7 @@ the contract.
 
 | Decision or state | Owner | Artifact |
 |---|---|---|
-| Product acceptance and mutation content | Nim domain issues #26, #29, #31 | canonical write intent |
+| Product acceptance and mutation content | Nim domain issues #26, #29, #31, #57 | canonical write intent |
 | Atomicity, checkpoint compare, persistence | data adapter issue #35 | transaction result |
 | Replication order and convergence | sync issues #50 and #53 | canonical change stream |
 | Search/thread/feed derivation | projection issue #55 | replaceable cache rows |
@@ -54,3 +54,6 @@ types, and all 36 active logical tables in `schema/schema.sql` aligned.
 `crates/nimino-store` implements the replaceable port and local `redb` adapter;
 its transaction, crash-recovery, schema, backup, and restore tests run in the
 Rust unit lane. Projection rebuild scenarios remain owned by #55.
+Workflow effect claims, execution markers, receipts, and manual reconciliation
+are canonical `workflow_effect` state owned by #57; append-only
+`workflow_execution_entry` rows remain non-authoritative evidence.

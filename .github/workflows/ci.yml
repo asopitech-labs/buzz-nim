@@ -158,6 +158,8 @@ jobs:
         run: just nimino-object-sync-contract
       - name: Nimino projection rebuild contract
         run: just nimino-projection-contract
+      - name: Nimino workflow effect ledger contract
+        run: just nimino-effect-ledger-contract
       - name: Nimino data contract
         run: node scripts/test-nimino-data-contract.mjs
       - name: Nimino event policy contract

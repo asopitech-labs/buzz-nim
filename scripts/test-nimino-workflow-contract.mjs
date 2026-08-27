@@ -31,6 +31,10 @@ check(contract.compatibilityMode === false, "workflow compatibility mode is forb
 check(contract.cutoverOwner === 12, "Issue #12 must own physical workflow cutover");
 check(contract.effectLedgerOwner === 57, "Issue #57 must own the effect ledger");
 check(
+  contract.effectLedgerContract === "nimino.effect-ledger/v1",
+  "workflow effect ledger contract link drifted",
+);
+check(
   contract.boundaryOperation === "domain.workflow.policy" &&
     rustBoundary.includes('"domain.workflow.policy"') &&
     nimWorker.includes('"domain.workflow.policy"'),
