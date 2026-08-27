@@ -76,14 +76,10 @@ wait and worker restart consume the same budget. Queue overflow returns
   from Buzz domain crates, SQLx, Redis, Nostr, Iroh, or Chirps.
 - The worker lifecycle follows the versioned State model in `lifecycle.json`.
 
-The operation union contains the exact-match handshake, diagnostic echo, and
-the `domain.event.policy` variant added by Issue #31. That domain variant owns
-event classification, replacement ordering, thread plans, deletion plans, and
-reaction plans; its contract and golden corpus live under
-`contracts/nimino-event/`. Test-only builds add deterministic sleep, crash,
-corruption, and mismatch operations. Later domain variants must likewise enter
-through their owning migration issue and extend the schema and both typed
-adapters together.
+The initial operation union contains only the exact-match handshake and a
+diagnostic echo. Test-only builds add deterministic sleep, crash, corruption,
+and mismatch operations. Domain variants enter through their owning migration
+issues and must extend the schema and both typed adapters together.
 
 ## Framing and lifecycle contract
 
