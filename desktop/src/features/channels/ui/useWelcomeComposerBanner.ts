@@ -9,6 +9,11 @@ import {
 
 const completedWelcomeComposerIdentityPubkeys = new Set<string>();
 
+/** Forget per-identity completion when leaving its community. */
+export function resetWelcomeComposerBannerState(): void {
+  completedWelcomeComposerIdentityPubkeys.clear();
+}
+
 /**
  * Manages the Welcome-channel composer hint banner's state machine.
  *

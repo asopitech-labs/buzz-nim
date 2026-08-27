@@ -1,5 +1,10 @@
 import assert from "node:assert/strict";
 import { beforeEach, describe, it } from "node:test";
+import { toast } from "sonner";
+
+globalThis.requestAnimationFrame ??= (callback) =>
+  globalThis.setTimeout(() => callback(Date.now()), 0);
+globalThis.cancelAnimationFrame ??= globalThis.clearTimeout;
 
 // cardMintStore drives the non-blocking mint flow: the dialog dispatches a
 // job and closes; the composer chip, completion toast, and viewer all read
@@ -215,5 +220,35 @@ describe("cardMintStore", () => {
     await runCardMintJob(INPUT, () => Promise.resolve(CARD));
     const after = getCardMintJobs();
     assert.notEqual(before, after, "snapshot identity must change on update");
+  });
+
+  it("ignores an old community's mint completion after reset", async () => {
+    let resolveMint;
+    const run = runCardMintJob(
+      INPUT,
+      () => new Promise((resolve) => (resolveMint = resolve)),
+    );
+    resetCardMintStore();
+
+    let notified = 0;
+    const unsubscribe = subscribeCardMintStore(() => {
+      notified += 1;
+    });
+    resolveMint(CARD);
+    await run;
+
+    assert.deepEqual(getCardMintJobs(), []);
+    assert.equal(notified, 0);
+    unsubscribe();
+  });
+
+  it("dismisses this store's completed toast on reset", async () => {
+    await runCardMintJob(INPUT, () => Promise.resolve(CARD));
+    const jobId = getCardMintJobs()[0].jobId;
+    assert.ok(toast.getToasts().some((entry) => entry.id === jobId));
+
+    resetCardMintStore();
+
+    assert.ok(toast.getToasts().every((entry) => entry.id !== jobId));
   });
 });

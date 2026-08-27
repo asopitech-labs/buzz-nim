@@ -538,7 +538,7 @@ community-scoped subtree to unmount and remount with fresh state.
 clears React state (useState, useRef, context). Module-level variables (Maps,
 class instances, cached promises) survive across remounts. Every community-scoped
 singleton needs a reset function wired into `resetCommunityState()` in
-`desktop/src/features/communities/useCommunityInit.ts`.
+`desktop/src/features/communities/communityStateLifecycle.ts`.
 
 `resetCommunityState()` is the canonical inventory of community-scoped
 singletons. **If you add a new module-level cache, Map, or class instance that
@@ -549,7 +549,8 @@ truth.
 
 Key files:
 - `desktop/src/app/App.tsx` — community key, init gate, remount boundary
-- `desktop/src/features/communities/useCommunityInit.ts` — `resetCommunityState()`, applies config to Tauri backend
+- `desktop/src/features/communities/communityStateLifecycle.ts` — canonical module-state reset inventory
+- `desktop/src/features/communities/useCommunityInit.ts` — saves outgoing state, resets lifecycle, and applies config to Tauri backend
 - `desktop/src/main.tsx` — provider hierarchy (`QueryClientProvider` > `App`)
 
 ---

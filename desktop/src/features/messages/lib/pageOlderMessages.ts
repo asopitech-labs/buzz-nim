@@ -11,7 +11,10 @@ import { getChannelWindowEvents } from "@/shared/api/channelWindow";
 
 const CHANNEL_WINDOW_PAGE_SIZE = 50;
 export type PageOlderResult = { hasOlderMessages: boolean };
-const inFlightPasses = new Map<string, Promise<PageOlderResult>>();
+const inFlightPassesByClient = new WeakMap<
+  QueryClient,
+  Map<string, Promise<PageOlderResult>>
+>();
 
 /** Fetch exactly one server-defined older window and append it atomically. */
 export function pageOlderMessagesUntilRowFloor(
@@ -19,6 +22,11 @@ export function pageOlderMessagesUntilRowFloor(
   channelId: string,
   shouldContinue: () => boolean,
 ): Promise<PageOlderResult> {
+  let inFlightPasses = inFlightPassesByClient.get(queryClient);
+  if (!inFlightPasses) {
+    inFlightPasses = new Map();
+    inFlightPassesByClient.set(queryClient, inFlightPasses);
+  }
   const running = inFlightPasses.get(channelId);
   if (running) return running;
   const pass = runPage(queryClient, channelId, shouldContinue).finally(() => {

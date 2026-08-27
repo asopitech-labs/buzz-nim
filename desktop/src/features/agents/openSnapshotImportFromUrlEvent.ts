@@ -19,6 +19,11 @@ const OPEN_SNAPSHOT_IMPORT_EVENT = "buzz:open-snapshot-import";
 
 let pendingImport: PendingSnapshotImport | null = null;
 
+/** Drop snapshot bytes captured for the community being left. */
+export function resetPendingSnapshotImport(): void {
+  pendingImport = null;
+}
+
 /**
  * Enqueue a snapshot import and dispatch the navigation event.
  * The caller must have already fetched and validated the bytes in memory.
