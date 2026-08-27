@@ -544,6 +544,10 @@ fn ready_matches_contract(ready: &ReadyPayload) -> bool {
             .capabilities
             .iter()
             .any(|name| name == "domain.community.policy")
+        && ready
+            .capabilities
+            .iter()
+            .any(|name| name == "domain.membership.policy")
         && !ready.worker_version.is_empty()
 }
 
@@ -563,6 +567,7 @@ mod tests {
                 "boundary.echo".to_owned(),
                 "domain.event.policy".to_owned(),
                 "domain.community.policy".to_owned(),
+                "domain.membership.policy".to_owned(),
             ],
         }
     }
@@ -598,6 +603,11 @@ mod tests {
         candidate
             .capabilities
             .retain(|name| name != "domain.community.policy");
+        assert!(!ready_matches_contract(&candidate));
+        let mut candidate = ready();
+        candidate
+            .capabilities
+            .retain(|name| name != "domain.membership.policy");
         assert!(!ready_matches_contract(&candidate));
         let mut candidate = ready();
         candidate.worker_version.clear();

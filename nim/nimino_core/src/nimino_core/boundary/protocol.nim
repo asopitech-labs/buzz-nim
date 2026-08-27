@@ -10,7 +10,7 @@ const
 when defined(niminoBoundaryWrongSchema):
   const BoundarySchemaHash* = "0000000000000000000000000000000000000000000000000000000000000000"
 else:
-  const BoundarySchemaHash* = "8b2ddbbb0fd4b20aa227511187428c03d2334f0a0b2f666c98a3a1db17172182"
+  const BoundarySchemaHash* = "eab348b5046af71c011889d0e17c1837011fef4ca2f1440fb240edca1876424a"
 
 type
   BoundaryOperationKind* = enum
@@ -18,6 +18,7 @@ type
     boEcho,
     boEventPolicy,
     boCommunityPolicy,
+    boMembershipPolicy,
     boTestSleep,
     boTestCrash,
     boTestRemoteFailure,
@@ -143,6 +144,9 @@ proc decodeOperation(
   of "domain.community.policy":
     result.kind = boCommunityPolicy
     result.data = payload
+  of "domain.membership.policy":
+    result.kind = boMembershipPolicy
+    result.data = payload
   of "boundary.test.sleep":
     if payload.len != 1:
       raiseProtocolError(
@@ -217,7 +221,8 @@ proc decodeRequest*(raw: string): BoundaryRequest =
   if result.protocol != BoundaryProtocolName:
     raiseProtocolError("INVALID_REQUEST", "protocol name is not supported", requestId)
   if result.version != BoundaryProtocolVersion:
-    raiseProtocolError("UNSUPPORTED_VERSION", "protocol version is not supported", requestId)
+    raiseProtocolError("UNSUPPORTED_VERSION",
+        "protocol version is not supported", requestId)
   if result.requestId.runeLen == 0 or result.requestId.runeLen > 128:
     raiseProtocolError("INVALID_REQUEST", "requestId length is invalid", requestId)
   if result.operationName.runeLen == 0 or result.operationName.runeLen > 128:

@@ -1,5 +1,7 @@
 import std/[json, strutils, unicode, unittest]
-import nimino_core/boundary/[community_policy_codec, event_policy_codec, protocol]
+import nimino_core/boundary/[
+  community_policy_codec, event_policy_codec, membership_policy_codec, protocol
+]
 
 suite "Nim/Rust boundary protocol v1":
   test "decodes the canonical request envelope":
@@ -136,8 +138,60 @@ suite "Nim/Rust boundary protocol v1":
           "request": {
             "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
             "resourceCommunity": nil,
-          },
-          "legacyMode": true,
         },
+        "legacyMode": true,
+      },
         "request-85-invalid",
+      )
+
+  test "routes typed membership policy payloads and rejects unknown fields":
+    let request = decodeRequest("""{
+      "protocol":"nimino.core.boundary",
+      "version":1,
+      "requestId":"request-86",
+      "operation":"domain.membership.policy",
+      "payload":{"decision":"relay","request":{"command":"add","actorRole":"owner","targetRole":"none","requestedRole":"admin","actorIsTarget":false}}
+    }""")
+    check request.operation.kind == boMembershipPolicy
+    check executeMembershipPolicy(request.operation.data, request.requestId) == %*{
+      "decision": "relay",
+      "action": "insert",
+      "error": "none",
+      "effectiveRole": "admin",
+    }
+
+    expect BoundaryProtocolError:
+      discard executeMembershipPolicy(
+        %*{
+          "decision": "relay",
+          "request": {
+            "command": "add",
+            "actorRole": "owner",
+            "targetRole": "none",
+            "requestedRole": "admin",
+            "actorIsTarget": false,
+        },
+        "legacyMode": true,
+      },
+        "request-86-invalid",
+      )
+
+    expect BoundaryProtocolError:
+      discard executeMembershipPolicy(
+        %*{
+          "decision": "channel",
+          "request": {
+            "command": "remove",
+            "visibility": "private",
+            "actorRole": "admin",
+            "targetRole": "member",
+            "requestedRole": "none",
+            "actorIsTarget": false,
+            "actorOwnsTargetAgent": false,
+            "targetIsAgent": false,
+            "targetAddPolicy": "anyone",
+            "ownerCount": -1,
+        },
+      },
+        "request-86-owner-count",
       )

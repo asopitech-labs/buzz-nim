@@ -3,13 +3,14 @@ use serde_json::Value;
 use uuid::Uuid;
 
 use crate::community::{CommunityPolicyRequest, CommunityPolicyResult};
+use crate::membership::{MembershipPolicyRequest, MembershipPolicyResult};
 
 /// Stable protocol name carried by every v1 frame.
 pub const PROTOCOL_NAME: &str = "nimino.core.boundary";
 /// The only accepted boundary version. No downgrade path exists.
 pub const PROTOCOL_VERSION: u16 = 1;
 /// SHA-256 of the checked-in v1 contract bundle.
-pub const SCHEMA_HASH: &str = "8b2ddbbb0fd4b20aa227511187428c03d2334f0a0b2f666c98a3a1db17172182";
+pub const SCHEMA_HASH: &str = "eab348b5046af71c011889d0e17c1837011fef4ca2f1440fb240edca1876424a";
 /// Role required during the exact-match startup handshake.
 pub const WORKER_ROLE: &str = "nimino-core";
 /// Maximum JSON payload length accepted by the frame codec.
@@ -483,6 +484,8 @@ pub enum BoundaryResult {
     EventPolicy(EventPolicyResult),
     /// Community lifecycle and tenant isolation decision owned by Nimino.
     CommunityPolicy(CommunityPolicyResult),
+    /// Channel, relay-roster, invite, and ownership decision owned by Nimino.
+    MembershipPolicy(MembershipPolicyResult),
     /// Test-only operation result; never present in a production build.
     #[cfg(feature = "test-hooks")]
     Test(Value),
@@ -511,6 +514,8 @@ pub(crate) enum BoundaryOperation {
     EventPolicy(EventPolicyRequest),
     /// Community lifecycle and tenant isolation policy.
     CommunityPolicy(CommunityPolicyRequest),
+    /// Channel, relay-roster, invite, and ownership policy.
+    MembershipPolicy(MembershipPolicyRequest),
     /// Deterministic blocking operation available only to boundary tests.
     #[cfg(feature = "test-hooks")]
     TestSleep(SleepPayload),
@@ -541,6 +546,7 @@ impl BoundaryOperation {
             Self::Echo(_) => "boundary.echo",
             Self::EventPolicy(_) => "domain.event.policy",
             Self::CommunityPolicy(_) => "domain.community.policy",
+            Self::MembershipPolicy(_) => "domain.membership.policy",
             #[cfg(feature = "test-hooks")]
             Self::TestSleep(_) => "boundary.test.sleep",
             #[cfg(feature = "test-hooks")]
@@ -564,6 +570,7 @@ impl BoundaryOperation {
             Self::Echo(payload) => serde_json::to_value(payload),
             Self::EventPolicy(payload) => serde_json::to_value(payload),
             Self::CommunityPolicy(payload) => serde_json::to_value(payload),
+            Self::MembershipPolicy(payload) => serde_json::to_value(payload),
             #[cfg(feature = "test-hooks")]
             Self::TestSleep(payload) => serde_json::to_value(payload),
             #[cfg(feature = "test-hooks")]
@@ -582,6 +589,9 @@ impl BoundaryOperation {
             "boundary.echo" => serde_json::from_value(payload).map(Self::Echo),
             "domain.event.policy" => serde_json::from_value(payload).map(Self::EventPolicy),
             "domain.community.policy" => serde_json::from_value(payload).map(Self::CommunityPolicy),
+            "domain.membership.policy" => {
+                serde_json::from_value(payload).map(Self::MembershipPolicy)
+            }
             #[cfg(feature = "test-hooks")]
             "boundary.test.sleep" => serde_json::from_value(payload).map(Self::TestSleep),
             #[cfg(feature = "test-hooks")]
@@ -703,6 +713,11 @@ impl BoundaryRequest {
     /// Constructs a typed community lifecycle or tenant isolation decision.
     pub fn community_policy(request: CommunityPolicyRequest) -> Self {
         Self::from_operation(BoundaryOperation::CommunityPolicy(request))
+    }
+
+    /// Constructs a typed channel, relay-roster, invite, or ownership decision.
+    pub fn membership_policy(request: MembershipPolicyRequest) -> Self {
+        Self::from_operation(BoundaryOperation::MembershipPolicy(request))
     }
 
     /// Returns the exact protocol identifier carried by this request.
@@ -847,6 +862,9 @@ impl<'de> Deserialize<'de> for BoundaryResponse {
                         .map_err(D::Error::custom)?,
                     "domain.community.policy" => serde_json::from_value(result)
                         .map(BoundaryResult::CommunityPolicy)
+                        .map_err(D::Error::custom)?,
+                    "domain.membership.policy" => serde_json::from_value(result)
+                        .map(BoundaryResult::MembershipPolicy)
                         .map_err(D::Error::custom)?,
                     #[cfg(feature = "test-hooks")]
                     name if name.starts_with("boundary.test.") => BoundaryResult::Test(result),

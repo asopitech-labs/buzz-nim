@@ -10,6 +10,7 @@ mod codec;
 mod community;
 mod contract;
 mod error;
+mod membership;
 mod runtime;
 
 pub use community::{
@@ -25,4 +26,10 @@ pub use contract::{
     PROTOCOL_VERSION, SCHEMA_HASH, WORKER_ROLE,
 };
 pub use error::{BoundaryError, HOST_ERROR_CODES};
+pub use membership::{
+    AgentAddPolicy, ChannelMembershipRequest, ChannelVisibility, InviteCommand,
+    InvitePolicyRequest, InviteState, MembershipAction, MembershipCommand, MembershipPolicyError,
+    MembershipPolicyRequest, MembershipPolicyResult, MembershipRole, OwnershipTransferRequest,
+    RelayMembershipRequest,
+};
 pub use runtime::{BoundaryClient, BoundaryConfig, BoundaryRuntime, CallContext};

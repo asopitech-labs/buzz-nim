@@ -178,6 +178,92 @@
         }
       ]
     },
+    "membershipPolicyError": {
+      "enum": [
+        "none",
+        "not_operator",
+        "not_authorized",
+        "not_member",
+        "invite_required",
+        "role_invalid",
+        "target_missing",
+        "last_owner",
+        "self_mutation",
+        "owner_protected",
+        "agent_add_denied",
+        "invite_invalid",
+        "invite_expired",
+        "invite_exhausted",
+        "policy_required",
+        "mint_bounds",
+        "owner_missing",
+        "owner_conflict",
+        "owner_limit"
+      ]
+    },
+    "membershipAction": {
+      "enum": [
+        "reject",
+        "insert",
+        "update_role",
+        "remove",
+        "noop",
+        "mint",
+        "join",
+        "transfer"
+      ]
+    },
+    "membershipPolicyResult": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "action", "error", "effectiveRole"],
+          "properties": {
+            "decision": { "const": "channel" },
+            "action": { "$ref": "#/$defs/membershipAction" },
+            "error": { "$ref": "#/$defs/membershipPolicyError" },
+            "effectiveRole": { "$ref": "#/$defs/membershipRole" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "action", "error", "effectiveRole"],
+          "properties": {
+            "decision": { "const": "relay" },
+            "action": { "$ref": "#/$defs/membershipAction" },
+            "error": { "$ref": "#/$defs/membershipPolicyError" },
+            "effectiveRole": { "$ref": "#/$defs/membershipRole" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "action", "error", "effectiveRole"],
+          "properties": {
+            "decision": { "const": "invite" },
+            "action": { "$ref": "#/$defs/membershipAction" },
+            "error": { "$ref": "#/$defs/membershipPolicyError" },
+            "effectiveRole": { "$ref": "#/$defs/membershipRole" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "action", "error", "effectiveRole"],
+          "properties": {
+            "decision": { "const": "ownership_transfer" },
+            "action": { "$ref": "#/$defs/membershipAction" },
+            "error": { "$ref": "#/$defs/membershipPolicyError" },
+            "effectiveRole": { "$ref": "#/$defs/membershipRole" }
+          }
+        }
+      ]
+    },
+    "membershipRole": {
+      "enum": ["none", "owner", "admin", "member", "guest", "bot"]
+    },
     "fault": {
       "type": "object",
       "additionalProperties": false,
@@ -286,7 +372,8 @@
                 "enum": [
                   "boundary.echo",
                   "domain.event.policy",
-                  "domain.community.policy"
+                  "domain.community.policy",
+                  "domain.membership.policy"
                 ]
               },
               "contains": { "const": "domain.event.policy" }
@@ -358,6 +445,26 @@
         "operation": { "const": "domain.community.policy" },
         "status": { "const": "ok" },
         "result": { "$ref": "#/$defs/communityPolicyResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol",
+        "version",
+        "requestId",
+        "operation",
+        "status",
+        "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.membership.policy" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/membershipPolicyResult" }
       }
     },
     {

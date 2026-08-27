@@ -178,6 +178,145 @@
         }
       ]
     },
+    "membershipRole": {
+      "enum": ["none", "owner", "admin", "member", "guest", "bot"]
+    },
+    "membershipCommand": {
+      "enum": ["join", "add", "change_role", "remove", "leave"]
+    },
+    "channelMembershipRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command",
+        "visibility",
+        "actorRole",
+        "targetRole",
+        "requestedRole",
+        "actorIsTarget",
+        "actorOwnsTargetAgent",
+        "targetIsAgent",
+        "targetAddPolicy",
+        "ownerCount"
+      ],
+      "properties": {
+        "command": { "$ref": "#/$defs/membershipCommand" },
+        "visibility": { "enum": ["open", "private"] },
+        "actorRole": { "$ref": "#/$defs/membershipRole" },
+        "targetRole": { "$ref": "#/$defs/membershipRole" },
+        "requestedRole": { "$ref": "#/$defs/membershipRole" },
+        "actorIsTarget": { "type": "boolean" },
+        "actorOwnsTargetAgent": { "type": "boolean" },
+        "targetIsAgent": { "type": "boolean" },
+        "targetAddPolicy": { "enum": ["anyone", "owner_only", "nobody"] },
+        "ownerCount": { "type": "integer", "minimum": 0, "maximum": 2147483647 }
+      }
+    },
+    "relayMembershipRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command",
+        "actorRole",
+        "targetRole",
+        "requestedRole",
+        "actorIsTarget"
+      ],
+      "properties": {
+        "command": { "$ref": "#/$defs/membershipCommand" },
+        "actorRole": { "$ref": "#/$defs/membershipRole" },
+        "targetRole": { "$ref": "#/$defs/membershipRole" },
+        "requestedRole": { "$ref": "#/$defs/membershipRole" },
+        "actorIsTarget": { "type": "boolean" }
+      }
+    },
+    "invitePolicyRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command",
+        "actorRole",
+        "inviteState",
+        "ttlSeconds",
+        "maxUses",
+        "alreadyMember",
+        "policyRequired",
+        "policyAccepted"
+      ],
+      "properties": {
+        "command": { "enum": ["mint", "claim"] },
+        "actorRole": { "$ref": "#/$defs/membershipRole" },
+        "inviteState": { "enum": ["valid", "expired", "exhausted", "invalid"] },
+        "ttlSeconds": { "type": "integer" },
+        "maxUses": {
+          "oneOf": [
+            { "type": "integer", "minimum": -2147483648, "maximum": 2147483647 },
+            { "type": "null" }
+          ]
+        },
+        "alreadyMember": { "type": "boolean" },
+        "policyRequired": { "type": "boolean" },
+        "policyAccepted": { "type": "boolean" }
+      }
+    },
+    "ownershipTransferRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "actorIsOperator",
+        "ownerPresent",
+        "expectedOwnerMatches",
+        "newOwnerIsCurrentOwner",
+        "newOwnerAtLimit"
+      ],
+      "properties": {
+        "actorIsOperator": { "type": "boolean" },
+        "ownerPresent": { "type": "boolean" },
+        "expectedOwnerMatches": { "type": "boolean" },
+        "newOwnerIsCurrentOwner": { "type": "boolean" },
+        "newOwnerAtLimit": { "type": "boolean" }
+      }
+    },
+    "membershipPolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "channel" },
+            "request": { "$ref": "#/$defs/channelMembershipRequest" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "relay" },
+            "request": { "$ref": "#/$defs/relayMembershipRequest" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "invite" },
+            "request": { "$ref": "#/$defs/invitePolicyRequest" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "ownership_transfer" },
+            "request": { "$ref": "#/$defs/ownershipTransferRequest" }
+          }
+        }
+      ]
+    },
     "communityLifecycleRequest": {
       "type": "object",
       "additionalProperties": false,
@@ -312,6 +451,18 @@
         "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
         "operation": { "const": "domain.community.policy" },
         "payload": { "$ref": "#/$defs/communityPolicyPayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.membership.policy" },
+        "payload": { "$ref": "#/$defs/membershipPolicyPayload" }
       }
     }
   ]

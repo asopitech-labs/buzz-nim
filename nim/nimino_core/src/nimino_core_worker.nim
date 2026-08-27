@@ -4,7 +4,13 @@ when defined(niminoBoundaryTestHooks):
   import std/os
 
 import nimino_core
-import nimino_core/boundary/[community_policy_codec, event_policy_codec, framing, protocol]
+import nimino_core/boundary/[
+  community_policy_codec,
+  event_policy_codec,
+  framing,
+  membership_policy_codec,
+  protocol,
+]
 
 proc helloResult(): JsonNode =
   result = newJObject()
@@ -15,7 +21,10 @@ proc helloResult(): JsonNode =
   result["schemaHash"] = %BoundarySchemaHash
   result["workerRole"] = %BoundaryWorkerRole
   result["capabilities"] = %*[
-    "boundary.echo", "domain.event.policy", "domain.community.policy"
+    "boundary.echo",
+    "domain.event.policy",
+    "domain.community.policy",
+    "domain.membership.policy",
   ]
 
 proc execute(request: BoundaryRequest; negotiated: var bool): string =
@@ -68,7 +77,8 @@ proc execute(request: BoundaryRequest; negotiated: var bool): string =
     of boTestMalformed:
       return "{not-json"
     of boTestWrongId:
-      return encodeSuccess("wrong-request-id", request.operationName, newJObject())
+      return encodeSuccess("wrong-request-id", request.operationName,
+          newJObject())
     of boTestPid:
       return encodeSuccess(
         request.requestId,
@@ -97,6 +107,12 @@ proc execute(request: BoundaryRequest; negotiated: var bool): string =
       request.operationName,
       executeCommunityPolicy(request.operation.data, request.requestId),
     )
+  of boMembershipPolicy:
+    result = encodeSuccess(
+      request.requestId,
+      request.operationName,
+      executeMembershipPolicy(request.operation.data, request.requestId),
+    )
   else:
     result = encodeFailure(
       request.requestId,
@@ -108,7 +124,7 @@ proc execute(request: BoundaryRequest; negotiated: var bool): string =
 proc runWorker*() =
   var negotiated = false
   while true:
-    var frame: tuple[available: bool, payload: string]
+    var frame: tuple[available: bool; payload: string]
     try:
       frame = readFrame(stdin)
     except BoundaryFrameError as error:
