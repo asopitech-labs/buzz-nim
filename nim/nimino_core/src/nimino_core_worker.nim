@@ -6,6 +6,7 @@ when defined(niminoBoundaryTestHooks):
 import nimino_core
 import nimino_core/boundary/[
   community_policy_codec,
+  dm_policy_codec,
   event_policy_codec,
   framing,
   membership_policy_codec,
@@ -25,6 +26,7 @@ proc helloResult(): JsonNode =
     "domain.event.policy",
     "domain.community.policy",
     "domain.membership.policy",
+    "domain.dm.policy",
   ]
 
 proc execute(request: BoundaryRequest; negotiated: var bool): string =
@@ -112,6 +114,12 @@ proc execute(request: BoundaryRequest; negotiated: var bool): string =
       request.requestId,
       request.operationName,
       executeMembershipPolicy(request.operation.data, request.requestId),
+    )
+  of boDmPolicy:
+    result = encodeSuccess(
+      request.requestId,
+      request.operationName,
+      executeDmPolicy(request.operation.data, request.requestId),
     )
   else:
     result = encodeFailure(

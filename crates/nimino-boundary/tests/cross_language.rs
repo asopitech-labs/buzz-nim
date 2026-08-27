@@ -4,10 +4,10 @@ use std::{path::PathBuf, process::Stdio, time::Duration};
 
 use nimino_boundary::{
     BoundaryConfig, BoundaryError, BoundaryRequest, BoundaryResponse, BoundaryResult,
-    BoundaryRuntime, CallContext, CommunityPolicyRequest, CommunityPolicyResult, EchoPayload,
-    EventPolicyRequest, EventPolicyResult, MembershipPolicyRequest, MembershipPolicyResult,
-    RemoteErrorCode, MAX_FRAME_BYTES, MAX_INFLIGHT, PROTOCOL_NAME, PROTOCOL_VERSION, SCHEMA_HASH,
-    WORKER_ROLE,
+    BoundaryRuntime, CallContext, CommunityPolicyRequest, CommunityPolicyResult, DmPolicyRequest,
+    DmPolicyResult, EchoPayload, EventPolicyRequest, EventPolicyResult, MembershipPolicyRequest,
+    MembershipPolicyResult, RemoteErrorCode, MAX_FRAME_BYTES, MAX_INFLIGHT, PROTOCOL_NAME,
+    PROTOCOL_VERSION, SCHEMA_HASH, WORKER_ROLE,
 };
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -230,6 +230,51 @@ async fn membership_policy_golden_corpus_crosses_the_real_worker_boundary() {
         assert_eq!(
             result,
             BoundaryResult::MembershipPolicy(case.expected),
+            "{}",
+            case.name
+        );
+    }
+    runtime.shutdown().await.expect("clean shutdown");
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+struct DmPolicyCorpus {
+    schema_version: u16,
+    cases: Vec<DmPolicyCase>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DmPolicyCase {
+    name: String,
+    invariant: String,
+    input: DmPolicyRequest,
+    expected: DmPolicyResult,
+}
+
+#[tokio::test]
+#[ignore = "requires the Nim test worker; run `just nim-boundary-test`"]
+async fn dm_policy_golden_corpus_crosses_the_real_worker_boundary() {
+    let corpus: DmPolicyCorpus =
+        serde_json::from_str(include_str!("../../../contracts/nimino-dm/v1/golden.json"))
+            .expect("valid DM policy corpus");
+    assert_eq!(corpus.schema_version, 1);
+
+    let runtime = runtime(8).await;
+    let client = runtime.client();
+    for case in corpus.cases {
+        assert!(!case.invariant.is_empty(), "{} has no invariant", case.name);
+        let result = client
+            .call(
+                BoundaryRequest::dm_policy(case.input),
+                CallContext::with_timeout(Duration::from_secs(2)),
+            )
+            .await
+            .unwrap_or_else(|error| panic!("{} failed: {error}", case.name));
+        assert_eq!(
+            result,
+            BoundaryResult::DmPolicy(case.expected),
             "{}",
             case.name
         );

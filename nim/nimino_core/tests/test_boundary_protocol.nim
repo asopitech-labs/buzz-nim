@@ -1,6 +1,10 @@
 import std/[json, strutils, unicode, unittest]
 import nimino_core/boundary/[
-  community_policy_codec, event_policy_codec, membership_policy_codec, protocol
+  community_policy_codec,
+  dm_policy_codec,
+  event_policy_codec,
+  membership_policy_codec,
+  protocol,
 ]
 
 suite "Nim/Rust boundary protocol v1":
@@ -194,4 +198,35 @@ suite "Nim/Rust boundary protocol v1":
         },
       },
         "request-86-owner-count",
+      )
+
+  test "routes typed DM policy payloads and rejects unknown fields":
+    let request = decodeRequest("""{
+      "protocol":"nimino.core.boundary",
+      "version":1,
+      "requestId":"request-87",
+      "operation":"domain.dm.policy",
+      "payload":{"decision":"access","request":{"operation":"read","requestCommunity":"018f5e5a-9b7d-7c01-a7bb-46fbe46d0001","resourceCommunity":"018f5e5a-9b7d-7c01-a7bb-46fbe46d0001","resourceExists":true,"channelIsDm":true,"actorIsParticipant":true,"actorIsViewer":false}}
+    }""")
+    check request.operation.kind == boDmPolicy
+    check executeDmPolicy(request.operation.data, request.requestId) == %*{
+      "decision": "access", "allowed": true, "error": "none"
+    }
+
+    expect BoundaryProtocolError:
+      discard executeDmPolicy(
+        %*{
+          "decision": "access",
+          "request": {
+            "operation": "read",
+            "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+            "resourceCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+            "resourceExists": true,
+            "channelIsDm": true,
+            "actorIsParticipant": true,
+            "actorIsViewer": false,
+            "legacyMode": true,
+          },
+        },
+        "request-87-invalid",
       )

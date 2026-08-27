@@ -264,6 +264,44 @@
     "membershipRole": {
       "enum": ["none", "owner", "admin", "member", "guest", "bot"]
     },
+    "dmPolicyError": {
+      "enum": [
+        "none",
+        "resource_missing",
+        "tenant_mismatch",
+        "not_dm",
+        "not_participant",
+        "actor_missing",
+        "participant_count",
+        "no_new_participant",
+        "fact_conflict",
+        "viewer_mismatch"
+      ]
+    },
+    "dmPolicyResult": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "action", "error"],
+          "properties": {
+            "decision": { "const": "mutation" },
+            "action": { "enum": ["reject", "create", "reuse", "unhide", "hide", "noop"] },
+            "error": { "$ref": "#/$defs/dmPolicyError" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "allowed", "error"],
+          "properties": {
+            "decision": { "const": "access" },
+            "allowed": { "type": "boolean" },
+            "error": { "$ref": "#/$defs/dmPolicyError" }
+          }
+        }
+      ]
+    },
     "fault": {
       "type": "object",
       "additionalProperties": false,
@@ -373,7 +411,8 @@
                   "boundary.echo",
                   "domain.event.policy",
                   "domain.community.policy",
-                  "domain.membership.policy"
+                  "domain.membership.policy",
+                  "domain.dm.policy"
                 ]
               },
               "contains": { "const": "domain.event.policy" }
@@ -465,6 +504,26 @@
         "operation": { "const": "domain.membership.policy" },
         "status": { "const": "ok" },
         "result": { "$ref": "#/$defs/membershipPolicyResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol",
+        "version",
+        "requestId",
+        "operation",
+        "status",
+        "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.dm.policy" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/dmPolicyResult" }
       }
     },
     {

@@ -1,9 +1,9 @@
 use nimino_boundary::{
     BoundaryFault, BoundaryRequest, BoundaryResponse, BoundaryResult, CommunityAction,
-    CommunityPolicyError, CommunityPolicyResult, EchoPayload, EventDisposition, EventPolicyError,
-    EventPolicyResult, MembershipAction, MembershipPolicyError, MembershipPolicyResult,
-    MembershipRole, RemoteErrorCode, RetryDisposition, HOST_ERROR_CODES, PROTOCOL_NAME,
-    PROTOCOL_VERSION,
+    CommunityPolicyError, CommunityPolicyResult, DmPolicyError, DmPolicyResult, EchoPayload,
+    EventDisposition, EventPolicyError, EventPolicyResult, MembershipAction, MembershipPolicyError,
+    MembershipPolicyResult, MembershipRole, RemoteErrorCode, RetryDisposition, HOST_ERROR_CODES,
+    PROTOCOL_NAME, PROTOCOL_VERSION,
 };
 use serde_json::json;
 
@@ -62,6 +62,27 @@ fn membership_policy_fixtures_use_the_typed_operation_variant() {
             action: MembershipAction::Insert,
             error: MembershipPolicyError::None,
             effective_role: MembershipRole::Admin,
+        })
+    );
+}
+
+#[test]
+fn dm_policy_fixtures_use_the_typed_operation_variant() {
+    let request: BoundaryRequest = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/dm-policy.request.json"
+    ))
+    .expect("valid DM policy request");
+    assert_eq!(request.operation_name(), "domain.dm.policy");
+
+    let response: BoundaryResponse = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/dm-policy.response.json"
+    ))
+    .expect("valid DM policy response");
+    assert_eq!(
+        response.into_result().expect("policy success"),
+        BoundaryResult::DmPolicy(DmPolicyResult::Access {
+            allowed: true,
+            error: DmPolicyError::None,
         })
     );
 }

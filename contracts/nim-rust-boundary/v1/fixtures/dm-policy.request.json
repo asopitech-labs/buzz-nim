@@ -1,0 +1,18 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0087",
+  "operation": "domain.dm.policy",
+  "payload": {
+    "decision": "access",
+    "request": {
+      "operation": "read",
+      "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+      "resourceCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+      "resourceExists": true,
+      "channelIsDm": true,
+      "actorIsParticipant": true,
+      "actorIsViewer": false
+    }
+  }
+}

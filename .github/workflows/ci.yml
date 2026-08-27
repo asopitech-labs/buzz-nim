@@ -60,10 +60,12 @@ jobs:
               - 'nim/nimino_core/src/nimino_core/domain/event_policy.nim'
               - 'nim/nimino_core/src/nimino_core/domain/community_policy.nim'
               - 'nim/nimino_core/src/nimino_core/domain/membership_policy.nim'
+              - 'nim/nimino_core/src/nimino_core/domain/dm_policy.nim'
               - 'nim/nimino_core/tests/test_boundary_protocol.nim'
               - 'nim/nimino_core/tests/test_event_policy.nim'
               - 'nim/nimino_core/tests/test_community_policy.nim'
               - 'nim/nimino_core/tests/test_membership_policy.nim'
+              - 'nim/nimino_core/tests/test_dm_policy.nim'
               - 'hermit-packages/nim.hcl'
               - 'bin/hermit.hcl'
               - 'bin/.nim-*.pkg'
@@ -75,10 +77,12 @@ jobs:
               - 'scripts/test-nimino-event-contract.mjs'
               - 'scripts/test-nimino-community-contract.mjs'
               - 'scripts/test-nimino-membership-contract.mjs'
+              - 'scripts/test-nimino-dm-contract.mjs'
               - 'contracts/nim-rust-boundary/**'
               - 'contracts/nimino-event/**'
               - 'contracts/nimino-community/**'
               - 'contracts/nimino-membership/**'
+              - 'contracts/nimino-dm/**'
               - 'crates/nimino-boundary/**'
               - 'Cargo.toml'
               - 'Cargo.lock'
@@ -133,6 +137,8 @@ jobs:
         run: node scripts/test-nimino-community-contract.mjs
       - name: Nimino membership policy contract
         run: node scripts/test-nimino-membership-contract.mjs
+      - name: Nimino DM policy contract
+        run: node scripts/test-nimino-dm-contract.mjs
       - name: Nimino runtime namespace contract
         run: just runtime-namespace-contract
       - name: GUI surface contract

@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.dm-policy",
+  "owner": "nim/nimino_core/src/nimino_core/domain/dm_policy.nim",
+  "boundaryOperation": "domain.dm.policy",
+  "compatibilityMode": false,
+  "cutoverOwner": 12,
+  "decisions": ["mutation", "access"],
+  "rustAdapters": [
+    "crates/nimino-boundary/src/dm.rs",
+    "crates/nimino-boundary/src/contract.rs",
+    "crates/nimino-boundary/src/runtime.rs"
+  ],
+  "rustPolicySitesToShrink": [
+    {
+      "path": "crates/buzz-relay/src/handlers/command_executor.rs",
+      "symbols": ["handle_dm_open", "handle_dm_add_member", "handle_dm_hide"]
+    },
+    {
+      "path": "crates/buzz-db/src/dm.rs",
+      "symbols": [
+        "create_dm",
+        "open_dm",
+        "hide_dm",
+        "unhide_dm",
+        "list_dms_for_user"
+      ]
+    },
+    {
+      "path": "crates/buzz-core/src/filter.rs",
+      "symbols": ["reader_authorized_for_event"]
+    },
+    {
+      "path": "crates/buzz-relay/src/handlers/req.rs",
+      "symbols": ["p_gated_filters_authorized", "result_gated_count_safe_for_pushdown"]
+    },
+    {
+      "path": "crates/buzz-relay/src/handlers/event.rs",
+      "symbols": ["filter_fanout_by_access"]
+    },
+    {
+      "path": "crates/buzz-relay/src/handlers/ingest.rs",
+      "symbols": ["check_channel_membership"]
+    }
+  ],
+  "cutoverRule": "Issue #12 routes DM command/read/write adapters through Nimino and retains only crypto, codec, scoped facts, hashing, transaction, and effect responsibilities in Rust.",
+  "outOfScope": {
+    "moderation": 88,
+    "publicCutover": 12,
+    "clusterAdmission": 9
+  }
+}

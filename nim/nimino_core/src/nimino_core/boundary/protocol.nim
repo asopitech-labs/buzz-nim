@@ -10,7 +10,7 @@ const
 when defined(niminoBoundaryWrongSchema):
   const BoundarySchemaHash* = "0000000000000000000000000000000000000000000000000000000000000000"
 else:
-  const BoundarySchemaHash* = "eab348b5046af71c011889d0e17c1837011fef4ca2f1440fb240edca1876424a"
+  const BoundarySchemaHash* = "a3cec674914749cbcfac2858f81175e4edeff4a7800bf9ce7ae27aca2f6cc28c"
 
 type
   BoundaryOperationKind* = enum
@@ -19,6 +19,7 @@ type
     boEventPolicy,
     boCommunityPolicy,
     boMembershipPolicy,
+    boDmPolicy,
     boTestSleep,
     boTestCrash,
     boTestRemoteFailure,
@@ -146,6 +147,9 @@ proc decodeOperation(
     result.data = payload
   of "domain.membership.policy":
     result.kind = boMembershipPolicy
+    result.data = payload
+  of "domain.dm.policy":
+    result.kind = boDmPolicy
     result.data = payload
   of "boundary.test.sleep":
     if payload.len != 1:

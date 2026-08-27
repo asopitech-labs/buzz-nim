@@ -9,6 +9,7 @@
 mod codec;
 mod community;
 mod contract;
+mod dm;
 mod error;
 mod membership;
 mod runtime;
@@ -24,6 +25,10 @@ pub use contract::{
     ReadyPayload, RemoteErrorCode, ReplacementAction, RetryDisposition, ThreadMetadataFacts,
     ThreadParentFacts, ThreadPlan, ThreadRequest, MAX_FRAME_BYTES, MAX_INFLIGHT, PROTOCOL_NAME,
     PROTOCOL_VERSION, SCHEMA_HASH, WORKER_ROLE,
+};
+pub use dm::{
+    DmAccessOperation, DmAccessRequest, DmAction, DmCommand, DmMutationRequest, DmPolicyError,
+    DmPolicyRequest, DmPolicyResult,
 };
 pub use error::{BoundaryError, HOST_ERROR_CODES};
 pub use membership::{

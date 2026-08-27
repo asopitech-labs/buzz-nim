@@ -317,6 +317,116 @@
         }
       ]
     },
+    "dmMutationRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command",
+        "requestCommunity",
+        "sourceCommunity",
+        "destinationCommunity",
+        "sourceExists",
+        "sourceIsDm",
+        "actorIsSourceParticipant",
+        "sourceActorHidden",
+        "actorIncluded",
+        "participantCount",
+        "newParticipantCount",
+        "destinationExists",
+        "destinationIsDm",
+        "destinationActorHidden"
+      ],
+      "properties": {
+        "command": { "enum": ["open", "add", "hide"] },
+        "requestCommunity": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "sourceCommunity": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            { "type": "null" }
+          ]
+        },
+        "destinationCommunity": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            { "type": "null" }
+          ]
+        },
+        "sourceExists": { "type": "boolean" },
+        "sourceIsDm": { "type": "boolean" },
+        "actorIsSourceParticipant": { "type": "boolean" },
+        "sourceActorHidden": { "type": "boolean" },
+        "actorIncluded": { "type": "boolean" },
+        "participantCount": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+        "newParticipantCount": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+        "destinationExists": { "type": "boolean" },
+        "destinationIsDm": { "type": "boolean" },
+        "destinationActorHidden": { "type": "boolean" }
+      }
+    },
+    "dmAccessRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "requestCommunity",
+        "resourceCommunity",
+        "resourceExists",
+        "channelIsDm",
+        "actorIsParticipant",
+        "actorIsViewer"
+      ],
+      "properties": {
+        "operation": { "enum": ["read", "write", "visibility"] },
+        "requestCommunity": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "resourceCommunity": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            { "type": "null" }
+          ]
+        },
+        "resourceExists": { "type": "boolean" },
+        "channelIsDm": { "type": "boolean" },
+        "actorIsParticipant": { "type": "boolean" },
+        "actorIsViewer": { "type": "boolean" }
+      }
+    },
+    "dmPolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "mutation" },
+            "request": { "$ref": "#/$defs/dmMutationRequest" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "access" },
+            "request": { "$ref": "#/$defs/dmAccessRequest" }
+          }
+        }
+      ]
+    },
     "communityLifecycleRequest": {
       "type": "object",
       "additionalProperties": false,
@@ -463,6 +573,18 @@
         "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
         "operation": { "const": "domain.membership.policy" },
         "payload": { "$ref": "#/$defs/membershipPolicyPayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.dm.policy" },
+        "payload": { "$ref": "#/$defs/dmPolicyPayload" }
       }
     }
   ]

@@ -109,7 +109,8 @@ nimino-chirps       (sole direct Alopex Chirps dependency; no product policy)
 For the cutover target, the Nim/Rust process contract is fixed. Event/message
 policy is exposed as `domain.event.policy`; community lifecycle and tenant
 isolation are exposed as `domain.community.policy`; channel/relay membership,
-invite, and ownership transfer are exposed as `domain.membership.policy`.
+invite, and ownership transfer are exposed as `domain.membership.policy`; DM
+participant-set mutations and access are exposed as `domain.dm.policy`.
 `nimino-boundary` owns no product, DB, replication, sync, or cluster-authority rule. Timeout,
 cancellation, crash, or corrupt stdout recycles the stateless worker before
 another request. See
@@ -130,8 +131,14 @@ The [`Nimino membership policy`](contracts/nimino-membership/README.md) owns the
 role capability matrix, channel join/leave and agent-owner decisions,
 relay-roster delegation, invite expiry/claim rules, and atomic ownership
 transfer. Rust retains identity and receipt verification, clock and locked-DB
-fact acquisition, and effect execution. DM and moderation remain in #87 and
-#88; the stateless v1 invite drain path is deleted by #12 without fallback.
+fact acquisition, and effect execution. Moderation remains in #88; the
+stateless v1 invite drain path is deleted by #12 without fallback.
+
+The [`Nimino DM policy`](contracts/nimino-dm/README.md) owns immutable
+participant-set open/expansion, per-viewer hide, participant read/write access,
+and visibility-snapshot access. Rust retains NIP-17 crypto, codecs,
+tenant-scoped fact reads, participant hashing, transactions, and effects. The
+listed Rust decision branches are deleted by #12 without fallback.
 
 The versioned [`Nimino data contract`](contracts/nimino-data/README.md)
 classifies canonical truth, rebuildable caches, and append-only logs, and fixes
