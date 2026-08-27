@@ -53,7 +53,7 @@ const MESH_SELECT_TRIGGER_CLASS = cn(
 );
 
 const SHARE_COMPUTE_REVEAL_TRANSITION = {
-  duration: 0.22,
+  duration: 0.18,
   ease: [0.23, 1, 0.32, 1],
 } as const;
 

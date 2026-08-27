@@ -46,7 +46,7 @@ const AVATAR_MODE_TABS_TRANSITION = {
   ease: [0.23, 1, 0.32, 1],
 } as const;
 const AVATAR_EDITOR_LAYOUT_TRANSITION = {
-  duration: 0.3,
+  duration: 0.18,
   ease: [0.23, 1, 0.32, 1],
 } as const;
 

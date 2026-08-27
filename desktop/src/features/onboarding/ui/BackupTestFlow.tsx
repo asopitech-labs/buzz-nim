@@ -80,10 +80,8 @@ const VERIFICATION_DOT_ANIMATION = {
   scale: [0.85, 1.25, 0.85],
 };
 const VERIFICATION_DOT_TRANSITION = {
-  duration: 0.7,
+  duration: 0.18,
   ease: "easeInOut" as const,
-  repeat: Number.POSITIVE_INFINITY,
-  repeatDelay: 1.2,
 };
 const PRIVATE_KEY_MASK = Array.from({ length: 63 }, () => "•").join("\u200b");
 
@@ -139,7 +137,7 @@ function SuccessBurst() {
           initial={{ x: 0, y: 0, opacity: 1, scale: 0.3, rotate: 0 }}
           key={particle.id}
           transition={{
-            duration: 0.9,
+            duration: 0.18,
             delay: particle.delay,
             ease: "easeOut",
           }}
@@ -392,7 +390,7 @@ export function BackupTestFlow({
           animate={{ opacity: 1, y: 0 }}
           initial={reduceMotion ? false : { opacity: 0, y: 8 }}
           transition={
-            reduceMotion ? { duration: 0 } : { delay: 0.15, duration: 0.35 }
+            reduceMotion ? { duration: 0 } : { delay: 0.15, duration: 0.18 }
           }
         >
           {isCeremony ? (

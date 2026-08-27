@@ -739,7 +739,7 @@ function ThemeSettingsCard() {
                   initial={{ height: 0, opacity: 0, y: -6 }}
                   key="theme-style-options"
                   transition={{
-                    duration: 0.22,
+                    duration: 0.18,
                     ease: [0.23, 1, 0.32, 1],
                   }}
                 >

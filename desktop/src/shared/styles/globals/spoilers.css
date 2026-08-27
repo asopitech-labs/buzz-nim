@@ -11,8 +11,8 @@
   padding: 0 0.12em;
   position: relative;
   transition:
-    background-color 500ms ease-out,
-    color 500ms ease-out;
+    background-color var(--motion-duration-state) ease-out,
+    color var(--motion-duration-state) ease-out;
   vertical-align: baseline;
 }
 
@@ -23,8 +23,8 @@
 .buzz-spoiler__content {
   position: relative;
   transition:
-    opacity 500ms ease-out,
-    filter 500ms ease-out;
+    opacity var(--motion-duration-state) ease-out,
+    filter var(--motion-duration-state) ease-out;
   z-index: 0;
 }
 
@@ -49,7 +49,7 @@
   opacity: 1;
   pointer-events: none;
   position: absolute;
-  transition: opacity 500ms ease-out;
+  transition: opacity var(--motion-duration-state) ease-out;
   width: calc(100% + 0.2em);
   z-index: 1;
 }

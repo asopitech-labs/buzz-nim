@@ -25,6 +25,7 @@ const COPY_FAILURE_MESSAGE = "Buzz couldn't access the clipboard. Try again.";
 const EXPIRED_LINK_MESSAGE =
   "This binding link has expired. Request a new one from the requesting app.";
 const VERIFICATION_CODE_LENGTH = 6;
+const VERIFICATION_CODE_SHAKE_DURATION_MS = 180;
 const VERIFICATION_CODE_DIGIT_KEYS = ["1", "2", "3", "4", "5", "6"] as const;
 const VERIFICATION_CODE_MISMATCH_MESSAGE =
   "That code doesn't match. Check the code and try again.";
@@ -363,7 +364,7 @@ export function NostrBindConsentDialog() {
         },
         { offset: 1, transform: "translateX(0px)" },
       ],
-      { duration: 280, easing: "linear" },
+      { duration: VERIFICATION_CODE_SHAKE_DURATION_MS, easing: "linear" },
     );
   }, [shouldReduceMotion]);
 

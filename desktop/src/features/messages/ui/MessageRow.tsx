@@ -198,17 +198,9 @@ export const MessageRow = React.memo(
     const [badgeBurstEmoji, setBadgeBurstEmoji] = React.useState<string | null>(
       null,
     );
-    const handleEntranceAnimationEnd = React.useCallback(
-      (event: React.AnimationEvent<HTMLElement>) => {
-        if (
-          playEntrance &&
-          event.animationName === "motion-enter-conversation"
-        ) {
-          onEntranceComplete?.(message.id);
-        }
-      },
-      [message.id, onEntranceComplete, playEntrance],
-    );
+    React.useEffect(() => {
+      if (playEntrance) onEntranceComplete?.(message.id);
+    }, [message.id, onEntranceComplete, playEntrance]);
     const {
       reactions,
       canToggle: canToggleReactions,
@@ -882,7 +874,6 @@ export const MessageRow = React.memo(
         <article
           className={cn(
             "group/message relative z-10 rounded-2xl transition-colors",
-            playEntrance && "motion-enter-conversation",
             "py-conversation-row",
             hoverBackground
               ? "mx-1 px-2 hover:bg-muted/50 focus-within:bg-muted/50"
@@ -898,7 +889,6 @@ export const MessageRow = React.memo(
           )}
           data-message-id={message.id}
           data-testid="message-row"
-          onAnimationEnd={handleEntranceAnimationEnd}
         >
           {isThreadReplyLayout ? (
             <>
