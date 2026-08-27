@@ -188,6 +188,15 @@ Node admission authority is #48.
 Chirps v0.6.3 still resolves its own unconditional Raft/file-transfer packages;
 their presence in `Cargo.lock` is not an authorized Nimino API or responsibility.
 
+The [`Nimino control-log v1 model`](docs/adr/nimino-control-log-v1.md) owns
+quorum, election term, joint voter transition, commit, snapshot, and recovery
+invariants above that transport. Stable phases require one active-set majority;
+joint consensus requires old and new majorities. Configuration commits
+invalidate authority and force election under the new phase. Monotonic time may
+trigger an election term but cannot authorize or commit. TLC evidence fixes the
+bounded model; runtime admission, persistence, replicated application, and
+lease/fencing remain separately owned by #48, #49, #51, and #52.
+
 ---
 
 ## 2. The Protocol

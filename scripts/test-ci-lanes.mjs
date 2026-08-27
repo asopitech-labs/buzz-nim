@@ -250,6 +250,12 @@ check(
   /^nim-boundary-ci: nim-boundary-test nim-boundary-benchmark$/m.test(justfile),
   "boundary CI must remain a separate focused gate",
 );
+check(
+  /^control-model-contract:\n    node scripts\/check-nimino-control-model\.mjs$/m.test(
+    justfile,
+  ) && workflow.includes("run: just control-model-contract"),
+  "control model contract must remain in CI",
+);
 
 const boundaryJob = job("boundary");
 check(

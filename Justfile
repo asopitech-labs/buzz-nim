@@ -157,6 +157,14 @@ nim-boundary-ci: nim-boundary-test nim-boundary-benchmark
 chirps-contract:
     node scripts/check-chirps-api-contract.mjs
 
+# Verify the versioned quorum/control-log model, ownership, hashes, and evidence
+control-model-contract:
+    node scripts/check-nimino-control-model.mjs
+
+# Exhaustively check the bounded 3-node control-log state graph with TLC
+control-model-check: control-model-contract
+    tlc -workers auto -config formal/scenarios/NiminoControlLog_3Node.cfg formal/tla/cluster/NiminoControlLog.tla
+
 # Verify the canonical Nimino names and generate the legacy Buzz denylist
 naming-contract:
     node scripts/check-nimino-naming-contract.mjs
@@ -185,7 +193,7 @@ ci-lanes-contract:
     node scripts/test-ci-lanes.mjs
 
 # Run repo lint, formatting, and repository policy checks
-check: fmt-check clippy chirps-contract naming-contract protocol-contract runtime-namespace-contract gui-surface-contract wsl-support-contract removed-client-contract ci-lanes-contract desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check file-size-check
+check: fmt-check clippy chirps-contract control-model-contract naming-contract protocol-contract runtime-namespace-contract gui-surface-contract wsl-support-contract removed-client-contract ci-lanes-contract desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check file-size-check
 
 # Run the active-product differential file-size ratchet and its policy tests.
 # The ratchet inspects only files changed from the merge base, so this stays
