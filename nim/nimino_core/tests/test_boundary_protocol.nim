@@ -4,6 +4,7 @@ import nimino_core/boundary/[
   dm_policy_codec,
   event_policy_codec,
   membership_policy_codec,
+  moderation_policy_codec,
   protocol,
 ]
 
@@ -229,4 +230,39 @@ suite "Nim/Rust boundary protocol v1":
           },
         },
         "request-87-invalid",
+      )
+
+  test "routes typed moderation policy payloads and rejects unknown fields":
+    let request = decodeRequest("""{
+      "protocol":"nimino.core.boundary",
+      "version":1,
+      "requestId":"request-88",
+      "operation":"domain.moderation.policy",
+      "payload":{"decision":"report","request":{"requestCommunity":"018f5e5a-9b7d-7c01-a7bb-46fbe46d0001","targetCommunity":"018f5e5a-9b7d-7c01-a7bb-46fbe46d0001","targetExists":true,"reporterIsTarget":false,"duplicate":false,"targetKind":"event","reportType":"spam"}}
+    }""")
+    check request.operation.kind == boModerationPolicy
+    check executeModerationPolicy(request.operation.data, request.requestId) == %*{
+      "decision": "report",
+      "effect": "queue_report",
+      "authority": "reporter",
+      "auditAction": "none",
+      "error": "none",
+    }
+
+    expect BoundaryProtocolError:
+      discard executeModerationPolicy(
+        %*{
+          "decision": "report",
+          "request": {
+            "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+            "targetCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+            "targetExists": true,
+            "reporterIsTarget": false,
+            "duplicate": false,
+            "targetKind": "event",
+            "reportType": "spam",
+            "legacyMode": true,
+          },
+        },
+        "request-88-invalid",
       )

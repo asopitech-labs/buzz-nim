@@ -134,6 +134,11 @@ check(
   "DM policy changes must run Nim and real boundary golden tests",
 );
 check(
+  matches("nim", "nim/nimino_core/src/nimino_core/domain/moderation_policy.nim") &&
+    matches("boundary", "nim/nimino_core/src/nimino_core/domain/moderation_policy.nim"),
+  "moderation policy changes must run Nim and real boundary golden tests",
+);
+check(
   matches("boundary", "crates/nimino-boundary/src/lib.rs") &&
     !matches("rust", "crates/nimino-boundary/src/lib.rs"),
   "Rust boundary adapter must use the focused boundary lane",
@@ -173,6 +178,10 @@ check(
 check(
   job("changes").includes("run: node scripts/test-nimino-dm-contract.mjs"),
   "changed-path gate must verify the Nimino DM policy contract",
+);
+check(
+  job("changes").includes("run: node scripts/test-nimino-moderation-contract.mjs"),
+  "changed-path gate must verify the Nimino moderation policy contract",
 );
 
 const nimJob = job("nim");

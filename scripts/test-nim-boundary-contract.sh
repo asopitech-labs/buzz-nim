@@ -94,11 +94,13 @@ for (const [schemaName, fixtureName] of [
   ["request.schema.json", "community-policy.request.json"],
   ["request.schema.json", "membership-policy.request.json"],
   ["request.schema.json", "dm-policy.request.json"],
+  ["request.schema.json", "moderation-policy.request.json"],
   ["response.schema.json", "echo.response.json"],
   ["response.schema.json", "event-policy.response.json"],
   ["response.schema.json", "community-policy.response.json"],
   ["response.schema.json", "membership-policy.response.json"],
   ["response.schema.json", "dm-policy.response.json"],
+  ["response.schema.json", "moderation-policy.response.json"],
   ["response.schema.json", "unknown-operation.response.json"],
 ]) {
   const schema = JSON.parse(fs.readFileSync(path.join(root, schemaName), "utf8"));
@@ -146,6 +148,7 @@ if rg -n 'println!|print!' \
   "$repo_root/crates/nimino-boundary/src/community.rs" \
   "$repo_root/crates/nimino-boundary/src/contract.rs" \
   "$repo_root/crates/nimino-boundary/src/dm.rs" \
+  "$repo_root/crates/nimino-boundary/src/moderation.rs" \
   "$repo_root/crates/nimino-boundary/src/error.rs" \
   "$repo_root/crates/nimino-boundary/src/membership.rs" \
   "$repo_root/crates/nimino-boundary/src/runtime.rs"; then

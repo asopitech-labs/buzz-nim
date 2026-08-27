@@ -12,6 +12,7 @@ mod contract;
 mod dm;
 mod error;
 mod membership;
+mod moderation;
 mod runtime;
 
 pub use community::{
@@ -36,5 +37,12 @@ pub use membership::{
     InvitePolicyRequest, InviteState, MembershipAction, MembershipCommand, MembershipPolicyError,
     MembershipPolicyRequest, MembershipPolicyResult, MembershipRole, OwnershipTransferRequest,
     RelayMembershipRequest,
+};
+pub use moderation::{
+    ModerationAuditAction, ModerationAuthority, ModerationEffect, ModerationEnforcementOperation,
+    ModerationEnforcementRequest, ModerationPolicyError, ModerationPolicyRequest,
+    ModerationPolicyResult, ModerationReportRequest, ModerationReportTarget, ModerationReportType,
+    ModerationResolutionAction, ModerationResolutionRequest, ModerationResolutionStatus,
+    ModerationRestrictionCommand, ModerationRestrictionRequest,
 };
 pub use runtime::{BoundaryClient, BoundaryConfig, BoundaryRuntime, CallContext};

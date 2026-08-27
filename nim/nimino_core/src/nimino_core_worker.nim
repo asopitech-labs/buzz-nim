@@ -10,6 +10,7 @@ import nimino_core/boundary/[
   event_policy_codec,
   framing,
   membership_policy_codec,
+  moderation_policy_codec,
   protocol,
 ]
 
@@ -27,6 +28,7 @@ proc helloResult(): JsonNode =
     "domain.community.policy",
     "domain.membership.policy",
     "domain.dm.policy",
+    "domain.moderation.policy",
   ]
 
 proc execute(request: BoundaryRequest; negotiated: var bool): string =
@@ -120,6 +122,12 @@ proc execute(request: BoundaryRequest; negotiated: var bool): string =
       request.requestId,
       request.operationName,
       executeDmPolicy(request.operation.data, request.requestId),
+    )
+  of boModerationPolicy:
+    result = encodeSuccess(
+      request.requestId,
+      request.operationName,
+      executeModerationPolicy(request.operation.data, request.requestId),
     )
   else:
     result = encodeFailure(

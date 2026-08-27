@@ -2,8 +2,9 @@ use nimino_boundary::{
     BoundaryFault, BoundaryRequest, BoundaryResponse, BoundaryResult, CommunityAction,
     CommunityPolicyError, CommunityPolicyResult, DmPolicyError, DmPolicyResult, EchoPayload,
     EventDisposition, EventPolicyError, EventPolicyResult, MembershipAction, MembershipPolicyError,
-    MembershipPolicyResult, MembershipRole, RemoteErrorCode, RetryDisposition, HOST_ERROR_CODES,
-    PROTOCOL_NAME, PROTOCOL_VERSION,
+    MembershipPolicyResult, MembershipRole, ModerationAuditAction, ModerationAuthority,
+    ModerationEffect, ModerationPolicyError, ModerationPolicyResult, RemoteErrorCode,
+    RetryDisposition, HOST_ERROR_CODES, PROTOCOL_NAME, PROTOCOL_VERSION,
 };
 use serde_json::json;
 
@@ -83,6 +84,29 @@ fn dm_policy_fixtures_use_the_typed_operation_variant() {
         BoundaryResult::DmPolicy(DmPolicyResult::Access {
             allowed: true,
             error: DmPolicyError::None,
+        })
+    );
+}
+
+#[test]
+fn moderation_policy_fixtures_use_the_typed_operation_variant() {
+    let request: BoundaryRequest = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/moderation-policy.request.json"
+    ))
+    .expect("valid moderation policy request");
+    assert_eq!(request.operation_name(), "domain.moderation.policy");
+
+    let response: BoundaryResponse = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/moderation-policy.response.json"
+    ))
+    .expect("valid moderation policy response");
+    assert_eq!(
+        response.into_result().expect("policy success"),
+        BoundaryResult::ModerationPolicy(ModerationPolicyResult::Restriction {
+            effect: ModerationEffect::ApplyTimeout,
+            authority: ModerationAuthority::CommunityOwner,
+            audit_action: ModerationAuditAction::Timeout,
+            error: ModerationPolicyError::None,
         })
     );
 }

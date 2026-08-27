@@ -427,6 +427,209 @@
         }
       ]
     },
+    "boundaryUuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "nullableBoundaryUuid": {
+      "oneOf": [{ "$ref": "#/$defs/boundaryUuid" }, { "type": "null" }]
+    },
+    "nonNegativeSeconds": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9223372036854775807
+    },
+    "nullableSeconds": {
+      "oneOf": [{ "$ref": "#/$defs/nonNegativeSeconds" }, { "type": "null" }]
+    },
+    "moderationReportRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requestCommunity",
+        "targetCommunity",
+        "targetExists",
+        "reporterIsTarget",
+        "duplicate",
+        "targetKind",
+        "reportType"
+      ],
+      "properties": {
+        "requestCommunity": { "$ref": "#/$defs/boundaryUuid" },
+        "targetCommunity": { "$ref": "#/$defs/nullableBoundaryUuid" },
+        "targetExists": { "type": "boolean" },
+        "reporterIsTarget": { "type": "boolean" },
+        "duplicate": { "type": "boolean" },
+        "targetKind": { "enum": ["event", "pubkey", "blob"] },
+        "reportType": {
+          "enum": [
+            "illegal",
+            "nudity",
+            "malware",
+            "spam",
+            "impersonation",
+            "profanity",
+            "other"
+          ]
+        }
+      }
+    },
+    "moderationRestrictionRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command",
+        "requestCommunity",
+        "actorRoleCommunity",
+        "targetRoleCommunity",
+        "actorRestrictionCommunity",
+        "targetRestrictionCommunity",
+        "actorRole",
+        "targetRole",
+        "actorRestrictionExists",
+        "actorBanSet",
+        "actorBanExpiresAt",
+        "targetRestrictionExists",
+        "targetBanSet",
+        "targetBanExpiresAt",
+        "targetMutedUntil",
+        "actorIsTarget",
+        "createdAtSeconds",
+        "nowSeconds",
+        "requestedExpiresAt"
+      ],
+      "properties": {
+        "command": { "enum": ["ban", "unban", "timeout", "untimeout"] },
+        "requestCommunity": { "$ref": "#/$defs/boundaryUuid" },
+        "actorRoleCommunity": { "$ref": "#/$defs/nullableBoundaryUuid" },
+        "targetRoleCommunity": { "$ref": "#/$defs/nullableBoundaryUuid" },
+        "actorRestrictionCommunity": { "$ref": "#/$defs/nullableBoundaryUuid" },
+        "targetRestrictionCommunity": { "$ref": "#/$defs/nullableBoundaryUuid" },
+        "actorRole": { "$ref": "#/$defs/membershipRole" },
+        "targetRole": { "$ref": "#/$defs/membershipRole" },
+        "actorRestrictionExists": { "type": "boolean" },
+        "actorBanSet": { "type": "boolean" },
+        "actorBanExpiresAt": { "$ref": "#/$defs/nullableSeconds" },
+        "targetRestrictionExists": { "type": "boolean" },
+        "targetBanSet": { "type": "boolean" },
+        "targetBanExpiresAt": { "$ref": "#/$defs/nullableSeconds" },
+        "targetMutedUntil": { "$ref": "#/$defs/nullableSeconds" },
+        "actorIsTarget": { "type": "boolean" },
+        "createdAtSeconds": { "$ref": "#/$defs/nonNegativeSeconds" },
+        "nowSeconds": { "$ref": "#/$defs/nonNegativeSeconds" },
+        "requestedExpiresAt": { "$ref": "#/$defs/nullableSeconds" }
+      }
+    },
+    "moderationResolutionRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requestCommunity",
+        "actorRoleCommunity",
+        "actorRestrictionCommunity",
+        "reportCommunity",
+        "actorRole",
+        "actorRestrictionExists",
+        "actorBanSet",
+        "actorBanExpiresAt",
+        "reportExists",
+        "reportOpen",
+        "createdAtSeconds",
+        "nowSeconds",
+        "status",
+        "action"
+      ],
+      "properties": {
+        "requestCommunity": { "$ref": "#/$defs/boundaryUuid" },
+        "actorRoleCommunity": { "$ref": "#/$defs/nullableBoundaryUuid" },
+        "actorRestrictionCommunity": { "$ref": "#/$defs/nullableBoundaryUuid" },
+        "reportCommunity": { "$ref": "#/$defs/nullableBoundaryUuid" },
+        "actorRole": { "$ref": "#/$defs/membershipRole" },
+        "actorRestrictionExists": { "type": "boolean" },
+        "actorBanSet": { "type": "boolean" },
+        "actorBanExpiresAt": { "$ref": "#/$defs/nullableSeconds" },
+        "reportExists": { "type": "boolean" },
+        "reportOpen": { "type": "boolean" },
+        "createdAtSeconds": { "$ref": "#/$defs/nonNegativeSeconds" },
+        "nowSeconds": { "$ref": "#/$defs/nonNegativeSeconds" },
+        "status": { "enum": ["resolved", "dismissed"] },
+        "action": { "enum": ["delete", "kick", "ban", "timeout", "dismiss", "escalate"] }
+      }
+    },
+    "moderationEnforcementRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "requestCommunity",
+        "principalRestrictionCommunity",
+        "ownerRestrictionCommunity",
+        "principalRestrictionExists",
+        "principalBanSet",
+        "principalBanExpiresAt",
+        "principalMutedUntil",
+        "ownerAttested",
+        "ownerRestrictionExists",
+        "ownerBanSet",
+        "ownerBanExpiresAt",
+        "nowSeconds"
+      ],
+      "properties": {
+        "operation": { "enum": ["authenticate", "write"] },
+        "requestCommunity": { "$ref": "#/$defs/boundaryUuid" },
+        "principalRestrictionCommunity": { "$ref": "#/$defs/nullableBoundaryUuid" },
+        "ownerRestrictionCommunity": { "$ref": "#/$defs/nullableBoundaryUuid" },
+        "principalRestrictionExists": { "type": "boolean" },
+        "principalBanSet": { "type": "boolean" },
+        "principalBanExpiresAt": { "$ref": "#/$defs/nullableSeconds" },
+        "principalMutedUntil": { "$ref": "#/$defs/nullableSeconds" },
+        "ownerAttested": { "type": "boolean" },
+        "ownerRestrictionExists": { "type": "boolean" },
+        "ownerBanSet": { "type": "boolean" },
+        "ownerBanExpiresAt": { "$ref": "#/$defs/nullableSeconds" },
+        "nowSeconds": { "$ref": "#/$defs/nonNegativeSeconds" }
+      }
+    },
+    "moderationPolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "report" },
+            "request": { "$ref": "#/$defs/moderationReportRequest" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "restriction" },
+            "request": { "$ref": "#/$defs/moderationRestrictionRequest" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "resolution" },
+            "request": { "$ref": "#/$defs/moderationResolutionRequest" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "enforcement" },
+            "request": { "$ref": "#/$defs/moderationEnforcementRequest" }
+          }
+        }
+      ]
+    },
     "communityLifecycleRequest": {
       "type": "object",
       "additionalProperties": false,
@@ -585,6 +788,18 @@
         "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
         "operation": { "const": "domain.dm.policy" },
         "payload": { "$ref": "#/$defs/dmPolicyPayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.moderation.policy" },
+        "payload": { "$ref": "#/$defs/moderationPolicyPayload" }
       }
     }
   ]

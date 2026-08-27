@@ -5,13 +5,14 @@ use uuid::Uuid;
 use crate::community::{CommunityPolicyRequest, CommunityPolicyResult};
 use crate::dm::{DmPolicyRequest, DmPolicyResult};
 use crate::membership::{MembershipPolicyRequest, MembershipPolicyResult};
+use crate::moderation::{ModerationPolicyRequest, ModerationPolicyResult};
 
 /// Stable protocol name carried by every v1 frame.
 pub const PROTOCOL_NAME: &str = "nimino.core.boundary";
 /// The only accepted boundary version. No downgrade path exists.
 pub const PROTOCOL_VERSION: u16 = 1;
 /// SHA-256 of the checked-in v1 contract bundle.
-pub const SCHEMA_HASH: &str = "a3cec674914749cbcfac2858f81175e4edeff4a7800bf9ce7ae27aca2f6cc28c";
+pub const SCHEMA_HASH: &str = "792aa92ac09de643627e12d0900d0056873dd28500b16a8e067e7179216a4323";
 /// Role required during the exact-match startup handshake.
 pub const WORKER_ROLE: &str = "nimino-core";
 /// Maximum JSON payload length accepted by the frame codec.
@@ -489,6 +490,8 @@ pub enum BoundaryResult {
     MembershipPolicy(MembershipPolicyResult),
     /// Direct-message mutation and access decision owned by Nimino.
     DmPolicy(DmPolicyResult),
+    /// Report, restriction, and resolution decision owned by Nimino.
+    ModerationPolicy(ModerationPolicyResult),
     /// Test-only operation result; never present in a production build.
     #[cfg(feature = "test-hooks")]
     Test(Value),
@@ -521,6 +524,8 @@ pub(crate) enum BoundaryOperation {
     MembershipPolicy(MembershipPolicyRequest),
     /// Direct-message mutation and access policy.
     DmPolicy(DmPolicyRequest),
+    /// Report, restriction, and resolution policy.
+    ModerationPolicy(ModerationPolicyRequest),
     /// Deterministic blocking operation available only to boundary tests.
     #[cfg(feature = "test-hooks")]
     TestSleep(SleepPayload),
@@ -553,6 +558,7 @@ impl BoundaryOperation {
             Self::CommunityPolicy(_) => "domain.community.policy",
             Self::MembershipPolicy(_) => "domain.membership.policy",
             Self::DmPolicy(_) => "domain.dm.policy",
+            Self::ModerationPolicy(_) => "domain.moderation.policy",
             #[cfg(feature = "test-hooks")]
             Self::TestSleep(_) => "boundary.test.sleep",
             #[cfg(feature = "test-hooks")]
@@ -578,6 +584,7 @@ impl BoundaryOperation {
             Self::CommunityPolicy(payload) => serde_json::to_value(payload),
             Self::MembershipPolicy(payload) => serde_json::to_value(payload),
             Self::DmPolicy(payload) => serde_json::to_value(payload),
+            Self::ModerationPolicy(payload) => serde_json::to_value(payload),
             #[cfg(feature = "test-hooks")]
             Self::TestSleep(payload) => serde_json::to_value(payload),
             #[cfg(feature = "test-hooks")]
@@ -600,6 +607,9 @@ impl BoundaryOperation {
                 serde_json::from_value(payload).map(Self::MembershipPolicy)
             }
             "domain.dm.policy" => serde_json::from_value(payload).map(Self::DmPolicy),
+            "domain.moderation.policy" => {
+                serde_json::from_value(payload).map(Self::ModerationPolicy)
+            }
             #[cfg(feature = "test-hooks")]
             "boundary.test.sleep" => serde_json::from_value(payload).map(Self::TestSleep),
             #[cfg(feature = "test-hooks")]
@@ -731,6 +741,11 @@ impl BoundaryRequest {
     /// Constructs a typed direct-message mutation or access decision.
     pub fn dm_policy(request: DmPolicyRequest) -> Self {
         Self::from_operation(BoundaryOperation::DmPolicy(request))
+    }
+
+    /// Constructs a typed report, restriction, or resolution decision.
+    pub fn moderation_policy(request: ModerationPolicyRequest) -> Self {
+        Self::from_operation(BoundaryOperation::ModerationPolicy(request))
     }
 
     /// Returns the exact protocol identifier carried by this request.
@@ -881,6 +896,9 @@ impl<'de> Deserialize<'de> for BoundaryResponse {
                         .map_err(D::Error::custom)?,
                     "domain.dm.policy" => serde_json::from_value(result)
                         .map(BoundaryResult::DmPolicy)
+                        .map_err(D::Error::custom)?,
+                    "domain.moderation.policy" => serde_json::from_value(result)
+                        .map(BoundaryResult::ModerationPolicy)
                         .map_err(D::Error::custom)?,
                     #[cfg(feature = "test-hooks")]
                     name if name.starts_with("boundary.test.") => BoundaryResult::Test(result),
