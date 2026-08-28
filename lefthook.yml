@@ -125,3 +125,7 @@ pre-push:
       files: git diff --name-only origin/main...HEAD
       glob: ["desktop/src-tauri/src/**", "desktop/src-tauri/Cargo.toml", "contracts/nimino-tauri/**", "scripts/test-nimino-tauri-contract.mjs", "Justfile"]
       run: just nimino-tauri-contract
+    rust-responsibility-contract:
+      files: git diff --name-only origin/main...HEAD
+      glob: ["**/*.rs", "**/Cargo.toml", "Cargo.lock", "contracts/rust-responsibility/**", "contracts/nim-rust-boundary/**", "contracts/nimino-tauri/**", "nim/nimino_core/src/nimino_core/domain/**", "scripts/test-rust-responsibility-contract.mjs", ".github/workflows/ci.yml", "Justfile"]
+      run: just rust-responsibility-contract

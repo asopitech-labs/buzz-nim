@@ -176,6 +176,8 @@ jobs:
         run: just legacy-control-manifest-contract
       - name: Nimino Tauri adapter contract
         run: just nimino-tauri-contract
+      - name: Rust responsibility contract
+        run: just rust-responsibility-contract
       - name: Nimino data contract
         run: node scripts/test-nimino-data-contract.mjs
       - name: Nimino event policy contract

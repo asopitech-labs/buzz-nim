@@ -1,0 +1,129 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.rust-responsibility",
+  "compatibilityMode": false,
+  "classificationUnit": {
+    "dependency": "cargo-package",
+    "source": "nearest-cargo-package",
+    "tauriCommand": "contracts/nimino-tauri/v1/manifest.json"
+  },
+  "inventory": {"packageCount": 37},
+  "target": {
+    "nim": "domain-and-product-policy",
+    "rust": ["typed-boundary", "crypto-codec", "bounded-io", "measured-native-hot-path"],
+    "typescript": "presentation-state"
+  },
+  "actions": {
+    "keep": {
+      "target": "bounded adapter, verification tool, or typed boundary",
+      "packages": [
+        "buzz-backend-kubernetes",
+        "buzz-conformance",
+        "buzz-datastore-tracing",
+        "buzz-pair-relay",
+        "buzz-terminal",
+        "buzz-voice",
+        "buzz-ws-client",
+        "git-credential-nostr",
+        "git-sign-nostr",
+        "nimino-boundary",
+        "nimino-chirps",
+        "nimino-data-ops",
+        "nimino-object-store",
+        "nimino-store"
+      ]
+    },
+    "shrink": {
+      "target": "retain only composition, transport, storage, crypto, codec, or execution effects",
+      "packages": [
+        "buzz-acp",
+        "buzz-admin",
+        "buzz-agent",
+        "buzz-audit",
+        "buzz-auth",
+        "buzz-cli",
+        "buzz-core",
+        "buzz-db",
+        "buzz-deletion",
+        "buzz-desktop",
+        "buzz-dev-mcp",
+        "buzz-media",
+        "buzz-pairing-cli",
+        "buzz-persona",
+        "buzz-pubsub",
+        "buzz-relay",
+        "buzz-sdk",
+        "buzz-search",
+        "buzz-test-client",
+        "buzz-workflow",
+        "countdown-bot",
+        "sprig"
+      ]
+    },
+    "move": {
+      "target": "Nim-owned package replacement",
+      "packages": []
+    },
+    "replace": {
+      "target": "nimino-chirps plus Nim-owned cluster and sync domains",
+      "packages": ["buzz-relay-mesh"]
+    },
+    "delete": {
+      "target": "no surviving runtime responsibility",
+      "packages": []
+    }
+  },
+  "standaloneSources": [
+    {
+      "path": "benchmarks/harbor-buzz-orchestra/forwarder/relay_forwarder.rs",
+      "action": "delete",
+      "removalIssue": 66
+    }
+  ],
+  "policyOwnership": {
+    "nimDomainRoot": "nim/nimino_core/src/nimino_core/domain",
+    "nimDomainModules": [
+      "agent_policy.nim",
+      "cli_policy.nim",
+      "cluster_lifecycle.nim",
+      "community_policy.nim",
+      "control_state_machine.nim",
+      "convergence_policy.nim",
+      "data_contract.nim",
+      "dm_policy.nim",
+      "effect_ledger.nim",
+      "event_policy.nim",
+      "lease_fencing.nim",
+      "membership_policy.nim",
+      "moderation_policy.nim",
+      "object_sync_policy.nim",
+      "projection_lifecycle.nim",
+      "repair_policy.nim",
+      "sync_protocol.nim",
+      "workflow_policy.nim"
+    ],
+    "operations": [
+      "domain.agent.policy",
+      "domain.cli.policy",
+      "domain.community.policy",
+      "domain.dm.policy",
+      "domain.event.policy",
+      "domain.membership.policy",
+      "domain.moderation.policy",
+      "domain.workflow.policy"
+    ],
+    "rustOperationLiteralOwner": "nimino-boundary",
+    "targetRustPolicyPackages": []
+  },
+  "cutoverDependencyEdges": [
+    {"from": "buzz-relay", "to": "buzz-relay-mesh", "removalIssue": 66}
+  ],
+  "developerExperience": {
+    "baselinePolicyLanguages": ["nim", "rust"],
+    "targetPolicyLanguages": ["nim"],
+    "pureNimRustJobs": 0,
+    "boundaryRustPackages": ["nimino-boundary"],
+    "fullRustWorkspaceForPolicyOnlyChange": false
+  },
+  "physicalRemovalOwner": 66
+}

@@ -192,6 +192,13 @@ adapter. The exact inventory, registration gate, forbidden dependency list,
 and native WebSocket/unread-projection/terminal evidence prevent an unclassified command
 or a second policy runtime from entering the cutover target.
 
+The [`Rust responsibility contract`](contracts/rust-responsibility/README.md)
+extends that rule to every Cargo package and inherited Rust source module. It
+rejects unowned sources, upward dependencies from kept adapters, policy wire
+operations outside `nimino-boundary`, and any untracked dependency on the
+legacy mesh. Pure Nim policy work stays out of workspace-wide Rust CI; only a
+boundary contract change selects the single `nimino-boundary` Rust package.
+
 The [`Nimino effect ledger`](contracts/nimino-effect-ledger/README.md) closes
 that #57 lifecycle with replicated canonical `workflow_effect` records. A live
 #52 quorum lease gates both claim and execution; the external I/O directive is

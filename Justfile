@@ -222,6 +222,10 @@ legacy-control-manifest-contract:
 nimino-tauri-contract:
     node scripts/test-nimino-tauri-contract.mjs
 
+# Verify every Rust package/module owner and reject product-policy reverse flow
+rust-responsibility-contract:
+    node scripts/test-rust-responsibility-contract.mjs
+
 # Verify the fixed 1/3/5-node real-mesh scenario definition and ownership
 nimino-cluster-scenario-contract:
     node scripts/test-nimino-cluster-scenario-contract.mjs

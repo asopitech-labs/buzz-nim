@@ -226,6 +226,10 @@ check(
   "changed-path gate must verify the Tauri adapter contract",
 );
 check(
+  job("changes").includes("run: just rust-responsibility-contract"),
+  "changed-path gate must verify the Rust responsibility contract",
+);
+check(
   job("changes").includes("run: just nimino-cluster-contract"),
   "changed-path gate must verify the Nimino cluster lifecycle contract",
 );
@@ -402,6 +406,23 @@ check(
     hookGlobs("tauri-adapter-contract").includes("desktop/src-tauri/src/**") &&
     hookGlobs("tauri-adapter-contract").includes("contracts/nimino-tauri/**"),
   "Tauri adapter pre-push gate must cover source and manifest changes",
+);
+check(
+  /^rust-responsibility-contract:\n {4}node scripts\/test-rust-responsibility-contract\.mjs$/m.test(
+    justfile,
+  ) && workflow.includes("run: just rust-responsibility-contract"),
+  "Rust responsibility inventory must remain in CI",
+);
+check(
+  hook("rust-responsibility-contract").includes(
+    "run: just rust-responsibility-contract",
+  ) &&
+    hookGlobs("rust-responsibility-contract").includes("**/*.rs") &&
+    hookGlobs("rust-responsibility-contract").includes("**/Cargo.toml") &&
+    hookGlobs("rust-responsibility-contract").includes(
+      "contracts/rust-responsibility/**",
+    ),
+  "Rust responsibility pre-push gate must cover source, packages, and manifest",
 );
 check(
   /^nimino-cluster-scenario-contract:\n    node scripts\/test-nimino-cluster-scenario-contract\.mjs$/m.test(
