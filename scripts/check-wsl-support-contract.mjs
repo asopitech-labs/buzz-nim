@@ -92,6 +92,7 @@ check(
 );
 check(contract.implementationOwnership.installer === 19, "installer lifecycle must remain in issue #19");
 check(contract.implementationOwnership.launcher === 25, "launcher boundary must remain in issue #25");
+check(contract.implementationOwnership.chirpsRuntime === 45, "WSL Chirps certification must remain in issue #45");
 check(
   contract.policies.secrets.legacyPlaintextFallback.ownerIssue === 25,
   "legacy identity.key fallback removal must remain in issue #25",

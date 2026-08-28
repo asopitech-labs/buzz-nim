@@ -104,9 +104,11 @@ jobs:
               - 'contracts/nimino-agent/**'
               - 'contracts/nimino-cluster/**'
               - 'contracts/nimino-cluster-scenarios/**'
+              - 'contracts/nimino-wsl-chirps/**'
               - 'crates/nimino-boundary/**'
               - 'crates/nimino-chirps/**'
               - 'scripts/test-nimino-cluster-scenario-contract.mjs'
+              - 'scripts/test-nimino-wsl-chirps-contract.mjs'
               - 'Cargo.toml'
               - 'Cargo.lock'
               - 'rust-toolchain.toml'
@@ -215,6 +217,8 @@ jobs:
         run: just wsl-service-contract
       - name: WSL launcher and secret boundary contract
         run: just wsl-launcher-contract
+      - name: WSL Chirps runtime certification contract
+        run: just wsl-chirps-contract
       - name: Removed client contract
         run: just removed-client-contract
       - name: File size policy

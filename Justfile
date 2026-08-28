@@ -277,6 +277,14 @@ wsl-service-contract:
 wsl-launcher-contract:
     node scripts/test-nimino-wsl-launcher-contract.mjs
 
+# Verify WSL Chirps mTLS rotation, rebind, rejoin, and shutdown evidence wiring
+wsl-chirps-contract:
+    node scripts/test-nimino-wsl-chirps-contract.mjs
+
+# Run the real UDP/QUIC certification on a WSL ext4 workspace
+wsl-chirps-certify: wsl-chirps-contract
+    node scripts/test-nimino-wsl-chirps-contract.mjs --certify
+
 # Verify complete Mobile-tree/reference classification and NIP-AB ownership
 removed-client-contract:
     node scripts/check-mobile-removal-contract.mjs
@@ -286,7 +294,7 @@ ci-lanes-contract:
     node scripts/test-ci-lanes.mjs
 
 # Run repo lint, formatting, and repository policy checks
-check: fmt-check clippy chirps-contract control-model-contract naming-contract protocol-contract runtime-namespace-contract gui-surface-contract wsl-support-contract removed-client-contract ci-lanes-contract desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check file-size-check
+check: fmt-check clippy chirps-contract control-model-contract naming-contract protocol-contract runtime-namespace-contract gui-surface-contract wsl-support-contract wsl-chirps-contract removed-client-contract ci-lanes-contract desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check file-size-check
 
 # Run the active-product differential file-size ratchet and its policy tests.
 # The ratchet inspects only files changed from the merge base, so this stays

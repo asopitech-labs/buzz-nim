@@ -239,6 +239,11 @@ the one supported distro with typed argv, tracks both host and Linux PIDs, and
 frames secrets only over stdin. Linux Secret Service is authoritative; legacy
 plaintext is deleted without read and unavailable storage disables signing.
 
+The [`WSL Chirps certification`](contracts/nimino-wsl-chirps/README.md) runs the
+existing thin Chirps adapter on WSL ext4 and proves mTLS rotation, UDP/QUIC
+rebind/rejoin, stable node identity, and complete socket shutdown. It adds no
+database, replication, sync, quorum, or product-policy ownership to Chirps.
+
 The [`Nimino MCP execution contract`](contracts/nimino-mcp-execution/README.md)
 keeps process, filesystem, and image I/O in a bounded Rust adapter. Explicit
 operation capabilities are checked and audited before side effects; process

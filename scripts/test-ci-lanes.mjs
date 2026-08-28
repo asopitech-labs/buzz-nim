@@ -259,6 +259,10 @@ check(
   "changed-path gate must verify the WSL launcher and secret boundary",
 );
 check(
+  job("changes").includes("run: just wsl-chirps-contract"),
+  "changed-path gate must verify the WSL Chirps runtime contract",
+);
+check(
   job("changes").includes("run: just nimino-cluster-contract"),
   "changed-path gate must verify the Nimino cluster lifecycle contract",
 );
@@ -490,6 +494,18 @@ check(
     justfile.includes("cargo nextest run -p nimino-wsl-launcher") &&
     rustTests.includes("cargo test -p nimino-wsl-launcher"),
   "WSL launcher and Secret Service boundary must remain in all test runners",
+);
+check(
+  /^wsl-chirps-contract:\n {4}node scripts\/test-nimino-wsl-chirps-contract\.mjs$/m.test(
+    justfile,
+  ) &&
+    /^wsl-chirps-certify: wsl-chirps-contract\n {4}node scripts\/test-nimino-wsl-chirps-contract\.mjs --certify$/m.test(
+      justfile,
+    ) &&
+    workflow.includes("run: just wsl-chirps-contract") &&
+    hook("wsl-chirps-contract").includes("run: just wsl-chirps-contract") &&
+    hookGlobs("wsl-chirps-contract").includes("crates/nimino-chirps/**"),
+  "WSL Chirps certification must remain in source gates and the real WSL runner",
 );
 check(
   /^nimino-cluster-scenario-contract:\n    node scripts\/test-nimino-cluster-scenario-contract\.mjs$/m.test(
