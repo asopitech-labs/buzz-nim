@@ -255,6 +255,10 @@ check(
   "changed-path gate must verify the WSL service lifecycle",
 );
 check(
+  job("changes").includes("run: just wsl-launcher-contract"),
+  "changed-path gate must verify the WSL launcher and secret boundary",
+);
+check(
   job("changes").includes("run: just nimino-cluster-contract"),
   "changed-path gate must verify the Nimino cluster lifecycle contract",
 );
@@ -475,6 +479,17 @@ check(
     hook("wsl-service-contract").includes("run: just wsl-service-contract") &&
     hookGlobs("wsl-service-contract").includes("scripts/nimino-wsl-service.sh"),
   "WSL service lifecycle must remain in CI and pre-push",
+);
+check(
+  /^wsl-launcher-contract:\n {4}node scripts\/test-nimino-wsl-launcher-contract\.mjs$/m.test(
+    justfile,
+  ) &&
+    workflow.includes("run: just wsl-launcher-contract") &&
+    hook("wsl-launcher-contract").includes("run: just wsl-launcher-contract") &&
+    hookGlobs("wsl-launcher-contract").includes("crates/nimino-wsl-launcher/**") &&
+    justfile.includes("cargo nextest run -p nimino-wsl-launcher") &&
+    rustTests.includes("cargo test -p nimino-wsl-launcher"),
+  "WSL launcher and Secret Service boundary must remain in all test runners",
 );
 check(
   /^nimino-cluster-scenario-contract:\n    node scripts\/test-nimino-cluster-scenario-contract\.mjs$/m.test(

@@ -24,8 +24,8 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 [features]
 default = ["system-keyring"]
 mesh-llm = ["dep:iroh", "dep:mesh-llm-sdk", "dep:mesh-llm-host-runtime", "dep:mesh-llm-client", "dep:mesh-llm-node", "dep:mesh-llm-system", "dep:mesh-llm-events"]
-# OS keyring backing for desktop secret storage (nsec private keys). When
-# disabled, secrets fall back to 0o600 files. On by default for real builds.
+# OS keyring backing for desktop secret storage (nsec private keys). Identity
+# persistence fails closed when this feature is disabled.
 system-keyring = ["dep:keyring"]
 
 [build-dependencies]

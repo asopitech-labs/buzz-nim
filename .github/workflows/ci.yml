@@ -213,6 +213,8 @@ jobs:
         run: just wsl-support-contract
       - name: WSL service lifecycle contract
         run: just wsl-service-contract
+      - name: WSL launcher and secret boundary contract
+        run: just wsl-launcher-contract
       - name: Removed client contract
         run: just removed-client-contract
       - name: File size policy

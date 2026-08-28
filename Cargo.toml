@@ -34,6 +34,7 @@ members = [
     "crates/nimino-store",
     "crates/nimino-object-store",
     "crates/nimino-data-ops",
+    "crates/nimino-wsl-launcher",
     "examples/countdown-bot",
 ]
 exclude = ["desktop/src-tauri"]

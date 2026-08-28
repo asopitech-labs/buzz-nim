@@ -359,15 +359,10 @@ pub async fn import_identity(
             .app_data_dir()
             .map_err(|e| format!("app data dir: {e}"))?;
         std::fs::create_dir_all(&data_dir).map_err(|e| format!("create app data dir: {e}"))?;
-        let key_path = data_dir.join("identity.key");
-
         let (pubkey, storage) = commit_imported_identity(&state, &data_dir, keys, |keys| {
-            // Persist into the OS keyring first (store → read-back verify →
-            // marker → delete file). Falls back to the 0o600 file when the
-            // keyring is unavailable; returns Err only when both backends fail.
             let store =
                 crate::secret_store::SecretStore::shared(crate::app_state::keyring_service());
-            crate::app_state::persist_imported_identity(store, keys, &key_path, &data_dir)
+            crate::app_state::persist_imported_identity(store, keys, &data_dir)
         })?;
 
         let pubkey_hex = pubkey.to_hex();
@@ -394,8 +389,7 @@ pub async fn import_identity(
 ///
 /// Ordering is the contract:
 ///
-/// 1. `persist` runs FIRST. If it fails (`Err` from both keyring and file
-///    fallback), nothing has changed — the previous identity stays live in
+/// 1. `persist` runs FIRST. If it fails, nothing has changed — the previous identity stays live in
 ///    memory AND its valid canonical `identity.ncryptsec` stays on disk.
 /// 2. Only after durable persistence do we swap `state.keys` and clear the
 ///    recovery flags.
@@ -425,11 +419,7 @@ pub(crate) fn commit_imported_identity(
         state.set_identity_storage(storage);
     }
 
-    // Clear both recovery flags — an import is valid in either lost or
-    // keyring-locked state and resolves both. In the locked case the
-    // keyring is unreachable, so the persist step already fell back to
-    // identity.key; on the next Unreachable boot the file is loaded
-    // directly and when the keyring returns the adoption path picks it up.
+    // Clear both recovery flags after Secret Service persistence succeeds.
     state
         .identity_lost
         .store(false, std::sync::atomic::Ordering::Release);
@@ -451,18 +441,15 @@ pub(crate) fn commit_imported_identity(
     Ok((pubkey, storage))
 }
 
-/// Make the current ephemeral identity durable by persisting it to the OS
-/// keyring (or falling back to identity.key). This is called when the user
+/// Make the current ephemeral identity durable by persisting it to Secret
+/// Service. This is called when the user
 /// chooses to start a new identity instead of re-importing their previous one
 /// — it converts the transient lost-state key into a permanent identity.
 ///
 /// **LOST-ONLY**: returns `Err` when `identity_lost` is false, and deliberately
 /// does NOT accept `keyring_locked`. In locked state the user's real identity
-/// still exists in the unreachable keyring; persisting the ephemeral key to
-/// `identity.key` would make it appear as a "different key" on next boot,
-/// and the mismatched-file adoption path would then clobber the real keyring
-/// key once the keyring becomes reachable again. The correct action in locked
-/// state is to unlock the keyring and relaunch — not to adopt the ephemeral key.
+/// still exists in the unreachable keyring. The correct action in locked state
+/// is to unlock the keyring and relaunch — not to adopt the ephemeral key.
 #[tauri::command]
 pub async fn persist_current_identity(
     app_handle: tauri::AppHandle,
@@ -491,11 +478,8 @@ pub async fn persist_current_identity(
             .app_data_dir()
             .map_err(|e| format!("app data dir: {e}"))?;
         std::fs::create_dir_all(&data_dir).map_err(|e| format!("create app data dir: {e}"))?;
-        let key_path = data_dir.join("identity.key");
-
         let store = crate::secret_store::SecretStore::shared(crate::app_state::keyring_service());
-        let storage =
-            crate::app_state::persist_imported_identity(store, &keys, &key_path, &data_dir)?;
+        let storage = crate::app_state::persist_imported_identity(store, &keys, &data_dir)?;
 
         // Keys are already the live identity. Record where the durable write
         // landed before clearing identity_lost.

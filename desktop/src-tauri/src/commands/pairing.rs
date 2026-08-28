@@ -526,11 +526,10 @@ async fn import_recovered_identity(
                 .app_data_dir()
                 .map_err(|e| format!("app data dir: {e}"))?;
             std::fs::create_dir_all(&data_dir).map_err(|e| format!("create app data dir: {e}"))?;
-            let key_path = data_dir.join("identity.key");
             crate::commands::identity::commit_imported_identity(&state, &data_dir, keys, |keys| {
                 let store =
                     crate::secret_store::SecretStore::shared(crate::app_state::keyring_service());
-                crate::app_state::persist_imported_identity(store, keys, &key_path, &data_dir)
+                crate::app_state::persist_imported_identity(store, keys, &data_dir)
             })?;
             Ok(())
         })

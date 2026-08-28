@@ -273,6 +273,10 @@ wsl-support-contract:
 wsl-service-contract:
     node scripts/test-nimino-wsl-service.mjs
 
+# Verify typed WSL argv/PID ownership and Secret Service-only persistence
+wsl-launcher-contract:
+    node scripts/test-nimino-wsl-launcher-contract.mjs
+
 # Verify complete Mobile-tree/reference classification and NIP-AB ownership
 removed-client-contract:
     node scripts/check-mobile-removal-contract.mjs
@@ -527,6 +531,7 @@ test-unit:
         cargo nextest run -p nimino-store
         cargo nextest run -p nimino-object-store
         cargo nextest run -p nimino-data-ops
+        cargo nextest run -p nimino-wsl-launcher
         cargo nextest run -p buzz-dev-mcp
         # buzz-agent model-capabilities corpus: the Rust half of the
         # cross-language drift guard. `model_capabilities.rs` embeds

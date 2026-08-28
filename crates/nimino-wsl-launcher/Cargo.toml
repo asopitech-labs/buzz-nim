@@ -1,0 +1,10 @@
+[package]
+name = "nimino-wsl-launcher"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Typed Windows-to-WSL process and secret handoff adapter for Nimino"
+
+[dependencies]

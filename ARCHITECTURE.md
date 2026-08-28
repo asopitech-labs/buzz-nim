@@ -234,6 +234,11 @@ the Relay under an immutable release-set ID and atomically switches a systemd
 user service. Failed health checks restore the prior target; uninstall stops
 the complete cgroup while retaining user data unless purge is explicit.
 
+The [`WSL launcher boundary`](contracts/nimino-wsl-launcher/README.md) invokes
+the one supported distro with typed argv, tracks both host and Linux PIDs, and
+frames secrets only over stdin. Linux Secret Service is authoritative; legacy
+plaintext is deleted without read and unavailable storage disables signing.
+
 The [`Nimino MCP execution contract`](contracts/nimino-mcp-execution/README.md)
 keeps process, filesystem, and image I/O in a bounded Rust adapter. Explicit
 operation capabilities are checked and audited before side effects; process

@@ -12,7 +12,7 @@
 //! one-time migration path that reads old per-key entries written by #1264.
 //! Windows and Linux use the `keyring` crate directly. The `system-keyring`
 //! feature gates the whole store; when it is off, [`SecretStore`] is unusable
-//! and callers fall back to their own `0o600` file storage.
+//! and identity persistence fails closed.
 //!
 //! The store is deliberately NOT on any env-read path. `NIMINO_PRIVATE_KEY`
 //! resolution for harnessed agents and CI is handled upstream (an env
@@ -24,10 +24,9 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Mutex;
 
-/// Result of probing the keyring before a migration: distinguishes "reachable
-/// but holds no entry" (safe to migrate into) from "unreachable this boot"
-/// (must NOT migrate — re-importing from a leftover plaintext file could
-/// resurrect a rotated/stale key).
+/// Result of probing the keyring: distinguishes "reachable but holds no entry"
+/// from "unreachable this boot" so callers can fail closed without mutating
+/// durable identity state.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum KeyringProbe {
     /// Keyring is reachable and an entry for the key already exists.
@@ -35,7 +34,7 @@ pub enum KeyringProbe {
     /// Keyring is reachable but has no entry for the key.
     ReachableButEmpty,
     /// Keyring backend is unavailable this boot (no Secret Service, dbus
-    /// failure, etc.). Migration must be skipped.
+    /// failure, etc.). Durable identity mutation must be skipped.
     Unreachable,
 }
 
@@ -249,7 +248,7 @@ impl SecretStore {
 /// Whether a keyring error string indicates the backend itself is unavailable
 /// (vs. a per-entry error like "not found"). Mirrors goose's discriminator
 /// (`crates/goose/src/config/base.rs`): treat dbus / Secret Service / platform
-/// secure-storage failures as "keyring unavailable, fall back to file".
+/// secure-storage failures as "keyring unavailable".
 #[cfg(feature = "system-keyring")]
 fn is_keyring_availability_error(error_str: &str) -> bool {
     let lower = error_str.to_lowercase();
@@ -724,8 +723,7 @@ impl SecretStore {
         }
     }
 
-    /// Store `value` for `key`. Reports `Err` on availability failures — callers
-    /// decide whether to fall back to file storage.
+    /// Store `value` for `key`. Reports `Err` on availability failures.
     pub fn store(&self, key: &str, value: &str) -> Result<(), String> {
         #[cfg(feature = "system-keyring")]
         {

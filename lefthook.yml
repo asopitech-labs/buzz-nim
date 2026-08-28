@@ -141,3 +141,7 @@ pre-push:
       files: git diff --name-only origin/main...HEAD
       glob: ["contracts/wsl-support-v1.json", "contracts/nimino-wsl-service/**", "scripts/nimino-wsl-service.sh", "scripts/test-nimino-wsl-service.mjs", "Justfile"]
       run: just wsl-service-contract
+    wsl-launcher-contract:
+      files: git diff --name-only origin/main...HEAD
+      glob: ["contracts/wsl-support-v1.json", "contracts/nimino-wsl-launcher/**", "crates/nimino-wsl-launcher/**", "desktop/src-tauri/src/app_state*", "desktop/src-tauri/src/commands/identity.rs", "desktop/src-tauri/src/commands/pairing.rs", "desktop/src-tauri/src/identity_storage.rs", "desktop/src-tauri/src/secret_store.rs", "scripts/test-nimino-wsl-launcher-contract.mjs", "Justfile"]
+      run: just wsl-launcher-contract

@@ -7,7 +7,7 @@
     "source": "nearest-cargo-package",
     "tauriCommand": "contracts/nimino-tauri/v1/manifest.json"
   },
-  "inventory": {"packageCount": 37},
+  "inventory": {"packageCount": 38},
   "target": {
     "nim": "domain-and-product-policy",
     "rust": ["typed-boundary", "crypto-codec", "bounded-io", "measured-native-hot-path"],
@@ -30,7 +30,8 @@
         "nimino-chirps",
         "nimino-data-ops",
         "nimino-object-store",
-        "nimino-store"
+        "nimino-store",
+        "nimino-wsl-launcher"
       ]
     },
     "shrink": {

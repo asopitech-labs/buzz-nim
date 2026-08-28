@@ -65,7 +65,7 @@
       "handoff": "process-scoped and non-persistent",
       "forbiddenCarriers": ["command-line argument", "Windows environment", "plaintext .env", "/mnt/* file", "Windows Credential Manager"],
       "legacyPlaintextFallback": {
-        "current": "desktop may persist identity.key with mode 0o600 when Secret Service is unavailable",
+        "current": "removed: predecessor plaintext is deleted without read and no write path remains",
         "target": "Secret Service is authoritative and unavailability fails closed without writing or reading a plaintext identity",
         "action": "delete",
         "ownerIssue": 25,
@@ -117,8 +117,8 @@
     },
     {
       "path": "desktop/src-tauri/src/app_state.rs",
-      "symbol": "falls back to the `0o600` identity.key file",
-      "signal": "The current plaintext fallback must be removed by the secret-boundary owner before cutover."
+      "symbol": "Linux Secret Service support is required",
+      "signal": "The secret boundary now fails closed when Secret Service support is unavailable."
     },
     {
       "path": "RELEASING.md",

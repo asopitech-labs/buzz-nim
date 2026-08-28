@@ -113,6 +113,9 @@ run_unit_tests() {
   run_test_step "nimino-store transaction and recovery tests" \
     cargo test -p nimino-store -- --nocapture
 
+  run_test_step "nimino WSL launcher boundary tests" \
+    cargo test -p nimino-wsl-launcher -- --nocapture
+
   run_test_step "buzz-dev-mcp capability and execution tests" \
     cargo test -p buzz-dev-mcp -- --nocapture
 

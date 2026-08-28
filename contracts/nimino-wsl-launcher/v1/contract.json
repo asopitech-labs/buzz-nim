@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.wsl-launcher",
+  "issue": 25,
+  "platformContract": "wsl-support-v1",
+  "distribution": "Ubuntu-24.04",
+  "launcher": "wsl.exe",
+  "shellInterpolation": false,
+  "livePathPrefixes": ["/home/"],
+  "forbiddenPathPrefixes": ["/mnt/"],
+  "processIdentity": ["distribution", "user", "hostPid", "linuxPid"],
+  "secretHandoff": "length-prefixed-stdin",
+  "secretForbiddenCarriers": ["argv", "windows-environment", "file"],
+  "secretBackend": "Linux Secret Service",
+  "plaintextLegacyAction": "delete-without-read",
+  "compatibilityMode": false
+}
