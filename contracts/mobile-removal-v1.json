@@ -182,7 +182,7 @@
       "owner": "Issue #33",
       "selectors": [
         { "type": "prefix", "value": "crates/buzz-push-gateway/" },
-        { "type": "prefix", "value": "deploy/charts/buzz-push-gateway/" },
+        { "type": "prefix", "value": "deploy/charts/nimino-push-gateway/" },
         { "type": "prefix", "value": "docs/formal/nip-pl/" },
         { "type": "exact", "value": ".github/workflows/push-gateway-helm-chart.yml" },
         { "type": "exact", "value": "Dockerfile.push-gateway" },
@@ -301,18 +301,18 @@
       "dependencies": ["Issue #28 Desktop identity use case"],
       "selectors": [
         { "type": "exact", "value": "crates/buzz-relay/src/handlers/event.rs" },
-        { "type": "exact", "value": "deploy/charts/buzz/README.md" },
-        { "type": "exact", "value": "deploy/charts/buzz/templates/_helpers.tpl" },
-        { "type": "exact", "value": "deploy/charts/buzz/templates/_validate.tpl" },
-        { "type": "exact", "value": "deploy/charts/buzz/templates/deployment.yaml" },
-        { "type": "exact", "value": "deploy/charts/buzz/templates/pairing-relay.yaml" },
-        { "type": "exact", "value": "deploy/charts/buzz/tests/pairing_relay_test.yaml" },
-        { "type": "exact", "value": "deploy/charts/buzz/values.schema.json" },
-        { "type": "exact", "value": "deploy/charts/buzz/values.yaml" }
+        { "type": "exact", "value": "deploy/charts/nimino/README.md" },
+        { "type": "exact", "value": "deploy/charts/nimino/templates/_helpers.tpl" },
+        { "type": "exact", "value": "deploy/charts/nimino/templates/_validate.tpl" },
+        { "type": "exact", "value": "deploy/charts/nimino/templates/deployment.yaml" },
+        { "type": "exact", "value": "deploy/charts/nimino/templates/pairing-relay.yaml" },
+        { "type": "exact", "value": "deploy/charts/nimino/tests/pairing_relay_test.yaml" },
+        { "type": "exact", "value": "deploy/charts/nimino/values.schema.json" },
+        { "type": "exact", "value": "deploy/charts/nimino/values.yaml" }
       ],
       "deleteWhen": "Delete only if Issue #28 removes identity recovery or Issue #61 replaces the relay packaging",
       "proof": "pairing relay smoke plus Desktop identity recovery E2E",
-      "evidence": { "path": "deploy/charts/buzz/templates/pairing-relay.yaml", "symbol": "pairingRelay.enabled", "signal": "Dedicated ephemeral relay is separately deployable" }
+      "evidence": { "path": "deploy/charts/nimino/templates/pairing-relay.yaml", "symbol": "pairingRelay.enabled", "signal": "Dedicated ephemeral relay is separately deployable" }
     },
     {
       "id": "external.platform-media-interop",

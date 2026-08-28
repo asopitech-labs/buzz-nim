@@ -679,8 +679,8 @@ Each axiom is *admitted* per deployment, not assumed universally:
      be shared across pods (e.g. Redis with the same atomic insert-if-absent
      semantics and TTL ≥ 120 s). The chart default (`replicaCount: 1`) satisfies
      this gate today; the shipped HA examples (`replicaCount: 3` in
-     `deploy/charts/buzz/examples/argocd-app.yaml:27` and
-     `deploy/charts/buzz/examples/flux-helmrelease.yaml:35`) are
+     `deploy/charts/nimino/examples/argocd-app.yaml:27` and
+     `deploy/charts/nimino/examples/flux-helmrelease.yaml:35`) are
      P3-non-conforming as shipped unless the operator adds one of:
      - **(a)** an ingress annotation hashing upstream selection on a header stable
        across replays — `nginx.ingress.kubernetes.io/upstream-hash-by:

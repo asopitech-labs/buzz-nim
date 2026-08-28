@@ -1252,7 +1252,7 @@ async fn run_periodic_until_cancelled<Tick, TickFuture>(
 /// per-connection close-frame ack wait (`RESTART_CLOSE_ACK_TIMEOUT` = 5s in
 /// `state.rs`) sum to 25s and stay inside the 30s hard drain. Total worst
 /// case from SIGTERM to forced exit is 5s + 30s = 35s. Both fit inside the
-/// chart's `terminationGracePeriodSeconds: 60` (`deploy/charts/buzz/values.yaml`),
+/// chart's `terminationGracePeriodSeconds: 60` (`deploy/charts/nimino/values.yaml`),
 /// which leaves headroom but assumes no `preStop` hook adds further delay.
 /// With jitter off (`NIMINO_DRAIN_JITTER_MS=0`, the default) sockets close
 /// all-at-once right after the grace, so the per-socket delay collapses to

@@ -14,16 +14,16 @@ services:
       - "${CADDY_HTTPS_PORT:-443}:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - buzz-caddy-data:/data
-      - buzz-caddy-config:/config
+      - nimino-caddy-data:/data
+      - nimino-caddy-config:/config
     restart: unless-stopped
     networks:
-      - buzz-net
+      - nimino-net
 
 volumes:
-  buzz-caddy-data:
+  nimino-caddy-data:
     labels:
-      com.buzz.volume: caddy-data
-  buzz-caddy-config:
+      com.nimino.volume: caddy-data
+  nimino-caddy-config:
     labels:
-      com.buzz.volume: caddy-config
+      com.nimino.volume: caddy-config

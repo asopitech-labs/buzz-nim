@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 #
-# Public Buzz relay image — published as ghcr.io/block/buzz:<tag>.
+# Nimino relay image — published as ghcr.io/asopitech-labs/nimino:<tag>.
 #
 # Builds the `buzz-relay` binary (Rust 1.95) and the `buzz-web` static bundle
 # (pnpm + vite), then assembles them into a small debian-slim runtime with
@@ -28,7 +28,7 @@ ARG EXTRA_CA_CERTS=
 ARG NPM_REGISTRY=
 
 # ─── Stage 1: cargo-chef base ───────────────────────────────────────────────
-FROM rust:${RUST_VERSION}-${DEBIAN_VERSION} AS chef
+FROM docker.io/library/rust:${RUST_VERSION}-${DEBIAN_VERSION} AS chef
 # Trust an optional corporate-proxy CA before any network fetch (no-op if unset).
 ARG EXTRA_CA_CERTS
 COPY --chmod=0644 ${EXTRA_CA_CERTS:-Dockerfile} /tmp/extra-ca/src
@@ -81,18 +81,18 @@ RUN strip target/release/nimino-relay \
 # ─── Stage 4: web bundle (pnpm + vite) ──────────────────────────────────────
 # Independent of the Rust layers so a CSS change doesn't bust Rust cache and
 # vice versa.
-FROM node:${NODE_VERSION}-${DEBIAN_VERSION}-slim AS web-builder
+FROM docker.io/library/node:${NODE_VERSION}-${DEBIAN_VERSION}-slim AS web-builder
 WORKDIR /build
 # Trust an optional corporate-proxy CA so corepack + pnpm can fetch over an
 # intercepting TLS gateway (no-op if EXTRA_CA_CERTS is unset).
 ARG EXTRA_CA_CERTS
 COPY --chmod=0644 ${EXTRA_CA_CERTS:-Dockerfile} /tmp/extra-ca/src
-RUN if [ -n "${EXTRA_CA_CERTS}" ]; then \
-        apt-get update && apt-get install -y --no-install-recommends ca-certificates \
-        && cp /tmp/extra-ca/src /usr/local/share/ca-certificates/extra-proxy-ca.crt \
-        && update-ca-certificates \
-        && rm -rf /var/lib/apt/lists/*; \
-    fi
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates \
+    && if [ -n "${EXTRA_CA_CERTS}" ]; then \
+        cp /tmp/extra-ca/src /usr/local/share/ca-certificates/extra-proxy-ca.crt \
+        && update-ca-certificates; \
+    fi \
+    && rm -rf /var/lib/apt/lists/*
 ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
 # Point npm + corepack at an optional mirror (no-op when NPM_REGISTRY is unset).
 # corepack reads COREPACK_NPM_REGISTRY to fetch the pinned pnpm; pnpm/npm read
@@ -119,16 +119,16 @@ COPY admin-web/ admin-web/
 RUN pnpm -C web build && pnpm -C admin-web build
 
 # ─── Stage 5: shared runtime ────────────────────────────────────────────────
-FROM debian:${DEBIAN_VERSION}-slim AS runtime-base
+FROM docker.io/library/debian:${DEBIAN_VERSION}-slim AS runtime-base
 
 # OCI annotations: required for GHCR to auto-link the image to this repo and
 # inherit its visibility. org.opencontainers.image.source is the load-bearing
 # one — without it GHCR keeps the image private even when the repo is public.
-LABEL org.opencontainers.image.title="Buzz" \
-      org.opencontainers.image.description="WebSocket relay server for the Buzz communications platform" \
-      org.opencontainers.image.source="https://github.com/block/buzz" \
-      org.opencontainers.image.url="https://github.com/block/buzz" \
-      org.opencontainers.image.documentation="https://github.com/block/buzz#readme" \
+LABEL org.opencontainers.image.title="Nimino" \
+      org.opencontainers.image.description="Nimino distributed collaboration relay" \
+      org.opencontainers.image.source="https://github.com/asopitech-labs/nimino" \
+      org.opencontainers.image.url="https://github.com/asopitech-labs/nimino" \
+      org.opencontainers.image.documentation="https://github.com/asopitech-labs/nimino#readme" \
       org.opencontainers.image.licenses="Apache-2.0"
 
 RUN apt-get update \
@@ -138,27 +138,27 @@ RUN apt-get update \
         git \
         openssl \
     && rm -rf /var/lib/apt/lists/* \
-    && groupadd --system --gid 1000 buzz \
-    && useradd  --system --uid 1000 --gid 1000 --home-dir /var/lib/buzz \
-                --create-home --shell /usr/sbin/nologin buzz
+    && groupadd --gid 1000 nimino \
+    && useradd  --uid 1000 --gid 1000 --home-dir /var/lib/nimino \
+                --create-home --shell /usr/sbin/nologin nimino
 
-COPY --from=web-builder /build/web/dist                 /srv/buzz/web
-COPY --from=web-builder /build/admin-web/dist           /srv/buzz/admin-web
+COPY --from=web-builder /build/web/dist                 /srv/nimino/web
+COPY --from=web-builder /build/admin-web/dist           /srv/nimino/admin-web
 
 # The invite landing page is always served from the bundled web UI. Repository
 # browser routes require the separate NIMINO_SERVE_GIT_WEB_GUI=true opt-in. The
 # admin bundle is inert until NIMINO_ADMIN_HOST is configured.
-ENV NIMINO_WEB_DIR=/srv/buzz/web \
-    NIMINO_ADMIN_WEB_DIR=/srv/buzz/admin-web
+ENV NIMINO_WEB_DIR=/srv/nimino/web \
+    NIMINO_ADMIN_WEB_DIR=/srv/nimino/admin-web
 
 # 3000: app (WS + REST)  ·  8080: /_liveness, /_readiness  ·  9102: /metrics
 EXPOSE 3000 8080 9102
 
-# deploy/compose mounts a volume here; pre-created so it inherits buzz:buzz.
-RUN mkdir -p /data/git && chown buzz:buzz /data/git
+# deploy/compose mounts a volume here; pre-created for the unprivileged user.
+RUN mkdir -p /data/git && chown nimino:nimino /data/git
 
-USER buzz:buzz
-WORKDIR /var/lib/buzz
+USER nimino:nimino
+WORKDIR /var/lib/nimino
 
 ENTRYPOINT ["/usr/local/bin/nimino-relay"]
 

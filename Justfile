@@ -230,6 +230,10 @@ rust-responsibility-contract:
 release-set-contract:
     node scripts/test-nimino-release-set.mjs
 
+# Verify the unified Nimino relay image/chart/Compose candidate pipeline
+relay-release-contract:
+    node scripts/test-nimino-relay-release-contract.mjs
+
 # Verify exact Agent/CLI bundle inventory, execution, and missing-component rejection
 agent-bundle-contract:
     node scripts/test-nimino-agent-bundle.mjs
@@ -306,7 +310,7 @@ ci-lanes-contract:
     node scripts/test-ci-lanes.mjs
 
 # Run repo lint, formatting, and repository policy checks
-check: fmt-check clippy chirps-contract control-model-contract naming-contract protocol-contract runtime-namespace-contract gui-surface-contract wsl-support-contract wsl-chirps-contract wsl-bundle-contract removed-client-contract ci-lanes-contract desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check file-size-check
+check: fmt-check clippy chirps-contract control-model-contract naming-contract protocol-contract runtime-namespace-contract gui-surface-contract release-set-contract relay-release-contract wsl-support-contract wsl-chirps-contract wsl-bundle-contract removed-client-contract ci-lanes-contract desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check file-size-check
 
 # Run the active-product differential file-size ratchet and its policy tests.
 # The ratchet inspects only files changed from the merge base, so this stays

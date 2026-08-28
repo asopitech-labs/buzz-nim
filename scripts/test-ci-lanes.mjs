@@ -301,6 +301,10 @@ check(
   "changed-path gate must verify the immutable release-set contract",
 );
 check(
+  job("changes").includes("run: just relay-release-contract"),
+  "changed-path gate must verify the unified relay release contract",
+);
+check(
   job("changes").includes("run: just agent-bundle-contract"),
   "changed-path gate must verify the manifest-driven agent bundle",
 );
@@ -537,6 +541,16 @@ check(
       "contracts/nimino-release-set/**",
     ),
   "immutable release-set authority must remain in CI and pre-push",
+);
+check(
+  /^relay-release-contract:\n {4}node scripts\/test-nimino-relay-release-contract\.mjs$/m.test(
+    justfile,
+  ) &&
+    workflow.includes("run: just relay-release-contract") &&
+    hook("relay-release-contract").includes("run: just relay-release-contract") &&
+    hookGlobs("relay-release-contract").includes(".github/workflows/nimino-relay-release.yml") &&
+    hookGlobs("relay-release-contract").includes("deploy/charts/nimino/**"),
+  "unified relay release contract must remain in CI and pre-push",
 );
 check(
   /^agent-bundle-contract:\n {4}node scripts\/test-nimino-agent-bundle\.mjs$/m.test(

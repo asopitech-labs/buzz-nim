@@ -133,6 +133,10 @@ pre-push:
       files: git diff --name-only origin/main...HEAD
       glob: ["Cargo.toml", "Cargo.lock", "nim/nimino_core/**", "contracts/chirps-v0.6.3.json", "contracts/nim-rust-boundary/**", "contracts/nimino-release-set/**", "scripts/nimino-release-set.mjs", "scripts/test-nimino-release-set.mjs", "Justfile"]
       run: just release-set-contract
+    relay-release-contract:
+      files: git diff --name-only origin/main...HEAD
+      glob: ["Dockerfile", "deploy/charts/nimino/**", "deploy/compose/**", "contracts/nimino-naming-v1.json", "contracts/nimino-release-set/**", "contracts/nimino-relay-release/**", "scripts/nimino-release-set.mjs", "scripts/test-nimino-relay-release-contract.mjs", ".github/workflows/nimino-relay-release.yml", ".github/workflows/docker.yml", ".github/workflows/helm-chart.yml", "Justfile"]
+      run: just relay-release-contract
     agent-bundle-contract:
       files: git diff --name-only origin/main...HEAD
       glob: ["contracts/nimino-release-set/**", "contracts/nimino-agent-bundle/**", "scripts/nimino-release-set.mjs", "scripts/nimino-agent-bundle.mjs", "scripts/test-nimino-agent-bundle.mjs", "Justfile"]

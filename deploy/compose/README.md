@@ -1,4 +1,4 @@
-# Buzz Docker Compose deployment
+# Nimino Docker Compose deployment
 
 This is the single-node/VPS deployment bundle. It is intentionally separate from
 the root `docker-compose.yml`, which remains local development infrastructure.
@@ -27,7 +27,10 @@ keypair.
 
 - Requires Docker Compose v2.24.4 or newer; the TLS override uses Compose's
   `!reset` tag to remove the direct relay port when Caddy terminates HTTPS.
-- Default `NIMINO_IMAGE` tracks `ghcr.io/block/buzz:main` for early testing. Pin it to `ghcr.io/block/buzz:sha-<7>` or a semver release tag for production once available.
+- `NIMINO_IMAGE_DIGEST` is required and must be the SHA-256 digest from a
+  verified release set. Compose fixes the repository to
+  `ghcr.io/asopitech-labs/nimino`; tags and predecessor repositories cannot be
+  substituted.
 - Keep `NIMINO_RELAY_PRIVATE_KEY`, `NIMINO_GIT_HOOK_HMAC_SECRET`, database/Redis,
   and S3 secrets stable across restarts.
 - `RELAY_OWNER_PUBKEY` is intentionally not prefixed with `NIMINO_`; it must be a
@@ -37,7 +40,7 @@ keypair.
   database. Auto-migration requires an image that includes embedded SQLx
   migrations.
 - The stack uses Postgres, Redis, MinIO, and a git data volume because
-  those are real Buzz dependencies today. Minimal mode can simplify this later.
+  those are real Nimino dependencies today. Minimal mode can simplify this later.
 - The bundled Compose stack fixes the relay endpoint to `http://minio:9000` and
   `NIMINO_S3_ADDRESSING_STYLE=path`: Docker DNS resolves `minio`, not
   `<bucket>.minio`. It is not configurable for an external S3 provider through

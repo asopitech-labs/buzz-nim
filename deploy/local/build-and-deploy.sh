@@ -21,7 +21,7 @@ NS="${NS:-buzz-mesh}"
 RELEASE="${RELEASE:-buzz}"
 IMAGE_REPO="${IMAGE_REPO:-buzz-relay}"
 IMAGE_TAG="${IMAGE_TAG:-mesh-local}"
-CHART="${REPO_ROOT}/deploy/charts/buzz"
+CHART="${REPO_ROOT}/deploy/charts/nimino"
 VALUES="${REPO_ROOT}/deploy/local/quickstart-ha-values.yaml"
 CA_PEM="${REPO_ROOT}/deploy/local/proxy-ca.pem"
 EXPECT_CTX="docker-desktop"
@@ -97,7 +97,7 @@ helm upgrade --install "$RELEASE" "$CHART" \
 helm_rc=${PIPESTATUS[0]}
 if [ "$helm_rc" != 0 ]; then
   kubectl -n "$NS" get pods -o wide | tee "$EVID/pods-onfail.txt"
-  kubectl -n "$NS" describe pods -l app.kubernetes.io/name=buzz | tee "$EVID/describe-onfail.txt"
+  kubectl -n "$NS" describe pods -l app.kubernetes.io/name=nimino | tee "$EVID/describe-onfail.txt"
   kubectl -n "$NS" logs -l app.kubernetes.io/name=nimino --tail=100 --all-containers | tee "$EVID/logs-onfail.txt"
   die "helm install returned rc=$helm_rc"
 fi
@@ -123,13 +123,13 @@ READY=$(kubectl -n "$NS" get deploy "$DEPLOY" -o jsonpath='{.status.readyReplica
 log "deployment reports $READY/$REPLICAS Ready"
 
 # ── 5. probe /_readiness on EVERY relay pod (not just the deployment aggregate)
-# The bundled MinIO + init pods share app.kubernetes.io/name=buzz, so select by
+# The bundled MinIO + init pods share app.kubernetes.io/name=nimino, so select by
 # the relay Deployment's own pod-template hash to hit only relay pods.
 log "probing /_readiness on each relay pod individually"
 : > "$EVID/readiness.txt"
 FAIL=0
 RELAY_PODS=$(kubectl -n "$NS" get pods \
-  -l "app.kubernetes.io/name=buzz,app.kubernetes.io/instance=$RELEASE" \
+  -l "app.kubernetes.io/name=nimino,app.kubernetes.io/instance=$RELEASE" \
   -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.metadata.labels.app\.kubernetes\.io/component}{"\n"}{end}' \
   | awk '$2 != "minio" && $2 != "minio-init" {print $1}')
 for pod in $RELAY_PODS; do

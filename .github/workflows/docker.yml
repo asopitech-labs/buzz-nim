@@ -40,9 +40,6 @@ name: Docker image
 # and main pushes (no semver tag) never produce :latest.
 
 on:
-  push:
-    branches: [main]
-    tags: ["relay-v[0-9]*"]
   pull_request:
     paths:
       - "Dockerfile"
@@ -57,11 +54,6 @@ on:
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - "patches/**"
-  workflow_dispatch:
-    inputs:
-      version:
-        description: "Semver version e.g. 0.3.0 (no relay-v prefix) — for relay-tag rescue dispatch"
-        required: true
 
 # One image build per ref; cancel superseded PR builds, but never cancel
 # tag/main builds (publishing must not be aborted mid-flight).
@@ -75,7 +67,7 @@ env:
   # Single source of truth for the image name. Set GHCR_IMAGE as a repo
   # variable to override (e.g., for forks that want to push to their own
   # namespace without forking this file).
-  IMAGE_NAME: ${{ vars.GHCR_IMAGE != '' && vars.GHCR_IMAGE || 'ghcr.io/block/buzz' }}
+  IMAGE_NAME: ghcr.io/asopitech-labs/nimino
 
 jobs:
   build:

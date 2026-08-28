@@ -19,6 +19,20 @@ web/dist/
 .vscode/
 .idea/
 .scratch/
+.agents/
+.claude/
+.codex/
+.goose/
+.hermit/
+.intersect/
+.spec-workflow/
+.release/
+
+# Local runtime state and cloned repositories are never build inputs.
+repos/
+states/
+perf/
+formal/evidence/
 
 # Local environment / secrets — never want these in the build context
 .env

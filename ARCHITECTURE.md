@@ -249,6 +249,12 @@ relay, data operations, CLI, ACP, agent, and MCP executables from one verified
 release set. The WSL service accepts only that checksum/provenance-pinned bundle
 and atomically installs, updates, rolls back, or removes the complete tool set.
 
+The [`Nimino relay release`](contracts/nimino-relay-release/README.md) is one
+release-set-driven candidate pipeline for the native amd64/arm64 image, Helm
+chart, and Compose bundle. Clean kind installation plus three-node negotiation
+and convergence evidence gate keyless signing and immutable publication; no
+rolling or predecessor tag is emitted.
+
 The [`Nimino MCP execution contract`](contracts/nimino-mcp-execution/README.md)
 keeps process, filesystem, and image I/O in a bounded Rust adapter. Explicit
 operation capabilities are checked and audited before side effects; process
