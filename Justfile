@@ -230,6 +230,10 @@ rust-responsibility-contract:
 release-set-contract:
     node scripts/test-nimino-release-set.mjs
 
+# Verify exact Agent/CLI bundle inventory, execution, and missing-component rejection
+agent-bundle-contract:
+    node scripts/test-nimino-agent-bundle.mjs
+
 # Verify the fixed 1/3/5-node real-mesh scenario definition and ownership
 nimino-cluster-scenario-contract:
     node scripts/test-nimino-cluster-scenario-contract.mjs

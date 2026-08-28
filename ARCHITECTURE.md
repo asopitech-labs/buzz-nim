@@ -224,6 +224,11 @@ boundary versions/digests, and every artifact's version, SHA-256, size, and
 filename. Its content-derived ID makes identical reruns idempotent while moved
 tags, downgrades, same-version changes, and artifact mismatches fail closed.
 
+The [`agent bundle`](contracts/nimino-agent-bundle/README.md) consumes that
+release set without adding a second version authority. It installs exactly the
+CLI, ACP harness, agent, and developer MCP as separate `nimino*` executables;
+the legacy Sprig multicall binary and compatibility aliases are not emitted.
+
 The [`Nimino MCP execution contract`](contracts/nimino-mcp-execution/README.md)
 keeps process, filesystem, and image I/O in a bounded Rust adapter. Explicit
 operation capabilities are checked and audited before side effects; process

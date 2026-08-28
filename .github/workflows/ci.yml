@@ -181,6 +181,8 @@ jobs:
         run: just rust-responsibility-contract
       - name: Immutable release-set contract
         run: just release-set-contract
+      - name: Manifest-driven agent bundle contract
+        run: just agent-bundle-contract
       - name: Nimino data contract
         run: node scripts/test-nimino-data-contract.mjs
       - name: Nimino event policy contract
