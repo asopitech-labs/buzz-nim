@@ -243,6 +243,10 @@ check(
   "changed-path gate must verify the Rust responsibility contract",
 );
 check(
+  job("changes").includes("run: just release-set-contract"),
+  "changed-path gate must verify the immutable release-set contract",
+);
+check(
   job("changes").includes("run: just nimino-cluster-contract"),
   "changed-path gate must verify the Nimino cluster lifecycle contract",
 );
@@ -436,6 +440,15 @@ check(
       "contracts/rust-responsibility/**",
     ),
   "Rust responsibility pre-push gate must cover source, packages, and manifest",
+);
+check(
+  /^release-set-contract:\n {4}node scripts\/test-nimino-release-set\.mjs$/m.test(
+    justfile,
+  ) &&
+    workflow.includes("run: just release-set-contract") &&
+    hook("release-set-contract").includes("run: just release-set-contract") &&
+    hookGlobs("release-set-contract").includes("contracts/nimino-release-set/**"),
+  "immutable release-set authority must remain in CI and pre-push",
 );
 check(
   /^nimino-cluster-scenario-contract:\n    node scripts\/test-nimino-cluster-scenario-contract\.mjs$/m.test(

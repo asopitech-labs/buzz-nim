@@ -226,6 +226,10 @@ nimino-tauri-contract:
 rust-responsibility-contract:
     node scripts/test-rust-responsibility-contract.mjs
 
+# Verify immutable release-set creation, rerun, mismatch, and downgrade rules
+release-set-contract:
+    node scripts/test-nimino-release-set.mjs
+
 # Verify the fixed 1/3/5-node real-mesh scenario definition and ownership
 nimino-cluster-scenario-contract:
     node scripts/test-nimino-cluster-scenario-contract.mjs

@@ -218,6 +218,12 @@ them. The target has no shared Redis dependency and no forwarding wrapper;
 Chirps remains transport/negotiation only, while Nim owns authority, sync,
 convergence, projection, and effect policy.
 
+The [`immutable release set`](contracts/nimino-release-set/README.md) is the
+single promotion input. It pins the resolved Nimino commit, Nim/Rust/Chirps and
+boundary versions/digests, and every artifact's version, SHA-256, size, and
+filename. Its content-derived ID makes identical reruns idempotent while moved
+tags, downgrades, same-version changes, and artifact mismatches fail closed.
+
 The [`Nimino MCP execution contract`](contracts/nimino-mcp-execution/README.md)
 keeps process, filesystem, and image I/O in a bounded Rust adapter. Explicit
 operation capabilities are checked and audited before side effects; process

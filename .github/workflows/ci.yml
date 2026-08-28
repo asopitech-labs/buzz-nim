@@ -179,6 +179,8 @@ jobs:
         run: just nimino-tauri-contract
       - name: Rust responsibility contract
         run: just rust-responsibility-contract
+      - name: Immutable release-set contract
+        run: just release-set-contract
       - name: Nimino data contract
         run: node scripts/test-nimino-data-contract.mjs
       - name: Nimino event policy contract

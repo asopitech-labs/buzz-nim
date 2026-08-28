@@ -129,3 +129,7 @@ pre-push:
       files: git diff --name-only origin/main...HEAD
       glob: ["**/*.rs", "**/Cargo.toml", "Cargo.lock", "contracts/rust-responsibility/**", "contracts/nim-rust-boundary/**", "contracts/nimino-tauri/**", "nim/nimino_core/src/nimino_core/domain/**", "scripts/test-rust-responsibility-contract.mjs", ".github/workflows/ci.yml", "Justfile"]
       run: just rust-responsibility-contract
+    release-set-contract:
+      files: git diff --name-only origin/main...HEAD
+      glob: ["Cargo.toml", "Cargo.lock", "nim/nimino_core/**", "contracts/chirps-v0.6.3.json", "contracts/nim-rust-boundary/**", "contracts/nimino-release-set/**", "scripts/nimino-release-set.mjs", "scripts/test-nimino-release-set.mjs", "Justfile"]
+      run: just release-set-contract
