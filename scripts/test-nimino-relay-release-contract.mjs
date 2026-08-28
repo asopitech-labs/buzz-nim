@@ -104,7 +104,7 @@ for (const proof of [
   );
 }
 for (const signal of [
-  'tags: ["nimino-v[0-9]*"]',
+  "workflow_call:",
   "linux/amd64",
   "linux/arm64",
   "push-by-digest=true",
@@ -112,10 +112,9 @@ for (const signal of [
   "nimino-cluster-scenarios",
   "nimino-data-ops-scenarios",
   "helm upgrade --install nimino",
-  "nimino-release-set.mjs",
   "cosign sign --yes",
   "cosign sign-blob --yes",
-  "attest-build-provenance",
+  "nimino-relay-candidate",
 ]) {
   check(
     workflow.includes(signal),

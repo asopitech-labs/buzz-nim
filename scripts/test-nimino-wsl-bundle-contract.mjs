@@ -81,6 +81,7 @@ check(
       "nimino",
       "nimino-acp",
       "nimino-agent",
+      "nimino-core-worker",
       "nimino-data-ops",
       "nimino-dev-mcp",
       "nimino-relay",

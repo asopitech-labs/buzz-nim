@@ -1,8 +1,10 @@
 # Nimino WSL install bundle v1
 
 The WSL bundle is composed only from artifacts pinned by one verified Nimino
-release set. It contains the relay, data verify/repair adapter, CLI, ACP, agent,
-and MCP binaries plus the release provenance and exact SHA-256 inventory.
+release set. It contains the relay, Nim core worker, data verify/repair adapter,
+CLI, ACP, agent, and MCP binaries plus the release provenance and exact SHA-256
+inventory. The service pins `NIMINO_BOUNDARY_WORKER` to that same atomic
+release directory.
 
 `scripts/nimino-wsl-service.sh` accepts this bundle as its sole install/update
 input. It stages the complete release, atomically switches `current`, rolls back

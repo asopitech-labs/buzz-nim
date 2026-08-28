@@ -1,8 +1,7 @@
 name: Nimino relay candidate
 
 on:
-  push:
-    tags: ["nimino-v[0-9]*"]
+  workflow_call:
   pull_request:
     paths:
       - "Dockerfile"
@@ -142,16 +141,15 @@ jobs:
           if-no-files-found: error
 
   assemble:
-    name: Clean install, sign, and publish candidate
+    name: Clean install, sign, and stage candidate
     if: github.ref_type == 'tag'
     runs-on: ubuntu-24.04
     needs: [source, evidence, image]
     timeout-minutes: 45
     permissions:
-      contents: write
+      contents: read
       packages: write
       id-token: write
-      attestations: write
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -210,7 +208,7 @@ jobs:
             --set image.pullPolicy=IfNotPresent \
             --wait --timeout 10m
           kubectl -n nimino-system rollout status deployment/nimino --timeout=2m
-      - name: Package, publish, and sign immutable artifacts
+      - name: Package and sign immutable artifacts
         id: artifacts
         env:
           VERSION: ${{ steps.image.outputs.version }}
@@ -230,32 +228,10 @@ jobs:
           printf '%s\n' "$IMAGE_DIGEST" > dist/nimino-relay-image.digest
           cp evidence/nimino-cluster-scenarios.json dist/
           cp evidence/nimino-data-ops-scenarios.log dist/
-          node scripts/nimino-release-set.mjs create \
-            --version "$VERSION" --tag "$GITHUB_REF_NAME" --commit "$GITHUB_SHA" \
-            --output dist/release-set.json \
-            --artifact "chart:${VERSION}:dist/nimino-${VERSION}.tgz" \
-            --artifact "cluster-evidence:${VERSION}:dist/nimino-cluster-scenarios.json" \
-            --artifact "compose:${VERSION}:dist/nimino-compose-${VERSION}.tar.gz" \
-            --artifact "data-ops-evidence:${VERSION}:dist/nimino-data-ops-scenarios.log" \
-            --artifact "relay-image:${VERSION}:dist/nimino-relay-image.digest"
-          node scripts/nimino-release-set.mjs verify \
-            --manifest dist/release-set.json --resolved-tag-commit "$GITHUB_SHA" --artifact-dir dist
+          cosign sign-blob --yes --bundle dist/nimino-chart.sigstore.json "dist/nimino-${VERSION}.tgz"
           cosign sign-blob --yes --bundle dist/nimino-compose.sigstore.json "dist/nimino-compose-${VERSION}.tar.gz"
-          cosign sign-blob --yes --bundle dist/release-set.sigstore.json dist/release-set.json
-      - name: Attest release-set provenance
-        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
-        with:
-          subject-path: dist/release-set.json
-      - name: Publish immutable candidate release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ steps.image.outputs.version }}
-        run: |
-          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || \
-            gh release create "$GITHUB_REF_NAME" --draft --verify-tag --title "Nimino ${VERSION} candidate"
-          gh release upload "$GITHUB_REF_NAME" dist/* --clobber
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: nimino-relay-release-set
+          name: nimino-relay-candidate
           path: dist/*
           if-no-files-found: error

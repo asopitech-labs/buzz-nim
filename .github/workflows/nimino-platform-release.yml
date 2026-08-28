@@ -1,0 +1,366 @@
+name: Nimino platform candidate
+
+on:
+  push:
+    tags: ["nimino-v[0-9]*"]
+  pull_request:
+    paths:
+      - ".github/workflows/nimino-platform-release.yml"
+      - ".github/workflows/nimino-relay-release.yml"
+      - "contracts/nimino-platform-release/**"
+      - "contracts/nimino-release-set/**"
+      - "contracts/nimino-wsl-bundle/**"
+      - "desktop/**"
+      - "scripts/nimino-platform-artifacts.mjs"
+      - "scripts/nimino-release-set.mjs"
+      - "scripts/nimino-wsl-bundle.mjs"
+      - "scripts/nimino-wsl-service.sh"
+
+concurrency:
+  group: nimino-platform-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions: {}
+
+env:
+  CANONICAL_REPOSITORY: asopitech-labs/nimino
+  NIMINO_UPDATER_ENDPOINT: https://github.com/asopitech-labs/nimino/releases/download/nimino-desktop-latest/latest.json
+
+jobs:
+  source:
+    name: Platform release contract
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: cashapp/activate-hermit@cea9af7913204a965fd488637a8d1811bba2e616 # v1
+      - name: Reject publication from a non-canonical repository
+        if: github.ref_type == 'tag'
+        run: test "$GITHUB_REPOSITORY" = "$CANONICAL_REPOSITORY"
+      - run: just platform-release-contract
+      - name: Verify immutable tag source
+        if: github.ref_type == 'tag'
+        run: scripts/verify-release-ref.sh nimino-v "${GITHUB_REF_NAME#nimino-v}"
+
+  relay:
+    if: github.ref_type == 'tag'
+    needs: source
+    uses: ./.github/workflows/nimino-relay-release.yml
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    secrets: inherit
+
+  desktop:
+    name: Desktop (${{ matrix.platform }})
+    if: github.ref_type == 'tag'
+    needs: source
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-aarch64
+            runner: macos-15
+            target: aarch64-apple-darwin
+            bundles: dmg
+          - platform: macos-x86-64
+            runner: macos-15-intel
+            target: x86_64-apple-darwin
+            bundles: dmg
+          - platform: linux-x86-64
+            runner: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            bundles: appimage
+    env:
+      NIMINO_UPDATER_PUBLIC_KEY: ${{ secrets.NIMINO_UPDATER_PUBLIC_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+      NIMINO_APPLE_CERTIFICATE: ${{ secrets.NIMINO_APPLE_CERTIFICATE }}
+      NIMINO_APPLE_CERTIFICATE_PASSWORD: ${{ secrets.NIMINO_APPLE_CERTIFICATE_PASSWORD }}
+      NIMINO_APPLE_SIGNING_IDENTITY: ${{ secrets.NIMINO_APPLE_SIGNING_IDENTITY }}
+      NIMINO_APPLE_API_KEY_ID: ${{ secrets.NIMINO_APPLE_API_KEY_ID }}
+      NIMINO_APPLE_API_ISSUER: ${{ secrets.NIMINO_APPLE_API_ISSUER }}
+      NIMINO_APPLE_API_KEY_P8: ${{ secrets.NIMINO_APPLE_API_KEY_P8 }}
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - uses: cashapp/activate-hermit@cea9af7913204a965fd488637a8d1811bba2e616 # v1
+      - uses: Swatinem/rust-cache@779b2ca901a859ea0906cf43be8d33c3f22f8134 # v2.8.2
+      - name: Fail closed before a signed build
+        run: node scripts/nimino-platform-artifacts.mjs preflight --platform "${{ matrix.platform }}"
+      - name: Install Linux bundle dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential curl file libasound2-dev libayatana-appindicator3-dev \
+            libgtk-3-dev librsvg2-dev libssl-dev libwebkit2gtk-4.1-dev \
+            libxdo-dev patchelf pkg-config squashfs-tools xdg-utils
+      - name: Install desktop dependencies
+        run: just desktop-install-ci
+      - name: Pin release version and updater
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          VERSION="${VERSION#nimino-v}"
+          cd desktop && node scripts/set-version-from-tag.mjs "$VERSION"
+          cd src-tauri && cargo update --workspace
+          cd .. && node scripts/build-release-config.mjs
+      - name: Add Rust target
+        run: rustup target add "${{ matrix.target }}"
+      - name: Build desktop sidecars
+        run: |
+          cargo build --release --target "${{ matrix.target }}" \
+            -p buzz-acp -p buzz-agent -p buzz-backend-kubernetes \
+            -p buzz-dev-mcp -p git-credential-nostr -p buzz-cli
+          scripts/bundle-sidecars.sh "${{ matrix.target }}"
+      - name: Prepare Apple signing identity
+        if: runner.os == 'macOS'
+        run: |
+          key_path="$RUNNER_TEMP/AuthKey_${NIMINO_APPLE_API_KEY_ID}.p8"
+          printf '%s' "$NIMINO_APPLE_API_KEY_P8" > "$key_path"
+          chmod 600 "$key_path"
+          echo "APPLE_API_KEY_PATH=$key_path" >> "$GITHUB_ENV"
+      - name: Build signed desktop artifact
+        uses: tauri-apps/tauri-action@1deb371b0cd8bd54025b384f1cd735e725c4060f # action-v1.0.0
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: "1"
+          APPLE_CERTIFICATE: ${{ env.NIMINO_APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ env.NIMINO_APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ env.NIMINO_APPLE_SIGNING_IDENTITY }}
+          APPLE_API_KEY: ${{ env.NIMINO_APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ env.NIMINO_APPLE_API_ISSUER }}
+        with:
+          projectPath: desktop
+          args: --target ${{ matrix.target }} --bundles ${{ matrix.bundles }} --config src-tauri/tauri.release.conf.json
+      - name: Repack and re-sign Linux AppImage
+        if: runner.os == 'Linux'
+        run: |
+          mapfile -t images < <(find desktop/src-tauri/target/${{ matrix.target }}/release/bundle -name '*.AppImage' -type f)
+          test "${#images[@]}" -eq 1
+          desktop/scripts/fix-appimage.sh "${images[0]}"
+          image="$(realpath "${images[0]}")"
+          work="$(mktemp -d)"
+          (cd "$work" && "$image" --appimage-extract >/dev/null)
+          test -x "$work/squashfs-root/AppRun"
+      - name: Verify Apple signature and notarization
+        if: runner.os == 'macOS'
+        run: |
+          bundle="desktop/src-tauri/target/${{ matrix.target }}/release/bundle"
+          app="$(find "$bundle" -name '*.app' -type d | head -1)"
+          dmg="$(find "$bundle" -name '*.dmg' -type f | head -1)"
+          test -n "$app" && test -n "$dmg"
+          codesign --verify --deep --strict --verbose=2 "$app"
+          spctl --assess --type execute --verbose=4 "$app"
+          xcrun stapler validate "$dmg"
+      - name: Stage canonical artifact names
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          node scripts/nimino-platform-artifacts.mjs stage \
+            --platform "${{ matrix.platform }}" \
+            --version "${VERSION#nimino-v}" \
+            --bundle-dir "desktop/src-tauri/target/${{ matrix.target }}/release/bundle" \
+            --output dist-platform
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nimino-desktop-${{ matrix.platform }}
+          path: dist-platform/nimino-*
+          if-no-files-found: error
+
+  wsl-components:
+    name: WSL release components
+    if: github.ref_type == 'tag'
+    needs: source
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - uses: cashapp/activate-hermit@cea9af7913204a965fd488637a8d1811bba2e616 # v1
+      - uses: Swatinem/rust-cache@779b2ca901a859ea0906cf43be8d33c3f22f8134 # v2.8.2
+      - run: just nim-boundary-build
+      - name: Build WSL binaries
+        run: |
+          cargo build --release \
+            -p buzz-cli -p buzz-acp -p buzz-agent -p nimino-data-ops \
+            -p buzz-dev-mcp -p buzz-relay
+          mkdir -p dist-wsl
+          cp target/release/nimino dist-wsl/nimino
+          cp target/release/buzz-acp dist-wsl/nimino-acp
+          cp target/release/buzz-agent dist-wsl/nimino-agent
+          cp target/nim/nimino_boundary/bin/nimino-core-worker dist-wsl/nimino-core-worker
+          cp target/release/nimino-data-ops dist-wsl/nimino-data-ops
+          cp target/release/buzz-dev-mcp dist-wsl/nimino-dev-mcp
+          cp target/release/nimino-relay dist-wsl/nimino-relay
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nimino-wsl-components
+          path: dist-wsl/*
+          if-no-files-found: error
+
+  assemble:
+    name: Assemble one release-set
+    if: github.ref_type == 'tag'
+    needs: [relay, desktop, wsl-components]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: cashapp/activate-hermit@cea9af7913204a965fd488637a8d1811bba2e616 # v1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: nimino-*
+          path: dist/all
+          merge-multiple: true
+      - uses: sigstore/cosign-installer@d7543c93d881b35a8faa02e8e3605f69b7a1ce62 # v3.10.0
+      - name: Create immutable release-set and derived WSL bundle
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          VERSION="${VERSION#nimino-v}"
+          artifact_args=(
+            --artifact "acp:${VERSION}:dist/all/nimino-acp"
+            --artifact "agent:${VERSION}:dist/all/nimino-agent"
+            --artifact "chart:${VERSION}:dist/all/nimino-${VERSION}.tgz"
+            --artifact "chart-signature:${VERSION}:dist/all/nimino-chart.sigstore.json"
+            --artifact "cli:${VERSION}:dist/all/nimino"
+            --artifact "cluster-evidence:${VERSION}:dist/all/nimino-cluster-scenarios.json"
+            --artifact "compose:${VERSION}:dist/all/nimino-compose-${VERSION}.tar.gz"
+            --artifact "compose-signature:${VERSION}:dist/all/nimino-compose.sigstore.json"
+            --artifact "core-worker:${VERSION}:dist/all/nimino-core-worker"
+            --artifact "data-ops:${VERSION}:dist/all/nimino-data-ops"
+            --artifact "data-ops-evidence:${VERSION}:dist/all/nimino-data-ops-scenarios.log"
+            --artifact "desktop-linux-x86-64-installer-updater:${VERSION}:dist/all/nimino-${VERSION}-linux-x86_64.AppImage"
+            --artifact "desktop-linux-x86-64-installer-updater-signature:${VERSION}:dist/all/nimino-${VERSION}-linux-x86_64.AppImage.sig"
+            --artifact "desktop-macos-aarch64-installer:${VERSION}:dist/all/nimino-${VERSION}-macos-aarch64.dmg"
+            --artifact "desktop-macos-aarch64-updater:${VERSION}:dist/all/nimino-${VERSION}-macos-aarch64.app.tar.gz"
+            --artifact "desktop-macos-aarch64-updater-signature:${VERSION}:dist/all/nimino-${VERSION}-macos-aarch64.app.tar.gz.sig"
+            --artifact "desktop-macos-x86-64-installer:${VERSION}:dist/all/nimino-${VERSION}-macos-x86_64.dmg"
+            --artifact "desktop-macos-x86-64-updater:${VERSION}:dist/all/nimino-${VERSION}-macos-x86_64.app.tar.gz"
+            --artifact "desktop-macos-x86-64-updater-signature:${VERSION}:dist/all/nimino-${VERSION}-macos-x86_64.app.tar.gz.sig"
+            --artifact "mcp:${VERSION}:dist/all/nimino-dev-mcp"
+            --artifact "relay:${VERSION}:dist/all/nimino-relay"
+            --artifact "relay-image:${VERSION}:dist/all/nimino-relay-image.digest"
+          )
+          node scripts/nimino-release-set.mjs create \
+            --version "$VERSION" --tag "$GITHUB_REF_NAME" --commit "$GITHUB_SHA" \
+            --output dist/all/release-set.json "${artifact_args[@]}"
+          node scripts/nimino-release-set.mjs verify \
+            --manifest dist/all/release-set.json \
+            --resolved-tag-commit "$GITHUB_SHA" --artifact-dir dist/all
+          node scripts/nimino-wsl-bundle.mjs compose \
+            --release-set dist/all/release-set.json \
+            --resolved-tag-commit "$GITHUB_SHA" --artifact-dir dist/all \
+            --output dist/wsl-bundle
+          tar --sort=name --mtime='UTC 1970-01-01' --owner=0 --group=0 --numeric-owner \
+            -czf "dist/all/nimino-${VERSION}-wsl2-x86_64.tar.gz" -C dist/wsl-bundle .
+          node scripts/nimino-platform-artifacts.mjs manifest \
+            --release-set dist/all/release-set.json --artifact-dir dist/all \
+            --base-url "https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}" \
+            --wsl-bundle-dir dist/wsl-bundle \
+            --wsl-archive "dist/all/nimino-${VERSION}-wsl2-x86_64.tar.gz" \
+            --output dist/all/latest.json
+          cosign sign-blob --yes --bundle dist/all/release-set.sigstore.json dist/all/release-set.json
+          cosign sign-blob --yes --bundle dist/all/nimino-wsl.sigstore.json "dist/all/nimino-${VERSION}-wsl2-x86_64.tar.gz"
+          cosign sign-blob --yes --bundle dist/all/latest.sigstore.json dist/all/latest.json
+      - uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
+        with:
+          subject-path: dist/all/release-set.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nimino-release-candidate
+          path: dist/all/*
+          if-no-files-found: error
+
+  wsl-qualification:
+    name: WSL clean-install qualification
+    if: github.ref_type == 'tag'
+    needs: assemble
+    runs-on: [self-hosted, linux, x64, nimino-wsl-ubuntu-24.04]
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - uses: cashapp/activate-hermit@cea9af7913204a965fd488637a8d1811bba2e616 # v1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: nimino-release-candidate
+          path: candidate
+      - uses: sigstore/cosign-installer@d7543c93d881b35a8faa02e8e3605f69b7a1ce62 # v3.10.0
+      - name: Verify and exercise the WSL candidate
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          VERSION="${VERSION#nimino-v}"
+          archive="candidate/nimino-${VERSION}-wsl2-x86_64.tar.gz"
+          cosign verify-blob \
+            --bundle candidate/nimino-wsl.sigstore.json \
+            --certificate-identity-regexp '^https://github.com/asopitech-labs/nimino/.github/workflows/nimino-platform-release.yml@refs/tags/nimino-v' \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            "$archive"
+          mkdir candidate/wsl
+          tar -xzf "$archive" -C candidate/wsl
+          (cd candidate/wsl && sha256sum --check --strict SHA256SUMS)
+          release_set_id="$(node -p "require('./candidate/release-set.json').releaseSetId")"
+          test "$(cat candidate/wsl/release-set-id)" = "$release_set_id"
+          candidate/wsl/bin/nimino --help >/dev/null
+          candidate/wsl/bin/nimino-agent --help >/dev/null
+          candidate/wsl/bin/nimino-dev-mcp --help >/dev/null
+          just wsl-bundle-certify
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nimino-wsl-qualification
+          path: target/nim/nimino-wsl-bundle-e2e.json
+          if-no-files-found: error
+
+  publish-candidate:
+    name: Publish draft candidate
+    if: github.ref_type == 'tag'
+    needs: wsl-qualification
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: nimino-release-candidate
+          path: candidate
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: nimino-wsl-qualification
+          path: candidate
+      - name: Create or reuse the draft and upload immutable artifacts
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1 || \
+            gh release create "$GITHUB_REF_NAME" --draft --verify-tag \
+              --title "Nimino ${GITHUB_REF_NAME#nimino-v} candidate"
+          gh release upload "$GITHUB_REF_NAME" candidate/* --clobber

@@ -10,6 +10,11 @@
     { "role": "acp", "artifactId": "acp", "installName": "nimino-acp" },
     { "role": "agent", "artifactId": "agent", "installName": "nimino-agent" },
     {
+      "role": "core-worker",
+      "artifactId": "core-worker",
+      "installName": "nimino-core-worker"
+    },
+    {
       "role": "data-ops",
       "artifactId": "data-ops",
       "installName": "nimino-data-ops"

@@ -24,11 +24,12 @@ UNIT_DIR="${CONFIG_HOME}/systemd/user"
 UNIT_PATH="${UNIT_DIR}/nimino-relay.service"
 SYSTEMCTL="${NIMINO_SYSTEMCTL:-systemctl}"
 STAGING=""
-TOOL_NAMES=(nimino nimino-acp nimino-agent nimino-data-ops nimino-dev-mcp nimino-relay)
+TOOL_NAMES=(nimino nimino-acp nimino-agent nimino-core-worker nimino-data-ops nimino-dev-mcp nimino-relay)
 CHECKSUM_PATHS=(
     bin/nimino
     bin/nimino-acp
     bin/nimino-agent
+    bin/nimino-core-worker
     bin/nimino-data-ops
     bin/nimino-dev-mcp
     bin/nimino-relay
@@ -71,6 +72,7 @@ write_unit() {
         printf '\n%s\n' '[Service]'
         printf 'ExecStart="%s"\n' "${CURRENT}/bin/nimino-relay"
         printf 'Environment="NIMINO_DATA_DIR=%s"\n' "$DATA_DIR"
+        printf 'Environment="NIMINO_BOUNDARY_WORKER=%s"\n' "${CURRENT}/bin/nimino-core-worker"
         printf '%s\n' 'Restart=on-failure' 'RestartSec=2s' 'KillMode=control-group'
         printf '\n%s\n' '[Install]'
         printf '%s\n' 'WantedBy=default.target'

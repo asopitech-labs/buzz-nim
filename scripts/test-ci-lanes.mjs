@@ -305,6 +305,10 @@ check(
   "changed-path gate must verify the unified relay release contract",
 );
 check(
+  job("changes").includes("run: just platform-release-contract"),
+  "changed-path gate must verify the signed platform release contract",
+);
+check(
   job("changes").includes("run: just agent-bundle-contract"),
   "changed-path gate must verify the manifest-driven agent bundle",
 );
@@ -551,6 +555,19 @@ check(
     hookGlobs("relay-release-contract").includes(".github/workflows/nimino-relay-release.yml") &&
     hookGlobs("relay-release-contract").includes("deploy/charts/nimino/**"),
   "unified relay release contract must remain in CI and pre-push",
+);
+check(
+  /^platform-release-contract:\n {4}node scripts\/test-nimino-platform-release\.mjs$/m.test(
+    justfile,
+  ) &&
+    workflow.includes("run: just platform-release-contract") &&
+    hook("platform-release-contract").includes(
+      "run: just platform-release-contract",
+    ) &&
+    hookGlobs("platform-release-contract").includes(
+      "contracts/nimino-platform-release/**",
+    ),
+  "signed platform release contract must remain in CI and pre-push",
 );
 check(
   /^agent-bundle-contract:\n {4}node scripts\/test-nimino-agent-bundle\.mjs$/m.test(

@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.platform-release",
+  "issue": 62,
+  "releaseSetAuthority": "nimino.release-set",
+  "compatibilityMode": false,
+  "tagPrefix": "nimino-v",
+  "sourceRepository": "asopitech-labs/nimino",
+  "updaterEndpoint": "https://github.com/asopitech-labs/nimino/releases/download/nimino-desktop-latest/latest.json",
+  "nativeWindows": false,
+  "platforms": [
+    {
+      "id": "macos-aarch64",
+      "runner": "macos-15",
+      "target": "aarch64-apple-darwin",
+      "updaterKey": "darwin-aarch64",
+      "requiredEnvironment": [
+        "NIMINO_UPDATER_PUBLIC_KEY",
+        "TAURI_SIGNING_PRIVATE_KEY",
+        "NIMINO_APPLE_CERTIFICATE",
+        "NIMINO_APPLE_CERTIFICATE_PASSWORD",
+        "NIMINO_APPLE_SIGNING_IDENTITY",
+        "NIMINO_APPLE_API_KEY_ID",
+        "NIMINO_APPLE_API_ISSUER",
+        "NIMINO_APPLE_API_KEY_P8"
+      ],
+      "artifacts": [
+        {
+          "role": "installer",
+          "sourcePattern": "\\.dmg$",
+          "fileName": "nimino-{version}-macos-aarch64.dmg",
+          "signature": false
+        },
+        {
+          "role": "updater",
+          "sourcePattern": "\\.app\\.tar\\.gz$",
+          "fileName": "nimino-{version}-macos-aarch64.app.tar.gz",
+          "signature": true
+        }
+      ]
+    },
+    {
+      "id": "macos-x86-64",
+      "runner": "macos-15-intel",
+      "target": "x86_64-apple-darwin",
+      "updaterKey": "darwin-x86_64",
+      "requiredEnvironment": [
+        "NIMINO_UPDATER_PUBLIC_KEY",
+        "TAURI_SIGNING_PRIVATE_KEY",
+        "NIMINO_APPLE_CERTIFICATE",
+        "NIMINO_APPLE_CERTIFICATE_PASSWORD",
+        "NIMINO_APPLE_SIGNING_IDENTITY",
+        "NIMINO_APPLE_API_KEY_ID",
+        "NIMINO_APPLE_API_ISSUER",
+        "NIMINO_APPLE_API_KEY_P8"
+      ],
+      "artifacts": [
+        {
+          "role": "installer",
+          "sourcePattern": "\\.dmg$",
+          "fileName": "nimino-{version}-macos-x86_64.dmg",
+          "signature": false
+        },
+        {
+          "role": "updater",
+          "sourcePattern": "\\.app\\.tar\\.gz$",
+          "fileName": "nimino-{version}-macos-x86_64.app.tar.gz",
+          "signature": true
+        }
+      ]
+    },
+    {
+      "id": "linux-x86-64",
+      "runner": "ubuntu-24.04",
+      "target": "x86_64-unknown-linux-gnu",
+      "updaterKey": "linux-x86_64",
+      "requiredEnvironment": [
+        "NIMINO_UPDATER_PUBLIC_KEY",
+        "TAURI_SIGNING_PRIVATE_KEY"
+      ],
+      "artifacts": [
+        {
+          "role": "installer-updater",
+          "sourcePattern": "\\.AppImage$",
+          "fileName": "nimino-{version}-linux-x86_64.AppImage",
+          "signature": true
+        }
+      ]
+    }
+  ],
+  "wsl": {
+    "id": "wsl2-x86_64",
+    "runnerLabels": ["self-hosted", "linux", "x64", "nimino-wsl-ubuntu-24.04"],
+    "archive": "nimino-{version}-wsl2-x86_64.tar.gz",
+    "componentArtifactIds": [
+      "acp",
+      "agent",
+      "cli",
+      "core-worker",
+      "data-ops",
+      "mcp",
+      "relay"
+    ]
+  },
+  "candidatePublication": "draft-only",
+  "promotionOwner": 63,
+  "legacyPipelineDeletionOwner": 65
+}
