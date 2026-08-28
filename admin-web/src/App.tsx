@@ -85,17 +85,30 @@ function StateView<T>({
   return resource.data ? children(resource.data) : null;
 }
 
+function Inbox() {
+  return (
+    <Page
+      eyebrow="Operations"
+      title="Operator inbox"
+      description="Moderation reports and product feedback in one typed queue."
+    >
+      <Reports />
+      <FeedbackList />
+    </Page>
+  );
+}
+
 function Reports() {
   const resource = useResource(
     () => request<Report[]>("/reports?status=open&limit=100"),
     "reports",
   );
   return (
-    <Page
-      eyebrow="Moderation"
-      title="Open reports"
-      description="Review reports across every Buzz community."
-    >
+    <section className="inbox-section" aria-labelledby="reports-heading">
+      <header className="inbox-section-title">
+        <p>Moderation</p>
+        <h2 id="reports-heading">Open reports</h2>
+      </header>
       <StateView resource={resource}>
         {(reports) =>
           reports.length ? (
@@ -131,7 +144,7 @@ function Reports() {
           )
         }
       </StateView>
-    </Page>
+    </section>
   );
 }
 
@@ -234,11 +247,11 @@ function FeedbackList() {
   };
 
   return (
-    <Page
-      eyebrow="Product"
-      title="Feedback"
-      description="Recent product feedback from across Buzz."
-    >
+    <section className="inbox-section" aria-labelledby="feedback-heading">
+      <header className="inbox-section-title">
+        <p>Product</p>
+        <h2 id="feedback-heading">Feedback</h2>
+      </header>
       <StateView resource={resource}>
         {(items) => {
           if (!items.length) return <Empty />;
@@ -317,7 +330,7 @@ function FeedbackList() {
                           className="record-card feedback-card feedback-record"
                         >
                           <Link
-                            href={`/feedback/${item.id}`}
+                            href={`/reports/feedback/${item.id}`}
                             className="feedback-main-link"
                           >
                             <span className="record-icon feedback-icon">
@@ -348,7 +361,7 @@ function FeedbackList() {
                             <time>{date(item.receivedAt)}</time>
                           </div>
                           <Link
-                            href={`/feedback/${item.id}`}
+                            href={`/reports/feedback/${item.id}`}
                             className="record-open-link"
                           >
                             <span className="visually-hidden">
@@ -368,7 +381,7 @@ function FeedbackList() {
           );
         }}
       </StateView>
-    </Page>
+    </section>
   );
 }
 
@@ -429,8 +442,8 @@ function FeedbackDetailView({ id }: { id: string }) {
       eyebrow="Product"
       title="Feedback detail"
       description="The complete feedback submission and its source."
-      back="/feedback"
-      backLabel="Back to feedback"
+      back="/reports"
+      backLabel="Back to inbox"
     >
       <StateView resource={resource}>
         {(feedback) => {
@@ -500,12 +513,23 @@ interface FeedbackAttachment {
   filename?: string;
 }
 
-const FEEDBACK_STATUS_KEY = "buzz-admin-feedback-status";
+const FEEDBACK_STATUS_KEY = "nimino-admin-inbox-feedback-status";
+const LEGACY_FEEDBACK_STATUS_KEY = "buzz-admin-feedback-status";
 
 function loadFeedbackStatuses(): FeedbackStatuses {
   try {
     const stored = localStorage.getItem(FEEDBACK_STATUS_KEY);
-    return stored ? (JSON.parse(stored) as FeedbackStatuses) : {};
+    if (stored) {
+      const statuses = JSON.parse(stored) as FeedbackStatuses;
+      localStorage.removeItem(LEGACY_FEEDBACK_STATUS_KEY);
+      return statuses;
+    }
+    const legacy = localStorage.getItem(LEGACY_FEEDBACK_STATUS_KEY);
+    if (!legacy) return {};
+    const statuses = JSON.parse(legacy) as FeedbackStatuses;
+    localStorage.setItem(FEEDBACK_STATUS_KEY, JSON.stringify(statuses));
+    localStorage.removeItem(LEGACY_FEEDBACK_STATUS_KEY);
+    return statuses;
   } catch {
     return {};
   }
@@ -797,19 +821,40 @@ function ArrowIcon() {
   );
 }
 
+function NotFound() {
+  return (
+    <Page
+      eyebrow="Navigation"
+      title="Page not found"
+      description="This operator route is not part of Nimino."
+      back="/reports"
+      backLabel="Open inbox"
+    >
+      {null}
+    </Page>
+  );
+}
+
 export function App() {
   const { path } = usePath();
+  useEffect(() => {
+    if (path !== "/") return;
+    history.replaceState(null, "", "/reports");
+    dispatchEvent(new PopStateEvent("popstate"));
+  }, [path]);
+
   const report = path.match(/^\/reports\/([^/]+)$/);
-  const feedback = path.match(/^\/feedback\/([^/]+)$/);
-  const content = report ? (
-    <ReportDetail id={report[1]} />
-  ) : feedback ? (
-    <FeedbackDetailView id={feedback[1]} />
-  ) : path === "/feedback" ? (
-    <FeedbackList />
-  ) : (
-    <Reports />
-  );
+  const feedback = path.match(/^\/reports\/feedback\/([^/]+)$/);
+  const content =
+    path === "/" ? null : path === "/reports" ? (
+      <Inbox />
+    ) : report ? (
+      <ReportDetail id={report[1]} />
+    ) : feedback ? (
+      <FeedbackDetailView id={feedback[1]} />
+    ) : (
+      <NotFound />
+    );
   return (
     <div className="app">
       <header className="app-header">
@@ -823,10 +868,7 @@ export function App() {
         </Link>
         <nav>
           <Link href="/reports" className="nav-link" activeWhenNested>
-            <ReportIcon /> Reports
-          </Link>
-          <Link href="/feedback" className="nav-link" activeWhenNested>
-            <FeedbackIcon /> Feedback
+            <ReportIcon /> Inbox
           </Link>
         </nav>
       </header>

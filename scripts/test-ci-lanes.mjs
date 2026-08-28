@@ -185,6 +185,19 @@ check(
   "Mobile changes must not select a CI product lane",
 );
 check(
+  matches("web", "web/src/app/routes.ts") &&
+    matches("web", "admin-web/src/App.tsx"),
+  "Web lane must cover both surviving browser clients",
+);
+const webJob = job("web");
+check(
+  webJob.includes("run: just web-check") &&
+    webJob.includes("run: just web-build") &&
+    webJob.includes("run: pnpm -C admin-web check") &&
+    webJob.includes("run: pnpm -C admin-web build"),
+  "Web lane must check and build Web and Admin",
+);
+check(
   job("changes").includes("run: node scripts/test-nimino-data-contract.mjs"),
   "changed-path gate must verify the Nimino data contract",
 );

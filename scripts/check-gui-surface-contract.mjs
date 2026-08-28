@@ -217,13 +217,16 @@ for (const capability of pulse.capabilityDispositions) {
 const requiredRoutes = {
   desktop: virtualRoutes("desktop/src/app/routes.ts"),
   web: virtualRoutes("web/src/app/routes.ts"),
-  // ponytail: Admin has no router; keep its four hand-written paths here until #39 installs one.
-  "admin-web": ["/", "/feedback", "/feedback/$feedbackId", "/reports", "/reports/$reportId"],
+  // ponytail: Admin has three paths; a router dependency would add no value.
+  "admin-web": ["/reports", "/reports/$reportId", "/reports/feedback/$feedbackId"],
 };
 for (const client of manifest.clients) {
   check(
-    same(sorted(client.routes.map((route) => route.path)), requiredRoutes[client.id]),
-    `${client.id} route inventory drifted`,
+    same(
+      sorted(client.routes.filter((route) => route.action === "keep").map((route) => route.path)),
+      requiredRoutes[client.id],
+    ),
+    `${client.id} active route inventory drifted`,
   );
   const seenRoutes = new Set();
   for (const route of client.routes) {

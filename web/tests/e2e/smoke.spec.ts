@@ -1,16 +1,16 @@
 import { createHash } from "node:crypto";
 import { expect, test } from "@playwright/test";
 
-test("home page loads with Buzz branding", async ({ page }) => {
-  await page.goto("/");
-  await expect(
-    page.getByRole("main").getByRole("img", { name: "Buzz" }),
-  ).toBeVisible();
-});
-
 test("home page shows repositories section", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByText("Repositories")).toBeVisible();
+});
+
+test("removed repository alias is not routed", async ({ page }) => {
+  await page.goto("/repos");
+  await expect(
+    page.getByRole("heading", { name: "Page not found" }),
+  ).toBeVisible();
 });
 
 test("invite requires age and legal consent before opening Buzz", async ({

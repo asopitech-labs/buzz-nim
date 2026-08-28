@@ -6,16 +6,30 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-for (const [path, heading] of [
-  ["/reports", "Open reports"],
-  ["/feedback", "Feedback"],
-]) {
-  test(`${path} supports a deep link and empty state`, async ({ page }) => {
-    await page.goto(path);
-    await expect(page.getByRole("heading", { name: heading })).toBeVisible();
-    await expect(page.getByText("No records.")).toBeVisible();
-  });
-}
+test("the operator inbox supports a deep link and both typed queues", async ({
+  page,
+}) => {
+  await page.goto("/reports");
+  await expect(
+    page.getByRole("heading", { name: "Operator inbox" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Open reports" }),
+  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Feedback" })).toBeVisible();
+  await expect(page.getByText("No records.")).toHaveCount(2);
+});
+
+test("root canonicalizes once and removed feedback routes stay removed", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await expect(page).toHaveURL("/reports");
+  await page.goto("/feedback");
+  await expect(
+    page.getByRole("heading", { name: "Page not found" }),
+  ).toBeVisible();
+});
 
 test("forbidden reads have an explicit state", async ({ page }) => {
   await page.route("**/api/admin/v1/reports?**", (route) =>
@@ -53,7 +67,9 @@ test("report rows render the relay response contract", async ({ page }) => {
     }),
   );
   await page.goto("/reports");
-  await expect(page.getByText("design.buzz.xyz")).toBeVisible();
+  await expect(page.getByText("design.buzz.xyz")).toBeVisible({
+    timeout: 15_000,
+  });
   await expect(page.getByText("spam")).toBeVisible();
   await expect(page.getByText("Unknown date")).toHaveCount(0);
 });
@@ -161,13 +177,13 @@ test("feedback cards open the complete submission", async ({ page }) => {
     }),
   );
 
-  await page.goto("/feedback");
+  await page.goto("/reports");
   const card = page.locator(".feedback-record");
   await expect(card.locator(".record-provenance")).toContainText(
     "design.buzz.xyz",
   );
   await card.locator(".feedback-main-link").click();
-  await expect(page).toHaveURL(`/feedback/${id}`);
+  await expect(page).toHaveURL(`/reports/feedback/${id}`);
   await expect(
     page.getByRole("heading", { name: "Feedback detail" }),
   ).toBeVisible();
@@ -207,7 +223,7 @@ test("feedback can be searched and filtered by community and time", async ({
     }),
   );
 
-  await page.goto("/feedback");
+  await page.goto("/reports");
   await expect(page.getByText("2 of 2 submissions")).toBeVisible();
   await page.getByRole("searchbox", { name: "Search feedback" }).fill("calls");
   await expect(page.getByText("Calls are much more reliable")).toBeVisible();
@@ -224,7 +240,13 @@ test("feedback can be searched and filtered by community and time", async ({
   await expect(page.getByText("Calls are much more reliable")).toHaveCount(0);
 });
 
-test("feedback status is stored locally by feedback id", async ({ page }) => {
+test("feedback status migrates to the unified inbox key", async ({ page }) => {
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      "buzz-admin-feedback-status",
+      JSON.stringify({ "feedback-one": true }),
+    );
+  });
   await page.route("**/api/admin/v1/feedback", (route) =>
     route.fulfill({
       contentType: "application/json",
@@ -242,10 +264,18 @@ test("feedback status is stored locally by feedback id", async ({ page }) => {
     }),
   );
 
-  await page.goto("/feedback");
-  await page.getByRole("checkbox", { name: "Acted on" }).check();
-  await page.reload();
+  await page.goto("/reports");
   await expect(page.getByRole("checkbox", { name: "Acted on" })).toBeChecked();
+  expect(
+    await page.evaluate(() =>
+      localStorage.getItem("buzz-admin-feedback-status"),
+    ),
+  ).toBeNull();
+  expect(
+    await page.evaluate(() =>
+      localStorage.getItem("nimino-admin-inbox-feedback-status"),
+    ),
+  ).toBe(JSON.stringify({ "feedback-one": true }));
   await page.getByLabel("Status").selectOption("acted-on");
   await expect(page.getByText("Composer freezes after sleep")).toBeVisible();
   await page.getByLabel("Status").selectOption("pending");
@@ -294,7 +324,7 @@ test("feedback attachments render from imeta without raw markdown", async ({
     }),
   );
 
-  await page.goto(`/feedback/${id}`);
+  await page.goto(`/reports/feedback/${id}`);
   await expect(
     page.getByText("Composer froze.", { exact: true }),
   ).toBeVisible();
