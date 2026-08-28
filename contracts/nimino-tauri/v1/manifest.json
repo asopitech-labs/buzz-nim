@@ -1,0 +1,157 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.tauri-adapter-boundary",
+  "compatibilityMode": false,
+  "publicationState": "cutover-ready",
+  "inventory": {"commandCount": 339, "sourceFileCount": 87},
+  "target": {
+    "rust": ["platform-adapter", "network-adapter", "performance-adapter"],
+    "nim": "domain-and-product-policy",
+    "typescript": "presentation-and-state-adapter"
+  },
+  "surviving": {
+    "platform-adapter": {
+      "action": "shrink",
+      "target": "OS, secure-storage, crypto, process, media, audio, git, terminal, and window effects only",
+      "files": [
+        "desktop/src-tauri/src/commands/agent_auth.rs",
+        "desktop/src-tauri/src/commands/agent_discovery.rs",
+        "desktop/src-tauri/src/commands/agent_logs.rs",
+        "desktop/src-tauri/src/commands/agent_models_update.rs",
+        "desktop/src-tauri/src/commands/agent_providers.rs",
+        "desktop/src-tauri/src/commands/clipboard.rs",
+        "desktop/src-tauri/src/commands/identity.rs",
+        "desktop/src-tauri/src/commands/media.rs",
+        "desktop/src-tauri/src/commands/media_download.rs",
+        "desktop/src-tauri/src/commands/media_raw.rs",
+        "desktop/src-tauri/src/commands/notifications.rs",
+        "desktop/src-tauri/src/commands/os_idle.rs",
+        "desktop/src-tauri/src/commands/pairing.rs",
+        "desktop/src-tauri/src/commands/prevent_sleep.rs",
+        "desktop/src-tauri/src/commands/project_git.rs",
+        "desktop/src-tauri/src/commands/project_git_branches.rs",
+        "desktop/src-tauri/src/commands/project_git_diff.rs",
+        "desktop/src-tauri/src/commands/project_git_file_content.rs",
+        "desktop/src-tauri/src/commands/project_terminal.rs",
+        "desktop/src-tauri/src/commands/qr_download.rs",
+        "desktop/src-tauri/src/commands/updater.rs",
+        "desktop/src-tauri/src/commands/window_chrome.rs",
+        "desktop/src-tauri/src/commands/window_vibrancy.rs",
+        "desktop/src-tauri/src/commands/workspace.rs",
+        "desktop/src-tauri/src/deep_link.rs",
+        "desktop/src-tauri/src/huddle/agent_voice.rs",
+        "desktop/src-tauri/src/huddle/audio_output.rs",
+        "desktop/src-tauri/src/huddle/pipeline.rs",
+        "desktop/src-tauri/src/huddle/transcription.rs",
+        "desktop/src-tauri/src/huddle/tts_settings.rs",
+        "desktop/src-tauri/src/huddle/window.rs",
+        "desktop/src-tauri/src/macos_notifications.rs",
+        "desktop/src-tauri/src/managed_agents/runtime_commands.rs",
+        "desktop/src-tauri/src/terminal_runtime.rs",
+        "desktop/src-tauri/src/tray_menu.rs"
+      ]
+    },
+    "network-adapter": {
+      "action": "shrink",
+      "target": "bounded transport of Nim-issued requests and verified facts only",
+      "files": [
+        "desktop/src-tauri/src/archive/sync.rs",
+        "desktop/src-tauri/src/commands/agent_discovery/relay_directory.rs",
+        "desktop/src-tauri/src/commands/agent_models.rs",
+        "desktop/src-tauri/src/commands/channel_reconnect_repair.rs",
+        "desktop/src-tauri/src/commands/join_policy.rs",
+        "desktop/src-tauri/src/commands/link_preview.rs",
+        "desktop/src-tauri/src/commands/relay_reconnect.rs",
+        "desktop/src-tauri/src/huddle/reconnect.rs",
+        "desktop/src-tauri/src/native_websocket.rs",
+        "desktop/src-tauri/src/persona_catalog.rs"
+      ]
+    },
+    "performance-adapter": {
+      "action": "shrink",
+      "target": "local batching, indexing, and projection execution from Nim-owned facts only",
+      "files": [
+        "desktop/src-tauri/src/archive/mod.rs",
+        "desktop/src-tauri/src/commands/channel_window.rs",
+        "desktop/src-tauri/src/observed_unread.rs",
+        "desktop/src-tauri/src/unread_catch_up.rs"
+      ]
+    }
+  },
+  "cutover": {
+    "product-policy": {
+      "action": "move",
+      "ownerIssue": 12,
+      "target": "Nim policy operation; Tauri executes only the returned adapter effect",
+      "files": [
+        "desktop/src-tauri/src/builderlab.rs",
+        "desktop/src-tauri/src/commands/agent_access.rs",
+        "desktop/src-tauri/src/commands/agent_config.rs",
+        "desktop/src-tauri/src/commands/agent_metric_archive.rs",
+        "desktop/src-tauri/src/commands/agent_settings.rs",
+        "desktop/src-tauri/src/commands/agents.rs",
+        "desktop/src-tauri/src/commands/canvas.rs",
+        "desktop/src-tauri/src/commands/channel_templates.rs",
+        "desktop/src-tauri/src/commands/channels.rs",
+        "desktop/src-tauri/src/commands/dms.rs",
+        "desktop/src-tauri/src/commands/engrams.rs",
+        "desktop/src-tauri/src/commands/global_agent_config.rs",
+        "desktop/src-tauri/src/commands/identity_archive.rs",
+        "desktop/src-tauri/src/commands/messages.rs",
+        "desktop/src-tauri/src/commands/messages/forum.rs",
+        "desktop/src-tauri/src/commands/observer_archive.rs",
+        "desktop/src-tauri/src/commands/personas/card.rs",
+        "desktop/src-tauri/src/commands/personas/create.rs",
+        "desktop/src-tauri/src/commands/personas/inbound.rs",
+        "desktop/src-tauri/src/commands/personas/mod.rs",
+        "desktop/src-tauri/src/commands/personas/sharing.rs",
+        "desktop/src-tauri/src/commands/personas/snapshot.rs",
+        "desktop/src-tauri/src/commands/personas/snapshot/import.rs",
+        "desktop/src-tauri/src/commands/personas/update.rs",
+        "desktop/src-tauri/src/commands/profile.rs",
+        "desktop/src-tauri/src/commands/project_git_recipient_notes.rs",
+        "desktop/src-tauri/src/commands/project_git_workflow.rs",
+        "desktop/src-tauri/src/commands/relay_members.rs",
+        "desktop/src-tauri/src/commands/social.rs",
+        "desktop/src-tauri/src/commands/team_snapshot.rs",
+        "desktop/src-tauri/src/commands/teams.rs",
+        "desktop/src-tauri/src/commands/workflows.rs",
+        "desktop/src-tauri/src/huddle/agents.rs",
+        "desktop/src-tauri/src/huddle/commands.rs",
+        "desktop/src-tauri/src/huddle/mod.rs"
+      ]
+    },
+    "obsolete": {
+      "action": "delete",
+      "ownerIssue": 66,
+      "target": "no compatibility wrapper or legacy mesh-LLM surface",
+      "files": [
+        "desktop/src-tauri/src/commands/legacy_storage.rs",
+        "desktop/src-tauri/src/commands/mesh_llm.rs",
+        "desktop/src-tauri/src/mesh_llm_stubs.rs"
+      ]
+    }
+  },
+  "forbiddenRustPolicyDependencies": [
+    "buzz-auth", "buzz-db", "buzz-pubsub", "buzz-relay", "buzz-workflow"
+  ],
+  "hotPaths": [
+    {
+      "path": "desktop/src-tauri/src/native_websocket.rs",
+      "commands": ["connect", "send", "disconnect", "disconnect_all"],
+      "tests": ["live_tcp_server_connect_send_and_disconnect", "oversize_frame_does_not_drag_buffered_frames_over_the_threshold"]
+    },
+    {
+      "path": "desktop/src-tauri/src/observed_unread.rs",
+      "commands": ["observed_unread_open_scope", "observed_unread_ingest"],
+      "tests": ["blocking_run_leaves_the_calling_thread", "ingest_replay_gap_prune_and_projection"]
+    },
+    {
+      "path": "desktop/src-tauri/src/terminal_runtime.rs",
+      "commands": ["terminal_attach", "terminal_input", "terminal_resize", "terminal_close"],
+      "tests": ["initial_attach_retains_output_captured_after_its_bootstrap_snapshot", "reader_pumps_a_deferred_tail_without_an_external_event"]
+    }
+  ],
+  "physicalRemovalOwner": 12,
+  "duplicatePolicyRemovalOwner": 66
+}

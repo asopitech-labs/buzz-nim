@@ -174,6 +174,8 @@ jobs:
         run: just nimino-mcp-execution-contract
       - name: Legacy mesh and Redis replacement manifest
         run: just legacy-control-manifest-contract
+      - name: Nimino Tauri adapter contract
+        run: just nimino-tauri-contract
       - name: Nimino data contract
         run: node scripts/test-nimino-data-contract.mjs
       - name: Nimino event policy contract

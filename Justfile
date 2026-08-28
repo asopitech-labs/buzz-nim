@@ -218,6 +218,10 @@ nimino-mcp-framing:
 legacy-control-manifest-contract:
     node scripts/check-legacy-control-manifest.mjs
 
+# Verify complete Tauri command classification and adapter-only target ownership
+nimino-tauri-contract:
+    node scripts/test-nimino-tauri-contract.mjs
+
 # Verify the fixed 1/3/5-node real-mesh scenario definition and ownership
 nimino-cluster-scenario-contract:
     node scripts/test-nimino-cluster-scenario-contract.mjs
@@ -383,6 +387,12 @@ desktop-tauri-check: _ensure-sidecar-stubs
 # Run desktop Tauri Rust unit tests
 desktop-tauri-test: _ensure-sidecar-stubs
     cd desktop/src-tauri && cargo test --workspace
+
+# Exercise the retained WebSocket, unread projection, and terminal hot paths
+nimino-tauri-native-test: _ensure-sidecar-stubs
+    cargo test --manifest-path {{desktop_tauri_manifest}} native_websocket::tests:: -- --test-threads=1
+    cargo test --manifest-path {{desktop_tauri_manifest}} observed_unread::tests:: -- --test-threads=1
+    cargo test --manifest-path {{desktop_tauri_manifest}} terminal_runtime::tests:: -- --test-threads=1
 
 # Run the native terminal latency gate explicitly on a known-idle host.
 # This is intentionally excluded from shared CI: scheduler contention makes a

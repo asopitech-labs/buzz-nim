@@ -176,6 +176,11 @@ check(
   "desktop frontend and Tauri paths must stay disjoint",
 );
 check(
+  matches("desktop-rust", "desktop/src-tauri/src/native_websocket.rs") &&
+    !matches("desktop-rust", "contracts/nimino-tauri/v1/manifest.json"),
+  "Tauri source changes must run native tests while manifest-only changes stay contract-only",
+);
+check(
   Object.keys(filters).every((group) => !matches(group, "mobile/lib/main.dart")),
   "Mobile changes must not select a CI product lane",
 );
@@ -215,6 +220,10 @@ check(
 check(
   job("changes").includes("run: just nimino-agent-contract"),
   "changed-path gate must verify the Nimino agent contract",
+);
+check(
+  job("changes").includes("run: just nimino-tauri-contract"),
+  "changed-path gate must verify the Tauri adapter contract",
 );
 check(
   job("changes").includes("run: just nimino-cluster-contract"),
@@ -381,6 +390,18 @@ check(
     justfile,
   ) && workflow.includes("run: just legacy-control-manifest-contract"),
   "legacy mesh and Redis replacement manifest must remain in CI",
+);
+check(
+  /^nimino-tauri-contract:\n    node scripts\/test-nimino-tauri-contract\.mjs$/m.test(
+    justfile,
+  ) && workflow.includes("run: just nimino-tauri-contract"),
+  "Tauri adapter inventory must remain in CI",
+);
+check(
+  hook("tauri-adapter-contract").includes("run: just nimino-tauri-contract") &&
+    hookGlobs("tauri-adapter-contract").includes("desktop/src-tauri/src/**") &&
+    hookGlobs("tauri-adapter-contract").includes("contracts/nimino-tauri/**"),
+  "Tauri adapter pre-push gate must cover source and manifest changes",
 );
 check(
   /^nimino-cluster-scenario-contract:\n    node scripts\/test-nimino-cluster-scenario-contract\.mjs$/m.test(

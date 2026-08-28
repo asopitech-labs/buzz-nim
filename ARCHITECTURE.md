@@ -184,6 +184,14 @@ are rejected and an undrained cancellation must be killed and reaped before a
 replacement can start. #66 deletes the registered Rust policy sites and #12
 performs the incompatible public cutover.
 
+The [`Nimino Tauri adapter contract`](contracts/nimino-tauri/README.md)
+classifies every desktop command source. Only platform, bounded network, and
+measured performance adapters survive; authorization, lifecycle, routing, and
+product-state decisions move to Nim. TypeScript remains a presentation/state
+adapter. The exact inventory, registration gate, forbidden dependency list,
+and native WebSocket/unread-projection/terminal evidence prevent an unclassified command
+or a second policy runtime from entering the cutover target.
+
 The [`Nimino effect ledger`](contracts/nimino-effect-ledger/README.md) closes
 that #57 lifecycle with replicated canonical `workflow_effect` records. A live
 #52 quorum lease gates both claim and execution; the external I/O directive is
