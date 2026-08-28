@@ -16,6 +16,11 @@ This repository is a hard fork. There is no `desktop-v`, `relay-v`, `chart-v`,
 Block/Square signing path, Buzz compatibility release, or native Windows
 installer in the Nimino release contract.
 
+The predecessor workflow/script/credential/external-authority disposition is
+frozen in `contracts/nimino-legacy-release/v1/manifest.json`. Its operator
+checklist is classification evidence for the atomic #66 deletion, not another
+release procedure. This file remains the sole release runbook.
+
 ## Supported artifacts
 
 | Surface | Platform | Artifact/signing |

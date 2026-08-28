@@ -191,6 +191,8 @@ jobs:
         run: just platform-release-contract
       - name: Nimino promotion and supply-chain contract
         run: just promotion-contract
+      - name: Legacy release authority retirement contract
+        run: just legacy-release-deletion-contract
       - name: Manifest-driven agent bundle contract
         run: just agent-bundle-contract
       - name: Nimino data contract

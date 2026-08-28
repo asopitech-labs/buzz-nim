@@ -1,0 +1,280 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.legacy-release",
+  "issue": 65,
+  "phase": "cutover-ready",
+  "compatibilityMode": false,
+  "sourceOfTruth": "RELEASING.md",
+  "physicalDeletionOwner": 66,
+  "physicalPromotionOwner": 68,
+  "workflowInventory": [
+    {
+      "path": ".github/workflows/auto-tag-on-release-pr-merge.yml",
+      "action": "delete",
+      "replacement": ".github/workflows/nimino-platform-release.yml"
+    },
+    {
+      "path": ".github/workflows/benchmark-harbor.yml",
+      "action": "rename",
+      "replacement": ".github/workflows/nimino-benchmark.yml"
+    },
+    {
+      "path": ".github/workflows/ci.yml",
+      "action": "keep",
+      "replacement": null
+    },
+    {
+      "path": ".github/workflows/desktop-release-cache-proof.yml",
+      "action": "delete",
+      "replacement": ".github/workflows/nimino-platform-release.yml"
+    },
+    {
+      "path": ".github/workflows/desktop-release-candidate.yml",
+      "action": "delete",
+      "replacement": ".github/workflows/nimino-platform-release.yml"
+    },
+    {
+      "path": ".github/workflows/docker.yml",
+      "action": "delete",
+      "replacement": ".github/workflows/nimino-relay-release.yml"
+    },
+    {
+      "path": ".github/workflows/helm-chart.yml",
+      "action": "delete",
+      "replacement": ".github/workflows/nimino-relay-release.yml"
+    },
+    {
+      "path": ".github/workflows/linux-canary.yml",
+      "action": "delete",
+      "replacement": ".github/workflows/nimino-platform-release.yml"
+    },
+    {
+      "path": ".github/workflows/macos-intel-canary.yml",
+      "action": "delete",
+      "replacement": ".github/workflows/nimino-platform-release.yml"
+    },
+    {
+      "path": ".github/workflows/mesh-lifecycle.yml",
+      "action": "delete",
+      "replacement": ".github/workflows/ci.yml"
+    },
+    {
+      "path": ".github/workflows/nimino-platform-release.yml",
+      "action": "keep",
+      "replacement": null
+    },
+    {
+      "path": ".github/workflows/nimino-promote.yml",
+      "action": "keep",
+      "replacement": null
+    },
+    {
+      "path": ".github/workflows/nimino-relay-release.yml",
+      "action": "keep",
+      "replacement": null
+    },
+    {
+      "path": ".github/workflows/promote-oss-desktop-release.yml",
+      "action": "delete",
+      "replacement": ".github/workflows/nimino-promote.yml"
+    },
+    {
+      "path": ".github/workflows/release.yml",
+      "action": "delete",
+      "replacement": ".github/workflows/nimino-platform-release.yml"
+    },
+    {
+      "path": ".github/workflows/signed-macos-canary.yml",
+      "action": "delete",
+      "replacement": ".github/workflows/nimino-platform-release.yml"
+    },
+    {
+      "path": ".github/workflows/sprig-image.yml",
+      "action": "delete",
+      "replacement": ".github/workflows/nimino-platform-release.yml"
+    },
+    {
+      "path": ".github/workflows/sprig.yml",
+      "action": "delete",
+      "replacement": ".github/workflows/nimino-platform-release.yml"
+    },
+    {
+      "path": ".github/workflows/windows-canary.yml",
+      "action": "delete",
+      "replacement": "WSL qualification in .github/workflows/nimino-platform-release.yml"
+    }
+  ],
+  "scriptInventory": [
+    {
+      "path": "desktop/scripts/build-llama.sh",
+      "action": "delete",
+      "state": "absent"
+    },
+    { "path": "desktop/scripts/build-release-config.mjs", "action": "keep" },
+    { "path": "desktop/scripts/fix-appimage.sh", "action": "keep" },
+    {
+      "path": "desktop/scripts/prepare-llama.sh",
+      "action": "delete",
+      "state": "absent"
+    },
+    {
+      "path": "desktop/scripts/set-dmg-finder-text-size.sh",
+      "action": "delete"
+    },
+    { "path": "desktop/scripts/set-version-from-tag.mjs", "action": "keep" },
+    {
+      "path": "desktop/scripts/verify-macos-entitlements.sh",
+      "action": "delete"
+    },
+    { "path": "scripts/build-sprig.sh", "action": "delete" },
+    { "path": "scripts/bundle-sidecars.sh", "action": "keep" },
+    { "path": "scripts/ci-mesh-lifecycle-smoke.sh", "action": "delete" },
+    { "path": "scripts/desktop-native-toolchain-id.sh", "action": "delete" },
+    { "path": "scripts/desktop-release-cache-key.py", "action": "delete" },
+    { "path": "scripts/desktop_release.py", "action": "delete" },
+    {
+      "path": "scripts/generate-oss-latest-json.sh",
+      "action": "delete",
+      "state": "absent"
+    },
+    { "path": "scripts/prepare-desktop-release.sh", "action": "delete" },
+    { "path": "scripts/promote-oss-desktop-release.sh", "action": "delete" },
+    { "path": "scripts/release-rulesets.sh", "action": "delete" },
+    { "path": "scripts/run-desktop-release-smoke.sh", "action": "keep" },
+    { "path": "scripts/sprig-entrypoint.sh", "action": "delete" },
+    { "path": "scripts/start-relay-for-tests.sh", "action": "keep" },
+    { "path": "scripts/test-desktop-release-cache-key.sh", "action": "delete" },
+    {
+      "path": "scripts/test-desktop-release-cache-workflow.sh",
+      "action": "delete"
+    },
+    { "path": "scripts/test-desktop-release-candidate.sh", "action": "delete" },
+    { "path": "scripts/test-k8s-provider-release.sh", "action": "delete" },
+    { "path": "scripts/test-k8s-sprig-image-live.sh", "action": "delete" },
+    {
+      "path": "scripts/test-oss-desktop-promotion-behavior.sh",
+      "action": "delete"
+    },
+    { "path": "scripts/test-oss-desktop-promotion.sh", "action": "delete" },
+    { "path": "scripts/test-release-ref-contract.sh", "action": "delete" },
+    { "path": "scripts/test-signed-canary-contract.sh", "action": "delete" },
+    { "path": "scripts/test-sprig-image.sh", "action": "delete" },
+    { "path": "scripts/verify-desktop-release-merge.sh", "action": "delete" },
+    { "path": "scripts/verify-release-ref.sh", "action": "keep" }
+  ],
+  "credentialInventory": [
+    { "kind": "secret", "name": "CODESIGN_S3_BUCKET", "action": "delete" },
+    { "kind": "secret", "name": "GITHUB_TOKEN", "action": "keep" },
+    { "kind": "variable", "name": "GHCR_SPRIG_IMAGE", "action": "delete" },
+    { "kind": "secret", "name": "NIMINO_APPLE_API_ISSUER", "action": "keep" },
+    { "kind": "secret", "name": "NIMINO_APPLE_API_KEY_ID", "action": "keep" },
+    { "kind": "secret", "name": "NIMINO_APPLE_API_KEY_P8", "action": "keep" },
+    { "kind": "secret", "name": "NIMINO_APPLE_CERTIFICATE", "action": "keep" },
+    {
+      "kind": "secret",
+      "name": "NIMINO_APPLE_CERTIFICATE_PASSWORD",
+      "action": "keep"
+    },
+    {
+      "kind": "secret",
+      "name": "NIMINO_APPLE_SIGNING_IDENTITY",
+      "action": "keep"
+    },
+    {
+      "kind": "variable",
+      "name": "NIMINO_RELEASE_TAGGER_CLIENT_ID",
+      "action": "delete"
+    },
+    {
+      "kind": "secret",
+      "name": "NIMINO_RELEASE_TAGGER_PRIVATE_KEY",
+      "action": "delete"
+    },
+    { "kind": "secret", "name": "NIMINO_UPDATER_PUBLIC_KEY", "action": "keep" },
+    { "kind": "secret", "name": "OSX_CODESIGN_ROLE", "action": "delete" },
+    { "kind": "secret", "name": "TAURI_SIGNING_PRIVATE_KEY", "action": "keep" },
+    {
+      "kind": "secret",
+      "name": "TAURI_SIGNING_PRIVATE_KEY_PASSWORD",
+      "action": "keep"
+    }
+  ],
+  "externalAuthorities": [
+    {
+      "target": "squareup/buzz-releases",
+      "action": "disconnect",
+      "surface": "Buildkite, Artifactory, Block-signed Desktop"
+    },
+    {
+      "target": "squareup/sprout-oss",
+      "action": "disconnect",
+      "surface": "internal relay image and ECR"
+    },
+    {
+      "target": "squareup/block-coder-tf-stacks",
+      "action": "disconnect",
+      "surface": "Terraform, Helm, ArgoCD"
+    },
+    {
+      "target": "squareup/sprout-backend-blox",
+      "action": "disconnect",
+      "surface": "Blox provider deployment"
+    },
+    {
+      "target": "ghcr.io/block/buzz",
+      "action": "deny",
+      "surface": "legacy relay image"
+    },
+    {
+      "target": "ghcr.io/block/buzz-sprig",
+      "action": "deny",
+      "surface": "legacy agent image"
+    },
+    {
+      "target": "oci://ghcr.io/block/buzz/charts",
+      "action": "deny",
+      "surface": "legacy chart"
+    }
+  ],
+  "internalReferenceClassification": {
+    ".github/workflows/desktop-release-cache-proof.yml": "delete",
+    ".github/workflows/docker.yml": "delete",
+    ".github/workflows/linux-canary.yml": "delete",
+    ".github/workflows/macos-intel-canary.yml": "delete",
+    ".github/workflows/promote-oss-desktop-release.yml": "delete",
+    ".github/workflows/release.yml": "delete",
+    ".github/workflows/signed-macos-canary.yml": "delete",
+    ".github/workflows/sprig-image.yml": "delete",
+    ".github/workflows/windows-canary.yml": "delete",
+    "AGENTS.md": "rewrite",
+    "CONTRIBUTING.md": "rewrite",
+    "README.md": "rewrite",
+    "RELEASING.md": "keep-negative",
+    "SECURITY.md": "rewrite",
+    "deploy/local/build-and-deploy.sh": "rewrite",
+    "scripts/buzz-adopt-prod-agents.sh": "delete",
+    "scripts/check-nimino-naming-contract.mjs": "keep-negative",
+    "scripts/check-pr-image-urls.sh": "rewrite",
+    "scripts/cutover/1321_backfill_default_community.sql": "rewrite",
+    "scripts/desktop_release.py": "delete",
+    "scripts/post-screenshots.sh": "rewrite",
+    "scripts/prepare-desktop-release.sh": "delete",
+    "scripts/promote-oss-desktop-release.sh": "delete",
+    "scripts/release-rulesets.sh": "delete",
+    "scripts/test-desktop-release-candidate.sh": "delete",
+    "scripts/test-k8s-sprig-image-live.sh": "delete",
+    "scripts/test-nimino-platform-release.mjs": "keep-negative",
+    "scripts/test-nimino-promotion.mjs": "keep-negative",
+    "scripts/test-nimino-relay-release-contract.mjs": "keep-negative",
+    "scripts/test-oss-desktop-promotion-behavior.sh": "delete",
+    "scripts/test-release-ref-contract.sh": "delete"
+  },
+  "completionProof": [
+    "workflow-inventory-exact",
+    "workflow-secret-inventory-exact",
+    "legacy-target-denylist",
+    "zero-unclassified-internal-reference-paths",
+    "releasing-source-of-truth",
+    "dry-run-decommission-checklist"
+  ]
+}

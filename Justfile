@@ -251,6 +251,10 @@ promotion-contract:
     node scripts/test-nimino-release-supply-chain.mjs
     node scripts/test-nimino-promotion.mjs
 
+# Verify exact predecessor workflow/script/credential/target retirement inventory
+legacy-release-deletion-contract:
+    node scripts/test-nimino-legacy-release-contract.mjs
+
 # Verify exact Agent/CLI bundle inventory, execution, and missing-component rejection
 agent-bundle-contract:
     node scripts/test-nimino-agent-bundle.mjs

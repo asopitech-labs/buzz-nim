@@ -596,6 +596,19 @@ check(
   "promotion and supply-chain gate must remain in CI and pre-push",
 );
 check(
+  /^legacy-release-deletion-contract:\n {4}node scripts\/test-nimino-legacy-release-contract\.mjs$/m.test(
+    justfile,
+  ) &&
+    workflow.includes("run: just legacy-release-deletion-contract") &&
+    hook("legacy-release-deletion-contract").includes(
+      "run: just legacy-release-deletion-contract",
+    ) &&
+    hookGlobs("legacy-release-deletion-contract").includes(
+      "contracts/nimino-legacy-release/**",
+    ),
+  "legacy release authority inventory must remain in CI and pre-push",
+);
+check(
   /^agent-bundle-contract:\n {4}node scripts\/test-nimino-agent-bundle\.mjs$/m.test(
     justfile,
   ) &&
