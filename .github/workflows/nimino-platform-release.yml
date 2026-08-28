@@ -8,11 +8,13 @@ on:
       - ".github/workflows/nimino-platform-release.yml"
       - ".github/workflows/nimino-relay-release.yml"
       - "contracts/nimino-platform-release/**"
+      - "contracts/nimino-promotion/**"
       - "contracts/nimino-release-set/**"
       - "contracts/nimino-wsl-bundle/**"
       - "desktop/**"
       - "scripts/nimino-platform-artifacts.mjs"
       - "scripts/nimino-release-set.mjs"
+      - "scripts/nimino-release-supply-chain.mjs"
       - "scripts/nimino-wsl-bundle.mjs"
       - "scripts/nimino-wsl-service.sh"
 
@@ -221,7 +223,6 @@ jobs:
     permissions:
       contents: read
       id-token: write
-      attestations: write
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -282,15 +283,16 @@ jobs:
             --wsl-bundle-dir dist/wsl-bundle \
             --wsl-archive "dist/all/nimino-${VERSION}-wsl2-x86_64.tar.gz" \
             --output dist/all/latest.json
+          node scripts/nimino-release-supply-chain.mjs sbom \
+            --release-set dist/all/release-set.json \
+            --output dist/all/nimino-release.spdx.json
           cosign sign-blob --yes --bundle dist/all/release-set.sigstore.json dist/all/release-set.json
+          cosign sign-blob --yes --bundle dist/all/nimino-release.spdx.sigstore.json dist/all/nimino-release.spdx.json
           cosign sign-blob --yes --bundle dist/all/nimino-wsl.sigstore.json "dist/all/nimino-${VERSION}-wsl2-x86_64.tar.gz"
           cosign sign-blob --yes --bundle dist/all/latest.sigstore.json dist/all/latest.json
-      - uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
-        with:
-          subject-path: dist/all/release-set.json
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: nimino-release-candidate
+          name: nimino-release-assembled
           path: dist/all/*
           if-no-files-found: error
 
@@ -310,7 +312,7 @@ jobs:
       - uses: cashapp/activate-hermit@cea9af7913204a965fd488637a8d1811bba2e616 # v1
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: nimino-release-candidate
+          name: nimino-release-assembled
           path: candidate
       - uses: sigstore/cosign-installer@d7543c93d881b35a8faa02e8e3605f69b7a1ce62 # v3.10.0
       - name: Verify and exercise the WSL candidate
@@ -322,7 +324,7 @@ jobs:
           archive="candidate/nimino-${VERSION}-wsl2-x86_64.tar.gz"
           cosign verify-blob \
             --bundle candidate/nimino-wsl.sigstore.json \
-            --certificate-identity-regexp '^https://github.com/asopitech-labs/nimino/.github/workflows/nimino-platform-release.yml@refs/tags/nimino-v' \
+            --certificate-identity-regexp '^https://github\.com/asopitech-labs/nimino/\.github/workflows/nimino-platform-release\.yml@refs/tags/nimino-v[0-9]+\.[0-9]+\.[0-9]+$' \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
             "$archive"
           mkdir candidate/wsl
@@ -340,10 +342,61 @@ jobs:
           path: target/nim/nimino-wsl-bundle-e2e.json
           if-no-files-found: error
 
+  finalize:
+    name: Finalize checksums and attestations
+    if: github.ref_type == 'tag'
+    needs: wsl-qualification
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: cashapp/activate-hermit@cea9af7913204a965fd488637a8d1811bba2e616 # v1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: nimino-release-assembled
+          path: candidate
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: nimino-wsl-qualification
+          path: candidate
+      - uses: sigstore/cosign-installer@d7543c93d881b35a8faa02e8e3605f69b7a1ce62 # v3.10.0
+      - name: Freeze and verify the complete candidate index
+        run: |
+          node scripts/nimino-release-supply-chain.mjs checksums \
+            --directory candidate --output candidate/SHA256SUMS
+          cosign sign-blob --yes \
+            --bundle candidate/SHA256SUMS.sigstore.json candidate/SHA256SUMS
+          node scripts/nimino-release-supply-chain.mjs verify \
+            --release-set candidate/release-set.json --artifact-dir candidate \
+            --sbom candidate/nimino-release.spdx.json \
+            --checksums candidate/SHA256SUMS \
+            --resolved-tag-commit "$GITHUB_SHA"
+      - name: Attest provenance for every indexed artifact
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-checksums: candidate/SHA256SUMS
+      - name: Bind the SPDX SBOM to every indexed artifact
+        uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-checksums: candidate/SHA256SUMS
+          sbom-path: candidate/nimino-release.spdx.json
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nimino-release-candidate
+          path: candidate/*
+          if-no-files-found: error
+
   publish-candidate:
     name: Publish draft candidate
     if: github.ref_type == 'tag'
-    needs: wsl-qualification
+    needs: finalize
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -351,10 +404,6 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: nimino-release-candidate
-          path: candidate
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: nimino-wsl-qualification
           path: candidate
       - name: Create or reuse the draft and upload immutable artifacts
         env:

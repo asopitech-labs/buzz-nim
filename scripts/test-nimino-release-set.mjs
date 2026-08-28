@@ -63,6 +63,8 @@ assert.equal(create(second, "1.2.0", artifacts).status, 0);
 assert.equal(readFileSync(first, "utf8"), readFileSync(second, "utf8"));
 assert.equal(verify(first).status, 0);
 assert.equal(verify(first, "--artifact-dir", work).status, 0);
+assert.equal(verify(first, "--source-root", root).status, 0);
+assert.notEqual(verify(first, "--source-root", work).status, 0);
 
 const releaseSet = JSON.parse(readFileSync(first, "utf8"));
 assert.match(releaseSet.releaseSetId, /^[0-9a-f]{64}$/);

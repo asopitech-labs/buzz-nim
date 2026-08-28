@@ -1,0 +1,55 @@
+name: Promote Nimino release-set
+run-name: Promote release-set ${{ inputs.release_set_id }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_set_id:
+        description: Immutable 64-hex nimino.release-set ID
+        required: true
+        type: string
+
+concurrency:
+  group: nimino-production-promotion
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  promote:
+    name: Verify and promote immutable bytes
+    if: github.repository == 'asopitech-labs/nimino'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    environment: nimino-production
+    permissions:
+      contents: write
+      attestations: read
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      RELEASE_SET_ID: ${{ inputs.release_set_id }}
+    steps:
+      - name: Require the reviewed workflow from main
+        env:
+          DISPATCH_REF: ${{ github.ref }}
+        run: test "$DISPATCH_REF" = refs/heads/main
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: cashapp/activate-hermit@cea9af7913204a965fd488637a8d1811bba2e616 # v1
+      - uses: sigstore/cosign-installer@d7543c93d881b35a8faa02e8e3605f69b7a1ce62 # v3.10.0
+      - name: Resolve the content identity to one candidate
+        id: candidate
+        run: |
+          node scripts/nimino-promote-release.mjs resolve \
+            --release-set-id "$RELEASE_SET_ID" --output "$RUNNER_TEMP/candidate.json"
+          echo "tag=$(node -p "require('$RUNNER_TEMP/candidate.json').tag")" >> "$GITHUB_OUTPUT"
+          echo "version=$(node -p "require('$RUNNER_TEMP/candidate.json').version")" >> "$GITHUB_OUTPUT"
+          echo "source_commit=$(node -p "require('$RUNNER_TEMP/candidate.json').sourceCommit")" >> "$GITHUB_OUTPUT"
+      - name: Promote after signature, provenance, SBOM, and rollback gates
+        env:
+          CANDIDATE_TAG: ${{ steps.candidate.outputs.tag }}
+        run: |
+          node scripts/nimino-promote-release.mjs promote \
+            --release-set-id "$RELEASE_SET_ID" --tag "$CANDIDATE_TAG"

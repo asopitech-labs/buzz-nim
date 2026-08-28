@@ -85,8 +85,8 @@ if (
 )
   fail("release-set contract is invalid");
 
-function versionFrom(path, section) {
-  const source = readFileSync(join(root, path), "utf8");
+function versionFrom(path, section, sourceRoot = root) {
+  const source = readFileSync(join(sourceRoot, path), "utf8");
   const body = section
     ? source.match(
         new RegExp(
@@ -99,33 +99,33 @@ function versionFrom(path, section) {
   return version;
 }
 
-function digestFiles(paths) {
+function digestFiles(paths, sourceRoot = root) {
   const hash = createHash("sha256");
   for (const path of [...paths].sort()) {
-    hash.update(`${path}\0${sha256(readFileSync(join(root, path)))}\n`);
+    hash.update(`${path}\0${sha256(readFileSync(join(sourceRoot, path)))}\n`);
   }
   return hash.digest("hex");
 }
 
-function filesUnder(directory) {
+function filesUnder(directory, sourceRoot = root) {
   const files = [];
-  for (const entry of readdirSync(join(root, directory), {
+  for (const entry of readdirSync(join(sourceRoot, directory), {
     withFileTypes: true,
   })) {
     if (entry.name === "nimcache") continue;
     const path = join(directory, entry.name);
-    if (entry.isDirectory()) files.push(...filesUnder(path));
+    if (entry.isDirectory()) files.push(...filesUnder(path, sourceRoot));
     else if (entry.isFile()) files.push(path);
   }
   return files;
 }
 
-function sourceComponents(commit) {
+function sourceComponents(commit, sourceRoot = root) {
   const chirps = JSON.parse(
-    readFileSync(join(root, "contracts/chirps-v0.6.3.json"), "utf8"),
+    readFileSync(join(sourceRoot, "contracts/chirps-v0.6.3.json"), "utf8"),
   );
   const boundary = readFileSync(
-    join(root, "contracts/nim-rust-boundary/v1/schema.sha256"),
+    join(sourceRoot, "contracts/nim-rust-boundary/v1/schema.sha256"),
     "utf8",
   ).match(/^# bundle-sha256: ([0-9a-f]{64})$/m)?.[1];
   if (!boundary) fail("boundary schema bundle digest is missing");
@@ -144,15 +144,22 @@ function sourceComponents(commit) {
     },
     {
       id: "nim-core",
-      version: versionFrom("nim/nimino_core/nimino_core.nimble"),
+      version: versionFrom(
+        "nim/nimino_core/nimino_core.nimble",
+        undefined,
+        sourceRoot,
+      ),
       sourceSha: commit,
-      sha256: digestFiles(filesUnder("nim/nimino_core")),
+      sha256: digestFiles(
+        filesUnder("nim/nimino_core", sourceRoot),
+        sourceRoot,
+      ),
     },
     {
       id: "rust-workspace",
-      version: versionFrom("Cargo.toml", "workspace.package"),
+      version: versionFrom("Cargo.toml", "workspace.package", sourceRoot),
       sourceSha: commit,
-      sha256: digestFiles(["Cargo.lock", "Cargo.toml"]),
+      sha256: digestFiles(["Cargo.lock", "Cargo.toml"], sourceRoot),
     },
   ];
 }
@@ -228,7 +235,7 @@ function validateIdentity(releaseSet) {
   }
 }
 
-function validateEntries(releaseSet) {
+function validateEntries(releaseSet, sourceRoot = root) {
   const componentIds = [];
   for (const component of releaseSet.components) {
     exactKeys(
@@ -249,7 +256,7 @@ function validateEntries(releaseSet) {
     JSON.stringify(componentIds) !==
       JSON.stringify(contract.requiredComponents) ||
     JSON.stringify(releaseSet.components) !==
-      JSON.stringify(sourceComponents(releaseSet.sourceCommit))
+      JSON.stringify(sourceComponents(releaseSet.sourceCommit, sourceRoot))
   )
     fail("source component pins do not match this checkout");
 
@@ -345,6 +352,7 @@ function verify(values) {
     "resolved-tag-commit",
     "artifact-dir",
     "previous",
+    "source-root",
   ]);
   const manifestPath = values.get("manifest");
   const resolvedTagCommit = values.get("resolved-tag-commit");
@@ -354,7 +362,10 @@ function verify(values) {
     readFileSync(resolve(root, manifestPath), "utf8"),
   );
   validateIdentity(releaseSet);
-  validateEntries(releaseSet);
+  const sourceRoot = resolve(root, values.get("source-root") ?? ".");
+  if (!existsSync(sourceRoot) || !statSync(sourceRoot).isDirectory())
+    fail("source root is missing");
+  validateEntries(releaseSet, sourceRoot);
   if (resolvedTagCommit !== releaseSet.sourceCommit)
     fail("tag resolved to a different commit");
 

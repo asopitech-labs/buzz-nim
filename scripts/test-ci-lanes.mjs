@@ -309,6 +309,10 @@ check(
   "changed-path gate must verify the signed platform release contract",
 );
 check(
+  job("changes").includes("run: just promotion-contract"),
+  "changed-path gate must verify the promotion and supply-chain contract",
+);
+check(
   job("changes").includes("run: just agent-bundle-contract"),
   "changed-path gate must verify the manifest-driven agent bundle",
 );
@@ -568,6 +572,15 @@ check(
       "contracts/nimino-platform-release/**",
     ),
   "signed platform release contract must remain in CI and pre-push",
+);
+check(
+  /^promotion-contract:\n {4}node scripts\/test-nimino-release-supply-chain\.mjs\n {4}node scripts\/test-nimino-promotion\.mjs$/m.test(
+    justfile,
+  ) &&
+    workflow.includes("run: just promotion-contract") &&
+    hook("promotion-contract").includes("run: just promotion-contract") &&
+    hookGlobs("promotion-contract").includes("contracts/nimino-promotion/**"),
+  "promotion and supply-chain gate must remain in CI and pre-push",
 );
 check(
   /^agent-bundle-contract:\n {4}node scripts\/test-nimino-agent-bundle\.mjs$/m.test(

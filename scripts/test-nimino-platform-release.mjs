@@ -87,7 +87,7 @@ for (const signal of [
   "nimino-release-set.mjs create",
   "nimino-wsl-bundle.mjs compose",
   "just wsl-bundle-certify",
-  "attest-build-provenance",
+  "actions/attest@",
   "--draft --verify-tag",
 ])
   assert.ok(

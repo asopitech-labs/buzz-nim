@@ -238,6 +238,11 @@ relay-release-contract:
 platform-release-contract:
     node scripts/test-nimino-platform-release.mjs
 
+# Verify SBOM/provenance, idempotent promotion, downgrade, and rollback gates
+promotion-contract:
+    node scripts/test-nimino-release-supply-chain.mjs
+    node scripts/test-nimino-promotion.mjs
+
 # Verify exact Agent/CLI bundle inventory, execution, and missing-component rejection
 agent-bundle-contract:
     node scripts/test-nimino-agent-bundle.mjs
@@ -314,7 +319,7 @@ ci-lanes-contract:
     node scripts/test-ci-lanes.mjs
 
 # Run repo lint, formatting, and repository policy checks
-check: fmt-check clippy chirps-contract control-model-contract naming-contract protocol-contract runtime-namespace-contract gui-surface-contract release-set-contract relay-release-contract platform-release-contract wsl-support-contract wsl-chirps-contract wsl-bundle-contract removed-client-contract ci-lanes-contract desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check file-size-check
+check: fmt-check clippy chirps-contract control-model-contract naming-contract protocol-contract runtime-namespace-contract gui-surface-contract release-set-contract relay-release-contract platform-release-contract promotion-contract wsl-support-contract wsl-chirps-contract wsl-bundle-contract removed-client-contract ci-lanes-contract desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check file-size-check
 
 # Run the active-product differential file-size ratchet and its policy tests.
 # The ratchet inspects only files changed from the merge base, so this stays

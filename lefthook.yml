@@ -141,6 +141,10 @@ pre-push:
       files: git diff --name-only origin/main...HEAD
       glob: ["contracts/nimino-platform-release/**", "contracts/nimino-release-set/**", "contracts/nimino-wsl-bundle/**", "scripts/nimino-platform-artifacts.mjs", "scripts/nimino-wsl-bundle.mjs", "scripts/nimino-wsl-service.sh", "scripts/test-nimino-platform-release.mjs", ".github/workflows/nimino-platform-release.yml", ".github/workflows/nimino-relay-release.yml", "desktop/scripts/build-release-config.mjs", "Justfile"]
       run: just platform-release-contract
+    promotion-contract:
+      files: git diff --name-only origin/main...HEAD
+      glob: ["contracts/nimino-promotion/**", "contracts/nimino-release-set/**", "contracts/nimino-platform-release/**", "scripts/nimino-release-supply-chain.mjs", "scripts/nimino-promote-release.mjs", "scripts/test-nimino-release-supply-chain.mjs", "scripts/test-nimino-promotion.mjs", ".github/workflows/nimino-platform-release.yml", ".github/workflows/nimino-promote.yml", "Justfile"]
+      run: just promotion-contract
     agent-bundle-contract:
       files: git diff --name-only origin/main...HEAD
       glob: ["contracts/nimino-release-set/**", "contracts/nimino-agent-bundle/**", "scripts/nimino-release-set.mjs", "scripts/nimino-agent-bundle.mjs", "scripts/test-nimino-agent-bundle.mjs", "Justfile"]
