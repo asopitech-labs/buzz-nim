@@ -193,6 +193,8 @@ jobs:
         run: just promotion-contract
       - name: Legacy release authority retirement contract
         run: just legacy-release-deletion-contract
+      - name: Unified cutover readiness contract
+        run: just cutover-readiness-contract
       - name: Manifest-driven agent bundle contract
         run: just agent-bundle-contract
       - name: Nimino data contract

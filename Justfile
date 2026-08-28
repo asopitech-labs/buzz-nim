@@ -255,6 +255,10 @@ promotion-contract:
 legacy-release-deletion-contract:
     node scripts/test-nimino-legacy-release-contract.mjs
 
+# Verify the complete Epic #2-#11 keep/delete/owner/proof readiness index
+cutover-readiness-contract:
+    node scripts/test-nimino-cutover-readiness.mjs
+
 # Verify exact Agent/CLI bundle inventory, execution, and missing-component rejection
 agent-bundle-contract:
     node scripts/test-nimino-agent-bundle.mjs

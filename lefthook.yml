@@ -153,6 +153,10 @@ pre-push:
       files: git diff --name-only origin/main...HEAD
       glob: [".github/workflows/**", "contracts/nimino-legacy-release/**", "scripts/**", "deploy/**", "AGENTS.md", "CONTRIBUTING.md", "README.md", "RELEASING.md", "SECURITY.md", "Justfile"]
       run: just legacy-release-deletion-contract
+    cutover-readiness-contract:
+      files: git diff --name-only origin/main...HEAD
+      glob: ["contracts/**", "nim/**", "crates/**", ".github/workflows/**", "scripts/**", "Justfile"]
+      run: just cutover-readiness-contract
     agent-bundle-contract:
       files: git diff --name-only origin/main...HEAD
       glob: ["contracts/nimino-release-set/**", "contracts/nimino-agent-bundle/**", "scripts/nimino-release-set.mjs", "scripts/nimino-agent-bundle.mjs", "scripts/test-nimino-agent-bundle.mjs", "Justfile"]

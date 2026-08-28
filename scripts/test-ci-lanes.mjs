@@ -609,6 +609,17 @@ check(
   "legacy release authority inventory must remain in CI and pre-push",
 );
 check(
+  /^cutover-readiness-contract:\n {4}node scripts\/test-nimino-cutover-readiness\.mjs$/m.test(
+    justfile,
+  ) &&
+    workflow.includes("run: just cutover-readiness-contract") &&
+    hook("cutover-readiness-contract").includes(
+      "run: just cutover-readiness-contract",
+    ) &&
+    hookGlobs("cutover-readiness-contract").includes("contracts/**"),
+  "unified cutover readiness index must remain in CI and pre-push",
+);
+check(
   /^agent-bundle-contract:\n {4}node scripts\/test-nimino-agent-bundle\.mjs$/m.test(
     justfile,
   ) &&
