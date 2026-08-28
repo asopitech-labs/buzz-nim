@@ -269,6 +269,10 @@ gui-surface-contract:
 wsl-support-contract:
     node scripts/check-wsl-support-contract.mjs
 
+# Verify idempotent WSL service install, rollback, restart, and uninstall
+wsl-service-contract:
+    node scripts/test-nimino-wsl-service.mjs
+
 # Verify complete Mobile-tree/reference classification and NIP-AB ownership
 removed-client-contract:
     node scripts/check-mobile-removal-contract.mjs

@@ -251,6 +251,10 @@ check(
   "changed-path gate must verify the manifest-driven agent bundle",
 );
 check(
+  job("changes").includes("run: just wsl-service-contract"),
+  "changed-path gate must verify the WSL service lifecycle",
+);
+check(
   job("changes").includes("run: just nimino-cluster-contract"),
   "changed-path gate must verify the Nimino cluster lifecycle contract",
 );
@@ -462,6 +466,15 @@ check(
     hook("agent-bundle-contract").includes("run: just agent-bundle-contract") &&
     hookGlobs("agent-bundle-contract").includes("contracts/nimino-agent-bundle/**"),
   "manifest-driven agent bundle must remain in CI and pre-push",
+);
+check(
+  /^wsl-service-contract:\n {4}node scripts\/test-nimino-wsl-service\.mjs$/m.test(
+    justfile,
+  ) &&
+    workflow.includes("run: just wsl-service-contract") &&
+    hook("wsl-service-contract").includes("run: just wsl-service-contract") &&
+    hookGlobs("wsl-service-contract").includes("scripts/nimino-wsl-service.sh"),
+  "WSL service lifecycle must remain in CI and pre-push",
 );
 check(
   /^nimino-cluster-scenario-contract:\n    node scripts\/test-nimino-cluster-scenario-contract\.mjs$/m.test(

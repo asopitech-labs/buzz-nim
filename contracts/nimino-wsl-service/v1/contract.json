@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.wsl-service",
+  "issue": 19,
+  "platformContract": "wsl-support-v1",
+  "serviceManager": "systemd-user",
+  "unit": "nimino-relay.service",
+  "releaseIdentity": "releaseSetId",
+  "releaseLayout": "$XDG_DATA_HOME/nimino/service-releases/<releaseSetId>",
+  "activation": "atomic-current-symlink",
+  "healthGate": "systemctl-is-active",
+  "rollback": "previous-current-target",
+  "restartPolicy": "on-failure",
+  "processOwnership": "control-group",
+  "uninstallRetention": [
+    "$XDG_DATA_HOME/nimino/data",
+    "$XDG_STATE_HOME/nimino"
+  ],
+  "purgeRequiresExplicitFlag": true,
+  "commands": ["install", "update", "restart", "uninstall"]
+}
