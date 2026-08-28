@@ -205,6 +205,14 @@ nimino-data-ops-contract:
 nimino-data-ops-scenarios:
     cargo test -p nimino-data-ops --test convergence_scenarios -- --test-threads=1
 
+# Verify fail-closed backup, restore, integrity, and rollback ownership
+nimino-cutover-rehearsal-contract:
+    node scripts/test-nimino-cutover-rehearsal.mjs
+
+# Exercise backup/restore plus the failed-promotion rollback and emit evidence
+nimino-cutover-rehearsal output="target/nim/nimino-cutover-rehearsal.json": nimino-cutover-rehearsal-contract promotion-contract
+    NIMINO_CUTOVER_EVIDENCE="{{justfile_directory()}}/{{output}}" NIMINO_FAILED_PROMOTION_VERIFIED=1 cargo test -p nimino-data-ops --test convergence_scenarios backup_restore_rehearsal_preserves_inventory_and_rejects_corruption -- --exact --test-threads=1
+
 # Verify MCP capability, audit, timeout, cancellation, and output boundaries
 nimino-mcp-execution-contract:
     node scripts/test-nimino-mcp-execution-contract.mjs

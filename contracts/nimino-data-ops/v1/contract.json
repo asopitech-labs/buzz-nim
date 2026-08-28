@@ -9,7 +9,7 @@
   "cli": {
     "crate": "nimino-data-ops",
     "binary": "nimino-data-ops",
-    "commands": ["verify", "repair"],
+    "commands": ["verify", "repair", "backup", "restore"],
     "role": "digest-object-filesystem-adapter"
   },
   "contracts": {

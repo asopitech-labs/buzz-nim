@@ -4,7 +4,9 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use clap::{Parser, Subcommand};
-use nimino_data_ops::{repair_replica, verify_replica, ObjectRepairRoots, ObjectSpec};
+use nimino_data_ops::{
+    backup_replica, repair_replica, restore_replica, verify_replica, ObjectRepairRoots, ObjectSpec,
+};
 
 #[derive(Parser)]
 #[command(
@@ -48,6 +50,30 @@ enum Command {
         #[arg(long = "object", value_parser = parse_object)]
         objects: Vec<ObjectSpec>,
     },
+    /// Create a verified, no-clobber cutover backup bundle.
+    Backup {
+        #[arg(long)]
+        store: PathBuf,
+        #[arg(long)]
+        community: String,
+        #[arg(long)]
+        object_root: Option<PathBuf>,
+        #[arg(long = "object", value_parser = parse_object)]
+        objects: Vec<ObjectSpec>,
+        #[arg(long)]
+        backup_dir: PathBuf,
+    },
+    /// Restore a verified bundle into new store and object paths.
+    Restore {
+        #[arg(long)]
+        backup_dir: PathBuf,
+        #[arg(long)]
+        store: PathBuf,
+        #[arg(long)]
+        community: String,
+        #[arg(long)]
+        object_root: Option<PathBuf>,
+    },
 }
 
 fn main() {
@@ -90,6 +116,30 @@ fn run(cli: Cli) -> Result<()> {
                 quarantine: object_quarantine_root.as_deref(),
             },
             &objects,
+        )?)?,
+        Command::Backup {
+            store,
+            community,
+            object_root,
+            objects,
+            backup_dir,
+        } => serde_json::to_value(backup_replica(
+            &store,
+            &community,
+            object_root.as_deref(),
+            &objects,
+            &backup_dir,
+        )?)?,
+        Command::Restore {
+            backup_dir,
+            store,
+            community,
+            object_root,
+        } => serde_json::to_value(restore_replica(
+            &backup_dir,
+            &store,
+            object_root.as_deref(),
+            &community,
         )?)?,
     };
     println!("{}", serde_json::to_string_pretty(&value)?);

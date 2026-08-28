@@ -173,6 +173,8 @@ jobs:
         run: just nimino-effect-ledger-contract
       - name: Nimino data operations contract
         run: just nimino-data-ops-contract
+      - name: Nimino cutover recovery rehearsal contract
+        run: just nimino-cutover-rehearsal-contract
       - name: Nimino MCP execution contract
         run: just nimino-mcp-execution-contract
       - name: Legacy mesh and Redis replacement manifest

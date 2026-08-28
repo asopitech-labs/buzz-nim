@@ -12,5 +12,11 @@ authorized operator supplies the Nim-selected source and target,
 installing them. Existing stores and corrupt objects move to explicit
 no-clobber quarantine paths. Repeating an already converged repair is a no-op.
 
+`backup` and `restore` are the low-level Issue #64 cutover adapters. Backup
+writes its manifest only after the copied store and declared objects reproduce
+the source inventory. Restore accepts only a verified bundle and new target
+paths. Rollback authority and stopping conditions remain in
+`nimino-cutover-rehearsal/v1`; these commands do not choose when to cut over.
+
 Run `just nimino-data-ops-contract`, `just nim-test`, and
 `just nimino-data-ops-scenarios`.

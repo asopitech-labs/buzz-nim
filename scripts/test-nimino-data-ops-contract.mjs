@@ -5,8 +5,12 @@ import { readFileSync } from "node:fs";
 const contract = JSON.parse(
   readFileSync("contracts/nimino-data-ops/v1/contract.json", "utf8"),
 );
-const data = JSON.parse(readFileSync("contracts/nimino-data/v1/contract.json", "utf8"));
-const sync = JSON.parse(readFileSync("contracts/nimino-sync/v1/contract.json", "utf8"));
+const data = JSON.parse(
+  readFileSync("contracts/nimino-data/v1/contract.json", "utf8"),
+);
+const sync = JSON.parse(
+  readFileSync("contracts/nimino-sync/v1/contract.json", "utf8"),
+);
 const convergence = JSON.parse(
   readFileSync("contracts/nimino-convergence/v1/contract.json", "utf8"),
 );
@@ -34,15 +38,24 @@ function check(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-check(contract.schemaVersion === 1 && contract.version === 1, "wrong data-ops version");
+check(
+  contract.schemaVersion === 1 && contract.version === 1,
+  "wrong data-ops version",
+);
 check(contract.contract === "nimino.data-ops", "wrong data-ops contract");
-check(contract.compatibilityMode === false, "data-ops compatibility mode is forbidden");
+check(
+  contract.compatibilityMode === false,
+  "data-ops compatibility mode is forbidden",
+);
 check(contract.owner === "nimino-core", "Nim must own repair authority");
 check(
   contract.cli.crate === "nimino-data-ops" &&
-    JSON.stringify(contract.cli.commands) === JSON.stringify(["verify", "repair"]) &&
+    JSON.stringify(contract.cli.commands) ===
+      JSON.stringify(["verify", "repair", "backup", "restore"]) &&
     cli.includes("Command::Verify") &&
-    cli.includes("Command::Repair"),
+    cli.includes("Command::Repair") &&
+    cli.includes("Command::Backup") &&
+    cli.includes("Command::Restore"),
   "operator CLI contract drifted",
 );
 
@@ -58,16 +71,20 @@ check(
 check(
   contract.contracts.data === `${data.protocol}/v${data.version}` &&
     contract.contracts.sync === `${sync.contract}/v${sync.version}` &&
-    contract.contracts.convergence === `${convergence.contract}/v${convergence.version}` &&
-    contract.contracts.projection === `${projection.contract}/v${projection.version}` &&
+    contract.contracts.convergence ===
+      `${convergence.contract}/v${convergence.version}` &&
+    contract.contracts.projection ===
+      `${projection.contract}/v${projection.version}` &&
     contract.contracts.objects === `${objects.contract}/v${objects.version}` &&
     contract.contracts.effects === `${effects.contract}/v${effects.version}` &&
-    contract.contracts.clusterScenarios === `${cluster.contract}/v${cluster.version}`,
+    contract.contracts.clusterScenarios ===
+      `${cluster.contract}/v${cluster.version}`,
   "data-ops dependency contracts drifted",
 );
 check(
   contract.authority.selection === "strict-majority-identical-snapshot" &&
-    JSON.stringify(contract.authority.nodeCounts) === JSON.stringify([1, 3, 5]) &&
+    JSON.stringify(contract.authority.nodeCounts) ===
+      JSON.stringify([1, 3, 5]) &&
     contract.authority.noQuorum === "fail-closed",
   "repair authority contract drifted",
 );
@@ -91,6 +108,8 @@ for (const symbol of [
 for (const symbol of [
   "verify_replica",
   "repair_replica",
+  "backup_replica",
+  "restore_replica",
   "backup_to",
   "quarantine_to",
   "copy_from",

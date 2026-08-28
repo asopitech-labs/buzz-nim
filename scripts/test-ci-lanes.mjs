@@ -475,6 +475,19 @@ check(
   "data verify/repair contract and scenarios must remain in CI",
 );
 check(
+  /^nimino-cutover-rehearsal-contract:\n {4}node scripts\/test-nimino-cutover-rehearsal\.mjs$/m.test(
+    justfile,
+  ) &&
+    workflow.includes("run: just nimino-cutover-rehearsal-contract") &&
+    hook("cutover-rehearsal-contract").includes(
+      "run: just nimino-cutover-rehearsal-contract",
+    ) &&
+    hookGlobs("cutover-rehearsal-contract").includes(
+      "contracts/nimino-cutover-rehearsal/**",
+    ),
+  "cutover recovery rehearsal contract must remain in CI and pre-push",
+);
+check(
   /^nimino-mcp-execution-contract:\n    node scripts\/test-nimino-mcp-execution-contract\.mjs$/m.test(
     justfile,
   ) &&

@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.cutover-rehearsal",
+  "issue": 64,
+  "compatibilityMode": false,
+  "backup": {
+    "format": "nimino.cutover-backup/v1",
+    "command": "nimino-data-ops backup",
+    "publicationRule": "manifest-written-last-after-store-object-and-inventory-verification",
+    "overwritePolicy": "reject",
+    "surfaces": [
+      "canonical-store",
+      "projections",
+      "workflow-effects",
+      "append-only-log",
+      "declared-objects"
+    ]
+  },
+  "restore": {
+    "command": "nimino-data-ops restore",
+    "targetPolicy": "new-paths-only",
+    "comparison": [
+      "checkpoint",
+      "canonicalDigest",
+      "projectionDigest",
+      "objectDigest",
+      "unknownEffects"
+    ],
+    "success": "exact-before-after-match"
+  },
+  "rollback": {
+    "method": "restore-verified-backup-to-new-target-then-atomic-serving-switch",
+    "triggerIfAny": [
+      "candidate-promotion-failed",
+      "post-cutover-health-failed",
+      "before-after-integrity-mismatch",
+      "unknown-effects-nonzero",
+      "backup-or-restore-verification-failed"
+    ],
+    "stopConditions": [
+      "freeze-all-store-and-object-writes-before-backup",
+      "do-not-promote-without-verified-isolated-restore",
+      "stop-serving-before-rollback-switch",
+      "do-not-resume-writes-until-restored-digests-match"
+    ],
+    "forbidden": [
+      "buzz-compatibility-shim",
+      "dual-write",
+      "down-migration",
+      "in-place-restore"
+    ]
+  },
+  "requiredEvidence": [
+    "verified-backup-manifest",
+    "isolated-restore-before-after-digests",
+    "corrupt-backup-rejection",
+    "failed-promotion-rollback"
+  ],
+  "failedPromotionContract": "nimino.promotion/v1",
+  "physicalCutoverOwner": 68
+}
