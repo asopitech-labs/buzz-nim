@@ -6,12 +6,22 @@
   "serviceManager": "systemd-user",
   "unit": "nimino-relay.service",
   "releaseIdentity": "releaseSetId",
+  "bundleContract": "nimino.wsl-bundle",
+  "bundleInput": "verified-complete-bundle-only",
   "releaseLayout": "$XDG_DATA_HOME/nimino/service-releases/<releaseSetId>",
   "activation": "atomic-current-symlink",
   "healthGate": "systemctl-is-active",
   "rollback": "previous-current-target",
   "restartPolicy": "on-failure",
   "processOwnership": "control-group",
+  "installedTools": [
+    "nimino",
+    "nimino-acp",
+    "nimino-agent",
+    "nimino-data-ops",
+    "nimino-dev-mcp",
+    "nimino-relay"
+  ],
   "uninstallRetention": [
     "$XDG_DATA_HOME/nimino/data",
     "$XDG_STATE_HOME/nimino"

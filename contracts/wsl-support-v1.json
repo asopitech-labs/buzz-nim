@@ -98,6 +98,7 @@
     "installer": 19,
     "launcher": 25,
     "chirpsRuntime": 45,
+    "bundleCertification": 60,
     "publicCutover": 12
   },
   "evidence": [

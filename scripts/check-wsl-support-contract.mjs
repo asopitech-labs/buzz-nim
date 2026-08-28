@@ -40,13 +40,16 @@ function compareSemver(left, right) {
 
 function matchesRule(candidate, { path, operator, value }) {
   const actual = valueAt(candidate, path);
-  if (operator === "equals") return JSON.stringify(actual) === JSON.stringify(value);
-  if (operator === "at-least") return typeof actual === "number" && actual >= value;
+  if (operator === "equals")
+    return JSON.stringify(actual) === JSON.stringify(value);
+  if (operator === "at-least")
+    return typeof actual === "number" && actual >= value;
   if (operator === "semver-at-least") {
     return typeof actual === "string" && compareSemver(actual, value) >= 0;
   }
   if (operator === "path-prefix") {
-    const normalized = typeof actual === "string" ? posix.normalize(actual) : "";
+    const normalized =
+      typeof actual === "string" ? posix.normalize(actual) : "";
     return normalized.startsWith(value) && !normalized.startsWith("/mnt/");
   }
   throw new Error(`unknown operator: ${operator}`);
@@ -65,34 +68,62 @@ check(
   "contractVersion must be wsl-support-v1",
 );
 check(contract.issue === 16, "contract must belong to issue #16");
-check(Array.isArray(contract.supportedConfiguration), "supportedConfiguration must be an array");
+check(
+  Array.isArray(contract.supportedConfiguration),
+  "supportedConfiguration must be an array",
+);
 check(
   contract.supportedConfiguration.length === 16,
   "supportedConfiguration must contain the exact v1 rules",
 );
-check(Array.isArray(contract.unsupportedMatrix), "unsupportedMatrix must be an array");
+check(
+  Array.isArray(contract.unsupportedMatrix),
+  "unsupportedMatrix must be an array",
+);
 check(
   contract.unsupportedMatrix.length === 19,
   "unsupportedMatrix must contain the exact v1 negative cases",
 );
-check(Array.isArray(contract.evidence) && contract.evidence.length >= 3, "local evidence is incomplete");
+check(
+  Array.isArray(contract.evidence) && contract.evidence.length >= 3,
+  "local evidence is incomplete",
+);
 check(
   Array.isArray(contract.sources) && contract.sources.length === 8,
   "official sources must contain the exact v1 references",
 );
-check(contract.policies.gui.method === "WSLg", "WSLg must be the sole GUI method");
+check(
+  contract.policies.gui.method === "WSLg",
+  "WSLg must be the sole GUI method",
+);
 check(
   contract.policies.filesystem.liveStorage === "distribution-ext4",
   "live storage must use distribution ext4",
 );
-check(contract.policies.network.mode === "mirrored", "network mode must be mirrored");
+check(
+  contract.policies.network.mode === "mirrored",
+  "network mode must be mirrored",
+);
 check(
   contract.policies.secrets.backend === "Linux Secret Service",
   "secrets must use Linux Secret Service",
 );
-check(contract.implementationOwnership.installer === 19, "installer lifecycle must remain in issue #19");
-check(contract.implementationOwnership.launcher === 25, "launcher boundary must remain in issue #25");
-check(contract.implementationOwnership.chirpsRuntime === 45, "WSL Chirps certification must remain in issue #45");
+check(
+  contract.implementationOwnership.installer === 19,
+  "installer lifecycle must remain in issue #19",
+);
+check(
+  contract.implementationOwnership.launcher === 25,
+  "launcher boundary must remain in issue #25",
+);
+check(
+  contract.implementationOwnership.chirpsRuntime === 45,
+  "WSL Chirps certification must remain in issue #45",
+);
+check(
+  contract.implementationOwnership.bundleCertification === 60,
+  "WSL bundle certification must remain in issue #60",
+);
 check(
   contract.policies.secrets.legacyPlaintextFallback.ownerIssue === 25,
   "legacy identity.key fallback removal must remain in issue #25",
@@ -120,7 +151,9 @@ const requiredRules = {
   "secrets.backend": ["equals", "Linux Secret Service"],
   "secrets.serviceState": ["equals", "available-unlocked"],
 };
-const actualRulePaths = contract.supportedConfiguration.map(({ path }) => path).sort();
+const actualRulePaths = contract.supportedConfiguration
+  .map(({ path }) => path)
+  .sort();
 check(
   same(actualRulePaths, Object.keys(requiredRules).sort()),
   "support rule paths must exactly match v1",

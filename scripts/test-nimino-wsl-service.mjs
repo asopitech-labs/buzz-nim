@@ -3,6 +3,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import {
+  appendFileSync,
   chmodSync,
   existsSync,
   mkdtempSync,
@@ -10,6 +11,7 @@ import {
   readFileSync,
   readdirSync,
   readlinkSync,
+  rmSync,
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
@@ -17,9 +19,17 @@ import { join } from "node:path";
 
 const root = process.cwd();
 const lifecycle = join(root, "scripts/nimino-wsl-service.sh");
-const contract = JSON.parse(
+const releaseCli = join(root, "scripts/nimino-release-set.mjs");
+const bundleCli = join(root, "scripts/nimino-wsl-bundle.mjs");
+const serviceContract = JSON.parse(
   readFileSync(
     join(root, "contracts/nimino-wsl-service/v1/contract.json"),
+    "utf8",
+  ),
+);
+const bundleContract = JSON.parse(
+  readFileSync(
+    join(root, "contracts/nimino-wsl-bundle/v1/contract.json"),
     "utf8",
   ),
 );
@@ -28,18 +38,37 @@ const home = join(work, "home", "nimino");
 const dataHome = join(home, ".local", "share");
 const stateHome = join(home, ".local", "state");
 const configHome = join(home, ".config");
+const binHome = join(home, ".local", "bin");
 const systemctl = join(work, "systemctl");
 const log = join(work, "systemctl.log");
 const pidFile = join(work, "service.pid");
 const failNext = join(work, "fail-next-active");
-const first = "1".repeat(64);
-const second = "2".repeat(64);
+const app = join(dataHome, "nimino");
+const releases = join(app, "service-releases");
+const current = join(app, "current");
+const unit = join(configHome, "systemd", "user", "nimino-relay.service");
 
-assert.deepEqual(Object.keys(contract).sort(), [
+function cleanup() {
+  if (existsSync(pidFile)) {
+    const pid = Number(readFileSync(pidFile, "utf8").trim());
+    try {
+      process.kill(pid, "SIGTERM");
+    } catch {
+      // Already stopped by uninstall.
+    }
+  }
+  rmSync(work, { recursive: true, force: true });
+}
+process.on("exit", cleanup);
+
+assert.deepEqual(Object.keys(serviceContract).sort(), [
   "activation",
+  "bundleContract",
+  "bundleInput",
   "commands",
   "contract",
   "healthGate",
+  "installedTools",
   "issue",
   "platformContract",
   "processOwnership",
@@ -53,17 +82,23 @@ assert.deepEqual(Object.keys(contract).sort(), [
   "uninstallRetention",
   "unit",
 ]);
-assert.equal(contract.contract, "nimino.wsl-service");
-assert.equal(contract.issue, 19);
-assert.equal(contract.serviceManager, "systemd-user");
-assert.equal(contract.processOwnership, "control-group");
-assert.equal(contract.purgeRequiresExplicitFlag, true);
-assert.deepEqual(contract.commands, [
+assert.equal(serviceContract.contract, "nimino.wsl-service");
+assert.equal(serviceContract.issue, 19);
+assert.equal(serviceContract.bundleContract, bundleContract.contract);
+assert.equal(serviceContract.bundleInput, "verified-complete-bundle-only");
+assert.equal(serviceContract.serviceManager, "systemd-user");
+assert.equal(serviceContract.processOwnership, "control-group");
+assert.equal(serviceContract.purgeRequiresExplicitFlag, true);
+assert.deepEqual(serviceContract.commands, [
   "install",
   "update",
   "restart",
   "uninstall",
 ]);
+assert.deepEqual(
+  serviceContract.installedTools,
+  bundleContract.components.map(({ installName }) => installName),
+);
 
 mkdirSync(home, { recursive: true });
 writeFileSync(
@@ -84,6 +119,7 @@ case "$1" in
   daemon-reload) ;;
   enable|restart)
     stop_process
+    "$NIMINO_FAKE_CURRENT/bin/nimino-relay" --health >> "$NIMINO_FAKE_SYSTEMCTL_LOG"
     sleep 300 >/dev/null 2>&1 &
     printf '%s\\n' "$!" > "$NIMINO_FAKE_PID_FILE"
     ;;
@@ -101,86 +137,148 @@ esac
 );
 chmodSync(systemctl, 0o755);
 
-function binary(name) {
-  const path = join(work, name);
-  writeFileSync(path, `#!/usr/bin/env bash\necho ${name}\n`);
-  chmodSync(path, 0o755);
-  return path;
-}
-
 const environment = {
   ...process.env,
   HOME: home,
   XDG_DATA_HOME: dataHome,
   XDG_STATE_HOME: stateHome,
   XDG_CONFIG_HOME: configHome,
+  XDG_BIN_HOME: binHome,
   NIMINO_SYSTEMCTL: systemctl,
   NIMINO_FAKE_SYSTEMCTL_LOG: log,
   NIMINO_FAKE_PID_FILE: pidFile,
   NIMINO_FAKE_FAIL_NEXT: failNext,
+  NIMINO_FAKE_CURRENT: current,
 };
 
-function run(...args) {
-  return spawnSync("bash", [lifecycle, ...args], {
-    cwd: root,
-    env: environment,
-    encoding: "utf8",
-  });
+function run(command, args, env = process.env) {
+  return spawnSync(command, args, { cwd: root, env, encoding: "utf8" });
 }
 
-const relay1 = binary("relay-v1");
-const relay2 = binary("relay-v2");
-assert.equal(
-  run("install", "--release-set-id", first, "--relay", relay1).status,
-  0,
-);
-const app = join(dataHome, "nimino");
-const releases = join(app, "service-releases");
-const current = join(app, "current");
-const unit = join(configHome, "systemd", "user", "nimino-relay.service");
-assert.deepEqual(readdirSync(releases), [first]);
-assert.equal(readlinkSync(current), join(releases, first));
+function runService(...args) {
+  return run("bash", [lifecycle, ...args], environment);
+}
+
+function makeBundle(version, commit, label) {
+  const artifacts = join(work, `artifacts-${label}`);
+  const releaseSet = join(work, `release-set-${label}.json`);
+  const bundle = join(work, `bundle-${label}`);
+  mkdirSync(artifacts);
+  const specifications = bundleContract.components.map(
+    ({ artifactId, installName }) => {
+      const path = join(artifacts, `${artifactId}-${label}`);
+      writeFileSync(
+        path,
+        `#!/usr/bin/env bash\nprintf '%s\\n' '${label}:${installName}:'"$*"\n`,
+      );
+      chmodSync(path, 0o755);
+      return `${artifactId}:0.1.0:${path}`;
+    },
+  );
+  const created = run(process.execPath, [
+    releaseCli,
+    "create",
+    "--version",
+    version,
+    "--tag",
+    `nimino-v${version}`,
+    "--commit",
+    commit,
+    "--output",
+    releaseSet,
+    ...specifications.flatMap((specification) => ["--artifact", specification]),
+  ]);
+  assert.equal(created.status, 0, created.stderr);
+  const composed = run(process.execPath, [
+    bundleCli,
+    "compose",
+    "--release-set",
+    releaseSet,
+    "--resolved-tag-commit",
+    commit,
+    "--artifact-dir",
+    artifacts,
+    "--output",
+    bundle,
+  ]);
+  assert.equal(composed.status, 0, composed.stderr);
+  return { bundle, id: composed.stdout.trim() };
+}
+
+function installArgs(command, release) {
+  return [command, "--release-set-id", release.id, "--bundle", release.bundle];
+}
+
+function assertWorkflow(label) {
+  for (const { installName } of bundleContract.components) {
+    const argument = installName === "nimino-data-ops" ? "verify" : "--version";
+    const result = run(join(binHome, installName), [argument]);
+    assert.equal(result.status, 0, result.stderr);
+    assert.match(result.stdout, new RegExp(`^${label}:${installName}:`));
+    assert.equal(
+      readlinkSync(join(binHome, installName)),
+      join(current, "bin", installName),
+    );
+  }
+}
+
+const first = makeBundle("1.0.0", "a".repeat(40), "v1");
+const second = makeBundle("1.0.1", "b".repeat(40), "v2");
+const corrupt = makeBundle("1.0.2", "c".repeat(40), "corrupt");
+appendFileSync(join(corrupt.bundle, "bin", "nimino-data-ops"), "tampered\n");
+
+assert.equal(runService(...installArgs("install", first)).status, 0);
+assert.equal(runService(...installArgs("install", first)).status, 0);
+assert.deepEqual(readdirSync(releases), [first.id]);
+assert.equal(readlinkSync(current), join(releases, first.id));
 assert.match(readFileSync(unit, "utf8"), /KillMode=control-group/);
 assert.match(readFileSync(unit, "utf8"), /Restart=on-failure/);
+assertWorkflow("v1");
+const installedManifest = JSON.parse(
+  readFileSync(join(current, "nimino-wsl-bundle.json"), "utf8"),
+);
+assert.equal(installedManifest.releaseSetId, first.id);
+assert.equal(
+  JSON.parse(readFileSync(join(current, "release-set.json"), "utf8"))
+    .releaseSetId,
+  first.id,
+);
 
 writeFileSync(join(app, "data", "retained.db"), "user-data");
-assert.equal(
-  run("install", "--release-set-id", first, "--relay", relay1).status,
-  0,
-);
-assert.deepEqual(readdirSync(releases), [first]);
+const checksumFailure = runService(...installArgs("update", corrupt));
+assert.notEqual(checksumFailure.status, 0);
+assert.match(checksumFailure.stderr, /checksum verification failed/i);
+assert(!existsSync(join(releases, corrupt.id)));
 
 writeFileSync(failNext, "1");
-const failed = run("update", "--release-set-id", second, "--relay", relay2);
+const failed = runService(...installArgs("update", second));
 assert.notEqual(failed.status, 0);
 assert.match(failed.stderr, /rolled back/i);
-assert.equal(readlinkSync(current), join(releases, first));
-assert(!existsSync(join(releases, second)));
+assert.equal(readlinkSync(current), join(releases, first.id));
+assert(!existsSync(join(releases, second.id)));
+assert(!readdirSync(releases).some((name) => name.startsWith(".staging.")));
+assertWorkflow("v1");
 
-assert.equal(
-  run("update", "--release-set-id", second, "--relay", relay2).status,
-  0,
-);
-assert.equal(readlinkSync(current), join(releases, second));
-assert.equal(run("restart").status, 0);
+assert.equal(runService(...installArgs("update", second)).status, 0);
+assert.equal(readlinkSync(current), join(releases, second.id));
+assertWorkflow("v2");
+assert.equal(runService("restart").status, 0);
 const servicePid = Number(readFileSync(pidFile, "utf8").trim());
 assert.doesNotThrow(() => process.kill(servicePid, 0));
 
-assert.equal(run("uninstall").status, 0);
+assert.equal(runService("uninstall").status, 0);
 assert.throws(() => process.kill(servicePid, 0));
 assert(!existsSync(unit));
 assert(!existsSync(current));
 assert(!existsSync(releases));
+assert.deepEqual(existsSync(binHome) ? readdirSync(binHome) : [], []);
 assert.equal(
   readFileSync(join(app, "data", "retained.db"), "utf8"),
   "user-data",
 );
 
-assert.equal(
-  run("install", "--release-set-id", first, "--relay", relay1).status,
-  0,
-);
-assert.equal(run("uninstall", "--purge-data").status, 0);
+assert.equal(runService(...installArgs("install", first)).status, 0);
+assert.equal(runService("uninstall", "--purge-data").status, 0);
 assert(!existsSync(app));
 assert.match(
   readFileSync(log, "utf8"),
@@ -188,5 +286,5 @@ assert.match(
 );
 
 console.log(
-  "Nimino WSL service tests passed: rerun, rollback, restart, uninstall/reinstall",
+  "Nimino WSL bundle lifecycle passed: manifest install, workflow, rollback, cleanup, uninstall",
 );

@@ -219,6 +219,8 @@ jobs:
         run: just wsl-launcher-contract
       - name: WSL Chirps runtime certification contract
         run: just wsl-chirps-contract
+      - name: WSL complete install bundle contract
+        run: just wsl-bundle-contract
       - name: Removed client contract
         run: just removed-client-contract
       - name: File size policy

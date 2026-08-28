@@ -7,17 +7,19 @@ symlink selects the active executable.
 
 ```bash
 scripts/nimino-wsl-service.sh install \
-  --release-set-id <64-hex-release-set-id> --relay ./nimino-relay
+  --release-set-id <64-hex-release-set-id> --bundle ./nimino-wsl-bundle
 scripts/nimino-wsl-service.sh update \
-  --release-set-id <64-hex-release-set-id> --relay ./nimino-relay
+  --release-set-id <64-hex-release-set-id> --bundle ./nimino-wsl-bundle
 scripts/nimino-wsl-service.sh restart
 scripts/nimino-wsl-service.sh uninstall
 ```
 
-Install and update require an executable with content unique to the release-set
-ID. A failed post-restart health check atomically restores the prior target.
-Systemd owns the whole process cgroup, so uninstall stops descendants before
-removing the unit and immutable executables.
+Install and update accept only a complete `nimino.wsl-bundle`. Its fixed binary
+inventory, SHA-256 list, release-set identity, and embedded provenance are
+verified before installation state is created. The former single `--relay`
+input is deleted. A failed post-restart health check atomically restores the
+prior target. Systemd owns the whole process cgroup, so uninstall stops
+descendants before removing the unit, tool links, and immutable executables.
 
 Uninstall retains user data and state. `uninstall --purge-data` is the only
 operation that deletes them; use it only for an explicit factory reset.

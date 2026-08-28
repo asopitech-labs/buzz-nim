@@ -244,6 +244,11 @@ existing thin Chirps adapter on WSL ext4 and proves mTLS rotation, UDP/QUIC
 rebind/rejoin, stable node identity, and complete socket shutdown. It adds no
 database, replication, sync, quorum, or product-policy ownership to Chirps.
 
+The [`WSL install bundle`](contracts/nimino-wsl-bundle/README.md) composes the
+relay, data operations, CLI, ACP, agent, and MCP executables from one verified
+release set. The WSL service accepts only that checksum/provenance-pinned bundle
+and atomically installs, updates, rolls back, or removes the complete tool set.
+
 The [`Nimino MCP execution contract`](contracts/nimino-mcp-execution/README.md)
 keeps process, filesystem, and image I/O in a bounded Rust adapter. Explicit
 operation capabilities are checked and audited before side effects; process

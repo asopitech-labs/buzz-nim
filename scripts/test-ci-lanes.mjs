@@ -6,7 +6,10 @@ const workflow = readFileSync(".github/workflows/ci.yml", "utf8");
 const justfile = readFileSync("Justfile", "utf8");
 const hooks = readFileSync("lefthook.yml", "utf8");
 const nimFeedback = readFileSync("scripts/measure-nim-feedback.sh", "utf8");
-const nimBootstrap = readFileSync("scripts/test-nim-bootstrap-contract.sh", "utf8");
+const nimBootstrap = readFileSync(
+  "scripts/test-nim-bootstrap-contract.sh",
+  "utf8",
+);
 const rustTests = readFileSync("scripts/run-tests.sh", "utf8");
 
 function check(condition, message) {
@@ -39,11 +42,13 @@ function hookGlobs(name) {
 function checkFocusedHook(name, expectedGlobs, expectedRun) {
   const block = hook(name);
   check(
-    block.match(/^ {6}files: (.*)$/m)?.[1] === "git diff --name-only origin/main...HEAD",
+    block.match(/^ {6}files: (.*)$/m)?.[1] ===
+      "git diff --name-only origin/main...HEAD",
     `${name} hook must use the CI-equivalent merge-base diff`,
   );
   check(
-    JSON.stringify(hookGlobs(name).sort()) === JSON.stringify(expectedGlobs.sort()),
+    JSON.stringify(hookGlobs(name).sort()) ===
+      JSON.stringify(expectedGlobs.sort()),
     `${name} hook paths must mirror CI`,
   );
   check(
@@ -56,7 +61,9 @@ function checkFocusedHook(name, expectedGlobs, expectedRun) {
 const filterStart = workflow.indexOf("          filters: |\n");
 check(filterStart !== -1, "missing path filters");
 check(
-  workflow.slice(0, filterStart).includes("predicate-quantifier: 'some-with-excludes'"),
+  workflow
+    .slice(0, filterStart)
+    .includes("predicate-quantifier: 'some-with-excludes'"),
   "negative path rules require some-with-excludes",
 );
 const filterEnd = workflow.indexOf("\n      - name:", filterStart);
@@ -105,28 +112,49 @@ check(filters.boundary, "missing boundary path filter");
 check(!filters.mobile, "Mobile path filter must be removed");
 check(
   matches("nim", "nim/nimino_core/src/nimino_core/domain/message.nim") &&
-    !matches("boundary", "nim/nimino_core/src/nimino_core/domain/message.nim") &&
+    !matches(
+      "boundary",
+      "nim/nimino_core/src/nimino_core/domain/message.nim",
+    ) &&
     !matches("rust", "nim/nimino_core/src/nimino_core/domain/message.nim"),
   "Nim domain-only change must stay Rust-free",
 );
 check(
   matches("nim", "nim/nimino_core/src/nimino_core/boundary/protocol.nim") &&
-    matches("boundary", "nim/nimino_core/src/nimino_core/boundary/protocol.nim"),
+    matches(
+      "boundary",
+      "nim/nimino_core/src/nimino_core/boundary/protocol.nim",
+    ),
   "Nim boundary change must run both Nim and cross-language lanes",
 );
 check(
   matches("nim", "nim/nimino_core/src/nimino_core/domain/event_policy.nim") &&
-    matches("boundary", "nim/nimino_core/src/nimino_core/domain/event_policy.nim"),
+    matches(
+      "boundary",
+      "nim/nimino_core/src/nimino_core/domain/event_policy.nim",
+    ),
   "event policy changes must run Nim and real boundary golden tests",
 );
 check(
-  matches("nim", "nim/nimino_core/src/nimino_core/domain/community_policy.nim") &&
-    matches("boundary", "nim/nimino_core/src/nimino_core/domain/community_policy.nim"),
+  matches(
+    "nim",
+    "nim/nimino_core/src/nimino_core/domain/community_policy.nim",
+  ) &&
+    matches(
+      "boundary",
+      "nim/nimino_core/src/nimino_core/domain/community_policy.nim",
+    ),
   "community policy changes must run Nim and real boundary golden tests",
 );
 check(
-  matches("nim", "nim/nimino_core/src/nimino_core/domain/membership_policy.nim") &&
-    matches("boundary", "nim/nimino_core/src/nimino_core/domain/membership_policy.nim"),
+  matches(
+    "nim",
+    "nim/nimino_core/src/nimino_core/domain/membership_policy.nim",
+  ) &&
+    matches(
+      "boundary",
+      "nim/nimino_core/src/nimino_core/domain/membership_policy.nim",
+    ),
   "membership policy changes must run Nim and real boundary golden tests",
 );
 check(
@@ -135,27 +163,45 @@ check(
   "DM policy changes must run Nim and real boundary golden tests",
 );
 check(
-  matches("nim", "nim/nimino_core/src/nimino_core/domain/moderation_policy.nim") &&
-    matches("boundary", "nim/nimino_core/src/nimino_core/domain/moderation_policy.nim"),
+  matches(
+    "nim",
+    "nim/nimino_core/src/nimino_core/domain/moderation_policy.nim",
+  ) &&
+    matches(
+      "boundary",
+      "nim/nimino_core/src/nimino_core/domain/moderation_policy.nim",
+    ),
   "moderation policy changes must run Nim and real boundary golden tests",
 );
 check(
   matches("nim", "nim/nimino_core/src/nimino_core/domain/cli_policy.nim") &&
-    matches("boundary", "nim/nimino_core/src/nimino_core/domain/cli_policy.nim") &&
+    matches(
+      "boundary",
+      "nim/nimino_core/src/nimino_core/domain/cli_policy.nim",
+    ) &&
     matches("boundary", "contracts/nimino-cli/v1/contract.json") &&
     matches("boundary", "scripts/test-nimino-cli-contract.mjs"),
   "CLI policy changes must run Nim and real boundary golden tests",
 );
 check(
   matches("nim", "nim/nimino_core/src/nimino_core/domain/agent_policy.nim") &&
-    matches("boundary", "nim/nimino_core/src/nimino_core/domain/agent_policy.nim") &&
+    matches(
+      "boundary",
+      "nim/nimino_core/src/nimino_core/domain/agent_policy.nim",
+    ) &&
     matches("boundary", "contracts/nimino-agent/v1/contract.json") &&
     matches("boundary", "scripts/test-nimino-agent-contract.mjs"),
   "agent policy changes must run Nim and real boundary golden tests",
 );
 check(
-  matches("nim", "nim/nimino_core/src/nimino_core/domain/cluster_lifecycle.nim") &&
-    matches("boundary", "nim/nimino_core/src/nimino_core/domain/cluster_lifecycle.nim"),
+  matches(
+    "nim",
+    "nim/nimino_core/src/nimino_core/domain/cluster_lifecycle.nim",
+  ) &&
+    matches(
+      "boundary",
+      "nim/nimino_core/src/nimino_core/domain/cluster_lifecycle.nim",
+    ),
   "cluster lifecycle changes must run Nim and real boundary golden tests",
 );
 check(
@@ -181,7 +227,9 @@ check(
   "Tauri source changes must run native tests while manifest-only changes stay contract-only",
 );
 check(
-  Object.keys(filters).every((group) => !matches(group, "mobile/lib/main.dart")),
+  Object.keys(filters).every(
+    (group) => !matches(group, "mobile/lib/main.dart"),
+  ),
   "Mobile changes must not select a CI product lane",
 );
 check(
@@ -211,11 +259,15 @@ check(
   "changed-path gate must verify the Nimino event policy contract",
 );
 check(
-  job("changes").includes("run: node scripts/test-nimino-community-contract.mjs"),
+  job("changes").includes(
+    "run: node scripts/test-nimino-community-contract.mjs",
+  ),
   "changed-path gate must verify the Nimino community policy contract",
 );
 check(
-  job("changes").includes("run: node scripts/test-nimino-membership-contract.mjs"),
+  job("changes").includes(
+    "run: node scripts/test-nimino-membership-contract.mjs",
+  ),
   "changed-path gate must verify the Nimino membership policy contract",
 );
 check(
@@ -223,7 +275,9 @@ check(
   "changed-path gate must verify the Nimino DM policy contract",
 );
 check(
-  job("changes").includes("run: node scripts/test-nimino-moderation-contract.mjs"),
+  job("changes").includes(
+    "run: node scripts/test-nimino-moderation-contract.mjs",
+  ),
   "changed-path gate must verify the Nimino moderation policy contract",
 );
 check(
@@ -263,6 +317,10 @@ check(
   "changed-path gate must verify the WSL Chirps runtime contract",
 );
 check(
+  job("changes").includes("run: just wsl-bundle-contract"),
+  "changed-path gate must verify the complete WSL bundle contract",
+);
+check(
   job("changes").includes("run: just nimino-cluster-contract"),
   "changed-path gate must verify the Nimino cluster lifecycle contract",
 );
@@ -278,7 +336,9 @@ check(
 );
 check(!nimJob.includes("nim-boundary-ci"), "Nim job must not run boundary CI");
 check(
-  JSON.stringify([...nimJob.matchAll(/^ {8}run: (.*)$/gm)].map((match) => match[1])) ===
+  JSON.stringify(
+    [...nimJob.matchAll(/^ {8}run: (.*)$/gm)].map((match) => match[1]),
+  ) ===
     JSON.stringify([
       "|",
       "scripts/test-nim-bootstrap-contract.sh",
@@ -291,16 +351,20 @@ const nimShellStart = nimJob.indexOf(nimShellMarker);
 check(nimShellStart !== -1, "Nim job must contain its toolchain version block");
 const nimShellRest = nimJob.slice(nimShellStart + nimShellMarker.length);
 const nimShellEnd = nimShellRest.search(/^ {6}- /m);
-const nimShellBody = nimShellEnd === -1 ? nimShellRest : nimShellRest.slice(0, nimShellEnd);
+const nimShellBody =
+  nimShellEnd === -1 ? nimShellRest : nimShellRest.slice(0, nimShellEnd);
 check(
   nimShellBody === "          nim --version\n          nimble --version\n",
   "Nim job shell block must contain only pinned toolchain version checks",
 );
-check(!/\b(?:cargo|rustc)\b/i.test(nimFeedback), "Nim feedback probe must stay Rust-free");
+check(
+  !/\b(?:cargo|rustc)\b/i.test(nimFeedback),
+  "Nim feedback probe must stay Rust-free",
+);
 check(
   nimBootstrap.includes("bin/just nim-ci") &&
     nimBootstrap.includes("(cargo|rustc)") &&
-    nimBootstrap.includes("bin/just --show \"$recipe\""),
+    nimBootstrap.includes('bin/just --show "$recipe"'),
   "Nim bootstrap must reject Rust toolchain commands before running nim-ci",
 );
 check(
@@ -407,19 +471,25 @@ check(
     ) &&
     workflow.includes("run: just nimino-mcp-execution-contract") &&
     justfile.includes("cargo nextest run -p buzz-dev-mcp") &&
-    justfile.includes("node scripts/test-nimino-mcp-framing.mjs target/debug/buzz-dev-mcp") &&
+    justfile.includes(
+      "node scripts/test-nimino-mcp-framing.mjs target/debug/buzz-dev-mcp",
+    ) &&
     rustTests.includes("cargo test -p buzz-dev-mcp") &&
-    rustTests.includes("node scripts/test-nimino-mcp-framing.mjs target/debug/buzz-dev-mcp"),
+    rustTests.includes(
+      "node scripts/test-nimino-mcp-framing.mjs target/debug/buzz-dev-mcp",
+    ),
   "MCP execution contract, framing, and unit tests must remain in CI",
 );
 check(
-  /^nimino-cli-contract:\n    node scripts\/test-nimino-cli-contract\.mjs$/m.test(justfile) &&
-    workflow.includes("run: just nimino-cli-contract"),
+  /^nimino-cli-contract:\n    node scripts\/test-nimino-cli-contract\.mjs$/m.test(
+    justfile,
+  ) && workflow.includes("run: just nimino-cli-contract"),
   "CLI grammar and exit contract must remain in CI",
 );
 check(
-  /^nimino-agent-contract:\n    node scripts\/test-nimino-agent-contract\.mjs$/m.test(justfile) &&
-    workflow.includes("run: just nimino-agent-contract"),
+  /^nimino-agent-contract:\n    node scripts\/test-nimino-agent-contract\.mjs$/m.test(
+    justfile,
+  ) && workflow.includes("run: just nimino-agent-contract"),
   "agent/persona contract must remain in CI",
 );
 check(
@@ -463,7 +533,9 @@ check(
   ) &&
     workflow.includes("run: just release-set-contract") &&
     hook("release-set-contract").includes("run: just release-set-contract") &&
-    hookGlobs("release-set-contract").includes("contracts/nimino-release-set/**"),
+    hookGlobs("release-set-contract").includes(
+      "contracts/nimino-release-set/**",
+    ),
   "immutable release-set authority must remain in CI and pre-push",
 );
 check(
@@ -472,7 +544,9 @@ check(
   ) &&
     workflow.includes("run: just agent-bundle-contract") &&
     hook("agent-bundle-contract").includes("run: just agent-bundle-contract") &&
-    hookGlobs("agent-bundle-contract").includes("contracts/nimino-agent-bundle/**"),
+    hookGlobs("agent-bundle-contract").includes(
+      "contracts/nimino-agent-bundle/**",
+    ),
   "manifest-driven agent bundle must remain in CI and pre-push",
 );
 check(
@@ -490,7 +564,9 @@ check(
   ) &&
     workflow.includes("run: just wsl-launcher-contract") &&
     hook("wsl-launcher-contract").includes("run: just wsl-launcher-contract") &&
-    hookGlobs("wsl-launcher-contract").includes("crates/nimino-wsl-launcher/**") &&
+    hookGlobs("wsl-launcher-contract").includes(
+      "crates/nimino-wsl-launcher/**",
+    ) &&
     justfile.includes("cargo nextest run -p nimino-wsl-launcher") &&
     rustTests.includes("cargo test -p nimino-wsl-launcher"),
   "WSL launcher and Secret Service boundary must remain in all test runners",
@@ -506,6 +582,24 @@ check(
     hook("wsl-chirps-contract").includes("run: just wsl-chirps-contract") &&
     hookGlobs("wsl-chirps-contract").includes("crates/nimino-chirps/**"),
   "WSL Chirps certification must remain in source gates and the real WSL runner",
+);
+check(
+  /^wsl-bundle-contract:\n {4}node scripts\/test-nimino-wsl-bundle-contract\.mjs$/m.test(
+    justfile,
+  ) &&
+    /^wsl-bundle-e2e: wsl-bundle-contract\n {4}node scripts\/test-nimino-wsl-bundle-contract\.mjs --e2e$/m.test(
+      justfile,
+    ) &&
+    /^wsl-bundle-certify: wsl-bundle-contract\n {4}node scripts\/test-nimino-wsl-bundle-contract\.mjs --certify$/m.test(
+      justfile,
+    ) &&
+    workflow.includes("run: just wsl-bundle-contract") &&
+    hook("wsl-bundle-contract").includes("run: just wsl-bundle-contract") &&
+    hookGlobs("wsl-bundle-contract").includes(
+      "scripts/nimino-wsl-service.sh",
+    ) &&
+    hookGlobs("wsl-bundle-contract").includes("contracts/nimino-wsl-bundle/**"),
+  "complete WSL bundle must remain in source gates and the real WSL runner",
 );
 check(
   /^nimino-cluster-scenario-contract:\n    node scripts\/test-nimino-cluster-scenario-contract\.mjs$/m.test(
@@ -530,14 +624,19 @@ check(
 );
 check(
   boundaryJob.includes("cargo fmt -p nimino-boundary") &&
-    boundaryJob.includes("cargo clippy -p nimino-boundary --all-targets --all-features"),
+    boundaryJob.includes(
+      "cargo clippy -p nimino-boundary --all-targets --all-features",
+    ),
   "boundary Rust checks must stay focused",
 );
 check(
   job("security").includes("needs.changes.outputs.boundary == 'true'"),
   "boundary dependency changes must run security policy",
 );
-check(!/\b(?:mobile|flutter)\b/i.test(workflow), "CI must not contain a Mobile product lane");
+check(
+  !/\b(?:mobile|flutter)\b/i.test(workflow),
+  "CI must not contain a Mobile product lane",
+);
 check(
   !justfile.match(/^check:.*\bmobile-check\b/m) &&
     !justfile.match(/^ci:.*\bmobile-test\b/m) &&
@@ -548,12 +647,23 @@ check(
 const localFilter = (patterns) =>
   patterns.filter((pattern) => pattern !== ".github/workflows/ci.yml").sort();
 checkFocusedHook("nim-checks", localFilter(filters.nim), "just nim-ci");
-checkFocusedHook("boundary-checks", localFilter(filters.boundary), "just nim-boundary-ci");
+checkFocusedHook(
+  "boundary-checks",
+  localFilter(filters.boundary),
+  "just nim-boundary-ci",
+);
 check(
   hook("rust-tests").includes('exclude: ["crates/nimino-boundary/**"]') &&
-    hook("desktop-tauri-checks").includes('exclude: ["crates/nimino-boundary/**"]'),
+    hook("desktop-tauri-checks").includes(
+      'exclude: ["crates/nimino-boundary/**"]',
+    ),
   "general Rust hooks must exclude the focused boundary crate",
 );
-check(!/^\s+mobile-(?:fmt|checks):$/m.test(hooks), "Mobile git-hook lanes must be removed");
+check(
+  !/^\s+mobile-(?:fmt|checks):$/m.test(hooks),
+  "Mobile git-hook lanes must be removed",
+);
 
-console.log("CI lane contract passed: Nim-only is Rust-free; boundary is integrated; Mobile has no lane");
+console.log(
+  "CI lane contract passed: Nim-only is Rust-free; boundary is integrated; Mobile has no lane",
+);

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.wsl-bundle",
+  "issue": 60,
+  "platformContract": "wsl-support-v1",
+  "releaseSetAuthority": "nimino.release-set",
+  "compatibilityMode": false,
+  "components": [
+    { "role": "cli", "artifactId": "cli", "installName": "nimino" },
+    { "role": "acp", "artifactId": "acp", "installName": "nimino-acp" },
+    { "role": "agent", "artifactId": "agent", "installName": "nimino-agent" },
+    {
+      "role": "data-ops",
+      "artifactId": "data-ops",
+      "installName": "nimino-data-ops"
+    },
+    {
+      "role": "mcp",
+      "artifactId": "mcp",
+      "installName": "nimino-dev-mcp"
+    },
+    { "role": "relay", "artifactId": "relay", "installName": "nimino-relay" }
+  ],
+  "integrityFiles": [
+    "SHA256SUMS",
+    "nimino-wsl-bundle.json",
+    "release-set-id",
+    "release-set.json"
+  ],
+  "activation": "atomic-current-symlink",
+  "commands": ["install", "update", "uninstall"],
+  "requiredProofs": [
+    "manifest-pinned-clean-install",
+    "relay-health",
+    "data-verify",
+    "cli-agent-mcp-execution",
+    "atomic-update-rollback",
+    "checksum-and-provenance",
+    "failure-cleanup",
+    "uninstall-orphan-scan"
+  ],
+  "evidencePath": "target/nim/nimino-wsl-bundle-e2e.json",
+  "e2eCommand": "just wsl-bundle-e2e",
+  "certificationCommand": "just wsl-bundle-certify"
+}

@@ -149,3 +149,7 @@ pre-push:
       files: git diff --name-only origin/main...HEAD
       glob: ["contracts/wsl-support-v1.json", "contracts/nimino-wsl-chirps/**", "contracts/chirps-v0.6.3.json", "crates/nimino-chirps/**", "scripts/test-nimino-wsl-chirps-contract.mjs", "Justfile"]
       run: just wsl-chirps-contract
+    wsl-bundle-contract:
+      files: git diff --name-only origin/main...HEAD
+      glob: ["contracts/wsl-support-v1.json", "contracts/nimino-release-set/**", "contracts/nimino-agent-bundle/**", "contracts/nimino-wsl-service/**", "contracts/nimino-wsl-bundle/**", "scripts/nimino-release-set.mjs", "scripts/nimino-agent-bundle.mjs", "scripts/nimino-wsl-service.sh", "scripts/nimino-wsl-bundle.mjs", "scripts/test-nimino-wsl-service.mjs", "scripts/test-nimino-wsl-bundle-contract.mjs", "Justfile"]
+      run: just wsl-bundle-contract
