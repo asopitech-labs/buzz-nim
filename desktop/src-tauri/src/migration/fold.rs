@@ -155,7 +155,7 @@ mod tests {
             "name": name,
             "pubkey": pubkey,
             "relay_url": "ws://localhost:3000",
-            "acp_command": "buzz-acp",
+            "acp_command": "nimino-acp",
             "agent_command": "goose",
             "agent_args": [],
             "mcp_command": "",

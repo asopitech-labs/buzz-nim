@@ -19,7 +19,7 @@
   ],
   "rustDuplicatesToDelete": [
     {
-      "path": "crates/buzz-core/src/kind.rs",
+      "path": "crates/nimino-core/src/kind.rs",
       "symbols": [
         "is_ephemeral",
         "is_replaceable",
@@ -27,23 +27,29 @@
       ]
     },
     {
-      "path": "crates/buzz-core/src/nip10.rs",
+      "path": "crates/nimino-core/src/nip10.rs",
       "symbols": ["parse_thread_markers", "ThreadMarkers::resolve"]
     },
     {
-      "path": "crates/buzz-relay/src/handlers/ingest.rs",
-      "symbols": ["resolve_nip10_thread_meta", "validate_reaction_emoji"]
+      "path": "crates/nimino-relay/src/handlers/ingest.rs",
+      "symbols": ["resolve_nip10_thread_meta"]
     },
     {
-      "path": "crates/buzz-relay/src/handlers/side_effects.rs",
+      "path": "crates/nimino-relay/src/handlers/side_effects.rs",
       "symbols": [
         "validate_standard_deletion_event",
         "handle_standard_deletion_event"
       ]
     },
     {
-      "path": "crates/buzz-db/src/lib.rs",
+      "path": "crates/nimino-db/src/lib.rs",
       "symbols": ["replace_addressable_event", "replace_parameterized_event"]
+    }
+  ],
+  "deletedRustSymbols": [
+    {
+      "path": "crates/nimino-relay/src/handlers/ingest.rs",
+      "symbols": ["validate_reaction_emoji"]
     }
   ],
   "deletionRule": "Issue #12 removes these Rust policy paths in the same incompatible cutover that routes relay decisions through Nimino; none is a fallback.",

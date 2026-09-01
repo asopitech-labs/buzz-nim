@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
-# grab-emoji.sh — Register custom Slack emoji in Buzz
+# grab-emoji.sh — Register custom Slack emoji in Nimino
 #
-# Looks up each emoji name in your Slack workspace and registers it in Buzz
-# via `buzz emoji set`, making it available as :name: in the Buzz emoji picker.
+# Looks up each emoji name in your Slack workspace and registers it in Nimino
+# via `nimino emoji set`, making it available as :name: in the Nimino emoji picker.
 #
 # Usage:
-#   SLACK_TOKEN=xoxp-... ./scripts/grab-emoji.sh [--name <buzz-name>] <emoji-name> [emoji-name ...]
+#   SLACK_TOKEN=xoxp-... ./scripts/grab-emoji.sh [--name <nimino-name>] <emoji-name> [emoji-name ...]
 #
 # Options:
-#   --name <buzz-name>  Override the shortcode used in Buzz (only valid with a single emoji)
+#   --name <nimino-name>  Override the shortcode used in Nimino (only valid with a single emoji)
 #
 # Env:
 #   SLACK_TOKEN  — Slack user token (xoxp-...) with emoji:read scope
 #
 # Output:
-#   name → registered as :name: in Buzz   on success
+#   name → registered as :name: in Nimino   on success
 #   name → ERROR: reason                  on failure (script continues to next emoji)
 
 set -euo pipefail
@@ -49,7 +49,7 @@ done
 # ── Preflight checks ──────────────────────────────────────────────────────────
 
 if [[ $# -eq 0 ]]; then
-  echo "Usage: SLACK_TOKEN=xoxp-... $0 [--name <buzz-name>] <emoji-name> [emoji-name ...]" >&2
+  echo "Usage: SLACK_TOKEN=xoxp-... $0 [--name <nimino-name>] <emoji-name> [emoji-name ...]" >&2
   exit 1
 fi
 
@@ -63,8 +63,8 @@ if [[ -z "${SLACK_TOKEN:-}" ]]; then
   exit 1
 fi
 
-if ! command -v buzz &>/dev/null; then
-  echo "ERROR: 'buzz' not found in PATH. Install the Buzz CLI and retry." >&2
+if ! command -v nimino &>/dev/null; then
+  echo "ERROR: 'nimino' not found in PATH. Install the Nimino CLI and retry." >&2
   exit 1
 fi
 
@@ -148,7 +148,7 @@ _resolve_url() {
 
 for emoji_name in "$@"; do
   # Use --name override if provided, otherwise use the Slack emoji name
-  buzz_shortcode="${NIMINO_NAME:-$emoji_name}"
+  nimino_shortcode="${NIMINO_NAME:-$emoji_name}"
 
   # Resolve URL
   emoji_url=$(_resolve_url "$emoji_name") || {
@@ -156,11 +156,11 @@ for emoji_name in "$@"; do
     continue
   }
 
-  # Register in Buzz
-  set_output=$(buzz emoji set --shortcode "$buzz_shortcode" --url "$emoji_url" 2>&1) || {
-    echo "${emoji_name} → ERROR: buzz emoji set failed — ${set_output}"
+  # Register in Nimino
+  set_output=$(nimino emoji set --shortcode "$nimino_shortcode" --url "$emoji_url" 2>&1) || {
+    echo "${emoji_name} → ERROR: nimino emoji set failed — ${set_output}"
     continue
   }
 
-  echo "${emoji_name} → registered as :${buzz_shortcode}: in Buzz"
+  echo "${emoji_name} → registered as :${nimino_shortcode}: in Nimino"
 done

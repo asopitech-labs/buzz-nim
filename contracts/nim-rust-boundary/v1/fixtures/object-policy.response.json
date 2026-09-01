@@ -1,0 +1,23 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "fixture-object-policy",
+  "operation": "domain.object.policy",
+  "status": "ok",
+  "result": {
+    "decision": "sync",
+    "result": {
+      "effect": "fetch",
+      "error": "none",
+      "actions": [
+        {
+          "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "size": 2097153,
+          "kind": "media",
+          "sourceNodeId": "node-a",
+          "resumeOffset": 0
+        }
+      ]
+    }
+  }
+}

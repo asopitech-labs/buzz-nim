@@ -1,7 +1,7 @@
 import { effectiveCloneUrls } from "./projectCloneUrl";
 
 export type ProjectRepoHost =
-  | { kind: "buzz" }
+  | { kind: "nimino" }
   | { kind: "external"; host: string }
   | { kind: "unresolved" };
 
@@ -19,10 +19,12 @@ export function projectRepoHost(
   try {
     const clone = new URL(cloneUrl);
     const relay = new URL(relayOrigin);
-    const isBuzzPath = /^\/git\/[0-9a-f]{64}\/[^/]+\/?$/i.test(clone.pathname);
+    const isNiminoPath = /^\/git\/[0-9a-f]{64}\/[^/]+\/?$/i.test(
+      clone.pathname,
+    );
 
-    if (clone.origin === relay.origin && isBuzzPath) {
-      return { kind: "buzz" };
+    if (clone.origin === relay.origin && isNiminoPath) {
+      return { kind: "nimino" };
     }
 
     return { kind: "external", host: clone.host };
@@ -53,9 +55,9 @@ export function projectRepoHostForRepository(
 }
 
 /**
- * Human-readable location of a repository's git data — "github.com/block/buzz"
+ * Human-readable location of a repository's git data — "github.com/asopitech-labs/nimino"
  * for external repos (host + path, `.git` stripped), or "owner/repo" for
- * Buzz-hosted ones (the relay host and full owner pubkey carry no signal;
+ * Nimino-hosted ones (the relay host and full owner pubkey carry no signal;
  * `ownerLabel` should be the resolved profile name, falling back to a
  * shortened pubkey). Returns `null` when no clone URL can be resolved.
  */
@@ -73,7 +75,7 @@ export function repositoryDisplayPath(
   )[0];
   if (!cloneUrl) return null;
 
-  if (projectRepoHost(cloneUrl, relayOrigin).kind === "buzz") {
+  if (projectRepoHost(cloneUrl, relayOrigin).kind === "nimino") {
     const owner = ownerLabel?.trim() || `${repository.owner.slice(0, 8)}…`;
     return `${owner}/${repository.dtag}`;
   }

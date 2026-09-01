@@ -210,8 +210,8 @@ check(
   "Rust boundary adapter must use the focused boundary lane",
 );
 check(
-  matches("rust", "crates/buzz-core/src/lib.rs") &&
-    !matches("boundary", "crates/buzz-core/src/lib.rs"),
+  matches("rust", "crates/nimino-core/src/lib.rs") &&
+    !matches("boundary", "crates/nimino-core/src/lib.rs"),
   "ordinary Rust changes must not run the boundary lane",
 );
 check(
@@ -410,7 +410,7 @@ check(
   "nim-ci dependencies must stay Rust-free",
 );
 check(
-  /^nim-boundary-ci: nim-boundary-test nim-boundary-benchmark nimino-cluster-scenarios$/m.test(
+  /^nim-boundary-ci: nim-boundary-test nim-boundary-benchmark nimino-cluster-scenarios nimino-sync-scenarios nimino-control-scenarios nimino-effect-scenarios nimino-object-scenarios nimino-projection-scenarios$/m.test(
     justfile,
   ),
   "boundary CI must include the real-mesh scenario gate",
@@ -491,17 +491,17 @@ check(
   /^nimino-mcp-execution-contract:\n    node scripts\/test-nimino-mcp-execution-contract\.mjs$/m.test(
     justfile,
   ) &&
-    /^nimino-mcp-framing:\n    cargo build -p buzz-dev-mcp\n    node scripts\/test-nimino-mcp-framing\.mjs target\/debug\/buzz-dev-mcp$/m.test(
+    /^nimino-mcp-framing:\n    cargo build -p nimino-dev-mcp\n    node scripts\/test-nimino-mcp-framing\.mjs target\/debug\/nimino-dev-mcp$/m.test(
       justfile,
     ) &&
     workflow.includes("run: just nimino-mcp-execution-contract") &&
-    justfile.includes("cargo nextest run -p buzz-dev-mcp") &&
+    justfile.includes("cargo nextest run -p nimino-dev-mcp") &&
     justfile.includes(
-      "node scripts/test-nimino-mcp-framing.mjs target/debug/buzz-dev-mcp",
+      "node scripts/test-nimino-mcp-framing.mjs target/debug/nimino-dev-mcp",
     ) &&
-    rustTests.includes("cargo test -p buzz-dev-mcp") &&
+    rustTests.includes("cargo test -p nimino-dev-mcp") &&
     rustTests.includes(
-      "node scripts/test-nimino-mcp-framing.mjs target/debug/buzz-dev-mcp",
+      "node scripts/test-nimino-mcp-framing.mjs target/debug/nimino-dev-mcp",
     ),
   "MCP execution contract, framing, and unit tests must remain in CI",
 );
@@ -690,7 +690,8 @@ check(
       justfile,
     ) &&
     workflow.includes("run: just nim-boundary-ci") &&
-    workflow.includes("path: target/nim/nimino-cluster-scenarios.json"),
+    workflow.includes("path: target/nim/nimino-cluster-scenarios.json") &&
+    workflow.includes("path: target/nim/nimino-sync-scenarios.json"),
   "real-mesh scenario suite and evidence must remain in CI",
 );
 
@@ -704,9 +705,9 @@ check(
   "boundary Cargo work must use the Rust cache",
 );
 check(
-  boundaryJob.includes("cargo fmt -p nimino-boundary") &&
+  boundaryJob.includes("cargo fmt -p nimino-boundary -p nimino-sync -p nimino-control -p nimino-object-store -p nimino-data-ops -p nimino-workflow") &&
     boundaryJob.includes(
-      "cargo clippy -p nimino-boundary --all-targets --all-features",
+      "cargo clippy -p nimino-boundary -p nimino-sync -p nimino-control -p nimino-object-store -p nimino-data-ops -p nimino-workflow --all-targets --all-features",
     ),
   "boundary Rust checks must stay focused",
 );
@@ -734,7 +735,9 @@ checkFocusedHook(
   "just nim-boundary-ci",
 );
 check(
-  hook("rust-tests").includes('exclude: ["crates/nimino-boundary/**"]') &&
+  hook("rust-tests").includes(
+    'exclude: ["crates/nimino-boundary/**", "crates/nimino-sync/**", "crates/nimino-control/**", "crates/nimino-object-store/**"]',
+  ) &&
     hook("desktop-tauri-checks").includes(
       'exclude: ["crates/nimino-boundary/**"]',
     ),

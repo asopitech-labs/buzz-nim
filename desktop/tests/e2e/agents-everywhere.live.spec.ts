@@ -101,7 +101,6 @@ test.describe("agents everywhere live two-relay gate", () => {
           "NIMINO_E2E_DATABASE_URL",
           process.env.NIMINO_E2E_DATABASE_URL,
         ),
-        redisUrl: process.env.NIMINO_E2E_REDIS_A ?? "redis://127.0.0.1:6379/11",
       },
       {
         name: "relay-b",
@@ -114,7 +113,6 @@ test.describe("agents everywhere live two-relay gate", () => {
           "NIMINO_E2E_DATABASE_URL",
           process.env.NIMINO_E2E_DATABASE_URL,
         ),
-        redisUrl: process.env.NIMINO_E2E_REDIS_B ?? "redis://127.0.0.1:6379/12",
       },
     ];
     const harness = await TwoRelayHarness.create(specs);

@@ -30,18 +30,18 @@ const GOOSE_AVAILABLE = {
   auth_status: { status: "not_applicable" },
 };
 
-/** buzz-agent is always available and has no auth step. */
+/** nimino-agent is always available and has no auth step. */
 const NIMINO_AGENT_AVAILABLE = {
-  id: "buzz-agent",
-  label: "Buzz Agent",
+  id: "nimino-agent",
+  label: "Nimino Agent",
   avatar_url: "",
   availability: "available",
-  command: "buzz-agent",
-  binary_path: "/usr/local/bin/buzz-agent",
+  command: "nimino-agent",
+  binary_path: "/usr/local/bin/nimino-agent",
   default_args: [],
-  mcp_command: "buzz-dev-mcp",
+  mcp_command: "nimino-dev-mcp",
   install_hint: "",
-  install_instructions_url: "https://github.com/block/buzz",
+  install_instructions_url: "https://github.com/asopitech-labs/nimino",
   can_auto_install: false,
   underlying_cli_path: null,
   node_required: false,
@@ -83,7 +83,7 @@ const CODEX_NOT_INSTALLED = {
   binary_path: null,
   default_args: [],
   mcp_command: null,
-  install_hint: "Buzz talks to Codex through the Codex CLI.",
+  install_hint: "Nimino talks to Codex through the Codex CLI.",
   install_instructions_url: "https://developers.openai.com/codex/cli/",
   can_auto_install: true,
   underlying_cli_path: null,
@@ -142,18 +142,18 @@ test.describe("Doctor panel state screenshots", () => {
           rows.map((row) => row.getAttribute("data-testid")),
         ),
     ).toEqual([
-      "doctor-runtime-buzz-agent",
+      "doctor-runtime-nimino-agent",
       "doctor-runtime-goose",
       "doctor-runtime-claude",
       "doctor-runtime-codex",
     ]);
-    for (const runtimeId of ["goose", "claude", "codex", "buzz-agent"]) {
+    for (const runtimeId of ["goose", "claude", "codex", "nimino-agent"]) {
       await expect(
         page.getByTestId(`doctor-runtime-logo-${runtimeId}`),
       ).toBeVisible();
     }
     const rowHeights = await Promise.all(
-      ["goose", "claude", "codex", "buzz-agent"].map((runtimeId) =>
+      ["goose", "claude", "codex", "nimino-agent"].map((runtimeId) =>
         page
           .getByTestId(`doctor-runtime-${runtimeId}`)
           .evaluate((element) =>
@@ -186,7 +186,7 @@ test.describe("Doctor panel state screenshots", () => {
         .locator("..")
         .locator(".."),
     ).toHaveCSS("align-items", "flex-end");
-    for (const runtimeId of ["goose", "claude", "buzz-agent"]) {
+    for (const runtimeId of ["goose", "claude", "nimino-agent"]) {
       await expect(
         page.getByTestId(`doctor-runtime-menu-${runtimeId}`),
       ).toHaveCount(0);
@@ -222,7 +222,7 @@ test.describe("Doctor panel state screenshots", () => {
       0,
     );
     await expect(page.getByTestId("doctor-runtime-codex")).not.toContainText(
-      "Buzz talks to Codex through the Codex CLI.",
+      "Nimino talks to Codex through the Codex CLI.",
     );
 
     await runtimeList.scrollIntoViewIfNeeded();
@@ -472,9 +472,9 @@ test.describe("Doctor panel state screenshots", () => {
               success: false,
               stdout: "",
               stderr:
-                "The installer finished, but Buzz still could not use codex (observed: NotInstalled).",
+                "The installer finished, but Nimino still could not use codex (observed: NotInstalled).",
               exit_code: null,
-              hint: "Buzz requires the vendor CLI executable, not only its desktop app. If the CLI was installed while Buzz was open, restart Buzz and check again.",
+              hint: "Nimino requires the vendor CLI executable, not only its desktop app. If the CLI was installed while Nimino was open, restart Nimino and check again.",
             },
           ],
         },
@@ -828,7 +828,7 @@ test.describe("Doctor panel state screenshots", () => {
     const dialog = page.getByRole("alertdialog");
     await expect(dialog).toContainText("Update Codex adapter?");
     await expect(dialog).toContainText(
-      "Older Buzz releases using the legacy adapter may lose community access",
+      "Older Nimino releases using the legacy adapter may lose community access",
     );
     await expect(page.getByTestId("doctor-runtime-loading-codex")).toHaveCount(
       0,
@@ -1006,7 +1006,7 @@ test.describe("Doctor panel state screenshots", () => {
             exit_code: 1,
           },
         ],
-        log_path: "/tmp/buzz-install-codex.log",
+        log_path: "/tmp/nimino-install-codex.log",
       },
     });
 
@@ -1043,7 +1043,7 @@ test.describe("Doctor panel state screenshots", () => {
 
     // The failure points at the log holding bounded output for every attempt.
     await expect(installError).toContainText("npm ERR! code E404");
-    await expect(installError).toContainText("/tmp/buzz-install-codex.log");
+    await expect(installError).toContainText("/tmp/nimino-install-codex.log");
 
     await row.scrollIntoViewIfNeeded();
     await waitForAnimations(page);

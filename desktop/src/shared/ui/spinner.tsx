@@ -23,7 +23,7 @@ export function Spinner({
     <span
       aria-hidden={ariaHidden}
       className={cn(
-        "sprout-arc-spinner inline-block h-6 w-6 shrink-0 rounded-full border-4 border-current/10 border-t-current",
+        "nimino-arc-spinner inline-block h-6 w-6 shrink-0 rounded-full border-4 border-current/10 border-t-current",
         className,
       )}
       role={isDecorative ? undefined : role}

@@ -81,7 +81,7 @@ has an explicit destination:
 | Pulse-only search input | delete | Global Search | Add public-note results, then verify the dead tab/route |
 
 Admin feedback keeps its API payload distinct after the UI merge. #39 also
-migrates per-feedback acted-on booleans from `buzz-admin-feedback-status` to the
+migrates per-feedback acted-on booleans from `nimino-admin-feedback-status` to the
 unified inbox owner, verifies ID parity, and deletes the stale key. It must not
 silently reset operator work state.
 

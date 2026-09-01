@@ -215,7 +215,7 @@ fn saved_agent_model_discovery_uses_record_snapshot_for_definition_less_agent() 
             "name": "test-agent",
             "private_key_nsec": "nsec1fake",
             "relay_url": "wss://localhost:3000",
-            "acp_command": "buzz-acp",
+            "acp_command": "nimino-acp",
             "agent_command": "goose",
             "agent_command_override": "goose",
             "agent_args": [],
@@ -341,7 +341,7 @@ fn env_derived_provider_falls_through_when_its_credential_is_missing() {
 
     // `export GOOSE_PROVIDER=anthropic` is goose's documented way to pick a
     // provider, and it keeps the API key in its own config/keyring rather than in
-    // Buzz's env — so the provider is visible here and the credential is not.
+    // Nimino's env — so the provider is visible here and the credential is not.
     // Erroring would swap the working subprocess catalog for a hard
     // "config: ... required" on exactly the null-provider records this fallback
     // exists to serve; the gate has to decline instead.
@@ -409,7 +409,7 @@ fn model_discovery_ignores_stale_record_for_linked_agent() {
             "persona_id": "persona-1",
             "private_key_nsec": "nsec1fake",
             "relay_url": "wss://localhost:3000",
-            "acp_command": "buzz-acp",
+            "acp_command": "nimino-acp",
             "agent_command": "goose",
             "agent_args": [],
             "mcp_command": "",
@@ -478,7 +478,7 @@ fn model_discovery_ignores_stale_record_for_linked_agent() {
 // Databricks provider detection
 // ---------------------------------------------------------------------------
 //
-// Parse/filter/pagination tests live in crates/buzz-agent/src/catalog.rs
+// Parse/filter/pagination tests live in crates/nimino-agent/src/catalog.rs
 // (they moved there with the Option C refactor).
 
 // ---------------------------------------------------------------------------
@@ -527,7 +527,7 @@ fn linked_instance_ignores_model_provider_prompt_writes() {
             "persona_id": "p1",
             "private_key_nsec": "nsec1fake",
             "relay_url": "wss://localhost:3000",
-            "acp_command": "buzz-acp",
+            "acp_command": "nimino-acp",
             "agent_command": "goose",
             "agent_args": [],
             "mcp_command": "",
@@ -579,7 +579,7 @@ fn definition_less_instance_accepts_model_provider_prompt_writes() {
             "name": "standalone-agent",
             "private_key_nsec": "nsec1fake",
             "relay_url": "wss://localhost:3000",
-            "acp_command": "buzz-acp",
+            "acp_command": "nimino-acp",
             "agent_command": "goose",
             "agent_args": [],
             "mcp_command": "",
@@ -636,7 +636,7 @@ fn databricks_interactive_auth_launches_only_without_a_static_token() {
 fn databricks_passive_auth_error_has_reachable_create_flow_guidance() {
     let error = databricks_sign_in_required_error();
     assert!(error.contains("save this agent, then open its model picker"));
-    assert!(error.contains("buzz-agent auth databricks"));
+    assert!(error.contains("nimino-agent auth databricks"));
 }
 
 #[test]
@@ -799,9 +799,9 @@ fn openrouter_saved_agent_model_discovery_resolves_provider() {
             "name": "test-agent",
             "private_key_nsec": "nsec1fake",
             "relay_url": "wss://localhost:3000",
-            "acp_command": "buzz-acp",
-            "agent_command": "buzz-agent",
-            "agent_command_override": "buzz-agent",
+            "acp_command": "nimino-acp",
+            "agent_command": "nimino-agent",
+            "agent_command_override": "nimino-agent",
             "agent_args": [],
             "mcp_command": "",
             "turn_timeout_seconds": 320,
@@ -853,7 +853,7 @@ fn openrouter_draft_agent_model_discovery_derives_provider_env() {
     )]);
 
     let merged = draft_agent_model_discovery_env(
-        "buzz-agent",
+        "nimino-agent",
         Some("openrouter"),
         &BTreeMap::new(),
         &env_vars,
@@ -874,7 +874,7 @@ fn openrouter_draft_agent_model_discovery_derives_provider_env() {
 #[test]
 fn draft_agent_model_discovery_env_omits_provider_when_absent() {
     let merged =
-        draft_agent_model_discovery_env("buzz-agent", None, &BTreeMap::new(), &BTreeMap::new());
+        draft_agent_model_discovery_env("nimino-agent", None, &BTreeMap::new(), &BTreeMap::new());
     assert!(
         !merged.contains_key("NIMINO_AGENT_PROVIDER"),
         "no provider must be derived when the caller supplies none"
@@ -897,7 +897,7 @@ fn draft_agent_model_discovery_env_layers_all_three_tiers_in_order() {
     // floor, loses to user env.
     let definition_env = BTreeMap::from([
         ("SHARED".to_string(), "from-definition".to_string()),
-        // Collides with tier 1: `buzz-agent`'s own provider env var, which the
+        // Collides with tier 1: `nimino-agent`'s own provider env var, which the
         // `provider` argument derives below.
         ("NIMINO_AGENT_PROVIDER".to_string(), "openai".to_string()),
         ("USER_OVER_DEF".to_string(), "from-definition".to_string()),
@@ -917,7 +917,7 @@ fn draft_agent_model_discovery_env_layers_all_three_tiers_in_order() {
 
     // Tier 1 (floor): `Some("openrouter")` derives NIMINO_AGENT_PROVIDER.
     let merged = draft_agent_model_discovery_env(
-        "buzz-agent",
+        "nimino-agent",
         Some("openrouter"),
         &definition_env,
         &env_vars,

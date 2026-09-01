@@ -62,7 +62,7 @@ import { CommunityApplyErrorScreen } from "@/features/communities/ui/CommunityAp
 import { CommunityChangeOverlay } from "@/features/communities/ui/CommunityChangeOverlay";
 import { setAvatarProfileSyncQueryClient } from "@/features/profile/avatarProfileSync";
 import { EncryptedBackupProvider } from "@/features/settings/EncryptedBackupProvider";
-import { createBuzzQueryClient } from "@/shared/api/queryClient";
+import { createNiminoQueryClient } from "@/shared/api/queryClient";
 import { useIdentityQuery } from "@/shared/api/hooks";
 import { isSharedIdentity as isSharedIdentityCmd } from "@/shared/api/tauri";
 import { getProfile } from "@/shared/api/tauriProfiles";
@@ -71,7 +71,7 @@ import {
   listenForDeepLinks,
 } from "@/shared/deep-link";
 import { cn } from "@/shared/lib/cn";
-import { BuzzMark } from "@/shared/ui/buzz-logo/BuzzMark";
+import { NiminoMark } from "@/shared/ui/nimino-logo/NiminoMark";
 import { StartupWindowDragRegion } from "@/shared/ui/StartupWindowDragRegion";
 
 const LOADING_TEXT = "Setting up your community...";
@@ -151,7 +151,7 @@ function BeeLoader({
       className={cn("relative", tintClassName, className)}
       role="img"
     >
-      <BuzzMark className="block h-auto w-full" />
+      <NiminoMark className="block h-auto w-full" />
     </div>
   );
 }
@@ -160,14 +160,14 @@ function BeeLoader({
 function AppLoadingGate() {
   return (
     <div
-      className="buzz-setup-loading-shell flex min-h-dvh flex-col items-center justify-center overflow-hidden px-6 py-10"
+      className="nimino-setup-loading-shell flex min-h-dvh flex-col items-center justify-center overflow-hidden px-6 py-10"
       data-testid="app-loading-gate"
       role="status"
     >
       <StartupWindowDragRegion />
       <ThemeGrainientBackground />
       <span className="sr-only">{LOADING_TEXT}</span>
-      <BuzzMark className="relative z-10 h-auto w-28" />
+      <NiminoMark className="relative z-10 h-auto w-28" />
     </div>
   );
 }
@@ -202,7 +202,7 @@ function CommunitySwitchGate() {
 }
 
 function CommunityQueryProvider({ children }: { children: ReactNode }) {
-  const [queryClient] = useState(createBuzzQueryClient);
+  const [queryClient] = useState(createNiminoQueryClient);
 
   useEffect(() => setAvatarProfileSyncQueryClient(queryClient), [queryClient]);
 
@@ -348,8 +348,8 @@ function CommunityApp({
   const isFindingCommunityAfterLeave =
     activeCommunity === null && loadCommunityDiscoveryAfterLeave();
 
-  // Surface nest-related backend events (repos-dir errors, legacy migration)
-  // as toasts. Mounted before useCommunityInit so the listeners are registered
+  // Surface repository-directory backend errors as toasts. Mounted before
+  // useCommunityInit so the listener is registered
   // ahead of the first apply_workspace call.
   useNestNotifications();
 
@@ -761,7 +761,7 @@ export function App() {
   useCloseWindowShortcut();
   useInitialRenderReady();
   const [sharedIdentity, setSharedIdentity] = useState<boolean | null>(null);
-  const [queryClient] = useState(createBuzzQueryClient);
+  const [queryClient] = useState(createNiminoQueryClient);
 
   useEffect(() => {
     isSharedIdentityCmd()

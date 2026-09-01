@@ -4,7 +4,7 @@ use super::{apply_claude_model_env, apply_effort_env};
 /// `apply_claude_model_env`, even if it was set before (dual-authority defect).
 /// ANTHROPIC_MODEL must be set to the resolved model.
 #[test]
-fn a1_buzz_acp_model_absent_anthropic_model_present_after_env_apply() {
+fn a1_nimino_acp_model_absent_anthropic_model_present_after_env_apply() {
     let mut cmd = std::process::Command::new("true");
     // Simulate descriptor.env writing NIMINO_ACP_MODEL (the pre-A1 path).
     cmd.env("NIMINO_ACP_MODEL", "claude-opus-4");
@@ -14,9 +14,9 @@ fn a1_buzz_acp_model_absent_anthropic_model_present_after_env_apply() {
 
     // NIMINO_ACP_MODEL must be removed. Command::get_envs returns None for
     // explicitly-removed keys.
-    let buzz_acp = env_map.get(std::ffi::OsStr::new("NIMINO_ACP_MODEL"));
+    let nimino_acp = env_map.get(std::ffi::OsStr::new("NIMINO_ACP_MODEL"));
     assert!(
-        buzz_acp.is_none() || buzz_acp.unwrap().is_none(),
+        nimino_acp.is_none() || nimino_acp.unwrap().is_none(),
         "NIMINO_ACP_MODEL must be absent (or explicitly removed) after A1 policy"
     );
 
@@ -47,9 +47,9 @@ fn a1_anthropic_model_removed_when_no_effective_model() {
         anthropic.is_none() || anthropic.unwrap().is_none(),
         "ANTHROPIC_MODEL must be absent when no effective model"
     );
-    let buzz_acp = env_map.get(std::ffi::OsStr::new("NIMINO_ACP_MODEL"));
+    let nimino_acp = env_map.get(std::ffi::OsStr::new("NIMINO_ACP_MODEL"));
     assert!(
-        buzz_acp.is_none() || buzz_acp.unwrap().is_none(),
+        nimino_acp.is_none() || nimino_acp.unwrap().is_none(),
         "NIMINO_ACP_MODEL must always be absent after A1 policy"
     );
 }

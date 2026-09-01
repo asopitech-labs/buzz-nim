@@ -1,4 +1,4 @@
-suite: quickstart bundled services
+suite: quickstart bundled object storage
 # The dev quickstart must stand up MinIO in-cluster so the relay's
 # startup S3 conformance probe passes with zero external dependencies.
 templates:
@@ -16,7 +16,6 @@ tests:
       relayUrl: wss://nimino.example.com
       ownerPubkey: "0000000000000000000000000000000000000000000000000000000000000000"
       postgresql.enabled: true
-      redis.enabled: true
       minio.enabled: true
     asserts:
       - containsDocument:
@@ -44,7 +43,6 @@ tests:
       relayUrl: wss://nimino.example.com
       ownerPubkey: "0000000000000000000000000000000000000000000000000000000000000000"
       postgresql.enabled: true
-      redis.enabled: true
       minio.enabled: true
     asserts:
       - contains:
@@ -61,7 +59,6 @@ tests:
       relayUrl: wss://nimino.example.com
       ownerPubkey: "0000000000000000000000000000000000000000000000000000000000000000"
       postgresql.enabled: true
-      redis.enabled: true
       minio.enabled: true
     asserts:
       # MinIO creds the relay reads must exist for the conformance probe.
@@ -81,7 +78,6 @@ tests:
       relayUrl: wss://nimino.example.com
       ownerPubkey: "0000000000000000000000000000000000000000000000000000000000000000"
       postgresql.enabled: true
-      redis.enabled: true
       minio.enabled: true
     asserts:
       - equal:

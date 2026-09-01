@@ -96,7 +96,7 @@ pub(crate) struct SpawnConfigInputs<'a> {
 /// [`ManagedAgentProcess`]: super::ManagedAgentProcess
 #[derive(Clone, Serialize)]
 pub(crate) struct SpawnConfigSnapshot {
-    /// The ACP harness binary the desktop launches (`buzz-acp`).
+    /// The ACP harness binary the desktop launches (`nimino-acp`).
     pub acp_command: String,
     /// The effective agent command the harness drives.
     pub command: String,

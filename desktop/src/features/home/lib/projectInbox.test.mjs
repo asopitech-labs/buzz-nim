@@ -11,7 +11,7 @@ import {
 
 const OWNER = "a".repeat(64);
 const REVIEWER = "b".repeat(64);
-const REPO_ADDRESS = `30617:${OWNER}:buzz`;
+const REPO_ADDRESS = `30617:${OWNER}:nimino`;
 const PR_ID = "c".repeat(64);
 const ISSUE_ID = "d".repeat(64);
 
@@ -35,16 +35,16 @@ function feedItem(overrides = {}) {
 }
 
 const repository = {
-  id: "buzz",
-  dtag: "buzz",
-  name: "Buzz",
+  id: "nimino",
+  dtag: "nimino",
+  name: "Nimino",
   owner: OWNER,
   repoAddress: REPO_ADDRESS,
 };
 
 const project = {
-  id: "buzz-project",
-  name: "Buzz",
+  id: "nimino-project",
+  name: "Nimino",
   owner: OWNER,
   repositories: [repository],
 };

@@ -79,11 +79,11 @@ blossom_auth() {
 
 # ── Test 1: Upload MP4 ────────────────────────────────────────────────────────
 
-echo "Test 1: Upload MP4 via PUT /media/upload"
+echo "Test 1: Upload MP4 via PUT /upload"
 AUTH="$(blossom_auth "$SHA256")"
 
 UPLOAD_RESP=$(curl -s -w "\n%{http_code}" \
-    -X PUT "$RELAY_URL/media/upload" \
+    -X PUT "$RELAY_URL/upload" \
     -H "Authorization: $AUTH" \
     -H "Content-Type: video/mp4" \
     -H "X-SHA-256: $SHA256" \
@@ -199,7 +199,7 @@ PNG_SHA=$(shasum -a 256 "$PNG_FILE" | cut -d' ' -f1)
 SPOOF_AUTH="$(blossom_auth "$PNG_SHA")"
 
 SPOOF_RESP=$(curl -s -w "\n%{http_code}" \
-    -X PUT "$RELAY_URL/media/upload" \
+    -X PUT "$RELAY_URL/upload" \
     -H "Authorization: $SPOOF_AUTH" \
     -H "Content-Type: video/mp4" \
     -H "X-SHA-256: $PNG_SHA" \
@@ -219,7 +219,7 @@ echo ""
 echo "Test 7: Idempotent re-upload (same file, same hash)"
 REUP_AUTH="$(blossom_auth "$SHA256")"
 REUP_RESP=$(curl -s -w "\n%{http_code}" \
-    -X PUT "$RELAY_URL/media/upload" \
+    -X PUT "$RELAY_URL/upload" \
     -H "Authorization: $REUP_AUTH" \
     -H "Content-Type: video/mp4" \
     -H "X-SHA-256: $SHA256" \
@@ -254,7 +254,7 @@ echo "  Poster: ${POSTER_SIZE} bytes, sha256=${POSTER_SHA:0:16}..."
 
 POSTER_AUTH="$(blossom_auth "$POSTER_SHA")"
 POSTER_RESP=$(curl -s -w "\n%{http_code}" \
-    -X PUT "$RELAY_URL/media/upload" \
+    -X PUT "$RELAY_URL/upload" \
     -H "Authorization: $POSTER_AUTH" \
     -H "Content-Type: image/jpeg" \
     -H "X-SHA-256: $POSTER_SHA" \

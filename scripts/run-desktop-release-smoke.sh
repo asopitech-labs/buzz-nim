@@ -5,10 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ARTIFACT_DIR="${NIMINO_RELEASE_SMOKE_ARTIFACT_DIR:-${ROOT}/desktop/test-results/release-smoke}"
 DB_NAME="${NIMINO_RELEASE_SMOKE_DB:-nimino_release_smoke_${$}}"
-REDIS_DB="${NIMINO_RELEASE_SMOKE_REDIS_DB:-}"
-LOCK_DIR="${TMPDIR:-/tmp}/nimino-desktop-release-smoke.lock"
 RELAY_PID=""
-LOCK_HELD=false
 
 free_port() {
   python3 - <<'PY'
@@ -43,24 +40,10 @@ cleanup() {
     done
     kill -9 "${RELAY_PID}" 2>/dev/null || true
   fi
-  docker exec buzz-redis redis-cli -n "${REDIS_DB}" FLUSHDB >/dev/null 2>&1 || true
-  docker exec buzz-postgres dropdb -U nimino --if-exists "${DB_NAME}" >/dev/null 2>&1 || true
-  if [[ "${LOCK_HELD}" == true ]]; then rmdir "${LOCK_DIR}" 2>/dev/null || true; fi
+  docker exec nimino-postgres dropdb -U nimino --if-exists "${DB_NAME}" >/dev/null 2>&1 || true
   exit "${status}"
 }
 trap cleanup EXIT INT TERM
-
-# Shared Docker services expose one Redis instance and a finite database index
-# space. Serialize automatic allocation; callers that deliberately own an
-# isolated Redis DB may opt out by setting NIMINO_RELEASE_SMOKE_REDIS_DB.
-if [[ -z "${REDIS_DB}" ]]; then
-  mkdir "${LOCK_DIR}" 2>/dev/null || {
-    log "another release-smoke run owns ${LOCK_DIR}; set NIMINO_RELEASE_SMOKE_REDIS_DB only for an isolated runner"
-    exit 1
-  }
-  LOCK_HELD=true
-  REDIS_DB=15
-fi
 
 mkdir -p "${ARTIFACT_DIR}"
 : > "${ARTIFACT_DIR}/phases.jsonl"
@@ -68,8 +51,8 @@ cd "${ROOT}"
 
 phase_start="$(date +%s)"
 log "starting backing services"
-docker compose up -d postgres redis minio minio-init
-for container in buzz-postgres buzz-redis buzz-minio; do
+docker compose up -d postgres minio minio-init
+for container in nimino-postgres nimino-minio; do
   for _ in $(seq 1 60); do
     [[ "$(docker inspect --format='{{.State.Health.Status}}' "${container}" 2>/dev/null || true)" == "healthy" ]] && break
     sleep 1
@@ -83,15 +66,14 @@ phase services "${phase_start}"
 
 phase_start="$(date +%s)"
 log "creating isolated database ${DB_NAME}"
-docker exec buzz-postgres createdb -U buzz "${DB_NAME}"
+docker exec nimino-postgres createdb -U nimino "${DB_NAME}"
 export PGHOST=localhost PGPORT=5432 PGUSER=nimino PGPASSWORD=nimino_dev PGDATABASE="${DB_NAME}"
 export PGSCHEMA_PLAN_HOST=localhost PGSCHEMA_PLAN_PORT=5432 PGSCHEMA_PLAN_DB="${DB_NAME}"
 export PGSCHEMA_PLAN_USER=nimino PGSCHEMA_PLAN_PASSWORD=nimino_dev
 ./bin/pgschema apply --file schema/schema.sql --auto-approve
-docker exec -i -e PGPASSWORD=nimino_dev buzz-postgres \
+docker exec -i -e PGPASSWORD=nimino_dev nimino-postgres \
   psql -U nimino -d "${DB_NAME}" -v ON_ERROR_STOP=1 < scripts/attach-schema-partitions.sql
 NIMINO_DB_NAME="${DB_NAME}" NIMINO_COMMUNITY_HOST="${COMMUNITY_HOST}" ./scripts/setup-desktop-test-data.sh
-docker exec buzz-redis redis-cli -n "${REDIS_DB}" FLUSHDB >/dev/null
 phase database "${phase_start}"
 
 phase_start="$(date +%s)"
@@ -99,13 +81,12 @@ if [[ -n "${NIMINO_E2E_RELAY_BIN:-}" ]]; then
   RELAY_BIN="${NIMINO_E2E_RELAY_BIN}"
 else
   log "building relay"
-  cargo build --profile ci -p buzz-relay
+  cargo build --profile ci -p nimino-relay
   RELAY_BIN="${ROOT}/target/ci/nimino-relay"
 fi
 log "starting relay at ${RELAY_HTTP_URL}"
 env \
   DATABASE_URL="postgres://nimino:nimino_dev@localhost:5432/${DB_NAME}" \
-  REDIS_URL="redis://localhost:6379/${REDIS_DB}" \
   RELAY_URL="ws://${COMMUNITY_HOST}" \
   NIMINO_BIND_ADDR="127.0.0.1:${RELAY_PORT}" \
   NIMINO_HEALTH_PORT="${HEALTH_PORT}" \

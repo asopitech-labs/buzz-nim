@@ -11,7 +11,7 @@ import { projectExternalRefUrl } from "@/features/projects/lib/projectExternalUr
 import type { ProjectRepoUnavailableReason } from "@/features/projects/lib/projectRepoAvailability";
 import { formatLastChangedAt } from "@/features/projects/lib/projectsViewHelpers";
 import { Button } from "@/shared/ui/button";
-import { BuzzLoadingState } from "@/shared/ui/BuzzLoadingState";
+import { NiminoLoadingState } from "@/shared/ui/NiminoLoadingState";
 import { Markdown, SyntaxHighlightedCode } from "@/shared/ui/markdown";
 import { baseName, languageForPath } from "./ProjectRepositoryPanel";
 import {
@@ -103,7 +103,7 @@ export function ReadmePanel({
   sourceControls,
   unavailableReason,
 }: {
-  /** `buzz-channel` binding of the repository, for access-restricted copy. */
+  /** `nimino-channel` binding of the repository, for access-restricted copy. */
   accessChannelId?: string | null;
   file: ProjectRepoFile | null;
   fileContentSource?: RepositoryFileContentSource;
@@ -171,7 +171,7 @@ export function ReadmePanel({
     return (
       <section className="overflow-hidden">
         {header}
-        <BuzzLoadingState label="Loading repository" />
+        <NiminoLoadingState label="Loading repository" />
       </section>
     );
   }
@@ -209,7 +209,7 @@ export function ReadmePanel({
           </h3>
           <p className="mt-1 max-w-lg text-sm text-muted-foreground">
             Clone this repository locally to explore its files, commits, and
-            contributors in Buzz.
+            contributors in Nimino.
           </p>
           {externalOpenUrl ? (
             <a
@@ -254,7 +254,7 @@ export function ReadmePanel({
     return (
       <section className="overflow-hidden">
         {header}
-        <BuzzLoadingState label="Loading README" />
+        <NiminoLoadingState label="Loading README" />
       </section>
     );
   }

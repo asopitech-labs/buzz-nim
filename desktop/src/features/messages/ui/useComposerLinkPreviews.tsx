@@ -14,7 +14,7 @@ import {
 } from "@/shared/lib/mediaUrl";
 import { useRelayOrigin } from "@/shared/lib/useRelayOrigin";
 import {
-  isBuzzEntityPreview,
+  isNiminoEntityPreview,
   type ResolvedLinkPreview,
   useResolvedLinkPreviews,
   withEntityFallbacks,
@@ -84,11 +84,11 @@ function ComposerLinkPreviewCard({
   );
   const showImage = Boolean(imageSrc && failedImageSrc !== imageSrc);
   const hostname = previewHostname(preview.href);
-  // External cards are send-ready only once their snapshot tag exists. Buzz
+  // External cards are send-ready only once their snapshot tag exists. Nimino
   // entities never snapshot; recipients resolve them from the relay, so they
   // are complete as soon as the recognized entity card exists.
   const snapshotTagReady = Boolean(preview.snapshotReady && tagReady);
-  const done = snapshotTagReady || isBuzzEntityPreview(preview);
+  const done = snapshotTagReady || isNiminoEntityPreview(preview);
 
   return (
     <div

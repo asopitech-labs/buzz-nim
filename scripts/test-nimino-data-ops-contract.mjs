@@ -9,7 +9,7 @@ const data = JSON.parse(
   readFileSync("contracts/nimino-data/v1/contract.json", "utf8"),
 );
 const sync = JSON.parse(
-  readFileSync("contracts/nimino-sync/v1/contract.json", "utf8"),
+  readFileSync("contracts/nimino-sync/v2/contract.json", "utf8"),
 );
 const convergence = JSON.parse(
   readFileSync("contracts/nimino-convergence/v1/contract.json", "utf8"),

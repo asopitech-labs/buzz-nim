@@ -6,7 +6,7 @@ const contract = JSON.parse(
   readFileSync("contracts/nimino-object-sync/v1/contract.json", "utf8"),
 );
 const sync = JSON.parse(
-  readFileSync("contracts/nimino-sync/v1/contract.json", "utf8"),
+  readFileSync("contracts/nimino-sync/v2/contract.json", "utf8"),
 );
 const convergence = JSON.parse(
   readFileSync("contracts/nimino-convergence/v1/contract.json", "utf8"),
@@ -16,6 +16,7 @@ const data = JSON.parse(
 );
 const policy = readFileSync(contract.module, "utf8");
 const adapter = readFileSync(`${contract.byteAdapter}/src/lib.rs`, "utf8");
+const runtime = readFileSync(contract.runtime, "utf8");
 const workspace = readFileSync("Cargo.toml", "utf8");
 
 function check(condition, message) {
@@ -32,6 +33,17 @@ check(
     contract.convergenceContract ===
       `${convergence.contract}/v${convergence.version}`,
   "object sync dependency contracts drifted",
+);
+check(
+  contract.transport.provider === "alopex-chirps" &&
+    contract.transport.maxFrameBytes === 63 * 1024 &&
+    contract.transport.chunkBytes === 60 * 1024 &&
+    contract.transport.authenticatedOrigin === true &&
+    runtime.includes("ObjectSyncRuntime") &&
+    runtime.includes("mesh.send") &&
+    runtime.includes("BoundaryRequest::object_policy") &&
+    runtime.includes("finish_partial"),
+  "real Chirps object runtime drifted",
 );
 check(
   workspace.includes('"crates/nimino-object-store"') &&

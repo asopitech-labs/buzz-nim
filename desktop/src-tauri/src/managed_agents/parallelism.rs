@@ -16,7 +16,7 @@
 
 /// Maximum parallelism for the OpenClaw harness.
 ///
-/// Each buzz-acp worker spawned by the Desktop is a client of the single
+/// Each nimino-acp worker spawned by the Desktop is a client of the single
 /// shared OpenClaw Gateway daemon — running more than this number of workers
 /// is both resource-expensive and architecturally wrong per the OpenClaw
 /// design. Tyler's ruling: "try 5 and lower if needed."
@@ -169,7 +169,7 @@ mod tests {
             Some(cap)
         );
         assert_eq!(super::harness_max_parallelism("goose"), None);
-        assert_eq!(super::harness_max_parallelism("buzz-agent"), None);
+        assert_eq!(super::harness_max_parallelism("nimino-agent"), None);
         assert_eq!(super::harness_max_parallelism(""), None);
 
         // effective_parallelism: openclaw clamps above cap, honors at/below; goose passes through.
@@ -177,7 +177,7 @@ mod tests {
         assert_eq!(super::effective_parallelism("openclaw", cap), cap);
         assert_eq!(super::effective_parallelism("openclaw", cap - 2), cap - 2);
         assert_eq!(super::effective_parallelism("goose", 99), 99);
-        assert_eq!(super::effective_parallelism("buzz-agent", 32), 32);
+        assert_eq!(super::effective_parallelism("nimino-agent", 32), 32);
     }
 
     // ── acp_agents_value: spawn-env seam ──────────────────────────────────────

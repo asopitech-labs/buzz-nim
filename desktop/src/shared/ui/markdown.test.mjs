@@ -524,7 +524,7 @@ test("rehypeImageGallery: leaves a single trailing image in the text flow", () =
 // schemes (returns `""`) before our `a` component override can see them,
 // which would break copy → paste → click for `nimino://message?…` links and
 // `nimino://pr|issue|repo?…` entity links end-to-end. We pass a custom
-// `urlTransform` (`buzzDeepLinkUrlTransform`) that preserves valid Buzz
+// `urlTransform` (`niminoDeepLinkUrlTransform`) that preserves valid Nimino
 // deep links and delegates everything else to `defaultUrlTransform`.
 //
 // This test renders real `<ReactMarkdown>` with the production transform
@@ -545,7 +545,7 @@ const OWNER_HEX =
 const EVENT_HEX =
   "c3b589fa5713ba25bad6dc095e2de00a4ac8f50050fdea00fc6444e603be1dd1";
 
-function buzzDeepLinkUrlTransform(value, key) {
+function niminoDeepLinkUrlTransform(value, key) {
   if (key !== "href") return defaultUrlTransform(value);
   if (isMessageLink(value) || isChannelLink(value)) return value;
   if (parseEntityLink(value).ok) return value;
@@ -556,7 +556,7 @@ function renderMarkdown(content) {
   return renderToStaticMarkup(
     React.createElement(
       ReactMarkdown,
-      { urlTransform: buzzDeepLinkUrlTransform },
+      { urlTransform: niminoDeepLinkUrlTransform },
       content,
     ),
   );
@@ -611,7 +611,7 @@ test("messageLinkUrlTransform: passes http(s) through unchanged", () => {
   assert.match(html, /href="https:\/\/example\.com\/path"/);
 });
 
-test("messageLinkUrlTransform: preserves legacy nimino://message href", () => {
+test("messageLinkUrlTransform: preserves nimino://message href", () => {
   const html = renderMarkdown(
     "Click [here](nimino://message?channel=abc&id=xyz)",
   );
@@ -628,46 +628,46 @@ test("messageLinkUrlTransform: leaves non-entity nimino:// schemes to default", 
   assert.match(html, /href=""/);
 });
 
-test("buzzDeepLinkUrlTransform: preserves nimino://pr entity link href", () => {
-  const prLink = `nimino://pr?id=${EVENT_HEX}&owner=${OWNER_HEX}&d=buzz-world`;
+test("niminoDeepLinkUrlTransform: preserves nimino://pr entity link href", () => {
+  const prLink = `nimino://pr?id=${EVENT_HEX}&owner=${OWNER_HEX}&d=nimino-world`;
   const html = renderMarkdown(`[My PR](${prLink})`);
   // The href must survive — our transform preserves valid entity links.
   assert.match(html, /href="nimino:\/\/pr\?/);
   assert.doesNotMatch(html, /href=""/);
 });
 
-test("buzzDeepLinkUrlTransform: preserves nimino://pr autolink href", () => {
-  const prLink = `nimino://pr?id=${EVENT_HEX}&owner=${OWNER_HEX}&d=buzz-world`;
+test("niminoDeepLinkUrlTransform: preserves nimino://pr autolink href", () => {
+  const prLink = `nimino://pr?id=${EVENT_HEX}&owner=${OWNER_HEX}&d=nimino-world`;
   const html = renderMarkdown(`<${prLink}>`);
   assert.match(html, /href="nimino:\/\/pr\?/);
   assert.doesNotMatch(html, /href=""/);
 });
 
-test("buzzDeepLinkUrlTransform: preserves nimino://issue entity link href", () => {
-  const issueLink = `nimino://issue?id=${EVENT_HEX}&owner=${OWNER_HEX}&d=buzz-world`;
+test("niminoDeepLinkUrlTransform: preserves nimino://issue entity link href", () => {
+  const issueLink = `nimino://issue?id=${EVENT_HEX}&owner=${OWNER_HEX}&d=nimino-world`;
   const html = renderMarkdown(`[Issue title](${issueLink})`);
   assert.match(html, /href="nimino:\/\/issue\?/);
   assert.doesNotMatch(html, /href=""/);
 });
 
-test("buzzDeepLinkUrlTransform: preserves nimino://repo entity link href", () => {
-  const repoLink = `nimino://repo?owner=${OWNER_HEX}&d=buzz-world`;
+test("niminoDeepLinkUrlTransform: preserves nimino://repo entity link href", () => {
+  const repoLink = `nimino://repo?owner=${OWNER_HEX}&d=nimino-world`;
   const html = renderMarkdown(`[My repo](${repoLink})`);
   assert.match(html, /href="nimino:\/\/repo\?/);
   assert.doesNotMatch(html, /href=""/);
 });
 
-test("buzzDeepLinkUrlTransform: preserves nimino://project autolink href", () => {
+test("niminoDeepLinkUrlTransform: preserves nimino://project autolink href", () => {
   const projectLink = `nimino://project?owner=${OWNER_HEX}&d=onboarding`;
   const html = renderMarkdown(`<${projectLink}>`);
   assert.match(html, /href="nimino:\/\/project\?/);
   assert.doesNotMatch(html, /href=""/);
 });
 
-test("buzzDeepLinkUrlTransform: strips malformed nimino://pr (unknown param)", () => {
+test("niminoDeepLinkUrlTransform: strips malformed nimino://pr (unknown param)", () => {
   // Strict parser rejects unknown params — transform falls back to default sanitizer.
   const html = renderMarkdown(
-    `[link](nimino://pr?id=${EVENT_HEX}&owner=${OWNER_HEX}&d=buzz-world&extra=ignored)`,
+    `[link](nimino://pr?id=${EVENT_HEX}&owner=${OWNER_HEX}&d=nimino-world&extra=ignored)`,
   );
   assert.match(html, /href=""/);
 });
@@ -741,7 +741,7 @@ test("renderEntityLinkAnchor_noRelayOrigin_cloneUrlReturnsNull", () => {
 
 test("renderEntityLinkAnchor_directEntityLink_returnsAnchorRegardlessOfOrigin", () => {
   // A direct nimino://pr link always resolves in-app — it does not require origin.
-  const prLink = `nimino://pr?id=${EVENT_HEX}&owner=${OWNER_HEX}&d=buzz-world`;
+  const prLink = `nimino://pr?id=${EVENT_HEX}&owner=${OWNER_HEX}&d=nimino-world`;
   const el = renderEntityLinkAnchor({
     children: React.createElement("span", null, "My PR"),
     href: prLink,
@@ -806,13 +806,13 @@ test("remarkMessageLinks: bare nimino://message URL is replaced", () => {
   assert.equal(para.children[0].data.hName, "message-link");
 });
 
-test("remarkMessageLinks: legacy bare message URL is left as text", () => {
-  const legacyUrl = ["buzz", "://message?channel=c&id=m"].join("");
-  const tree = runPlugin(paragraph(text(legacyUrl)));
+test("remarkMessageLinks: retired product URL is left as text", () => {
+  const retiredUrl = ["bu", "zz", "://message?channel=c&id=m"].join("");
+  const tree = runPlugin(paragraph(text(retiredUrl)));
   const para = tree.children[0];
   assert.equal(para.children.length, 1);
   assert.equal(para.children[0].type, "text");
-  assert.equal(para.children[0].value, legacyUrl);
+  assert.equal(para.children[0].value, retiredUrl);
 });
 
 test("remarkMessageLinks: mid-sentence URL splits surrounding text", () => {
@@ -943,9 +943,9 @@ function nudgeBody(agentPubkey) {
     "**Fizz** needs configuration before it can respond:",
     "- set `ANTHROPIC_API_KEY` in Edit Agent → Environment variables",
     "",
-    "Open Edit Agent in the Buzz app to set these.",
+    "Open Edit Agent in the Nimino app to set these.",
     "",
-    "```buzz:config-nudge",
+    "```nimino:config-nudge",
     JSON.stringify({
       agent_name: "Fizz",
       agent_pubkey: agentPubkey,
@@ -1069,7 +1069,7 @@ test("nudgeGuard_noSentinel_proseRenderedCardAbsent", () => {
   );
 });
 
-test("bare Buzz permalinks render cohesive icon-prefixed chips", () => {
+test("bare Nimino permalinks render cohesive icon-prefixed chips", () => {
   const channelId = "580ca78b-9dae-46f3-8854-bd671853ba32";
   const messageLink = `nimino://message?channel=${channelId}&id=${EVENT_HEX}`;
   const compatibilityMessageLink = `nimino://channel/${channelId}/${EVENT_HEX}`;
@@ -1078,9 +1078,9 @@ test("bare Buzz permalinks render cohesive icon-prefixed chips", () => {
     messageLink,
     compatibilityMessageLink,
     channelLink,
-    `nimino://pr?id=${EVENT_HEX}&owner=${OWNER_HEX}&d=buzz-world`,
-    `nimino://issue?id=${EVENT_HEX}&owner=${OWNER_HEX}&d=buzz-world`,
-    `nimino://repo?owner=${OWNER_HEX}&d=buzz-world`,
+    `nimino://pr?id=${EVENT_HEX}&owner=${OWNER_HEX}&d=nimino-world`,
+    `nimino://issue?id=${EVENT_HEX}&owner=${OWNER_HEX}&d=nimino-world`,
+    `nimino://repo?owner=${OWNER_HEX}&d=nimino-world`,
   ];
   const markdown = renderCachedMarkdown({
     components: createMarkdownComponents(true, false),
@@ -1108,7 +1108,7 @@ test("bare Buzz permalinks render cohesive icon-prefixed chips", () => {
   );
 
   const visibleText = html.replace(/<[^>]+>/g, "");
-  assert.equal((html.match(/data-buzz-link=""/g) ?? []).length, 6);
+  assert.equal((html.match(/data-nimino-link=""/g) ?? []).length, 6);
   assert.equal(
     (
       html.match(
@@ -1128,7 +1128,7 @@ test("bare Buzz permalinks render cohesive icon-prefixed chips", () => {
   assert.match(html, /inline-chip-icon-repo/);
   // PR, issue, and repository chips all use the stable repository identity;
   // fetched subjects and event hashes never alter their inline width.
-  assert.equal((visibleText.match(/buzz-world/g) ?? []).length, 3);
+  assert.equal((visibleText.match(/nimino-world/g) ?? []).length, 3);
   assert.doesNotMatch(visibleText, /c3b589fa/);
 });
 
@@ -1144,25 +1144,25 @@ test("inline issue and pull-request chips show the repository name without the e
     );
 
   const issueHtml = renderEntityChip(
-    `nimino://issue?id=${EVENT_HEX}&owner=${OWNER_HEX}&d=buzz-world`,
+    `nimino://issue?id=${EVENT_HEX}&owner=${OWNER_HEX}&d=nimino-world`,
   );
   const issueText = issueHtml.replace(/<[^>]+>/g, "");
-  assert.equal(issueText, "buzz-world");
+  assert.equal(issueText, "nimino-world");
   assert.doesNotMatch(issueText, /c3b589fa/);
   assert.doesNotMatch(issueText, /·/);
   // Identity, icon, and navigation affordances survive the shorter label.
-  assert.match(issueHtml, /data-buzz-link-kind="issue"/);
+  assert.match(issueHtml, /data-nimino-link-kind="issue"/);
   assert.match(issueHtml, /inline-chip-icon-issue/);
   assert.match(
     issueHtml,
-    /aria-label="Open issue c3b589fa in repository buzz-world"/,
+    /aria-label="Open issue c3b589fa in repository nimino-world"/,
   );
 
   // Pull-request chips follow the same stable inline identity policy.
   const pullRequestText = renderEntityChip(
-    `nimino://pr?id=${EVENT_HEX}&owner=${OWNER_HEX}&d=buzz-world`,
+    `nimino://pr?id=${EVENT_HEX}&owner=${OWNER_HEX}&d=nimino-world`,
   ).replace(/<[^>]+>/g, "");
-  assert.equal(pullRequestText, "buzz-world");
+  assert.equal(pullRequestText, "nimino-world");
   assert.doesNotMatch(pullRequestText, /c3b589fa/);
   assert.doesNotMatch(pullRequestText, /·/);
 });
@@ -1229,18 +1229,18 @@ test("inline message chips omit fetched metadata and the event hash", () => {
   assert.doesNotMatch(visibleText, /·/);
 });
 
-test("authored Buzz permalink labels remain ordinary links", () => {
+test("authored Nimino permalink labels remain ordinary links", () => {
   const channelId = "580ca78b-9dae-46f3-8854-bd671853ba32";
   const links = [
     `[the message](nimino://message?channel=${channelId}&id=${EVENT_HEX})`,
     `[the compatibility message](nimino://channel/${channelId}/${EVENT_HEX})`,
     `[**design discussion**](nimino://channel/${channelId})`,
-    `[the issue](nimino://issue?id=${EVENT_HEX}&owner=${OWNER_HEX}&d=buzz-world)`,
+    `[the issue](nimino://issue?id=${EVENT_HEX}&owner=${OWNER_HEX}&d=nimino-world)`,
   ];
   const markdown = renderCachedMarkdown({
     components: createMarkdownComponents(true, false),
     content: links.join(" "),
-    variant: "authored-buzz-link-integration-test",
+    variant: "authored-nimino-link-integration-test",
   });
   const html = renderToStaticMarkup(
     React.createElement(
@@ -1262,7 +1262,7 @@ test("authored Buzz permalink labels remain ordinary links", () => {
     ),
   );
 
-  assert.equal((html.match(/data-buzz-link=""/g) ?? []).length, 0);
+  assert.equal((html.match(/data-nimino-link=""/g) ?? []).length, 0);
   assert.match(html, />the message</);
   assert.match(html, />the compatibility message</);
   assert.match(html, /aria-label="Open message: the compatibility message"/);
@@ -1273,7 +1273,7 @@ test("authored Buzz permalink labels remain ordinary links", () => {
   assert.equal((html.match(/underline-offset-4/g) ?? []).length, 4);
 });
 
-test("bare Buzz permalinks shorten unavailable channel identifiers", () => {
+test("bare Nimino permalinks shorten unavailable channel identifiers", () => {
   const channelId = "580ca78b-9dae-46f3-8854-bd671853ba32";
   const markdown = renderCachedMarkdown({
     components: createMarkdownComponents(true, false),
@@ -1281,7 +1281,7 @@ test("bare Buzz permalinks shorten unavailable channel identifiers", () => {
       `nimino://message?channel=${channelId}&id=${EVENT_HEX}`,
       `nimino://channel/${channelId}`,
     ].join(" "),
-    variant: "unknown-channel-buzz-link-integration-test",
+    variant: "unknown-channel-nimino-link-integration-test",
   });
   const html = renderToStaticMarkup(
     React.createElement(
@@ -1400,8 +1400,8 @@ test("agent mentions retain the bot treatment instead of the human icon", () => 
   assert.doesNotMatch(html, />@alice</);
 });
 
-test("renderEntityLinkAnchor renders Buzz entity links as chips", () => {
-  const prLink = `nimino://pr?id=${EVENT_HEX}&owner=${OWNER_HEX}&d=buzz-world`;
+test("renderEntityLinkAnchor renders Nimino entity links as chips", () => {
+  const prLink = `nimino://pr?id=${EVENT_HEX}&owner=${OWNER_HEX}&d=nimino-world`;
   const el = renderEntityLinkAnchor({
     children: "PR · abc123",
     href: prLink,
@@ -1410,29 +1410,29 @@ test("renderEntityLinkAnchor renders Buzz entity links as chips", () => {
     relayOrigin: null,
   });
   const html = renderToStaticMarkup(el);
-  assert.match(html, /data-buzz-link=""/);
+  assert.match(html, /data-nimino-link=""/);
   assert.match(html, /<span/);
   assert.match(html, /role="button"/);
   assert.match(html, /tabindex="0"/);
-  assert.match(html, /data-buzz-link-kind="pr"/);
+  assert.match(html, /data-nimino-link-kind="pr"/);
   assert.match(html, /wrapping-inline-chip/);
-  assert.match(html, /inline-chip-leading-fragment[^>]*>buzz-</);
+  assert.match(html, /inline-chip-leading-fragment[^>]*>nimino-</);
   assert.doesNotMatch(html, /\btruncate\b/);
   assert.doesNotMatch(html, /<a/);
   assert.doesNotMatch(html, /<button/);
 });
 
 test("renderEntityLinkAnchor keeps chip styling when interaction is disabled", () => {
-  const repoLink = `nimino://repo?owner=${OWNER_HEX}&d=buzz-world`;
+  const repoLink = `nimino://repo?owner=${OWNER_HEX}&d=nimino-world`;
   const el = renderEntityLinkAnchor({
-    children: "buzz-world",
+    children: "nimino-world",
     href: repoLink,
     interactive: false,
     onOpenEntityLink: () => {},
     relayOrigin: null,
   });
   const html = renderToStaticMarkup(el);
-  assert.match(html, /data-buzz-link=""/);
+  assert.match(html, /data-nimino-link=""/);
   assert.match(html, /<span/);
   assert.match(html, /class="mention-chip\s/);
   assert.doesNotMatch(html, /<button/);

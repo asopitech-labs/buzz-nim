@@ -27,7 +27,9 @@ fn entry(index: u64, term: u64, command: &str) -> ControlLogEntry {
         term,
         voter_epoch: 1,
         kind: "command".into(),
+        command_id: format!("command-{index}"),
         payload: command.as_bytes().to_vec(),
+        target_voters: Vec::new(),
     }
 }
 
@@ -137,14 +139,16 @@ fn installs_snapshot_then_recovers_the_suffix() {
         last_included_term: 1,
         voter_epoch: 1,
         voter_phase: "stable-old".into(),
+        old_voters: vec!["node-a".into()],
+        new_voters: Vec::new(),
         state: b"nim-state-through-two".to_vec(),
     };
-    assert!(store.install_control_snapshot(snapshot.clone()).unwrap());
-    assert!(!store.install_control_snapshot(snapshot.clone()).unwrap());
+    assert!(store.install_control_snapshot(1, snapshot.clone()).unwrap());
+    assert!(!store.install_control_snapshot(2, snapshot.clone()).unwrap());
     let mut conflicting = snapshot.clone();
     conflicting.state = b"different-state".to_vec();
     assert!(matches!(
-        store.install_control_snapshot(conflicting),
+        store.install_control_snapshot(2, conflicting),
         Err(StoreError::ControlSnapshotConflict { index: 2 })
     ));
 
@@ -157,9 +161,11 @@ fn installs_snapshot_then_recovers_the_suffix() {
         last_included_term: 3,
         voter_epoch: 2,
         voter_phase: "joint".into(),
+        old_voters: vec!["node-a".into()],
+        new_voters: vec!["node-b".into()],
         state: b"remote-state-through-five".to_vec(),
     };
-    assert!(store.install_control_snapshot(incoming.clone()).unwrap());
+    assert!(store.install_control_snapshot(2, incoming.clone()).unwrap());
     let recovered = store.recover_control_state().unwrap();
     assert_eq!(recovered.snapshot, Some(incoming));
     assert!(recovered.entries.is_empty());

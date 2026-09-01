@@ -10,7 +10,7 @@ _agents="$3"
 _heartbeat="$4"
 _prompt="${5:-}"
 
-cargo build --release -p buzz-acp -p buzz-cli
+cargo build --release -p nimino-acp -p nimino-cli
 
 env_args=(
     NIMINO_RELAY_URL="$_relay"

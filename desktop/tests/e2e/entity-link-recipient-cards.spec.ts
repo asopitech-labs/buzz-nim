@@ -9,7 +9,7 @@ import {
 
 const SHOTS = "test-results/entity-link-recipient-cards";
 
-// Regression coverage for Buzz-native entity links after standalone cards were
+// Regression coverage for Nimino-native entity links after standalone cards were
 // removed. Raw and authored entity links keep their inline navigation and
 // relay-backed metadata tooltips, while external sender snapshots still render.
 
@@ -25,7 +25,7 @@ const EXTERNAL_HREF = "https://example.com/entity-chip-control";
 const RELAY_ORIGIN = "http://localhost:3000";
 const CLONE_HREF = `${RELAY_ORIGIN}/git/${ALICE_PUBKEY}/relay-tools.git`;
 
-test("agent-style Buzz links stay chip-only with metadata tooltips", async ({
+test("agent-style Nimino links stay chip-only with metadata tooltips", async ({
   page,
 }) => {
   await page.addInitScript(
@@ -126,7 +126,7 @@ test("agent-style Buzz links stay chip-only with metadata tooltips", async ({
     .last();
   await expect(row).toBeVisible();
 
-  await expect(row.locator('[data-link-preview^="buzz-"]')).toHaveCount(0);
+  await expect(row.locator('[data-link-preview^="nimino-"]')).toHaveCount(0);
   const externalCard = row.locator('[data-link-preview="generic-link"]');
   await expect(externalCard).toBeVisible();
   await expect(externalCard).toContainText("External preview survives");
@@ -148,12 +148,12 @@ test("agent-style Buzz links stay chip-only with metadata tooltips", async ({
   await prChip.hover();
   const prTooltip = page.getByRole("tooltip");
   const prContext = prTooltip.locator(
-    '[data-buzz-tooltip-metadata-content=""]',
+    '[data-nimino-tooltip-metadata-content=""]',
   );
   await expect(prContext).toHaveText(PR_SUBJECT);
   await expect(prContext).toHaveClass(/line-clamp-3/);
   await expect(prContext).toHaveCSS("overflow-wrap", "anywhere");
-  const prFooter = prTooltip.locator('[data-buzz-tooltip-metadata-type=""]');
+  const prFooter = prTooltip.locator('[data-nimino-tooltip-metadata-type=""]');
   await expect(prFooter).toHaveText("Pull request · relay-tools");
   await expect(prFooter).toHaveCSS("overflow-wrap", "anywhere");
   await expect(prFooter).toHaveCSS("white-space", "normal");
@@ -174,7 +174,7 @@ test("agent-style Buzz links stay chip-only with metadata tooltips", async ({
   expect(tooltipSemanticColors.actual).toEqual(tooltipSemanticColors.expected);
   await expect(prChip).toHaveText("relay-tools");
 
-  const issueChip = row.locator('[data-buzz-link-kind="issue"]');
+  const issueChip = row.locator('[data-nimino-link-kind="issue"]');
   // The issue chip is the repository name alone — resolved metadata never
   // reaches the inline label, so it neither absorbs the title nor falls back
   // to the event hash.
@@ -190,7 +190,7 @@ test("agent-style Buzz links stay chip-only with metadata tooltips", async ({
   await issueChip.hover();
   const issueTooltip = page.getByRole("tooltip");
   const issueContext = issueTooltip.locator(
-    '[data-buzz-tooltip-metadata-content=""]',
+    '[data-nimino-tooltip-metadata-content=""]',
   );
   await expect(issueContext).toHaveText(ISSUE_SUBJECT);
   await expect(issueContext).toHaveClass(/line-clamp-3/);
@@ -204,7 +204,7 @@ test("agent-style Buzz links stay chip-only with metadata tooltips", async ({
     )
     .toBe(true);
   await expect(
-    issueTooltip.locator('[data-buzz-tooltip-metadata-type=""]'),
+    issueTooltip.locator('[data-nimino-tooltip-metadata-type=""]'),
   ).toHaveText("Issue · relay-tools");
 
   const labeledIssue = row
@@ -215,7 +215,7 @@ test("agent-style Buzz links stay chip-only with metadata tooltips", async ({
   await expect(
     page
       .getByRole("tooltip")
-      .locator('[data-buzz-tooltip-metadata-content=""]'),
+      .locator('[data-nimino-tooltip-metadata-content=""]'),
   ).toHaveText(ISSUE_SUBJECT);
 
   // Repository metadata remains available from its inline chip.
@@ -226,10 +226,10 @@ test("agent-style Buzz links stay chip-only with metadata tooltips", async ({
   await repoChip.hover();
   const repoTooltip = page.getByRole("tooltip");
   await expect(
-    repoTooltip.locator('[data-buzz-tooltip-metadata-content=""]'),
+    repoTooltip.locator('[data-nimino-tooltip-metadata-content=""]'),
   ).toContainText("Operator tooling and admin CLI for relay deployments.");
   await expect(
-    repoTooltip.locator('[data-buzz-tooltip-metadata-type=""]'),
+    repoTooltip.locator('[data-nimino-tooltip-metadata-type=""]'),
   ).toHaveText("Repository");
 
   const labeledClone = row
@@ -242,7 +242,7 @@ test("agent-style Buzz links stay chip-only with metadata tooltips", async ({
   await labeledClone.hover();
   const cloneTooltip = page.getByRole("tooltip");
   await expect(
-    cloneTooltip.locator('[data-buzz-tooltip-metadata-content=""]'),
+    cloneTooltip.locator('[data-nimino-tooltip-metadata-content=""]'),
   ).toContainText("Operator tooling and admin CLI for relay deployments.");
   await labeledClone.click();
   await expect(page.locator("[data-project-detail-screen]")).toBeVisible();
@@ -251,7 +251,7 @@ test("agent-style Buzz links stay chip-only with metadata tooltips", async ({
   const missingRepoChip = row.getByRole("button", {
     name: "Open repository missing-repo",
   });
-  await expect(missingRepoChip).not.toHaveClass(/buzz-link-unavailable/);
+  await expect(missingRepoChip).not.toHaveClass(/nimino-link-unavailable/);
   const missingRepoColors = await missingRepoChip.evaluate((element) => {
     const styles = getComputedStyle(element);
     const probe = document.createElement("span");
@@ -272,10 +272,10 @@ test("agent-style Buzz links stay chip-only with metadata tooltips", async ({
   await missingRepoChip.hover();
   const missingRepoTooltip = page.getByRole("tooltip");
   await expect(
-    missingRepoTooltip.locator('[data-buzz-tooltip-metadata-content=""]'),
+    missingRepoTooltip.locator('[data-nimino-tooltip-metadata-content=""]'),
   ).toHaveCount(0);
   const missingRepoFooter = missingRepoTooltip.locator(
-    '[data-buzz-tooltip-metadata-type=""]',
+    '[data-nimino-tooltip-metadata-type=""]',
   );
   await expect(missingRepoFooter).toHaveText("Repository");
   await expect(missingRepoFooter).toHaveClass(/text-secondary-foreground\/80/);
@@ -342,7 +342,7 @@ test("issue chip width is metadata-independent while the title loads", async ({
 
   const tooltipContent = page
     .getByRole("tooltip")
-    .locator('[data-buzz-tooltip-metadata-content=""]');
+    .locator('[data-nimino-tooltip-metadata-content=""]');
   const widths = new Set<number>();
   const tooltipSamples: string[] = [];
   await expect
@@ -385,24 +385,24 @@ test("entity tooltip uses project context while relay metadata is delayed", asyn
     ({ issueId, owner }) => {
       window.__NIMINO_E2E_EMIT_MOCK_MESSAGE__?.({
         channelName: "general",
-        content: `Delayed issue: nimino://issue?id=${issueId}&owner=${owner}&d=buzz`,
+        content: `Delayed issue: nimino://issue?id=${issueId}&owner=${owner}&d=nimino`,
       });
     },
     { issueId: ISSUE_ID, owner: DEFAULT_MOCK_PUBKEY },
   );
 
   const issueChip = page.getByRole("button", {
-    name: /Open issue .* in repository buzz/,
+    name: /Open issue .* in repository nimino/,
   });
   await issueChip.hover();
   await expect(
     page
       .getByRole("tooltip")
-      .locator('[data-buzz-tooltip-metadata-content=""]'),
-  ).toHaveText("buzz · The complete Buzz community platform.");
+      .locator('[data-nimino-tooltip-metadata-content=""]'),
+  ).toHaveText("nimino · The complete Nimino community platform.");
 });
 
-test("desktop composer and sent message keep Buzz entities chip-only", async ({
+test("desktop composer and sent message keep Nimino entities chip-only", async ({
   page,
 }) => {
   await installMockBridge(page);
@@ -413,7 +413,7 @@ test("desktop composer and sent message keep Buzz entities chip-only", async ({
   const repoLink = `nimino://repo?owner=${ALICE_PUBKEY}&d=relay-tools`;
   await page.getByTestId("message-input").fill(`Check out ${repoLink}`);
 
-  // Buzz-native links do not enter the standalone composer-preview surface.
+  // Nimino-native links do not enter the standalone composer-preview surface.
   await expect(page.locator("[data-composer-link-previews]")).toHaveCount(0);
 
   await waitForAnimations(page);
@@ -425,7 +425,7 @@ test("desktop composer and sent message keep Buzz entities chip-only", async ({
   await page.getByTestId("send-message").click();
 
   const row = page.getByTestId("message-row").last();
-  await expect(row.locator('[data-link-preview^="buzz-"]')).toHaveCount(0);
+  await expect(row.locator('[data-link-preview^="nimino-"]')).toHaveCount(0);
   const repoChip = row.getByRole("button", {
     name: "Open repository relay-tools",
   });
@@ -434,7 +434,7 @@ test("desktop composer and sent message keep Buzz entities chip-only", async ({
   await expect(
     page
       .getByRole("tooltip")
-      .locator('[data-buzz-tooltip-metadata-content=""]'),
+      .locator('[data-nimino-tooltip-metadata-content=""]'),
   ).toContainText("Operator tooling and admin CLI for relay deployments.");
 
   await waitForAnimations(page);
@@ -457,7 +457,7 @@ test("composer classifies a same-relay clone URL as a repository chip, not a car
   // so the mismatch cannot appear. Point the bridge at an https relay so the
   // composer's classification is the only variable.
   const relayHttpUrl = "https://relay.e2e.example";
-  const cloneHref = `${relayHttpUrl}/git/${DEFAULT_MOCK_PUBKEY}/buzz.git`;
+  const cloneHref = `${relayHttpUrl}/git/${DEFAULT_MOCK_PUBKEY}/nimino.git`;
   await installBridge(page, {
     mode: "mock",
     relayHttpUrl,
@@ -490,13 +490,13 @@ test("composer classifies a same-relay clone URL as a repository chip, not a car
 
   const row = page.getByTestId("message-row").last();
   await expect(row.locator("[data-link-preview]")).toHaveCount(0);
-  const repoChip = row.getByRole("button", { name: "Open repository buzz" });
+  const repoChip = row.getByRole("button", { name: "Open repository nimino" });
   await expect(repoChip).toBeVisible();
   await repoChip.hover();
   await expect(
     page
       .getByRole("tooltip")
-      .locator('[data-buzz-tooltip-metadata-content=""]'),
+      .locator('[data-nimino-tooltip-metadata-content=""]'),
   ).toContainText("Relay, desktop, and mobile clients");
 
   // The chip navigates in-app, proving the clone URL resolved onto the
@@ -508,7 +508,7 @@ test("composer classifies a same-relay clone URL as a repository chip, not a car
 test("reopening the same entity link reapplies its workspace state", async ({
   page,
 }) => {
-  const repoAddress = `30617:${DEFAULT_MOCK_PUBKEY}:buzz`;
+  const repoAddress = `30617:${DEFAULT_MOCK_PUBKEY}:nimino`;
   await page.addInitScript(
     ({ issueId, issueSubject, prId, prSubject, repoAddress, owner }) => {
       const createdAt = Math.floor(Date.now() / 1000) - 60;
@@ -551,9 +551,9 @@ test("reopening the same entity link reapplies its workspace state", async ({
   await installMockBridge(page);
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.getByTestId("open-projects-view")).toBeVisible();
-  const repoLink = `nimino://repo?owner=${DEFAULT_MOCK_PUBKEY}&d=buzz&tab=prs`;
-  const prLink = `nimino://pr?id=${PR_ID}&owner=${DEFAULT_MOCK_PUBKEY}&d=buzz`;
-  const issueLink = `nimino://issue?id=${ISSUE_ID}&owner=${DEFAULT_MOCK_PUBKEY}&d=buzz`;
+  const repoLink = `nimino://repo?owner=${DEFAULT_MOCK_PUBKEY}&d=nimino&tab=prs`;
+  const prLink = `nimino://pr?id=${PR_ID}&owner=${DEFAULT_MOCK_PUBKEY}&d=nimino`;
+  const issueLink = `nimino://issue?id=${ISSUE_ID}&owner=${DEFAULT_MOCK_PUBKEY}&d=nimino`;
   const emitEntityLink = async (link: string) => {
     await page.waitForFunction(
       () => typeof window.__TAURI_INTERNALS__?.invoke === "function",
@@ -683,8 +683,8 @@ test("deleted top-level message links identify deletion and fall back to channel
     "data-message-link-state",
     "deleted",
   );
-  await expect(deletedLink).toHaveClass(/buzz-link-deleted/);
-  await expect(deletedLink).not.toHaveClass(/buzz-link-unavailable/);
+  await expect(deletedLink).toHaveClass(/nimino-link-deleted/);
+  await expect(deletedLink).not.toHaveClass(/nimino-link-unavailable/);
   await deletedLink.hover();
   await expect(page.getByRole("tooltip")).toHaveText("Message deleted");
 
@@ -696,7 +696,7 @@ test("deleted top-level message links identify deletion and fall back to channel
 test("cold-start entity links drain after the React listener mounts", async ({
   page,
 }) => {
-  const href = `nimino://repo?owner=${DEFAULT_MOCK_PUBKEY}&d=buzz&tab=prs`;
+  const href = `nimino://repo?owner=${DEFAULT_MOCK_PUBKEY}&d=nimino&tab=prs`;
   await installMockBridge(page, {
     pendingEntityDeepLinks: [{ id: "cold-start-project", href }],
   });

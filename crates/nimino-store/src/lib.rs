@@ -21,8 +21,9 @@ pub use projection_stage::{
 };
 pub use redb_store::RedbNodeStore;
 pub use sync_digest::{
-    canonical_prefix_digest, canonical_record_digest, empty_prefix_digest, extend_prefix_digest,
-    verify_range_digest, CanonicalPrefixDigest,
+    canonical_logical_record_digest, canonical_prefix_digest, canonical_prefix_digest_at,
+    canonical_record_digest, canonical_state_digest, empty_prefix_digest, extend_prefix_digest,
+    verify_range_digest, CanonicalPrefixDigest, CanonicalStateDigest,
 };
 pub use types::{
     CacheReplacement, CanonicalCommit, CommitResult, LogAppend, NodeStorePort, RecordClass,

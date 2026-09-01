@@ -378,7 +378,7 @@ pub(crate) fn write_profile_reconcile_queue(
 }
 
 pub(crate) fn profile_reconcile_relay_key(relay_url: &str) -> Result<String, String> {
-    buzz_core_pkg::relay::normalize_relay_url(relay_url)
+    nimino_core_pkg::relay::normalize_relay_url(relay_url)
         .map_err(|error| format!("invalid profile reconcile relay: {error}"))
 }
 
@@ -460,7 +460,7 @@ fn remove_pollen_from_legacy_fizz_name_pool(
 ) -> bool {
     const LEGACY_FIZZ_NAME_POOL: &[&str] = &[
         "Nectar", "Comet", "Bramble", "Clover", "Pollen", "Amber", "Daisy", "Mason", "Thistle",
-        "Waxwing", "Hive", "Meadow", "Juniper", "Aster", "Sage", "Willow", "Orchard", "Buzz",
+        "Waxwing", "Hive", "Meadow", "Juniper", "Aster", "Sage", "Willow", "Orchard", "Nimino",
     ];
     let Some(names) = record
         .get("name_pool")

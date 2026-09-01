@@ -16,8 +16,8 @@ const check = (condition, message) => {
 
 check(manifest.compatibilityAliases === false, "runtime aliases must be disabled");
 
-const cliCargo = readFileSync(join(root, "crates", "buzz-cli", "Cargo.toml"), "utf8");
-const relayCargo = readFileSync(join(root, "crates", "buzz-relay", "Cargo.toml"), "utf8");
+const cliCargo = readFileSync(join(root, "crates", "nimino-cli", "Cargo.toml"), "utf8");
+const relayCargo = readFileSync(join(root, "crates", "nimino-relay", "Cargo.toml"), "utf8");
 check(
   cliCargo.includes(`[[bin]]\nname = "${surface("binary.cli").canonical}"`),
   "CLI binary is not Nimino",
@@ -50,9 +50,10 @@ check(
 const excluded = new Set([
   "CHANGELOG.md",
   "contracts/fixtures/old-buzz-client-v1.json",
+  "contracts/nimino-cli/v1/golden.json",
   "contracts/nimino-naming-v1.json",
   "contracts/nimino-protocol-v1.json",
-  "crates/buzz-relay/CHANGELOG.md",
+  "crates/nimino-relay/CHANGELOG.md",
   "docs/adr/nim-rust-boundary-v1.md",
   "scripts/check-nimino-naming-contract.mjs",
   "scripts/check-nimino-protocol-contract.mjs",
@@ -161,7 +162,7 @@ check(
 );
 
 const relayConfig = readFileSync(
-  join(root, "crates", "buzz-relay", "src", "config.rs"),
+  join(root, "crates", "nimino-relay", "src", "config.rs"),
   "utf8",
 );
 check(
@@ -171,7 +172,7 @@ check(
 check(!relayConfig.includes("postgres://buzz"), "legacy relay database default remains");
 
 const chartValues = readFileSync(
-  join(root, "deploy", "charts", "buzz", "values.yaml"),
+  join(root, "deploy", "charts", "nimino", "values.yaml"),
   "utf8",
 );
 check(
@@ -180,7 +181,7 @@ check(
 );
 
 const mediaConfig = readFileSync(
-  join(root, "crates", "buzz-media", "src", "config.rs"),
+  join(root, "crates", "nimino-media", "src", "config.rs"),
   "utf8",
 );
 check(
@@ -207,9 +208,9 @@ check(
 );
 
 for (const path of [
-  "crates/buzz-relay/src/main.rs",
-  "crates/buzz-relay/src/router.rs",
-  "crates/buzz-relay/src/telemetry.rs",
+  "crates/nimino-relay/src/main.rs",
+  "crates/nimino-relay/src/router.rs",
+  "crates/nimino-relay/src/telemetry.rs",
 ]) {
   check(
     !readFileSync(join(root, path), "utf8").includes('"buzz-relay"'),

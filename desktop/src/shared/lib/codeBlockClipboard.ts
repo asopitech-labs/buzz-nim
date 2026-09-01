@@ -1,6 +1,6 @@
 import { copyTextToSystemClipboard } from "@/shared/api/tauriMedia";
 
-const NIMINO_CODE_BLOCK_ATTRIBUTE = "data-buzz-code-block";
+const NIMINO_CODE_BLOCK_ATTRIBUTE = "data-nimino-code-block";
 
 function escapeHtml(value: string) {
   return value
@@ -10,7 +10,7 @@ function escapeHtml(value: string) {
     .replace(/"/g, "&quot;");
 }
 
-function createBuzzCodeBlockHtml(code: string) {
+function createNiminoCodeBlockHtml(code: string) {
   // Keep the code as one text node; the paste reader recovers it via textContent.
   return `<pre ${NIMINO_CODE_BLOCK_ATTRIBUTE}="true"><code>${escapeHtml(code)}</code></pre>`;
 }
@@ -25,7 +25,7 @@ export async function copyCodeBlockToClipboard(code: string) {
     try {
       await clipboard.write([
         new ClipboardItem({
-          "text/html": new Blob([createBuzzCodeBlockHtml(code)], {
+          "text/html": new Blob([createNiminoCodeBlockHtml(code)], {
             type: "text/html",
           }),
           "text/plain": new Blob([code], { type: "text/plain" }),
@@ -40,7 +40,7 @@ export async function copyCodeBlockToClipboard(code: string) {
   await copyTextToSystemClipboard(code);
 }
 
-export function getBuzzCodeBlockClipboardText(
+export function getNiminoCodeBlockClipboardText(
   clipboardData: DataTransfer | null | undefined,
 ) {
   const html = clipboardData?.getData("text/html");

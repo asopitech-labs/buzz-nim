@@ -1,0 +1,26 @@
+[package]
+name = "nimino-deletion"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Durable whole-community deletion engine for Nimino"
+
+[dependencies]
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+nimino-core = { workspace = true }
+nimino-db = { workspace = true }
+nimino-media = { workspace = true }
+chrono = { workspace = true }
+clap = { version = "4", features = ["derive"] }
+hex = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+uuid = { workspace = true }
+
+[dev-dependencies]
+sqlx = { workspace = true }

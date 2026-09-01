@@ -2,7 +2,7 @@
 
 This directory is the machine-readable source of truth for communication
 between the Rust host adapters and the Nimino core worker. Version `v1` is a
-deliberate break from Buzz internals; there is no legacy or dual-runtime mode.
+deliberate break from Nimino internals; there is no legacy or dual-runtime mode.
 
 The transport is a long-lived child process. Each message is UTF-8 JSON framed
 by a four-byte unsigned big-endian payload length. Standard output is reserved

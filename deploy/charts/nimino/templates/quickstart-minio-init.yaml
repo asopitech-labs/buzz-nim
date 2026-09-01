@@ -7,13 +7,13 @@ This is a NORMAL resource, deliberately NOT a helm hook. The relay's A3
 object-store conformance probe is startup-fatal and does not create the bucket
 itself, so the bucket must exist for a relay Pod to pass readiness. A
 `post-install` hook cannot satisfy that: `helm install --wait` blocks on the
-main resources (the relay Deployment) becoming Ready *before* post-install
+main resources (the relay StatefulSet) becoming Ready *before* post-install
 hooks run, but the relay can never become Ready without the bucket — a
 deadlock (relays CrashLoopBackOff forever). A `pre-install` hook deadlocks the
 other way: it would run to completion before MinIO (a normal resource) is
 created. Running the Job as a normal resource lets helm create MinIO, this Job,
-and the relay Deployment together; the Job's `until` loop waits for MinIO, and
-`--wait` waits for the Job to complete alongside the Deployment.
+and the relay StatefulSet together; the Job's `until` loop waits for MinIO, and
+`--wait` waits for the Job to complete alongside the StatefulSet.
 
 The name carries the release revision so `helm upgrade` creates a fresh Job
 (a completed Job's spec is immutable); `ttlSecondsAfterFinished` GCs it.

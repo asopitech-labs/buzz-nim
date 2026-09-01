@@ -1,4 +1,4 @@
-# Buzz
+# Nimino
 
 Desktop chat shell with:
 

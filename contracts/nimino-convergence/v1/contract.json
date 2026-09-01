@@ -6,7 +6,7 @@
   "publicationState": "cutover-ready",
   "owner": "nimino-core",
   "module": "nim/nimino_core/src/nimino_core/domain/convergence_policy.nim",
-  "syncContract": "nimino.sync/v1",
+  "syncContract": "nimino.sync/v2",
   "eventPolicyContract": "nimino.event-policy/v1",
   "moderationPolicyContract": "nimino.moderation-policy/v1",
   "identity": {

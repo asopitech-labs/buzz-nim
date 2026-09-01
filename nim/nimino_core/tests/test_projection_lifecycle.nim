@@ -13,8 +13,7 @@ proc event(
     recordType: "event",
     key: key,
     value: %*{
-      "content": content,
-      "createdAt": createdAt,
+      "event": {"content": content, "created_at": createdAt},
       "parentId": parent,
       "rootId": root,
     },

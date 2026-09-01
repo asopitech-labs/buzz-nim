@@ -52,6 +52,31 @@
       }
     },
     {
+      "name": "private-channel-existing-member-join-is-idempotent",
+      "invariant": "Channel.Join.Idempotent",
+      "input": {
+        "decision": "channel",
+        "request": {
+          "command": "join",
+          "visibility": "private",
+          "actorRole": "member",
+          "targetRole": "member",
+          "requestedRole": "none",
+          "actorIsTarget": true,
+          "actorOwnsTargetAgent": false,
+          "targetIsAgent": false,
+          "targetAddPolicy": "anyone",
+          "ownerCount": 1
+        }
+      },
+      "expected": {
+        "decision": "channel",
+        "action": "noop",
+        "error": "none",
+        "effectiveRole": "member"
+      }
+    },
+    {
       "name": "last-owner-cannot-leave",
       "invariant": "Channel.LastOwner",
       "input": {

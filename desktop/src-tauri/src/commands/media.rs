@@ -336,7 +336,7 @@ pub(crate) fn sign_blossom_get_auth_header(
             .map_err(|e| e.to_string())?,
         Tag::parse(vec!["server".to_string(), server]).map_err(|e| e.to_string())?,
     ];
-    let event = EventBuilder::new(Kind::from(24242), "Get buzz-media")
+    let event = EventBuilder::new(Kind::from(24242), "Get nimino-media")
         .tags(tags)
         .sign_with_keys(keys)
         .map_err(|e| e.to_string())?;
@@ -389,7 +389,7 @@ fn sign_blossom_upload_auth(
     if let Some(domain) = extract_server_authority(base_url) {
         tags.push(Tag::parse(vec!["server".to_string(), domain]).map_err(|e| e.to_string())?);
     }
-    EventBuilder::new(Kind::from(24242), "Upload buzz-media")
+    EventBuilder::new(Kind::from(24242), "Upload nimino-media")
         .tags(tags)
         .sign_with_keys(keys)
         .map_err(|e| e.to_string())
@@ -400,13 +400,6 @@ fn sign_blossom_upload_auth(
 // Current approach works for videos up to ~100MB but will OOM on 500MB files.
 // Fix: use reqwest's Body::wrap_stream() to stream from the temp file directly.
 // The server already supports streaming upload via process_video_upload.
-fn should_retry_legacy_upload(status: reqwest::StatusCode) -> bool {
-    matches!(
-        status,
-        reqwest::StatusCode::NOT_FOUND | reqwest::StatusCode::METHOD_NOT_ALLOWED
-    )
-}
-
 pub(crate) async fn upload_image_bytes(
     body: Vec<u8>,
     state: &AppState,
@@ -450,35 +443,19 @@ async fn do_upload(
     if let Some((app, progress_id)) = progress.as_ref() {
         emit_media_upload_phase(app, Some(progress_id.as_str()), "uploading");
     }
-    let mut resp = send_upload_attempt(
+    let resp = send_upload_attempt(
         state,
         UploadAttempt {
             url: format!("{base_url}/upload"),
             auth_header: &auth_header,
             mime,
             sha256: &sha256,
-            body: body.clone(),
+            body,
             progress: progress.as_ref(),
             cancellation,
         },
     )
     .await?;
-    if should_retry_legacy_upload(resp.status()) {
-        resp = send_upload_attempt(
-            state,
-            UploadAttempt {
-                url: format!("{base_url}/media/upload"),
-                auth_header: &auth_header,
-                mime,
-                sha256: &sha256,
-                body,
-                progress: progress.as_ref(),
-                cancellation,
-            },
-        )
-        .await?;
-    }
-
     if !resp.status().is_success() {
         return Err(relay_error_message(resp).await);
     }
@@ -732,7 +709,7 @@ pub(super) async fn upload_media_bytes_inner(
         let cancellation = cancellation.cloned();
         tokio::task::spawn_blocking(move || -> Result<(Vec<u8>, Option<Vec<u8>>), String> {
             let tmp_input =
-                std::env::temp_dir().join(format!("buzz-drop-{}", uuid::Uuid::new_v4()));
+                std::env::temp_dir().join(format!("nimino-drop-{}", uuid::Uuid::new_v4()));
             // Cleanup guard: remove temp file on ALL exit paths (including write failure).
             let result = (|| {
                 std::fs::write(&tmp_input, &data)
@@ -752,7 +729,7 @@ pub(super) async fn upload_media_bytes_inner(
         let cancellation = cancellation.cloned();
         tokio::task::spawn_blocking(move || -> Result<(Vec<u8>, Option<Vec<u8>>), String> {
             let tmp_input =
-                std::env::temp_dir().join(format!("buzz-drop-{}", uuid::Uuid::new_v4()));
+                std::env::temp_dir().join(format!("nimino-drop-{}", uuid::Uuid::new_v4()));
             // Cleanup guard: remove temp file on ALL exit paths (including write failure).
             let result = (|| {
                 std::fs::write(&tmp_input, &data)
@@ -966,20 +943,6 @@ mod tests {
         webp.extend_from_slice(&0u32.to_le_bytes());
         assert!(is_animated_image(&webp, "image/webp"));
         assert!(sanitize_image_for_upload(webp, "image/webp").is_ok());
-    }
-
-    #[test]
-    fn test_legacy_upload_retry_statuses_are_narrow() {
-        assert!(should_retry_legacy_upload(reqwest::StatusCode::NOT_FOUND));
-        assert!(should_retry_legacy_upload(
-            reqwest::StatusCode::METHOD_NOT_ALLOWED
-        ));
-        assert!(!should_retry_legacy_upload(
-            reqwest::StatusCode::UNPROCESSABLE_ENTITY
-        ));
-        assert!(!should_retry_legacy_upload(
-            reqwest::StatusCode::UNSUPPORTED_MEDIA_TYPE
-        ));
     }
 
     #[test]

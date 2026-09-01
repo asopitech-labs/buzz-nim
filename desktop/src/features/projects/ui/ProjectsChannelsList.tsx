@@ -11,7 +11,7 @@ import {
 } from "@/features/projects/lib/projectRelatedChannels";
 import { selectionItemFromChannel } from "@/features/projects/lib/projectSelection";
 import { listRowDescription } from "@/features/projects/lib/projectsViewHelpers";
-import { BuzzLoadingState } from "@/shared/ui/BuzzLoadingState";
+import { NiminoLoadingState } from "@/shared/ui/NiminoLoadingState";
 import { ProjectEntityListRow } from "./ProjectEntityListRow";
 import { ProjectSelectableGroup } from "./ProjectSelectableGroup";
 
@@ -107,7 +107,7 @@ export function ProjectsChannelsList({ projects }: { projects: Project[] }) {
   }, [rows]);
 
   if (channelsQuery.isLoading && rows.length === 0) {
-    return <BuzzLoadingState label="Loading project channels" />;
+    return <NiminoLoadingState label="Loading project channels" />;
   }
   if (rows.length === 0) {
     return (

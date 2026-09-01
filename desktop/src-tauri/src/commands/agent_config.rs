@@ -125,7 +125,7 @@ fn resolve_config_surface(
     claude_config_dir: Option<&std::path::Path>,
 ) -> RuntimeConfigSurface {
     // Linked instances are definition-authoritative: clear stale materialized
-    // model/provider/prompt so they can never masquerade as BuzzExplicit and
+    // model/provider/prompt so they can never masquerade as NiminoExplicit and
     // shadow definition values. Env var overrides are untouched.
     if record.persona_id.is_some() {
         record.system_prompt = None;

@@ -111,14 +111,16 @@ pub fn run() {
             // would shut down the workers Tauri now depends on.
             std::mem::forget(runtime);
             eprintln!(
-                "buzz-mesh: installed tokio runtime with {} MiB worker stacks",
+                "nimino-mesh: installed tokio runtime with {} MiB worker stacks",
                 crate::mesh_llm::MESH_WORKER_STACK_SIZE / (1024 * 1024)
             );
         }
         Err(error) => {
             // Fall back to Tauri's default runtime: the app still works,
             // only deep mesh-llm futures are at risk of stack overflow.
-            eprintln!("buzz-mesh: failed to build big-stack tokio runtime, using default: {error}");
+            eprintln!(
+                "nimino-mesh: failed to build big-stack tokio runtime, using default: {error}"
+            );
         }
     }
     let builder = tauri::Builder::default()
@@ -208,7 +210,7 @@ pub fn run() {
     let builder = ptt_shortcut::install(builder);
 
     // Register the updater only in configured release builds; omit it locally.
-    #[cfg(buzz_updater_enabled)]
+    #[cfg(nimino_updater_enabled)]
     let builder = if cfg!(debug_assertions) {
         builder
     } else {
@@ -218,7 +220,7 @@ pub fn run() {
         .register_asynchronous_uri_scheme_protocol("nimino-media", |ctx, request, responder| {
             let app = ctx.app_handle().clone();
             tauri::async_runtime::spawn(async move {
-                let response = media_proxy::handle_buzz_media(&app, &request).await;
+                let response = media_proxy::handle_nimino_media(&app, &request).await;
                 responder.respond(response);
             });
         })
@@ -367,7 +369,7 @@ pub fn run() {
                     .store(port, std::sync::atomic::Ordering::Relaxed);
             });
 
-            // Create the Buzz nest (~/.nimino or ~/.nimino-dev for dev builds) before
+            // Create the Nimino nest (~/.nimino or ~/.nimino-dev for dev builds) before
             // agents are restored, so default_agent_workdir() resolves to the
             // nest directory. Non-fatal: agents fall back to $HOME if nest
             // creation fails.
@@ -580,7 +582,6 @@ pub fn run() {
             get_os_idle_seconds,
             get_default_relay_url,
             auto_connect_default_relay_enabled,
-            get_legacy_workspace_storage,
             is_shared_identity,
             get_relay_ws_url,
             get_relay_http_url,
@@ -862,7 +863,7 @@ pub fn run() {
             event: WindowEvent::CloseRequested { api, .. },
             ..
         } if label == "main" => {
-            // Keep the webview alive so Buzz can be reopened from its tray menu.
+            // Keep the webview alive so Nimino can be reopened from its tray menu.
             api.prevent_close();
             if let Some(window) = app_handle.get_webview_window("main") {
                 if let Err(error) = window.hide() {
@@ -910,7 +911,7 @@ pub fn run() {
             // AppKit terminates through libc exit(), which runs C++ static
             // destructors. The embedded ggml/Metal runtime currently aborts in
             // that destructor phase even after its node has stopped cleanly.
-            // End the process only after Buzz and Mesh shutdown above, while
+            // End the process only after Nimino and Mesh shutdown above, while
             // deliberately skipping those native global destructors.
             #[cfg(all(feature = "mesh-llm", target_os = "macos"))]
             hard_exit_after_mesh_shutdown();

@@ -55,6 +55,39 @@ proc commit(
   decision.state
 
 suite "Nimino replicated control state machine":
+  test "votes reject stale logs and follower replication replaces only an uncommitted suffix":
+    let initial = initControlState(@["node-a", "node-b", "node-c"])
+    let staleVote = planVote(
+      initial,
+      VoteRequest(term: 1, candidateId: "node-a", lastIndex: 0, lastTerm: 0),
+    )
+    check staleVote.error == cseNone
+    var leader = settleControlPlan(staleVote, true).state
+    leader = elect(leader, 1, "node-a", @["node-a", "node-b"])
+    leader = append(leader, cekCommand, "authoritative")
+    check planVote(
+      leader,
+      VoteRequest(term: 2, candidateId: "node-b", lastIndex: 0, lastTerm: 0),
+    ).error == cseCandidateLogStale
+
+    var follower = elect(initial, 1, "node-a", @["node-a", "node-b"])
+    follower = append(follower, cekCommand, "divergent")
+    let replication = planReplication(
+      follower,
+      ReplicationRequest(
+        leaderId: "node-a",
+        term: 1,
+        supporters: @["node-a", "node-b"],
+        previousIndex: 0,
+        entry: leader.log[0],
+      ),
+    )
+    check replication.error == cseNone
+    follower = settleControlPlan(replication, true).state
+    check follower.log == leader.log
+    check not checkControlQuorum(follower, @["node-a"]).granted
+    check checkControlQuorum(follower, @["node-a", "node-c"]).granted
+
   test "minorities cannot elect or commit":
     let initial = initControlState(@["node-a", "node-b", "node-c"])
     let minorityElection = planElection(

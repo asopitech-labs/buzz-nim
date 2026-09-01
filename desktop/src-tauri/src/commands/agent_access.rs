@@ -5,7 +5,7 @@ pub fn agent_access_owner_only() -> bool {
 }
 
 /// Tiny executable-facing probe for release packaging smoke tests. Keeping the
-/// probe in the product crate makes it impossible for buzz-releases to validate
+/// probe in the product crate makes it impossible for nimino-releases to validate
 /// a copied flag interpretation that has drifted from Desktop's command.
 #[doc(hidden)]
 pub fn print_agent_access_owner_only_probe_if_requested() -> bool {

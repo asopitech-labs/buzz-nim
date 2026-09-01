@@ -1,4 +1,4 @@
-import { BuzzMark } from "@/shared/ui/buzz-logo/BuzzMark";
+import { NiminoMark } from "@/shared/ui/nimino-logo/NiminoMark";
 
 type Bee = {
   top: string;
@@ -60,7 +60,7 @@ export function LandingBees() {
       className="pointer-events-none absolute inset-0 overflow-hidden"
     >
       <span className="absolute left-6 top-12 block w-11 text-[#231E1E]">
-        <BuzzMark className="h-auto w-full" />
+        <NiminoMark className="h-auto w-full" />
       </span>
       {BEES.map((bee) => (
         <span
@@ -75,7 +75,7 @@ export function LandingBees() {
             opacity: 0.9,
           }}
         >
-          <BuzzMark className="w-full" />
+          <NiminoMark className="w-full" />
         </span>
       ))}
     </div>

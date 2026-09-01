@@ -10,12 +10,8 @@ surface at template time regardless of which manifest helm renders first.
   {{- fail "relayUrl is required: set --set relayUrl=wss://your.domain" -}}
 {{- end -}}
 
-{{/* Multiple replicas require Redis, whether fixed or autoscaled. */}}
-{{- $minimumReplicas := include "nimino.minimumReplicas" . | int -}}
-{{- if gt $minimumReplicas 1 -}}
-  {{- if and (not .Values.redis.enabled) (not .Values.externalRedis.url) (not .Values.secrets.existingSecret) -}}
-    {{- fail (printf "minimum replica count %d requires Redis for nimino-pubsub. Enable redis.enabled=true, set externalRedis.url, or provide secrets.existingSecret with key REDIS_URL." $minimumReplicas) -}}
-  {{- end -}}
+{{- if not .Values.cluster.tlsSecret -}}
+  {{- fail "cluster.tlsSecret is required and must contain DER tls.crt, tls.key, and ca.crt" -}}
 {{- end -}}
 
 {{/* Multiple replicas do NOT require ReadWriteMany git storage.
@@ -26,12 +22,7 @@ surface at template time regardless of which manifest helm renders first.
      (docs/git-on-object-storage.md, Inv_NoFork). No persistent git state lives
      on the PVC, so replicas do not need a shared ReadWriteMany volume to agree
      on refs. Repo-name uniqueness — the last shared-state need — now lives in
-     Postgres (git_repo_names), not on local disk.
-
-     The prior hard-fail requiring persistence.git.accessMode=ReadWriteMany was
-     removed here: its stated reason ("git on-disk state must be shared across
-     replicas") is no longer true. Redis (validated above) remains the real
-     multi-pod requirement for nimino-pubsub. */}}
+     Postgres (git_repo_names), not on local disk. */}}
 
 {{/* Autoscaling bounds must be coherent. */}}
 {{- if .Values.autoscaling.enabled -}}
@@ -43,6 +34,11 @@ surface at template time regardless of which manifest helm renders first.
   {{- end -}}
   {{- if and .Values.autoscaling.websocketMetricEnabled (not .Values.autoscaling.websocketMetricName) -}}
     {{- fail "autoscaling.websocketMetricName is required when WebSocket scaling is enabled" -}}
+  {{- end -}}
+  {{- $voters := .Values.autoscaling.maxReplicas | int -}}
+  {{- $quorum := add (div $voters 2) 1 -}}
+  {{- if lt (.Values.autoscaling.minReplicas | int) $quorum -}}
+    {{- fail "autoscaling.minReplicas must retain a majority of the fixed cluster voter set" -}}
   {{- end -}}
 {{- end -}}
 

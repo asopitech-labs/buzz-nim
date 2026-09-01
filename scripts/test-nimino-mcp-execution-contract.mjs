@@ -5,13 +5,13 @@ import { readFileSync } from "node:fs";
 const contract = JSON.parse(
   readFileSync("contracts/nimino-mcp-execution/v1/contract.json", "utf8"),
 );
-const capability = readFileSync("crates/buzz-dev-mcp/src/capability.rs", "utf8");
-const shell = readFileSync("crates/buzz-dev-mcp/src/shell.rs", "utf8");
-const readFile = readFileSync("crates/buzz-dev-mcp/src/read_file.rs", "utf8");
-const replace = readFileSync("crates/buzz-dev-mcp/src/str_replace.rs", "utf8");
-const image = readFileSync("crates/buzz-dev-mcp/src/view_image.rs", "utf8");
-const output = readFileSync("crates/buzz-dev-mcp/src/output.rs", "utf8");
-const agent = readFileSync("crates/buzz-agent/src/mcp.rs", "utf8");
+const capability = readFileSync("crates/nimino-dev-mcp/src/capability.rs", "utf8");
+const shell = readFileSync("crates/nimino-dev-mcp/src/shell.rs", "utf8");
+const readFile = readFileSync("crates/nimino-dev-mcp/src/read_file.rs", "utf8");
+const replace = readFileSync("crates/nimino-dev-mcp/src/str_replace.rs", "utf8");
+const image = readFileSync("crates/nimino-dev-mcp/src/view_image.rs", "utf8");
+const output = readFileSync("crates/nimino-dev-mcp/src/output.rs", "utf8");
+const agent = readFileSync("crates/nimino-agent/src/mcp.rs", "utf8");
 const framing = readFileSync("scripts/test-nimino-mcp-framing.mjs", "utf8");
 
 function check(condition, message) {

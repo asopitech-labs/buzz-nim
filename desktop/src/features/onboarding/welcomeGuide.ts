@@ -25,12 +25,9 @@ import { normalizePubkey } from "@/shared/lib/pubkey";
 export const WELCOME_GUIDE_AGENT_NAME = "Fizz";
 export const WELCOME_GUIDE_PERSONA_ID = "builtin:fizz";
 export const WELCOME_TEAM_ID = "builtin-team:welcome";
-export const WELCOME_GUIDE_INTRO_MARKER = "buzz-welcome-intro.v1";
-const LEGACY_WELCOME_GUIDE_AGENT_NAME = "Kit";
-export const LEGACY_WELCOME_GUIDE_SYSTEM_PROMPT =
-  "You are Kit, Sprout's friendly welcome guide. Help new users understand the community, channels, messages, and agents. Keep introductions concise, practical, and warm.";
+export const WELCOME_GUIDE_INTRO_MARKER = "nimino-welcome-intro.v1";
 export const WELCOME_GUIDE_INTRO_MESSAGE =
-  "Hi, I'm Fizz. Welcome to Buzz.\n\nI can help you get oriented, answer questions, and make the first few steps feel less mysterious.\n\nFeel free to ask me what else you can do in Buzz, or just talk through what you want to build.";
+  "Hi, I'm Fizz. Welcome to Nimino.\n\nI can help you get oriented, answer questions, and make the first few steps feel less mysterious.\n\nFeel free to ask me what else you can do in Nimino, or just talk through what you want to build.";
 
 export type WelcomeTeamRole = "lead" | "teammate";
 
@@ -67,18 +64,8 @@ function isBuiltInWelcomeGuideAgent(agent: ManagedAgent) {
   return agent.personaId === WELCOME_GUIDE_PERSONA_ID;
 }
 
-function isLegacyKitWelcomeGuideAgent(agent: ManagedAgent) {
-  return (
-    agent.name.trim().toLowerCase() ===
-      LEGACY_WELCOME_GUIDE_AGENT_NAME.toLowerCase() &&
-    agent.systemPrompt?.trim() === LEGACY_WELCOME_GUIDE_SYSTEM_PROMPT
-  );
-}
-
 function isWelcomeGuideAgent(agent: ManagedAgent) {
-  return (
-    isBuiltInWelcomeGuideAgent(agent) || isLegacyKitWelcomeGuideAgent(agent)
-  );
+  return isBuiltInWelcomeGuideAgent(agent);
 }
 
 function pickAgentByStatus(agents: ManagedAgent[]) {
@@ -138,7 +125,7 @@ export async function getWelcomeTeamAgentPubkeys(relayUrl?: string | null) {
     .map((agent) => agent.pubkey);
 }
 
-/** Legacy Fizz/Kit lookup retained for existing channel reuse checks. */
+/** Find Welcome guide identities for existing channel reuse checks. */
 export async function getWelcomeGuideAgentPubkeys(relayUrl?: string | null) {
   return (await listManagedAgents())
     .filter(

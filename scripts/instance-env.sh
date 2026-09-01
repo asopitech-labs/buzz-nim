@@ -25,7 +25,7 @@ if [[ "${NIMINO_RESET_WEBVIEW_STATE:-0}" == "1" ]]; then
     DEV_URL="${DEV_URL}?resetDevState=1"
 fi
 
-NIMINO_TAURI_CONFIG="{\"build\":{\"devUrl\":\"${DEV_URL}\",\"beforeDevCommand\":\"exec ./node_modules/.bin/vite --port ${NIMINO_VITE_PORT} --strictPort\"},\"identifier\":\"com.asopitech.nimino.dev\",\"productName\":\"Buzz Dev\"}"
+NIMINO_TAURI_CONFIG="{\"build\":{\"devUrl\":\"${DEV_URL}\",\"beforeDevCommand\":\"exec ./node_modules/.bin/vite --port ${NIMINO_VITE_PORT} --strictPort\"},\"identifier\":\"com.asopitech.nimino.dev\",\"productName\":\"Nimino Dev\"}"
 unset VITE_DEV_BRANCH
 
 # In worktrees, extract a label from the branch name and derive a unique app
@@ -64,19 +64,15 @@ if git rev-parse --is-inside-work-tree &>/dev/null; then
 
             KEYRING_IDENTITY="$(printf '%s' "$KEYRING_BLOB" | python3 -c 'import json, sys; value = json.load(sys.stdin).get("identity", ""); print(value if isinstance(value, str) else "")' 2>/dev/null || true)"
             CANONICAL_KEY="$HOME/Library/Application Support/com.asopitech.nimino.dev/identity.key"
-            LEGACY_CANONICAL_KEY="$HOME/Library/Application Support/xyz.block.sprout.app.dev/identity.key"
-
             SHARED_IDENTITY="$KEYRING_IDENTITY"
             if [[ -z "$SHARED_IDENTITY" && -f "$CANONICAL_KEY" ]]; then
                 SHARED_IDENTITY="$(cat "$CANONICAL_KEY")"
-            elif [[ -z "$SHARED_IDENTITY" && -f "$LEGACY_CANONICAL_KEY" ]]; then
-                SHARED_IDENTITY="$(cat "$LEGACY_CANONICAL_KEY")"
             fi
 
             if [[ -n "$SHARED_IDENTITY" ]]; then
                 export NIMINO_PRIVATE_KEY="$SHARED_IDENTITY"
             else
-                echo "⚠ NIMINO_SHARE_IDENTITY=1 but no identity found in keyring service $KEYRING_SERVICE, at $CANONICAL_KEY, or at $LEGACY_CANONICAL_KEY — run Buzz from repo root first" >&2
+                echo "⚠ NIMINO_SHARE_IDENTITY=1 but no identity found in keyring service $KEYRING_SERVICE or at $CANONICAL_KEY — run Nimino from repo root first" >&2
             fi
         fi
 
@@ -89,7 +85,7 @@ if git rev-parse --is-inside-work-tree &>/dev/null; then
         if swift "$GENERATE_DEV_ICON" "$BASE_ICON" "$DEV_ICON" "$NIMINO_WORKTREE_LABEL"; then
             echo "🌳 Worktree: ${NIMINO_WORKTREE_LABEL}"
             export VITE_DEV_BRANCH="$NIMINO_WORKTREE_LABEL"
-            NIMINO_TAURI_CONFIG="{\"build\":{\"devUrl\":\"${DEV_URL}\",\"beforeDevCommand\":\"exec ./node_modules/.bin/vite --port ${NIMINO_VITE_PORT} --strictPort\"},\"identifier\":\"com.asopitech.nimino.dev.${NIMINO_INSTANCE_SLUG}\",\"productName\":\"Buzz Dev (${NIMINO_WORKTREE_LABEL})\",\"bundle\":{\"icon\":[\"$DEV_ICON\"]}}"
+            NIMINO_TAURI_CONFIG="{\"build\":{\"devUrl\":\"${DEV_URL}\",\"beforeDevCommand\":\"exec ./node_modules/.bin/vite --port ${NIMINO_VITE_PORT} --strictPort\"},\"identifier\":\"com.asopitech.nimino.dev.${NIMINO_INSTANCE_SLUG}\",\"productName\":\"Nimino Dev (${NIMINO_WORKTREE_LABEL})\",\"bundle\":{\"icon\":[\"$DEV_ICON\"]}}"
         fi
     fi
 fi

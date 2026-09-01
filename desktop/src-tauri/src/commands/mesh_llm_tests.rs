@@ -28,7 +28,7 @@ fn reported_target(
 }
 
 #[test]
-fn buzz_mesh_join_uses_the_same_live_member_from_every_other_node() {
+fn nimino_mesh_join_uses_the_same_live_member_from_every_other_node() {
     let targets = vec![
         reported_target("member-c", "model-c", "addr-c"),
         reported_target("member-a", "model-a", "addr-a"),
@@ -36,14 +36,14 @@ fn buzz_mesh_join_uses_the_same_live_member_from_every_other_node() {
     ];
 
     assert_eq!(
-        buzz_mesh_join_targets(targets.clone(), "member-b")
+        nimino_mesh_join_targets(targets.clone(), "member-b")
             .into_iter()
             .next()
             .map(|target| target.endpoint_addr),
         Some("addr-a".to_string())
     );
     assert_eq!(
-        buzz_mesh_join_targets(targets, "member-c")
+        nimino_mesh_join_targets(targets, "member-c")
             .into_iter()
             .next()
             .map(|target| target.endpoint_addr),
@@ -52,14 +52,14 @@ fn buzz_mesh_join_uses_the_same_live_member_from_every_other_node() {
 }
 
 #[test]
-fn buzz_mesh_bootstrap_member_does_not_dial_itself() {
+fn nimino_mesh_bootstrap_member_does_not_dial_itself() {
     let targets = vec![
         reported_target("member-b", "model-b", "addr-b"),
         reported_target("member-a", "model-a", "addr-a"),
     ];
 
     assert_eq!(
-        buzz_mesh_join_targets(targets, "MEMBER-A")
+        nimino_mesh_join_targets(targets, "MEMBER-A")
             .into_iter()
             .next(),
         Some(reported_target("member-b", "model-b", "addr-b"))
@@ -67,14 +67,14 @@ fn buzz_mesh_bootstrap_member_does_not_dial_itself() {
 }
 
 #[test]
-fn buzz_mesh_join_ignores_targets_without_a_validated_reporter() {
+fn nimino_mesh_join_ignores_targets_without_a_validated_reporter() {
     let targets = vec![
         target("unbound-model", "unbound-addr"),
         reported_target("member-b", "model-b", "addr-b"),
     ];
 
     assert_eq!(
-        buzz_mesh_join_targets(targets, "member-c")
+        nimino_mesh_join_targets(targets, "member-c")
             .into_iter()
             .next()
             .map(|target| target.endpoint_addr),
@@ -83,14 +83,14 @@ fn buzz_mesh_join_ignores_targets_without_a_validated_reporter() {
 }
 
 #[test]
-fn buzz_mesh_join_keeps_other_device_with_the_same_member_key() {
+fn nimino_mesh_join_keeps_other_device_with_the_same_member_key() {
     let mut self_target = reported_target("same-member", "model-a", "self-addr");
     self_target.owner_id = Some("owner-self".to_string());
     let mut other_device = reported_target("same-member", "model-b", "other-addr");
     other_device.owner_id = Some("owner-other".to_string());
 
     assert_eq!(
-        buzz_mesh_join_targets(vec![self_target, other_device], "owner-self")
+        nimino_mesh_join_targets(vec![self_target, other_device], "owner-self")
             .into_iter()
             .next()
             .map(|target| target.endpoint_addr),
@@ -99,10 +99,10 @@ fn buzz_mesh_join_keeps_other_device_with_the_same_member_key() {
 }
 
 #[test]
-fn buzz_mesh_name_is_stable_and_does_not_expose_the_relay() {
-    let first = buzz_mesh_name_for_relay("WSS://EXAMPLE.COM/");
-    let second = buzz_mesh_name_for_relay("wss://example.com:443/some/path?ignored=yes");
-    let other_relay = buzz_mesh_name_for_relay("wss://other.example.com");
+fn nimino_mesh_name_is_stable_and_does_not_expose_the_relay() {
+    let first = nimino_mesh_name_for_relay("WSS://EXAMPLE.COM/");
+    let second = nimino_mesh_name_for_relay("wss://example.com:443/some/path?ignored=yes");
+    let other_relay = nimino_mesh_name_for_relay("wss://other.example.com");
 
     assert_eq!(first, second);
     assert_ne!(first, other_relay);
@@ -333,7 +333,7 @@ async fn cold_client_preflight_requires_explicit_target() {
 ///
 /// Before this change, `ensure_client_node_for_model` hard-errored whenever
 /// the running runtime was in `Serve` mode ("stop sharing before using
-/// Buzz shared compute as a client"). That forbade exactly what a user should be
+/// Nimino shared compute as a client"). That forbade exactly what a user should be
 /// able to do: host model A while pointing an agent at a different model B
 /// through the same `9337` ingress.
 ///
@@ -344,7 +344,7 @@ async fn cold_client_preflight_requires_explicit_target() {
 /// frontend selected earlier.
 ///
 /// Hardware-gated (`#[ignore]`): loads a real model. Run with:
-///   cargo test -p buzz-desktop --features mesh-llm \
+///   cargo test -p nimino-desktop --features mesh-llm \
 ///     ensure_serve_runtime_serves_other_model -- --ignored --nocapture
 #[test]
 #[ignore = "loads a real model; run manually with --ignored"]

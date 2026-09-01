@@ -11,27 +11,23 @@
     "crates/nimino-boundary/src/contract.rs",
     "crates/nimino-boundary/src/runtime.rs"
   ],
-  "rustPolicySitesToShrink": [
+  "productionPolicyCallers": [
     {
-      "path": "crates/buzz-relay/src/handlers/community_provisioning.rs",
-      "symbols": ["provision_community"]
+      "path": "crates/nimino-relay/src/handlers/community_provisioning.rs",
+      "markers": ["CommunityPolicyRequest::Lifecycle"]
     },
     {
-      "path": "crates/buzz-relay/src/api/operator.rs",
-      "symbols": ["archive_community", "unarchive_community"]
+      "path": "crates/nimino-relay/src/api/operator.rs",
+      "markers": ["CommunityPolicyRequest::Lifecycle"]
     },
     {
-      "path": "crates/buzz-db/src/lib.rs",
-      "symbols": [
-        "create_community_with_owner",
-        "archive_community_owned_by",
-        "unarchive_community_owned_by"
-      ]
-    },
-    {
-      "path": "crates/buzz-relay/src/api/admin/mod.rs",
-      "symbols": ["feedback_attachment"]
+      "path": "crates/nimino-relay/src/api/admin/mod.rs",
+      "markers": ["CommunityPolicyRequest::Scope"]
     }
+  ],
+  "rustPolicySitesToShrink": [],
+  "rustEffectAdaptersToRetain": [
+    "crates/nimino-db/src/lib.rs"
   ],
   "cutoverRule": "Issue #12 removes or shrinks these Rust policy branches when routing the existing HTTP/DB adapters through Nimino; no compatibility fallback remains.",
   "outOfScope": {

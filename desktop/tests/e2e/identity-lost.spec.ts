@@ -179,9 +179,9 @@ test("Desktop recovery uses the shared pairing card semantics", async ({
   await expect(qrCode).toBeVisible();
   await expect(qrCode).toHaveAttribute("data-qr-matrix-size", "57");
   await expect(qrCode.locator("[data-qr-finder-pattern]")).toHaveCount(3);
-  await expect(qrCode.locator(".buzz-qr-cell-reveal").first()).toHaveCSS(
+  await expect(qrCode.locator(".nimino-qr-cell-reveal").first()).toHaveCSS(
     "animation-name",
-    "buzz-qr-cell-reveal",
+    "nimino-qr-cell-reveal",
   );
   const qrBox = await qrContainer.boundingBox();
   const copyBox = await copyButton.boundingBox();
@@ -205,7 +205,7 @@ test("Desktop recovery uses the shared pairing card semantics", async ({
   ).toBeVisible();
   await expect(
     card.getByText(
-      "This gives this desktop permanent access to your Buzz identity. Only continue if you trust it.",
+      "This gives this desktop permanent access to your Nimino identity. Only continue if you trust it.",
     ),
   ).toBeVisible();
   await expect(

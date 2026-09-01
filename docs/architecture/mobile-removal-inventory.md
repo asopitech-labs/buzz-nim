@@ -29,7 +29,7 @@ The machine-readable source of truth is
 | Applied push migration ledger | keep until reset | #33 / #12 | immutable checksums plus migration 0033 teardown |
 | Desktop Mobile pairing wording/routes | pending shrink | #28 | Desktop sender/receiver E2E with no Mobile wording or dead route |
 | NIP-AB protocol, CLI, bounded ephemeral relay | keep | protocol adapters; product owner #28 | vectors, state machine, interop, relay-limit tests |
-| iOS/Android media-origin fixtures | keep | `buzz-media` | sanitizer tests; these are input compatibility, not product clients |
+| iOS/Android media-origin fixtures | keep | `nimino-media` | sanitizer tests; these are input compatibility, not product clients |
 | Tauri Android/iOS packaging icons | removed | #33 | desktop bundles pass without the unused directories |
 
 ## NIP-AB ownership

@@ -38,9 +38,9 @@ function makeSnapshotChannel(index: number, prefix = "snapshot") {
 const FULL_SNAPSHOT = Array.from({ length: 14 }, (_, index) =>
   makeSnapshotChannel(index),
 );
-const SNAPSHOT_DIAGNOSTIC_MARK = "buzz:sidebar:snapshot-diagnostic";
-const FULL_SIDEBAR_PAINT_MARK = "buzz:sidebar:full-list-painted";
-const BOOT_TO_FULL_SIDEBAR_MEASURE = "buzz:sidebar:boot-to-full-list-painted";
+const SNAPSHOT_DIAGNOSTIC_MARK = "nimino:sidebar:snapshot-diagnostic";
+const FULL_SIDEBAR_PAINT_MARK = "nimino:sidebar:full-list-painted";
+const BOOT_TO_FULL_SIDEBAR_MEASURE = "nimino:sidebar:boot-to-full-list-painted";
 
 function snapshotIntegrity(
   ownerPubkey: string,

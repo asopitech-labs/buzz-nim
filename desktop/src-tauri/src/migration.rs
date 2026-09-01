@@ -1,4 +1,4 @@
-//! Worktree data sync and on-launch reconciliation for the Buzz desktop app.
+//! Worktree data sync and on-launch reconciliation for the Nimino desktop app.
 //!
 //! **Worktree sync** (`sync_shared_agent_data`): Per-launch symlink creation
 //! from the current worktree data directory to the canonical dev data
@@ -6,9 +6,6 @@
 //! `NIMINO_SHARE_IDENTITY=1` and `NIMINO_PRIVATE_KEY` is set. All dev
 //! instances share the same physical files — edits in any worktree are
 //! immediately visible to all others.
-//!
-//! **Command reconciliation** (`reconcile_legacy_command_names`): Per-launch
-//! fix-up of persisted built-in command names from the Sprout→Buzz rename.
 //!
 //! **Provider reconciliation** (`reconcile_provider_mcp_commands`): Per-launch
 //! fix-up of `mcp_command` values in `managed-agents.json` against the
@@ -22,8 +19,6 @@ use tauri::Manager;
 use crate::util::replace_with_symlink;
 
 const CANONICAL_DEV_IDENTIFIER: &str = "com.asopitech.nimino.dev";
-const LEGACY_CANONICAL_DEV_IDENTIFIER: &str = "xyz.block.sprout.app.dev";
-const LEGACY_RELEASE_IDENTIFIER: &str = "xyz.block.sprout.app";
 
 /// JSON files symlinked from worktree data directories to the canonical
 /// dev data directory. Only data files — never `agent-pids/` or `logs/`.
@@ -54,18 +49,6 @@ pub(crate) fn is_dev_data_dir_name(name: &str) -> bool {
 
 fn canonical_dev_data_dir(current: &Path) -> Option<PathBuf> {
     current.parent().map(|p| p.join(CANONICAL_DEV_IDENTIFIER))
-}
-
-pub(crate) fn legacy_app_data_dir(current: &Path) -> Option<PathBuf> {
-    let name = current.file_name()?.to_str()?;
-    let legacy_name = if name.starts_with(CANONICAL_DEV_IDENTIFIER) {
-        name.replacen(CANONICAL_DEV_IDENTIFIER, LEGACY_CANONICAL_DEV_IDENTIFIER, 1)
-    } else if name.starts_with("com.asopitech.nimino") {
-        name.replacen("com.asopitech.nimino", LEGACY_RELEASE_IDENTIFIER, 1)
-    } else {
-        return None;
-    };
-    current.parent().map(|parent| parent.join(legacy_name))
 }
 
 fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
@@ -165,7 +148,6 @@ fn run_boot_migrations_inner(app: &tauri::AppHandle, reset_completed: bool) {
         crate::managed_agents::migrate_agent_keys_to_dev_service(app);
     }
     migrate_persona_provider_to_runtime(app);
-    reconcile_legacy_command_names(app);
     // Fold personas.json after its JSON-level migrations and before consumers
     // below; otherwise sync_team_personas sees an empty definition set.
     // Post-fold runtime reads fall back to unified-store definitions.
@@ -937,7 +919,7 @@ fn reconcile_mcp_commands_in_file(path: &Path) {
         }
         // Only fix values that are clearly stale (empty or a removed binary).
         // Leave user-customized values untouched.
-        if !current.is_empty() && current != "buzz-mcp-server" {
+        if !current.is_empty() && current != "nimino-mcp-server" {
             return false;
         }
         eprintln!(
@@ -953,191 +935,6 @@ fn reconcile_mcp_commands_in_file(path: &Path) {
         );
         true
     });
-}
-
-fn replace_command_field(
-    obj: &mut serde_json::Map<String, serde_json::Value>,
-    field: &str,
-    replacement: String,
-) -> bool {
-    let Some(current) = obj.get(field).and_then(|v| v.as_str()) else {
-        return false;
-    };
-    if current == replacement {
-        return false;
-    }
-    eprintln!(
-        "nimino-desktop: command-rename-reconcile: {:?}: {field} {:?} → {:?}",
-        obj.get("name").and_then(|v| v.as_str()).unwrap_or("?"),
-        current,
-        replacement,
-    );
-    obj.insert(field.to_string(), serde_json::Value::String(replacement));
-    true
-}
-
-fn reconcile_legacy_command_names_in_file(path: &Path) {
-    patch_json_records(path, |obj| {
-        let mut changed = false;
-
-        if let Some(acp_command) = obj
-            .get("acp_command")
-            .and_then(|v| v.as_str())
-            .map(str::to_string)
-        {
-            if acp_command == "sprout-acp" {
-                changed |= replace_command_field(obj, "acp_command", "buzz-acp".to_string());
-            }
-        }
-
-        let mut agent_command = obj
-            .get("agent_command")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-        if agent_command == "sprout-agent" {
-            agent_command = "buzz-agent".to_string();
-            changed |= replace_command_field(obj, "agent_command", agent_command.clone());
-        }
-
-        if let Some(mcp_command) = obj
-            .get("mcp_command")
-            .and_then(|v| v.as_str())
-            .map(str::to_string)
-        {
-            match mcp_command.as_str() {
-                "sprout-dev-mcp" => {
-                    changed |=
-                        replace_command_field(obj, "mcp_command", "buzz-dev-mcp".to_string());
-                }
-                "sprout-mcp" | "sprout-mcp-server" | "buzz-mcp-server" => {
-                    let replacement = if agent_command == "buzz-agent" {
-                        "buzz-dev-mcp"
-                    } else {
-                        ""
-                    };
-                    changed |= replace_command_field(obj, "mcp_command", replacement.to_string());
-                }
-                _ => {}
-            }
-        }
-
-        changed
-    });
-}
-
-fn reconcile_legacy_persona_runtimes_in_file(path: &Path) {
-    patch_json_records(path, |obj| {
-        let Some(runtime) = obj.get("runtime").and_then(|v| v.as_str()) else {
-            return false;
-        };
-        if runtime != "sprout-agent" {
-            return false;
-        }
-        eprintln!(
-            "nimino-desktop: command-rename-reconcile: persona {:?}: runtime {:?} → {:?}",
-            obj.get("display_name")
-                .or_else(|| obj.get("displayName"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("?"),
-            runtime,
-            "buzz-agent",
-        );
-        obj.insert(
-            "runtime".to_string(),
-            serde_json::Value::String("buzz-agent".to_string()),
-        );
-        true
-    });
-}
-
-fn rewrite_legacy_persona_md_runtime(content: &str) -> Option<String> {
-    let (frontmatter, body) = buzz_persona_pkg::persona::split_frontmatter(content).ok()?;
-    let mut value = serde_yaml::from_str::<serde_yaml::Value>(frontmatter).ok()?;
-    let mapping = value.as_mapping_mut()?;
-    let runtime = mapping.get_mut(serde_yaml::Value::String("runtime".to_string()))?;
-    if runtime.as_str()? != "sprout-agent" {
-        return None;
-    }
-    *runtime = serde_yaml::Value::String("buzz-agent".to_string());
-    let frontmatter = serde_yaml::to_string(&value).ok()?;
-    Some(format!("---\n{frontmatter}---\n{body}"))
-}
-
-fn reconcile_legacy_team_persona_runtime_files(dir: &Path) {
-    let Ok(entries) = std::fs::read_dir(dir) else {
-        return;
-    };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        let Ok(file_type) = entry.file_type() else {
-            continue;
-        };
-        if file_type.is_dir() {
-            reconcile_legacy_team_persona_runtime_files(&path);
-            continue;
-        }
-        if !file_type.is_file() {
-            continue;
-        }
-        let Some(name) = path.file_name().and_then(|name| name.to_str()) else {
-            continue;
-        };
-        if !name.ends_with(".persona.md") {
-            continue;
-        }
-        let Ok(content) = std::fs::read_to_string(&path) else {
-            continue;
-        };
-        let Some(updated) = rewrite_legacy_persona_md_runtime(&content) else {
-            continue;
-        };
-        if updated == content {
-            continue;
-        }
-        match std::fs::write(&path, updated) {
-            Ok(()) => {
-                eprintln!(
-                    "nimino-desktop: command-rename-reconcile: updated {}",
-                    path.display()
-                );
-            }
-            Err(error) => {
-                eprintln!(
-                    "nimino-desktop: command-rename-reconcile: failed to update {}: {error}",
-                    path.display()
-                );
-            }
-        }
-    }
-}
-
-/// Reconcile exact built-in command values persisted before the Sprout→Buzz
-/// rename. Custom commands and explicit paths are left untouched.
-pub fn reconcile_legacy_command_names(app: &tauri::AppHandle) {
-    let Ok(current_dir) = app.path().app_data_dir() else {
-        return;
-    };
-    let mut dirs = vec![current_dir.clone()];
-    if let Some(canonical) = canonical_dev_data_dir(&current_dir) {
-        if canonical.exists() && canonical != current_dir {
-            dirs.push(canonical);
-        }
-    }
-    for dir in dirs {
-        let path = dir.join("agents/managed-agents.json");
-        if path.exists() {
-            reconcile_legacy_command_names_in_file(&path);
-        }
-        let personas_path = dir.join("agents/personas.json");
-        if personas_path.exists() {
-            reconcile_legacy_persona_runtimes_in_file(&personas_path);
-        }
-        let teams_dir = dir.join("agents/teams");
-        if teams_dir.exists() && !teams_dir.is_symlink() {
-            reconcile_legacy_team_persona_runtime_files(&teams_dir);
-        }
-    }
 }
 
 /// Reconcile `mcp_command` values in managed-agents.json against the
@@ -1188,7 +985,7 @@ fn reconcile_databricks_v1_to_v2_in_file(path: &Path, rewrite_v1_provider: bool)
             // Also clear the model field — a V1 model name (e.g. "dbrx-instruct")
             // on a V2 provider would shadow the baked DATABRICKS_MODEL at spawn time
             // (NIMINO_AGENT_MODEL from runtime_metadata_env_vars takes priority in
-            // buzz-agent config.rs). Clearing it lets the baked V2 default win.
+            // nimino-agent config.rs). Clearing it lets the baked V2 default win.
             if obj.remove("model").is_some() {
                 eprintln!(
                     "nimino-desktop: databricks-v1-to-v2: {name:?}: cleared stale V1 model field",
@@ -1242,7 +1039,7 @@ fn reconcile_databricks_v1_to_v2_in_file(path: &Path, rewrite_v1_provider: bool)
 ///
 /// Covers both the current app data dir and the canonical dev data dir
 /// (for worktree instances) — same dual-dir pattern as
-/// `reconcile_legacy_command_names` and `reconcile_provider_mcp_commands`.
+/// `reconcile_provider_mcp_commands`.
 pub fn reconcile_databricks_v1_to_v2(app: &tauri::AppHandle) {
     use crate::managed_agents::baked_build_env;
     // On Block builds, the baked env contains NIMINO_AGENT_PROVIDER=databricks_v2.
@@ -1319,10 +1116,6 @@ mod tests;
 #[cfg(test)]
 #[path = "migration_avatar_tests.rs"]
 mod avatar_tests;
-
-#[cfg(test)]
-#[path = "migration_command_tests.rs"]
-mod command_tests;
 
 #[cfg(test)]
 #[path = "migration_databricks_tests.rs"]

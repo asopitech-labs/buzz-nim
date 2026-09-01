@@ -10,7 +10,6 @@ export type RelaySpec = {
   name: string;
   ports: RelayPorts;
   databaseUrl: string;
-  redisUrl: string;
 };
 
 type OwnedProcess = { name: string; child: ChildProcess; logPath: string };
@@ -33,7 +32,7 @@ export class TwoRelayHarness {
 
   static async create(relays: readonly RelaySpec[]) {
     return new TwoRelayHarness(
-      await mkdtemp(join(tmpdir(), "buzz-ae-e2e-")),
+      await mkdtemp(join(tmpdir(), "nimino-ae-e2e-")),
       relays,
     );
   }
@@ -155,7 +154,6 @@ export class TwoRelayHarness {
   private async startRelay(binary: string, relay: RelaySpec) {
     const child = this.spawnOwned(relay.name, binary, [], {
       DATABASE_URL: relay.databaseUrl,
-      REDIS_URL: relay.redisUrl,
       RELAY_URL: `ws://127.0.0.1:${relay.ports.main}`,
       NIMINO_BIND_ADDR: `127.0.0.1:${relay.ports.main}`,
       NIMINO_HEALTH_PORT: String(relay.ports.health),

@@ -54,10 +54,10 @@ test.beforeEach(() => {
 
 test("getStorageItem returns the stored value when storage is healthy", () => {
   const restore = patchLocalStorage(
-    createThrowingStorage({ "nimino-theme": "buzz" }),
+    createThrowingStorage({ "nimino-theme": "nimino" }),
   );
   try {
-    assert.equal(getStorageItem("nimino-theme"), "buzz");
+    assert.equal(getStorageItem("nimino-theme"), "nimino");
     assert.equal(getStorageItem("missing"), null);
   } finally {
     restore();
@@ -87,8 +87,8 @@ test("setStorageItem returns true on a healthy write", () => {
   const storage = createThrowingStorage();
   const restore = patchLocalStorage(storage);
   try {
-    assert.equal(setStorageItem("nimino-theme", "buzz-dark"), true);
-    assert.equal(storage.values.get("nimino-theme"), "buzz-dark");
+    assert.equal(setStorageItem("nimino-theme", "nimino-dark"), true);
+    assert.equal(storage.values.get("nimino-theme"), "nimino-dark");
   } finally {
     restore();
   }

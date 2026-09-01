@@ -122,7 +122,7 @@ test("continuous CSS motion is reserved for the functional spinner", () => {
         ),
     );
   assert.deepEqual(infiniteAnimations, [
-    "shared/styles/globals/animations.css:animation: sprout-arc-spinner-spin 500ms linear infinite;",
+    "shared/styles/globals/animations.css:animation: nimino-arc-spinner-spin 500ms linear infinite;",
   ]);
 });
 
@@ -154,7 +154,10 @@ test("decorative surfaces are static", () => {
   );
   assert.equal(
     existsSync(
-      new URL("../../../shared/ui/buzz-logo/FlappingBee.tsx", import.meta.url),
+      new URL(
+        "../../../shared/ui/nimino-logo/FlappingBee.tsx",
+        import.meta.url,
+      ),
     ),
     false,
   );

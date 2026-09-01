@@ -36,7 +36,7 @@ failure-lifecycle, and performance gate and therefore invokes Rust.
 | `just ci-lanes-contract` | Verify path ownership and the absent Mobile lane |
 
 Nim still emits C and therefore needs a C compiler on the host. The Nim-only
-commands need no Rust toolchain or Buzz service; boundary commands also use the
+commands need no Rust toolchain or Nimino service; boundary commands also use the
 pinned Rust toolchain but still need no database, relay, Redis, or container.
 
 ## CI lane ownership

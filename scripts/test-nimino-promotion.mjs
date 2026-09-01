@@ -17,7 +17,6 @@ import { join } from "node:path";
 
 const root = process.cwd();
 const cli = join(root, "scripts/nimino-promote-release.mjs");
-const releaseSetCli = join(root, "scripts/nimino-release-set.mjs");
 const supplyCli = join(root, "scripts/nimino-release-supply-chain.mjs");
 const platform = JSON.parse(
   readFileSync("contracts/nimino-platform-release/v1/contract.json", "utf8"),
@@ -48,6 +47,19 @@ const commit = spawnSync("git", ["rev-parse", "HEAD"], {
   cwd: root,
   encoding: "utf8",
 }).stdout.trim();
+const source = join(work, "source");
+const cloned = spawnSync(
+  "git",
+  ["clone", "--quiet", "--shared", "--no-checkout", root, source],
+  { encoding: "utf8" },
+);
+assert.equal(cloned.status, 0, cloned.stderr);
+const checkedOut = spawnSync("git", ["checkout", "--quiet", commit], {
+  cwd: source,
+  encoding: "utf8",
+});
+assert.equal(checkedOut.status, 0, checkedOut.stderr);
+const releaseSetCli = join(source, "scripts/nimino-release-set.mjs");
 
 assert.equal(promotion.schemaVersion, 1);
 assert.equal(promotion.contract, "nimino.promotion");
@@ -72,7 +84,7 @@ for (const signal of [
     `missing promotion workflow signal: ${signal}`,
   );
 assert.ok(!promotionWorkflow.includes("inputs.version"));
-assert.ok(!promotionWorkflow.includes("block/buzz"));
+assert.ok(!promotionWorkflow.includes("block/nimino"));
 for (const signal of [
   "nimino-release-supply-chain.mjs sbom",
   "nimino-release-supply-chain.mjs checksums",
@@ -382,14 +394,16 @@ assert.notEqual(
   0,
 );
 assert.equal(existsSync(join(state, "stable-exists")), false);
-assert.equal(promote(first).status, 0);
+const promotedFirst = promote(first);
+assert.equal(promotedFirst.status, 0, promotedFirst.stderr);
 const firstRecord = readFileSync(join(state, "promotion.json"), "utf8");
 const firstLatest = readFileSync(join(state, "latest.json"), "utf8");
 assert.equal(
   JSON.parse(firstRecord).current.releaseSetId,
   first.releaseSet.releaseSetId,
 );
-assert.equal(promote(first).status, 0);
+const repeatedFirst = promote(first);
+assert.equal(repeatedFirst.status, 0, repeatedFirst.stderr);
 assert.equal(readFileSync(join(state, "promotion.json"), "utf8"), firstRecord);
 
 const second = fixture("1.2.4", "second");

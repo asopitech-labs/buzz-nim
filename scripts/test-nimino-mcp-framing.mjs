@@ -60,7 +60,7 @@ try {
     capabilities: {},
     clientInfo: { name: "nimino-mcp-framing-test", version: "1" },
   });
-  assert.equal(initialized.result.serverInfo.name, "buzz-dev-mcp");
+  assert.equal(initialized.result.serverInfo.name, "nimino-dev-mcp");
   child.stdin.write(
     `${JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" })}\n`,
   );

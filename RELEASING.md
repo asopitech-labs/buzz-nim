@@ -35,6 +35,11 @@ The WSL bundle includes the relay and its matching `nimino-core-worker` plus
 CLI, ACP, agent, MCP, and data operations tools. Native Windows shells are not
 a supported execution or release surface.
 
+Relay images always contain the matching `nimino-core-worker`. Helm releases
+run the relay as a StatefulSet with one sync-store PVC per ordinal and require a
+Secret containing DER `tls.crt`, PKCS#8 DER `tls.key`, and DER `ca.crt` for
+Chirps mTLS. Compose requires the same three files under `deploy/compose/chirps`.
+
 ## Candidate lifecycle
 
 Pushing an immutable `nimino-vX.Y.Z` tag starts

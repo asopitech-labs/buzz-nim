@@ -12,7 +12,7 @@
 - Model: `formal/tla/cluster/NiminoControlLog.tla`
 - Scenario: `formal/scenarios/NiminoControlLog_3Node.cfg`
 - Verification: `just control-model-check`
-- Evidence: `formal/evidence/FM-cluster-control-log_20260828_summary.md`
+- Evidence: `formal/evidence/FM-cluster-control-log_20260831_summary.md`
 - Status: active
 - Change policy: update the versioned JSON contract, rerun TLC, update hashes
   and evidence, then run `just control-model-contract`.

@@ -98,7 +98,7 @@ for (const invariant of formal.invariants) {
   );
 }
 
-const evidence = read("formal/evidence/FM-cluster-control-log_20260828_summary.md");
+const evidence = read("formal/evidence/FM-cluster-control-log_20260831_summary.md");
 check(evidence.includes(formal.modelSha256), "evidence model hash drifted");
 check(evidence.includes(formal.scenarioSha256), "evidence scenario hash drifted");
 check(

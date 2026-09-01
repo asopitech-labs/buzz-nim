@@ -3,18 +3,18 @@ use super::*;
 #[test]
 fn nest_dir_is_under_home() {
     if let Some(dir) = nest_dir() {
-        // Accepts both .buzz (prod) and .nimino-dev (dev) depending on
+        // Accepts both .nimino (prod) and .nimino-dev (dev) depending on
         // whether init_nest_dir was called before this test ran.
         let name = dir.file_name().and_then(|n| n.to_str()).unwrap_or("");
         assert!(
             name == NEST_DIR_PROD || name == NEST_DIR_DEV,
-            "nest_dir must end with .buzz or .nimino-dev, got {dir:?}"
+            "nest_dir must end with .nimino or .nimino-dev, got {dir:?}"
         );
     }
 }
 
 #[test]
-fn init_nest_dir_prod_sets_buzz() {
+fn init_nest_dir_prod_sets_nimino() {
     // init_nest_dir is idempotent (OnceLock) — once set, subsequent calls
     // are no-ops. We can only test the fallback path if the OnceLock is
     // unset, which is only true in a fresh process. Instead, verify that
@@ -24,7 +24,7 @@ fn init_nest_dir_prod_sets_buzz() {
         let name = d.file_name().and_then(|n| n.to_str()).unwrap_or("");
         assert!(
             name == NEST_DIR_PROD || name == NEST_DIR_DEV,
-            "nest_dir suffix must be .buzz or .nimino-dev, got {d:?}"
+            "nest_dir suffix must be .nimino or .nimino-dev, got {d:?}"
         );
     }
 }
@@ -126,7 +126,7 @@ fn ensure_nest_creates_skill_file() {
     ensure_nest_at(&root).unwrap();
 
     // Canonical location under .agents.
-    let skill = root.join(".agents/skills/buzz-cli/SKILL.md");
+    let skill = root.join(".agents/skills/nimino-cli/SKILL.md");
     assert!(skill.exists(), "SKILL.md should exist at .agents path");
     let content = fs::read_to_string(&skill).unwrap();
     assert_eq!(content, NIMINO_CLI_SKILL_MD);
@@ -135,14 +135,14 @@ fn ensure_nest_creates_skill_file() {
     #[cfg(unix)]
     {
         for dir in [".goose/skills", ".claude/skills", ".codex/skills"] {
-            let link = root.join(dir).join("buzz-cli");
+            let link = root.join(dir).join("nimino-cli");
             assert!(
                 link.symlink_metadata().unwrap().file_type().is_symlink(),
-                "{dir}/buzz-cli should be a symlink"
+                "{dir}/nimino-cli should be a symlink"
             );
             assert!(
                 link.join("SKILL.md").exists(),
-                "symlink at {dir}/buzz-cli should resolve to dir with SKILL.md"
+                "symlink at {dir}/nimino-cli should resolve to dir with SKILL.md"
             );
         }
     }
@@ -154,7 +154,7 @@ fn ensure_nest_does_not_overwrite_skill_file() {
     let root = tmp.path().join(".nimino");
     ensure_nest_at(&root).unwrap();
 
-    let skill = root.join(".agents/skills/buzz-cli/SKILL.md");
+    let skill = root.join(".agents/skills/nimino-cli/SKILL.md");
     fs::write(&skill, "custom skill content").unwrap();
 
     ensure_nest_at(&root).unwrap();
@@ -169,11 +169,11 @@ fn ensure_nest_skill_dir_has_700_permissions() {
     let root = tmp.path().join(".nimino");
     ensure_nest_at(&root).unwrap();
     // Canonical path and all provider parent dirs should be locked down.
-    // Symlinks (e.g. .goose/skills/buzz-cli) are skipped by the chmod loop.
+    // Symlinks (e.g. .goose/skills/nimino-cli) are skipped by the chmod loop.
     for dir in [
         ".agents",
         ".agents/skills",
-        ".agents/skills/buzz-cli",
+        ".agents/skills/nimino-cli",
         ".goose",
         ".goose/skills",
         ".claude",
@@ -227,25 +227,25 @@ fn ensure_nest_migrates_old_skill_dir() {
     ensure_nest_at(&root).unwrap();
 
     // Remove the symlink and new skill dir, recreate old real dir.
-    let _ = fs::remove_file(root.join(".claude/skills/buzz-cli"));
-    let _ = fs::remove_dir_all(root.join(".agents/skills/buzz-cli"));
-    let old_skill_dir = root.join(".claude/skills/buzz-cli");
+    let _ = fs::remove_file(root.join(".claude/skills/nimino-cli"));
+    let _ = fs::remove_dir_all(root.join(".agents/skills/nimino-cli"));
+    let old_skill_dir = root.join(".claude/skills/nimino-cli");
     fs::create_dir_all(&old_skill_dir).unwrap();
     fs::write(old_skill_dir.join("SKILL.md"), "user edited skill").unwrap();
 
     // Delete version file to force refresh.
-    let _ = fs::remove_file(root.join(".agents/skills/buzz-cli/.skill-version"));
+    let _ = fs::remove_file(root.join(".agents/skills/nimino-cli/.skill-version"));
 
     // Re-run ensure_nest_at — should trigger migration in refresh_skill_md_if_stale.
     ensure_nest_at(&root).unwrap();
 
     // New canonical location exists with user's content preserved.
-    let new_skill = root.join(".agents/skills/buzz-cli/SKILL.md");
+    let new_skill = root.join(".agents/skills/nimino-cli/SKILL.md");
     assert!(new_skill.exists(), "SKILL.md should exist at new path");
     assert_eq!(fs::read_to_string(&new_skill).unwrap(), "user edited skill");
 
     // Old path is now a symlink, not a real directory.
-    let old_path = root.join(".claude/skills/buzz-cli");
+    let old_path = root.join(".claude/skills/nimino-cli");
     assert!(
         old_path
             .symlink_metadata()
@@ -266,17 +266,17 @@ fn ensure_skill_symlinks_are_idempotent() {
     ensure_nest_at(&root).unwrap();
     // All symlinks still valid and point to relative targets.
     for dir in [".goose/skills", ".claude/skills", ".codex/skills"] {
-        let link = root.join(dir).join("buzz-cli");
+        let link = root.join(dir).join("nimino-cli");
         assert!(link.symlink_metadata().unwrap().file_type().is_symlink());
         assert!(
             link.join("SKILL.md").exists(),
-            "symlink at {dir}/buzz-cli should resolve to dir with SKILL.md"
+            "symlink at {dir}/nimino-cli should resolve to dir with SKILL.md"
         );
         let target = fs::read_link(&link).unwrap();
         assert_eq!(
             target.to_str().unwrap(),
             format!("../../{CANONICAL_SKILL_DIR}"),
-            "symlink at {dir}/buzz-cli should use relative target"
+            "symlink at {dir}/nimino-cli should use relative target"
         );
     }
 }
@@ -286,13 +286,13 @@ fn ensure_skill_symlinks_are_idempotent() {
 fn ensure_skill_symlinks_skips_existing_path_during_initial_pass() {
     // ensure_skill_symlinks skips any path where symlink_metadata succeeds.
     // However, refresh_skill_md_if_stale (called after ensure_skill_symlinks)
-    // migrates pre-existing real directories at .claude/skills/buzz-cli to
+    // migrates pre-existing real directories at .claude/skills/nimino-cli to
     // symlinks. This test verifies the end-to-end behavior: a pre-existing real
     // dir at the claude path is migrated to a symlink.
     let tmp = tempfile::tempdir().unwrap();
     let root = tmp.path().join(".nimino");
     // Pre-create a real directory where a symlink would go.
-    let real_dir = root.join(".claude/skills/buzz-cli");
+    let real_dir = root.join(".claude/skills/nimino-cli");
     fs::create_dir_all(&real_dir).unwrap();
     // Place SKILL.md so migration preserves it.
     fs::write(real_dir.join("SKILL.md"), "custom skill content").unwrap();
@@ -306,10 +306,10 @@ fn ensure_skill_symlinks_skips_existing_path_during_initial_pass() {
             .unwrap()
             .file_type()
             .is_symlink(),
-        ".claude/skills/buzz-cli should be migrated to a symlink"
+        ".claude/skills/nimino-cli should be migrated to a symlink"
     );
     // The canonical path now holds the migrated content.
-    let canonical = root.join(".agents/skills/buzz-cli/SKILL.md");
+    let canonical = root.join(".agents/skills/nimino-cli/SKILL.md");
     assert_eq!(
         fs::read_to_string(&canonical).unwrap(),
         "custom skill content"
@@ -324,7 +324,7 @@ fn ensure_skill_symlinks_skip_dangling_symlink() {
     // Pre-create a dangling symlink where the .codex link would go.
     let codex_skills = root.join(".codex/skills");
     fs::create_dir_all(&codex_skills).unwrap();
-    let dangling = codex_skills.join("buzz-cli");
+    let dangling = codex_skills.join("nimino-cli");
     std::os::unix::fs::symlink("/nonexistent/target", &dangling).unwrap();
 
     ensure_nest_at(&root).unwrap();
@@ -342,7 +342,7 @@ fn ensure_skill_symlinks_skip_dangling_symlink() {
 }
 
 #[test]
-fn cli_link_name_prod_is_buzz() {
+fn cli_link_name_prod_is_nimino() {
     assert_eq!(cli_link_name(false), "nimino");
 }
 
@@ -412,13 +412,13 @@ fn ensure_cli_symlink_does_not_clobber_regular_file_dev() {
     let local_bin = tmp.path().join("local_bin");
     fs::create_dir_all(&local_bin).unwrap();
     let link = local_bin.join(cli_link_name(true));
-    fs::write(&link, "user-installed buzz-dev binary").unwrap();
+    fs::write(&link, "user-installed nimino-dev binary").unwrap();
 
     // Regular files at the dev path are also preserved.
     assert!(link.symlink_metadata().unwrap().file_type().is_file());
     assert_eq!(
         fs::read_to_string(&link).unwrap(),
-        "user-installed buzz-dev binary"
+        "user-installed nimino-dev binary"
     );
 }
 
@@ -436,7 +436,8 @@ fn refresh_skill_md_writes_version_file() {
     let tmp = tempfile::tempdir().unwrap();
     let root = tmp.path().join(".nimino");
     ensure_nest_at(&root).unwrap();
-    let version = fs::read_to_string(root.join(".agents/skills/buzz-cli/.skill-version")).unwrap();
+    let version =
+        fs::read_to_string(root.join(".agents/skills/nimino-cli/.skill-version")).unwrap();
     assert_eq!(version.trim(), NEST_SKILL_VERSION.to_string());
 }
 
@@ -463,7 +464,7 @@ fn refresh_agents_md_preserves_managed_section() {
     let content = fs::read_to_string(&agents_md).unwrap();
     // Static content should be refreshed (from template).
     assert!(
-        content.starts_with("# Buzz Nest"),
+        content.starts_with("# Nimino Nest"),
         "template header must be present"
     );
     // Managed section should be preserved.
@@ -501,11 +502,11 @@ fn refresh_skill_overwrites_on_version_bump() {
     let root = tmp.path().join(".nimino");
     ensure_nest_at(&root).unwrap();
 
-    let skill_md = root.join(".agents/skills/buzz-cli/SKILL.md");
+    let skill_md = root.join(".agents/skills/nimino-cli/SKILL.md");
     fs::write(&skill_md, "stale skill content").unwrap();
 
     // Remove version file to simulate upgrade.
-    let _ = fs::remove_file(root.join(".agents/skills/buzz-cli/.skill-version"));
+    let _ = fs::remove_file(root.join(".agents/skills/nimino-cli/.skill-version"));
 
     ensure_nest_at(&root).unwrap();
 

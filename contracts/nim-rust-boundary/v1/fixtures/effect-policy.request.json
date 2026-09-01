@@ -1,0 +1,66 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "fixture-effect-policy",
+  "operation": "domain.effect.policy",
+  "payload": {
+    "decision": "claim",
+    "state": {
+      "valid": true,
+      "communityId": "community-a",
+      "workflowId": "workflow-a",
+      "runId": "run-a",
+      "stepId": "step-a",
+      "idempotencyKey": "effect-a",
+      "effectDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+      "leaseResourceId": "workflow-effect/community-a/workflow-a/run-a/step-a",
+      "revision": 0,
+      "attempt": 0,
+      "status": "pending",
+      "ownerNodeId": "",
+      "fenceToken": 0,
+      "receipt": null,
+      "reconciledBy": "",
+      "reconcileReason": ""
+    },
+    "ownerNodeId": "node-a",
+    "fenceToken": 1,
+    "leaseState": {
+      "valid": true,
+      "resourceId": "workflow-effect/community-a/workflow-a/run-a/step-a",
+      "lastFenceToken": 1,
+      "lastControlIndex": 1,
+      "lastCommand": {
+        "resourceId": "workflow-effect/community-a/workflow-a/run-a/step-a",
+        "transitionId": "lease-a",
+        "ownerId": "node-a",
+        "eligibleOwners": ["node-a"],
+        "expectedPreviousFence": 0,
+        "fenceToken": 1,
+        "durationTicks": 60000,
+        "leaderId": "node-a",
+        "term": 1,
+        "voterEpoch": 1
+      },
+      "activeLease": {
+        "resourceId": "workflow-effect/community-a/workflow-a/run-a/step-a",
+        "ownerId": "node-a",
+        "fenceToken": 1,
+        "leaderId": "node-a",
+        "term": 1,
+        "voterEpoch": 1,
+        "clockEpoch": "clock-a",
+        "activatedAtTick": 10,
+        "expiresAtTick": 60010
+      }
+    },
+    "fact": {
+      "quorumAvailable": true,
+      "leaderId": "node-a",
+      "term": 1,
+      "voterEpoch": 1,
+      "clockEpoch": "clock-a",
+      "nowTick": 11
+    }
+  }
+}

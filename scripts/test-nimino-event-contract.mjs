@@ -23,6 +23,10 @@ const nimWorker = readFileSync(
   "nim/nimino_core/src/nimino_core_worker.nim",
   "utf8",
 );
+const relayIngest = readFileSync(
+  "crates/nimino-relay/src/handlers/ingest.rs",
+  "utf8",
+);
 
 function check(condition, message) {
   if (!condition) throw new Error(message);
@@ -47,6 +51,11 @@ check(
     rustBoundary.includes('"domain.event.policy"') &&
     nimWorker.includes('"domain.event.policy"'),
   "typed event policy operation is not wired on both boundary sides",
+);
+check(
+  relayIngest.includes("BoundaryRequest::event_policy") &&
+    relayIngest.includes("BoundaryResult::EventPolicy"),
+  "relay ingest must execute event decisions through the Nim boundary",
 );
 
 const registry = protocol.surfaces.find(
@@ -100,6 +109,19 @@ for (const entry of eventContract.rustDuplicatesToDelete) {
         `\\b${symbol.replaceAll(/[$()*+.?[\\\]^{|}]/g, "\\$&")}\\b`,
       ).test(source),
       `${entry.path}: missing cutover symbol ${qualified}`,
+    );
+  }
+}
+
+for (const entry of eventContract.deletedRustSymbols) {
+  const source = readFileSync(entry.path, "utf8");
+  for (const qualified of entry.symbols) {
+    const symbol = qualified.split("::").at(-1);
+    check(
+      !new RegExp(
+        `\\b${symbol.replaceAll(/[$()*+.?[\\\]^{|}]/g, "\\$&")}\\b`,
+      ).test(source),
+      `${entry.path}: deleted Rust policy symbol returned: ${qualified}`,
     );
   }
 }

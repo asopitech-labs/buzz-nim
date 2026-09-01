@@ -40,7 +40,7 @@ const requiredSurfaceIds = [
   "protocol.tag-prefix",
   "release.artifact-prefix",
   "release.container-repository.relay",
-  "release.container-repository.sprig",
+  "release.container-repository.agent",
   "release.desktop-artifact-prefix",
   "release.helm-chart-repository",
   "release.helm-chart.relay",
@@ -85,7 +85,7 @@ check(Array.isArray(manifest.surfaces), "naming surfaces must be an array");
 const surfaceIds = manifest.surfaces.map((surface) => surface.id);
 check(new Set(surfaceIds).size === surfaceIds.length, "naming surface ids must be unique");
 check(
-  same([...surfaceIds].sort(), requiredSurfaceIds),
+  same([...surfaceIds].sort(), [...requiredSurfaceIds].sort()),
   `naming surface coverage drifted: ${surfaceIds.sort().join(",")}`,
 );
 
@@ -197,16 +197,16 @@ const expectedFamilies = {
         "ghcr.io/asopitech-labs/nimino@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
     },
   ],
-  "release.container-repository.sprig": [
+  "release.container-repository.agent": [
     {
       input: "ghcr.io/block/buzz-sprig",
-      output: "ghcr.io/asopitech-labs/nimino-sprig",
+      output: "ghcr.io/asopitech-labs/nimino-agent",
     },
     {
       input:
         "ghcr.io/block/buzz-sprig:sha-deadbee@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       output:
-        "ghcr.io/asopitech-labs/nimino-sprig:sha-deadbee@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "ghcr.io/asopitech-labs/nimino-agent:sha-deadbee@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     },
   ],
   "release.desktop-artifact-prefix": [

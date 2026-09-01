@@ -12,7 +12,7 @@ function agent(overrides = {}) {
     name: "Mesh Agent",
     personaId: null,
     relayUrl: "ws://localhost:3000",
-    acpCommand: "buzz-acp",
+    acpCommand: "nimino-acp",
     agentCommand: "goose",
     agentArgs: [],
     mcpCommand: "",

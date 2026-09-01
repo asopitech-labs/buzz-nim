@@ -1,5 +1,5 @@
 pub const RELAY_MESH_API_BASE_URL: &str = "http://127.0.0.1:9337/v1";
-pub const RELAY_MESH_API_KEY_PLACEHOLDER: &str = "buzz-mesh-local";
+pub const RELAY_MESH_API_KEY_PLACEHOLDER: &str = "nimino-mesh-local";
 pub const RELAY_MESH_PROVIDER_ID: &str = "relay-mesh";
 /// Stored value for "let the mesh decide", kept as the user-facing word.
 pub const RELAY_MESH_AUTO_MODEL_ID: &str = "auto";
@@ -9,8 +9,8 @@ pub const RELAY_MESH_AUTO_MODEL_ID: &str = "auto";
 /// (`moa_gateway::degrade_to_single_model`). That degradation is a pre-flight
 /// capacity decision, so a committee that forms and *then* loses a worker still
 /// surfaces as a failed turn — MoA repairs partial results internally
-/// (`repair_tool_result_answer`) before it gets that far. Buzz translates the
-/// stored `auto` here rather than teaching buzz-agent anything about meshes.
+/// (`repair_tool_result_answer`) before it gets that far. Nimino translates the
+/// stored `auto` here rather than teaching nimino-agent anything about meshes.
 #[cfg(feature = "mesh-llm")]
 pub const RELAY_MESH_VIRTUAL_MODEL_ID: &str = "mesh";
 
@@ -29,8 +29,8 @@ pub fn relay_mesh_wire_model(stored: &str) -> &str {
     }
 }
 
-/// Translate the native Buzz shared compute provider into the OpenAI-compatible
-/// transport understood by buzz-agent. These are derived runtime details, not
+/// Translate the native Nimino shared compute provider into the OpenAI-compatible
+/// transport understood by nimino-agent. These are derived runtime details, not
 /// user-owned agent configuration.
 #[cfg(feature = "mesh-llm")]
 pub fn apply_relay_mesh_env(
@@ -143,7 +143,7 @@ mod tests {
         assert_eq!(env.get("NIMINO_AGENT_THINKING_EFFORT"), None);
     }
 
-    /// Stored `auto` is translated here, so buzz-agent receives a plain model
+    /// Stored `auto` is translated here, so nimino-agent receives a plain model
     /// name and needs no knowledge of the mesh. MeshLLM decides per request
     /// whether `mesh` becomes a committee or a single served model.
     #[test]

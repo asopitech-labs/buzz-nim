@@ -78,8 +78,8 @@ export function buildInitialProjectEventTemplates({
   if (!isValidProjectChannelId(normalizedAccessChannelId)) {
     throw new Error("Repository access channel is invalid.");
   }
-  repositoryTags.push(["buzz-channel", normalizedAccessChannelId]);
-  projectTags.push(["buzz-channel", normalizedAccessChannelId]);
+  repositoryTags.push(["nimino-channel", normalizedAccessChannelId]);
+  projectTags.push(["nimino-channel", normalizedAccessChannelId]);
   if (normalizedDescription) {
     repositoryTags.push(["description", normalizedDescription]);
     projectTags.push(["description", normalizedDescription]);

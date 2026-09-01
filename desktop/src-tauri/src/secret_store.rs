@@ -44,7 +44,7 @@ const BLOB_KEY: &str = "secrets";
 
 // ── Interprocess advisory lock ─────────────────────────────────────────────
 //
-// Two concurrent Buzz processes (e.g. the signed DMG build and an unsigned dev
+// Two concurrent Nimino processes (e.g. the signed DMG build and an unsigned dev
 // build via `just staging`) share the same OS keychain blob because the
 // service name `"nimino-desktop"` is a constant — it does not key off the bundle
 // identifier. Each process holds its own in-memory cache, so without an
@@ -140,7 +140,7 @@ impl BlobLockGuard {
             // needed. Derive a unique mutex name from the lockfile path so
             // distinct services get distinct mutexes.
             let name_str = format!(
-                "Local\\BuzzKeychain-{}",
+                "Local\\NiminoKeychain-{}",
                 path.file_stem()
                     .and_then(|s| s.to_str())
                     .unwrap_or("default")
@@ -395,7 +395,7 @@ impl SecretStore {
     where
         F: FnOnce(&mut HashMap<String, String>),
     {
-        // Acquire the interprocess advisory lock first. All Buzz processes
+        // Acquire the interprocess advisory lock first. All Nimino processes
         // using the same service name contend on the same lockfile at
         // /tmp/nimino-keychain-<uid>-<service>.lock (a deterministic per-user
         // path invariant to $TMPDIR), so only one process performs a
@@ -937,7 +937,7 @@ mod tests {
     fn probe_returns_present_when_key_in_cache() {
         let mut map = HashMap::new();
         map.insert("identity".to_string(), "nsec1test".to_string());
-        let store = SecretStore::with_cache("buzz-test-cache-hit", Some(map));
+        let store = SecretStore::with_cache("nimino-test-cache-hit", Some(map));
         // Cache is warm and contains "identity" — probe must return Present
         // without touching the keychain.
         assert_eq!(store.probe("identity"), KeyringProbe::Present);
@@ -947,7 +947,7 @@ mod tests {
     fn load_returns_value_when_key_in_cache() {
         let mut map = HashMap::new();
         map.insert("identity".to_string(), "nsec1test".to_string());
-        let store = SecretStore::with_cache("buzz-test-load-cache-hit", Some(map));
+        let store = SecretStore::with_cache("nimino-test-load-cache-hit", Some(map));
         // Cache is warm and contains "identity" — load must return the value
         // without touching the keychain.
         assert_eq!(
@@ -969,7 +969,7 @@ mod tests {
         // mutate_blob would build from its stale {k1} cache and write
         // {k1, k3}, silently dropping k2. With the fix, A always re-reads
         // from the keychain inside the lock, so the result is {k1, k2, k3}.
-        let svc = "buzz-test-race-stale-cache";
+        let svc = "nimino-test-race-stale-cache";
 
         // Clean state.
         let setup = SecretStore::keyring(svc);
@@ -1018,7 +1018,7 @@ mod tests {
     fn test_concurrent_adds_neither_key_dropped() {
         // Two sequential stores from distinct instances (simulating two
         // processes each adding one key) must both be durably visible.
-        let svc = "buzz-test-race-concurrent-add";
+        let svc = "nimino-test-race-concurrent-add";
 
         let setup = SecretStore::keyring(svc);
         let _ = setup.delete("agent_a");
@@ -1089,7 +1089,7 @@ mod tests {
     fn test_blob_lock_acquire_and_release() {
         // Verify the advisory lock can be acquired and released without errors.
         // This exercises the real flock/mutex path on the current platform.
-        let guard = acquire_blob_lock("buzz-test-lock-smoke");
+        let guard = acquire_blob_lock("nimino-test-lock-smoke");
         assert!(
             guard.is_ok(),
             "advisory lock acquire must succeed: {:?}",
@@ -1097,7 +1097,7 @@ mod tests {
         );
         // Drop the guard — lock is released. A second acquire must succeed.
         drop(guard);
-        let guard2 = acquire_blob_lock("buzz-test-lock-smoke");
+        let guard2 = acquire_blob_lock("nimino-test-lock-smoke");
         assert!(
             guard2.is_ok(),
             "advisory lock re-acquire after release must succeed: {:?}",
@@ -1126,7 +1126,7 @@ mod tests {
         //   2. The failed key is not present (the dirty candidate was discarded).
         let mut map = HashMap::new();
         map.insert("existing".to_string(), "durable_val".to_string());
-        let store = SecretStore::with_cache("buzz-test-cow-write-fail", Some(map));
+        let store = SecretStore::with_cache("nimino-test-cow-write-fail", Some(map));
 
         // Attempt to add a new key — this calls write_blob_raw against the
         // real keychain; with copy-on-write the cache must remain at {existing}
@@ -1192,7 +1192,7 @@ mod tests {
     #[ignore = "requires real OS keychain (run locally)"]
     #[test]
     fn blob_stores_and_retrieves_multiple_keys() {
-        let store = SecretStore::keyring("buzz-test-blob-multi");
+        let store = SecretStore::keyring("nimino-test-blob-multi");
         store.store("key_a", "val_a").unwrap();
         store.store("key_b", "val_b").unwrap();
         assert_eq!(store.load("key_a").unwrap(), Some("val_a".to_string()));
@@ -1206,7 +1206,7 @@ mod tests {
     #[ignore = "requires real OS keychain (run locally)"]
     #[test]
     fn blob_probe_present_absent_unreachable() {
-        let store = SecretStore::keyring("buzz-test-blob-probe");
+        let store = SecretStore::keyring("nimino-test-blob-probe");
         // No blob yet — key absent, backend reachable.
         assert_eq!(store.probe("identity"), KeyringProbe::ReachableButEmpty);
         store.store("identity", "nsec1test").unwrap();
@@ -1221,7 +1221,7 @@ mod tests {
     #[ignore = "requires real OS keychain (run locally)"]
     #[test]
     fn blob_delete_removes_key_not_others() {
-        let store = SecretStore::keyring("buzz-test-blob-delete");
+        let store = SecretStore::keyring("nimino-test-blob-delete");
         store.store("keep", "keep_val").unwrap();
         store.store("remove", "remove_val").unwrap();
         store.delete("remove").unwrap();
@@ -1234,7 +1234,7 @@ mod tests {
     #[ignore = "requires real OS keychain (run locally)"]
     #[test]
     fn blob_migration_from_per_key_entry() {
-        let svc = "buzz-test-blob-migration";
+        let svc = "nimino-test-blob-migration";
         let key = "identity";
         let value = "nsec1migrationtest";
 
@@ -1267,7 +1267,7 @@ mod tests {
     #[ignore = "requires real OS keychain (run locally)"]
     #[test]
     fn delete_all_with_legacy_cleanup_removes_per_key_identity() {
-        let svc = "buzz-test-delete-all-legacy";
+        let svc = "nimino-test-delete-all-legacy";
         let key = "identity";
         let value = "nsec1legacytest";
 

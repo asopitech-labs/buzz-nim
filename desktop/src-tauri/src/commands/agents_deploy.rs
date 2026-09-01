@@ -277,7 +277,7 @@ mod tests {
             "display_name": "Agent\u{0000} Name",
             "private_key_nsec": "nsec1fake",
             "relay_url": "wss://relay.example",
-            "acp_command": "buzz-acp",
+            "acp_command": "nimino-acp",
             "agent_command": "goose",
             "agent_args": [],
             "mcp_command": "",
@@ -352,7 +352,7 @@ mod tests {
     }
 
     #[test]
-    fn launch_block_claude_runtime_uses_anthropic_model_not_buzz_acp_model() {
+    fn launch_block_claude_runtime_uses_anthropic_model_not_nimino_acp_model() {
         // B2: remote claude deploys must send ANTHROPIC_MODEL, not NIMINO_ACP_MODEL,
         // so the remote harness has a single startup model authority matching A1.
         let record = record();

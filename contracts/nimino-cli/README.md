@@ -8,7 +8,7 @@ filesystem, and process adapter.
 
 Every normal command writes JSON only. Human text is limited to `--help` and
 `--version`; failures use JSON stderr with `error`, `message`, and `retryable`.
-The sole executable name is `nimino`; `buzz` is neither a command alias nor a
+The sole executable name is `nimino`; `nimino` is neither a command alias nor a
 build artifact.
 
 Workflow reads and mutations route through the v1 command plan. Definition,

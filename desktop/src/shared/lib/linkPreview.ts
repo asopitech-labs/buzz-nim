@@ -9,10 +9,10 @@ import {
 } from "./entityLink";
 
 export type SupportedLinkPreviewKind =
-  | "buzz-pull-request"
-  | "buzz-issue"
-  | "buzz-repository"
-  | "buzz-project"
+  | "nimino-pull-request"
+  | "nimino-issue"
+  | "nimino-repository"
+  | "nimino-project"
   | "github-pull-request"
   | "github-issue"
   | "github-repository"
@@ -47,7 +47,7 @@ export type SupportedLinkPreview = {
     | "link";
 };
 
-// Buzz relay hosts differ per community, so relay git URLs are recognized by
+// Nimino relay hosts differ per community, so relay git URLs are recognized by
 // their distinctive path shape (`/git/<64-hex-pubkey>/<repo>`) rather than by
 // hostname, and require an explicit scheme. Generic previews remain HTTPS-only.
 const SUPPORTED_URL_RE =
@@ -299,7 +299,7 @@ function createPreview(
  * Exported so the resolver can tell "still the fallback" apart from a
  * markdown-label override it must not overwrite.
  */
-export function buzzEntityFallbackTitle(link: ParsedEntityLink): string {
+export function niminoEntityFallbackTitle(link: ParsedEntityLink): string {
   if (link.type === "repo" || link.type === "project") return link.dtag;
   return `${link.dtag} #${link.id.slice(0, 8)}`;
 }
@@ -309,43 +309,43 @@ export function buzzEntityFallbackTitle(link: ParsedEntityLink): string {
  * href is rebuilt through the canonical builders so equivalent links (case
  * or query order variants) dedupe to a single card.
  */
-function parseBuzzEntityPreview(href: string): SupportedLinkPreview | null {
+function parseNiminoEntityPreview(href: string): SupportedLinkPreview | null {
   const parsed = parseEntityLink(href);
   if (!parsed.ok) return null;
 
   const link = parsed.value;
-  const title = buzzEntityFallbackTitle(link);
+  const title = niminoEntityFallbackTitle(link);
   if (link.type === "pr") {
     return {
-      kind: "buzz-pull-request",
+      kind: "nimino-pull-request",
       href: buildPullRequestLink(link),
-      provider: "Buzz",
+      provider: "Nimino",
       title,
       typeLabel: "Review",
     };
   }
   if (link.type === "issue") {
     return {
-      kind: "buzz-issue",
+      kind: "nimino-issue",
       href: buildIssueLink(link),
-      provider: "Buzz",
+      provider: "Nimino",
       title,
       typeLabel: "Task",
     };
   }
   if (link.type === "project") {
     return {
-      kind: "buzz-project",
+      kind: "nimino-project",
       href: buildProjectLink(link),
-      provider: "Buzz",
+      provider: "Nimino",
       title,
       typeLabel: "project",
     };
   }
   return {
-    kind: "buzz-repository",
+    kind: "nimino-repository",
     href: buildRepoLink(link),
-    provider: "Buzz",
+    provider: "Nimino",
     title,
     typeLabel: "repo",
   };
@@ -355,7 +355,7 @@ const NIMINO_GIT_PATH_RE =
   /^\/git\/([a-f0-9]{64})\/([a-zA-Z0-9._-]+?)(?:\.git)?\/?$/;
 
 /**
- * Recognize a Buzz relay git URL (`{relay-origin}/git/<owner-pubkey>/<repo>`,
+ * Recognize a Nimino relay git URL (`{relay-origin}/git/<owner-pubkey>/<repo>`,
  * the clone URL shape agents paste when announcing work). The preview href
  * is normalized to the canonical `nimino://repo` deep link: the raw git
  * transport endpoint is not a browsable page, and the nimino:// href gives the
@@ -364,11 +364,11 @@ const NIMINO_GIT_PATH_RE =
  *
  * Security: the URL origin must equal `activeRelayOrigin` (the currently
  * connected relay). Path shape alone is not proof that a host belongs to the
- * active Buzz relay — an arbitrary external URL sharing the path shape must
+ * active Nimino relay — an arbitrary external URL sharing the path shape must
  * remain an ordinary external link. Pass `null` when the relay origin is not
  * yet resolved; the link stays external until it can be verified.
  */
-function parseBuzzGitLink(
+function parseNiminoGitLink(
   parsed: URL,
   activeRelayOrigin: string | null,
 ): SupportedLinkPreview | null {
@@ -385,9 +385,9 @@ function parseBuzzGitLink(
   }
 
   return {
-    kind: "buzz-repository",
+    kind: "nimino-repository",
     href: buildRepoLink({ owner, dtag: repo }),
-    provider: "Buzz",
+    provider: "Nimino",
     title: repo,
     typeLabel: "repo",
   };
@@ -547,7 +547,7 @@ export function parseSupportedLinkPreview(
 ): SupportedLinkPreview | null {
   const candidate = trimUrlCandidate(href);
   if (isEntityLink(candidate)) {
-    return parseBuzzEntityPreview(candidate);
+    return parseNiminoEntityPreview(candidate);
   }
 
   let parsed: URL;
@@ -564,7 +564,7 @@ export function parseSupportedLinkPreview(
   }
 
   const recognized =
-    parseBuzzGitLink(parsed, activeRelayOrigin ?? null) ??
+    parseNiminoGitLink(parsed, activeRelayOrigin ?? null) ??
     parseGithubLink(parsed) ??
     parseLinearIssue(parsed) ??
     parseGoogleDriveLink(parsed) ??
@@ -665,7 +665,7 @@ export function extractSupportedLinkPreviews(
   const relayOrigin = activeRelayOrigin ?? null;
   for (const candidate of candidates) {
     const preview = parseSupportedLinkPreview(candidate.href, relayOrigin);
-    // Buzz-native links render as inline entity chips. Their relay-backed
+    // Nimino-native links render as inline entity chips. Their relay-backed
     // metadata is available from the chip on hover, so a second standalone
     // preview would duplicate the same entity presentation. This also covers
     // same-relay clone URLs, which parseSupportedLinkPreview normalizes to a

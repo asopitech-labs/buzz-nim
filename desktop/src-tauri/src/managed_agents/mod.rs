@@ -6,7 +6,7 @@ pub(crate) mod agent_snapshot_envelope;
 pub(crate) mod team_snapshot;
 pub(crate) use access_policy::{owner_only, owner_only_access_build, projected_access_with_policy};
 pub(crate) use agent_env::{
-    baked_build_env, build_buzz_agent_provider_defaults, discovery_env_with_baked_floor,
+    baked_build_env, build_nimino_agent_provider_defaults, discovery_env_with_baked_floor,
 };
 mod backend;
 pub(crate) mod claude_config;
@@ -89,7 +89,7 @@ pub use storage::*;
 pub use teams::*;
 pub use types::*;
 
-/// Returns the Buzz nest directory (`~/.nimino`) if it exists as a real
+/// Returns the Nimino nest directory (`~/.nimino`) if it exists as a real
 /// directory (not a symlink), falling back to the user's home directory.
 ///
 /// Used as the default working directory for spawned agent processes.

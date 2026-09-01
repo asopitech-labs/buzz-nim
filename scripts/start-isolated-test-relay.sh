@@ -4,14 +4,13 @@
 # =============================================================================
 # Stands up a FULLY ISOLATED relay for seeding + parity/perf runs, from source
 # on the current branch. Never touches the shared :3000 team relay or the
-# default `buzz-*` dev stack. Backing services run under the dedicated
-# `buzz-harness` Compose project (docker-compose.harness.yml); the relay runs
+# default `nimino-*` dev stack. Backing services run under the dedicated
+# `nimino-harness` Compose project (docker-compose.harness.yml); the relay runs
 # in the foreground on override ports.
 #
 #   Topology (reuse this exact tuple for desktop parity runs):
-#     compose project : buzz-harness
-#     postgres        : localhost:5471  (db=buzz, user=buzz, pass=nimino_dev)
-#     redis           : localhost:6471
+#     compose project : nimino-harness
+#     postgres        : localhost:5471  (db=nimino, user=nimino, pass=nimino_dev)
 #     minio           : localhost:9471 (console 9472)
 #     relay main      : localhost:3030   ← NIMINO_E2E_RELAY_URL=http://localhost:3030
 #     relay health    : localhost:8088
@@ -21,7 +20,7 @@
 #   ./scripts/start-isolated-test-relay.sh [--profile <cargo-profile>]
 #
 # Teardown (safe — scoped to our project only):
-#   docker compose -p buzz-harness -f docker-compose.harness.yml down -v
+#   docker compose -p nimino-harness -f docker-compose.harness.yml down -v
 # =============================================================================
 set -euo pipefail
 
@@ -50,13 +49,12 @@ case "${CARGO_PROFILE}" in
     ;;
 esac
 
-PROJECT="buzz-harness"
+PROJECT="nimino-harness"
 COMPOSE_FILE="docker-compose.harness.yml"
 
 # Isolated ports (distinct from :3000 team relay, default dev stack, and Eva's
 # evaperf :5470/:6470/:9470/:3170 stack).
 PG_PORT=5471
-REDIS_PORT=6471
 MINIO_PORT=9471
 RELAY_MAIN=3030
 RELAY_HEALTH=8088
@@ -68,14 +66,14 @@ log() { echo -e "${BLUE}[isolated-relay]${NC} $*"; }
 ok()  { echo -e "${GREEN}[isolated-relay]${NC} $*"; }
 err() { echo -e "${RED}[isolated-relay]${NC} $*" >&2; }
 
-# ── Backing services (scoped to buzz-harness only) ───────────────────────────
+# ── Backing services (scoped to nimino-harness only) ───────────────────────────
 log "Bringing up backing services (project=${PROJECT})..."
 docker compose -p "${PROJECT}" -f "${COMPOSE_FILE}" up -d
 
 wait_pg() {
   for _ in $(seq 1 60); do
     if docker compose -p "${PROJECT}" -f "${COMPOSE_FILE}" exec -T postgres \
-         pg_isready -U buzz >/dev/null 2>&1; then
+         pg_isready -U nimino >/dev/null 2>&1; then
       ok "Postgres ready"; return 0
     fi
     sleep 2
@@ -90,7 +88,7 @@ psql_h() { docker compose -p "${PROJECT}" -f "${COMPOSE_FILE}" exec -T postgres 
   psql -U nimino -d nimino -v ON_ERROR_STOP=1 "$@"; }
 
 log "Resetting isolated database and applying schema..."
-# This database belongs only to the buzz-harness Compose project. Reset it on
+# This database belongs only to the nimino-harness Compose project. Reset it on
 # every launch so stale partitions/events from an earlier proof cannot alter
 # schema planning or test results.
 psql_h -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
@@ -106,7 +104,7 @@ ok "Schema applied"
 # the channel/member seed. It keys everything off a fixed COMMUNITY_ID and an
 # overridable host — point that host at OUR relay so the tenant binding matches,
 # and point its DB env at OUR isolated postgres. (psql is on PATH, so it uses
-# NIMINO_DB_HOST/PORT rather than the shared `buzz-postgres` container.)
+# NIMINO_DB_HOST/PORT rather than the shared `nimino-postgres` container.)
 log "Seeding community (host=${COMMUNITY_HOST}), channels, and members..."
 NIMINO_COMMUNITY_HOST="${COMMUNITY_HOST}" \
   NIMINO_DB_HOST=localhost NIMINO_DB_PORT=${PG_PORT} NIMINO_DB_USER=nimino \
@@ -123,7 +121,7 @@ if [[ -x "${HOME}/.cargo/bin/cargo" ]]; then
   export PATH="${HOME}/.cargo/bin:${PATH}"
 fi
 log "Building relay (profile=${CARGO_BUILD_PROFILE}, cargo=$(command -v cargo), $(cargo --version))..."
-cargo build --profile "${CARGO_BUILD_PROFILE}" -p buzz-relay
+cargo build --profile "${CARGO_BUILD_PROFILE}" -p nimino-relay
 ok "Relay built"
 
 # ── Run relay (detached tmux session) ────────────────────────────────────────
@@ -142,7 +140,6 @@ fi
 log "Starting relay in tmux session '${TMUX_SESSION}' on :${RELAY_MAIN} (health :${RELAY_HEALTH}, metrics :${RELAY_METRICS})..."
 tmux new-session -d -s "${TMUX_SESSION}" "cd '${REPO_ROOT}' && env \
   DATABASE_URL=postgres://nimino:nimino_dev@localhost:${PG_PORT}/nimino \
-  REDIS_URL=redis://localhost:${REDIS_PORT} \
   RELAY_URL=ws://localhost:${RELAY_MAIN} \
   NIMINO_BIND_ADDR=0.0.0.0:${RELAY_MAIN} \
   NIMINO_HEALTH_PORT=${RELAY_HEALTH} \

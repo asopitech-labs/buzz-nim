@@ -25,7 +25,7 @@ export const MAX_SELF_PROFILE_CACHES = 32;
  * localStorage writes are not reactive — React state won't update on its own.
  * Components that need to react to profile updates should listen to this event.
  */
-export const SELF_PROFILE_CACHE_EVENT = "buzz:self-profile-cache";
+export const SELF_PROFILE_CACHE_EVENT = "nimino:self-profile-cache";
 
 export type SelfProfileCache = {
   version: 1;

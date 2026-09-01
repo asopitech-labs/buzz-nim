@@ -11,8 +11,8 @@ const cli = join(root, "scripts/nimino-release-set.mjs");
 const work = mkdtempSync(join(tmpdir(), "nimino-release-set-"));
 const commit = "a".repeat(40);
 const movedCommit = "b".repeat(40);
-const cliArtifact = join(work, "buzz");
-const agentArtifact = join(work, "buzz-agent");
+const cliArtifact = join(work, "nimino");
+const agentArtifact = join(work, "nimino-agent");
 writeFileSync(cliArtifact, "cli-v1\n");
 writeFileSync(agentArtifact, "agent-v1\n");
 

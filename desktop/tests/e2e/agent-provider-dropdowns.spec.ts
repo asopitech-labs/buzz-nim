@@ -12,7 +12,7 @@
  *       (provider unset → effortDefault = "medium" → inheritFallbackLabel fires)
  *
  *  03 – Edit dialog for a definition with runtime null auto-seeds the app-default
- *       runtime (buzz-agent) and model discovery runs → model combobox is non-empty.
+ *       runtime (nimino-agent) and model discovery runs → model combobox is non-empty.
  *       Previously, the seeding effect bailed in edit mode, leaving the runtime
  *       empty and the model dropdown silently blank.
  */
@@ -138,7 +138,7 @@ test.describe("agent provider dropdown screenshots", () => {
   });
 
   // Shot 03: Edit dialog for a definition with null runtime auto-seeds the
-  // default runtime (buzz-agent via getDefaultPersonaRuntime) and model
+  // default runtime (nimino-agent via getDefaultPersonaRuntime) and model
   // discovery runs, producing a non-empty model combobox.
   //
   // Previously the seeding effect bailed in edit mode ("id" in initialValues),
@@ -177,7 +177,7 @@ test.describe("agent provider dropdown screenshots", () => {
     await dialog.getByRole("tab", { name: "Customize for this agent" }).click();
 
     // Regression: the runtime trigger must not be empty — the auto-seed effect
-    // must have run and selected the app default (buzz-agent in the mock catalog).
+    // must have run and selected the app default (nimino-agent in the mock catalog).
     const runtimeTrigger = dialog.locator("#persona-runtime");
     await expect(runtimeTrigger).toBeVisible({ timeout: 8_000 });
     await expect(runtimeTrigger).not.toContainText("No preference", {

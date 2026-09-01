@@ -674,24 +674,24 @@ test("buildRecord_hidden_tuning_key_unchanged_when_generic_row_edited", () => {
 test("buildRecord_runtime_switch_new_hiddenKeys_then_generic_edit", () => {
   // Scenario 2: runtime switch then generic edit.
   //
-  // Before switch: agent is buzz-agent with NIMINO_AGENT_MAX_ROUNDS = "50" stored
+  // Before switch: agent is nimino-agent with NIMINO_AGENT_MAX_ROUNDS = "50" stored
   // in value (set via the numeric tuning control). After switching to Goose,
-  // the buzz-agent key is no longer hidden — it becomes a visible generic row.
+  // the nimino-agent key is no longer hidden — it becomes a visible generic row.
   // The test verifies:
-  //   (a) After the switch, the old buzz-agent key appears as a generic row
+  //   (a) After the switch, the old nimino-agent key appears as a generic row
   //       (toRows with the new Goose hidden set projects it).
   //   (b) After a generic-row edit, buildRecord preserves BOTH the old-runtime
   //       key (now a generic row) and the new-runtime hidden key.
   //   (c) An unset new-runtime hidden key is not introduced.
 
   // Derive both descriptor sets from real runtime objects.
-  const buzzAgentRuntime = {
-    id: "buzz-agent",
-    label: "Buzz Agent",
+  const niminoAgentRuntime = {
+    id: "nimino-agent",
+    label: "Nimino Agent",
     avatarUrl: "",
     availability: "available",
-    command: "buzz-agent",
-    binaryPath: "buzz-agent",
+    command: "nimino-agent",
+    binaryPath: "nimino-agent",
     defaultArgs: [],
     mcpCommand: null,
     modelEnvVar: "NIMINO_AGENT_MODEL",
@@ -732,16 +732,16 @@ test("buildRecord_runtime_switch_new_hiddenKeys_then_generic_edit", () => {
     loginHint: null,
   };
 
-  const buzzDescriptors = deriveNumericDescriptors(buzzAgentRuntime);
+  const niminoDescriptors = deriveNumericDescriptors(niminoAgentRuntime);
   const gooseDescriptors = deriveNumericDescriptors(gooseRuntime);
-  const buzzHiddenKeys = structuredEnvKeys(buzzDescriptors);
+  const niminoHiddenKeys = structuredEnvKeys(niminoDescriptors);
   const gooseHiddenKeys = structuredEnvKeys(gooseDescriptors);
 
-  // Sanity-check that NIMINO_AGENT_MAX_ROUNDS is hidden under buzz-agent but not
+  // Sanity-check that NIMINO_AGENT_MAX_ROUNDS is hidden under nimino-agent but not
   // under Goose — that contrast is what makes it become a generic row.
   assert.ok(
-    buzzHiddenKeys.includes("NIMINO_AGENT_MAX_ROUNDS"),
-    "NIMINO_AGENT_MAX_ROUNDS must be hidden under buzz-agent descriptors",
+    niminoHiddenKeys.includes("NIMINO_AGENT_MAX_ROUNDS"),
+    "NIMINO_AGENT_MAX_ROUNDS must be hidden under nimino-agent descriptors",
   );
   assert.equal(
     gooseHiddenKeys.includes("NIMINO_AGENT_MAX_ROUNDS"),
@@ -749,7 +749,7 @@ test("buildRecord_runtime_switch_new_hiddenKeys_then_generic_edit", () => {
     "NIMINO_AGENT_MAX_ROUNDS must not be hidden under Goose descriptors",
   );
 
-  // Pre-switch value: buzz-agent max-rounds was set, GOOSE_MAX_TOKENS was
+  // Pre-switch value: nimino-agent max-rounds was set, GOOSE_MAX_TOKENS was
   // already set (e.g. user configured it before switching back), plus a
   // generic user var. GOOSE_MAX_TOKENS is a hidden key under the Goose
   // descriptor set, so it must survive buildRecord() via hiddenKeys.
@@ -814,13 +814,13 @@ test("filterBakedGenericRows_numeric_baked_key_excluded_and_placeholder_shown", 
   // filterBakedGenericRows path must exclude this key from the generic
   // baked-row display so it isn't editable twice, while the structured
   // numeric input shows the inherited placeholder via numericTuningPlaceholder.
-  const buzzAgentRuntime = {
-    id: "buzz-agent",
-    label: "Buzz Agent",
+  const niminoAgentRuntime = {
+    id: "nimino-agent",
+    label: "Nimino Agent",
     avatarUrl: "",
     availability: "available",
-    command: "buzz-agent",
-    binaryPath: "buzz-agent",
+    command: "nimino-agent",
+    binaryPath: "nimino-agent",
     defaultArgs: [],
     mcpCommand: null,
     modelEnvVar: "NIMINO_AGENT_MODEL",
@@ -838,7 +838,7 @@ test("filterBakedGenericRows_numeric_baked_key_excluded_and_placeholder_shown", 
     loginHint: null,
   };
 
-  const numericDescriptors = deriveNumericDescriptors(buzzAgentRuntime);
+  const numericDescriptors = deriveNumericDescriptors(niminoAgentRuntime);
   const numericStructuredKeys = structuredEnvKeys(numericDescriptors);
 
   assert.ok(

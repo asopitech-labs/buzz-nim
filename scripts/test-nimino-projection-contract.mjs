@@ -14,6 +14,12 @@ const convergence = JSON.parse(
 const policy = readFileSync(contract.module, "utf8");
 const stage = readFileSync("crates/nimino-store/src/projection_stage.rs", "utf8");
 const store = readFileSync("crates/nimino-store/src/types.rs", "utf8");
+const dataOps = readFileSync("crates/nimino-data-ops/src/lib.rs", "utf8");
+const command = readFileSync("crates/nimino-data-ops/src/main.rs", "utf8");
+const scenario = readFileSync(
+  "crates/nimino-data-ops/tests/projection_rebuild.rs",
+  "utf8",
+);
 
 function check(condition, message) {
   if (!condition) throw new Error(message);
@@ -68,6 +74,16 @@ check(
   "atomic projection publication drifted",
 );
 check(contract.staging.productTruth === false, "staging became product truth");
+check(
+  contract.runtime.boundaryOperation === "domain.projection.policy" &&
+    contract.runtime.adapter === "nimino-data-ops.rebuild_projections" &&
+    dataOps.includes("pub async fn rebuild_projections(") &&
+    dataOps.includes("ProjectionPolicyRequest::Batch") &&
+    dataOps.includes("store.replace_cache(CacheReplacement") &&
+    command.includes("ProjectionRebuild") &&
+    scenario.includes("partial_stage_then_drop_and_rebuild_is_query_equivalent"),
+  "production projection rebuild path or scenario drifted",
+);
 check(contract.repairOwner === 59, "wrong repair owner");
 check(contract.legacyRemovalOwner === 12, "wrong cutover owner");
 

@@ -3,9 +3,13 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
+use nimino_boundary::{
+    EffectReceipt, EffectReceiptOutcome, EffectReconcileCommand, EffectReconcileRequest,
+};
 use nimino_data_ops::{
-    backup_replica, repair_replica, restore_replica, verify_replica, ObjectRepairRoots, ObjectSpec,
+    backup_replica, rebuild_projections, reconcile_effect, repair_replica, restore_replica,
+    verify_replica, ObjectRepairRoots, ObjectSpec,
 };
 
 #[derive(Parser)]
@@ -74,16 +78,58 @@ enum Command {
         #[arg(long)]
         object_root: Option<PathBuf>,
     },
+    /// Manually settle or retry one unknown workflow effect.
+    EffectReconcile {
+        #[arg(long)]
+        store: PathBuf,
+        #[arg(long)]
+        community: String,
+        #[arg(long)]
+        effect_key: String,
+        #[arg(long)]
+        worker: PathBuf,
+        #[arg(long)]
+        operator: String,
+        #[arg(long)]
+        reason: String,
+        #[arg(long, value_enum)]
+        action: ReconcileAction,
+        #[arg(long)]
+        receipt_id: Option<String>,
+        #[arg(long)]
+        result_digest: Option<String>,
+    },
+    /// Rebuild all replaceable projections from canonical event state.
+    ProjectionRebuild {
+        #[arg(long)]
+        store: PathBuf,
+        #[arg(long)]
+        community: String,
+        #[arg(long)]
+        worker: PathBuf,
+        #[arg(long)]
+        owner: String,
+        #[arg(long)]
+        epoch: String,
+    },
 }
 
-fn main() {
-    if let Err(error) = run(Cli::parse()) {
+#[derive(Clone, Copy, ValueEnum)]
+enum ReconcileAction {
+    MarkSucceeded,
+    MarkFailed,
+    Retry,
+}
+
+#[tokio::main]
+async fn main() {
+    if let Err(error) = run(Cli::parse()).await {
         eprintln!("error: {error:#}");
         std::process::exit(2);
     }
 }
 
-fn run(cli: Cli) -> Result<()> {
+async fn run(cli: Cli) -> Result<()> {
     let value = match cli.command {
         Command::Verify {
             store,
@@ -141,6 +187,65 @@ fn run(cli: Cli) -> Result<()> {
             object_root.as_deref(),
             &community,
         )?)?,
+        Command::EffectReconcile {
+            store,
+            community,
+            effect_key,
+            worker,
+            operator,
+            reason,
+            action,
+            receipt_id,
+            result_digest,
+        } => {
+            let (command, outcome) = match action {
+                ReconcileAction::MarkSucceeded => (
+                    EffectReconcileCommand::MarkSucceeded,
+                    Some(EffectReceiptOutcome::Succeeded),
+                ),
+                ReconcileAction::MarkFailed => (
+                    EffectReconcileCommand::MarkFailed,
+                    Some(EffectReceiptOutcome::Failed),
+                ),
+                ReconcileAction::Retry => (EffectReconcileCommand::Retry, None),
+            };
+            let receipt = match outcome {
+                Some(outcome) => Some(EffectReceipt {
+                    outcome,
+                    receipt_id: receipt_id
+                        .ok_or_else(|| anyhow::anyhow!("--receipt-id is required"))?,
+                    result_digest: result_digest
+                        .ok_or_else(|| anyhow::anyhow!("--result-digest is required"))?,
+                }),
+                None if receipt_id.is_none() && result_digest.is_none() => None,
+                None => anyhow::bail!("retry does not accept receipt fields"),
+            };
+            serde_json::to_value(
+                reconcile_effect(
+                    &store,
+                    &community,
+                    &effect_key,
+                    &worker,
+                    EffectReconcileRequest {
+                        operator_authorized: true,
+                        operator_id: operator,
+                        reason,
+                        command,
+                        receipt,
+                    },
+                )
+                .await?,
+            )?
+        }
+        Command::ProjectionRebuild {
+            store,
+            community,
+            worker,
+            owner,
+            epoch,
+        } => serde_json::to_value(
+            rebuild_projections(&store, &community, &worker, &owner, &epoch).await?,
+        )?,
     };
     println!("{}", serde_json::to_string_pretty(&value)?);
     Ok(())

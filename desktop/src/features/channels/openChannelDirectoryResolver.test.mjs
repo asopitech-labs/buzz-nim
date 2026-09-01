@@ -534,7 +534,7 @@ test("markdown message links resolve private destinations without a directory sc
     );
     assert.notEqual(
       mounted.container.querySelector(
-        "span[data-message-link][data-buzz-link]",
+        "span[data-message-link][data-nimino-link]",
       ),
       null,
       `${path} private destination must render an inert message-link pill`,
@@ -587,7 +587,7 @@ test("authored-label channel and message links respect the private-destination g
       `${path} private destination must not render a clickable element`,
     );
     assert.notEqual(
-      mounted.container.querySelector("span[data-buzz-link]"),
+      mounted.container.querySelector("span[data-nimino-link]"),
       null,
       `${path} private destination must render an inert node`,
     );

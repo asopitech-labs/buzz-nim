@@ -49,7 +49,7 @@ fn record() -> ManagedAgentRecord {
         auth_tag: None,
         relay_url: "ws://localhost:3000".into(),
         avatar_url: None,
-        acp_command: "buzz-acp".into(),
+        acp_command: "nimino-acp".into(),
         agent_command: "goose".into(),
         agent_command_override: None,
         agent_args: vec![],
@@ -696,7 +696,7 @@ fn name_edit_changes_snapshot_when_display_name_is_absent() {
 
 #[test]
 fn display_name_edit_does_not_change_snapshot_under_an_explicit_title_override() {
-    // User env is written AFTER the Buzz-set title (last-wins), so an explicit
+    // User env is written AFTER the Nimino-set title (last-wins), so an explicit
     // NIMINO_ACP_SESSION_TITLE is what the child actually runs with. Renaming the
     // record changes nothing about the spawned process, so badging it would be
     // a false restart prompt. The override itself still reaches the snapshot

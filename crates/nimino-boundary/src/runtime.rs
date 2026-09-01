@@ -281,6 +281,7 @@ async fn run_manager(
     }
 }
 
+#[allow(clippy::large_enum_variant)] // One in-flight IPC response, never stored in bulk.
 enum CallOutcome {
     Response(Result<BoundaryResponse, CodecError>),
     DeadlineExceeded,

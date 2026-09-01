@@ -6,21 +6,20 @@ templates:
   - templates/secret-chart.yaml
   - templates/serviceaccount.yaml
   - templates/service.yaml
-  - templates/pvc-git.yaml
+  - templates/chirps-service.yaml
 tests:
-  - it: renders cleanly in production profile (external pg/redis)
+  - it: renders cleanly in production profile
     set:
       relayUrl: wss://nimino.example.com
       ownerPubkey: "0000000000000000000000000000000000000000000000000000000000000000"
       externalPostgresql.url: postgres://u:p@h:5432/d
-      externalRedis.url: redis://h:6379
       s3.endpoint: http://minio:9000
       s3.accessKey: a
       s3.secretKey: s
     asserts:
       - equal:
           path: kind
-          value: Deployment
+          value: StatefulSet
         template: templates/deployment.yaml
       - equal:
           path: kind
@@ -53,7 +52,6 @@ tests:
       relayUrl: wss://nimino.example.com
       ownerPubkey: "0000000000000000000000000000000000000000000000000000000000000000"
       externalPostgresql.url: postgres://u:p@h:5432/d
-      externalRedis.url: redis://h:6379
       s3.endpoint: https://storage.railway.app
       s3.bucket: nimino-media-example
       s3.region: auto
@@ -79,7 +77,6 @@ tests:
       relayUrl: wss://nimino.example.com
       ownerPubkey: "0000000000000000000000000000000000000000000000000000000000000000"
       externalPostgresql.url: postgres://u:p@h:5432/d
-      externalRedis.url: redis://h:6379
       s3.endpoint: http://minio:9000
       s3.accessKey: a
       s3.secretKey: s
@@ -91,18 +88,15 @@ tests:
             name: NIMINO_HUDDLE_AUDIO_AVAILABLE
             value: "false"
         template: templates/deployment.yaml
-
   - it: lets an explicit value enable huddle audio in HA when the operator owns external audio behavior
     set:
       relayUrl: wss://nimino.example.com
       ownerPubkey: "0000000000000000000000000000000000000000000000000000000000000000"
       externalPostgresql.url: postgres://u:p@h:5432/d
-      externalRedis.url: redis://h:6379
       s3.endpoint: http://minio:9000
       s3.accessKey: a
       s3.secretKey: s
       replicaCount: 3
-      persistence.git.accessMode: ReadWriteOnce
       relay.huddleAudioAvailable: true
     asserts:
       - contains:
@@ -112,44 +106,54 @@ tests:
             value: "true"
         template: templates/deployment.yaml
 
-  - it: renders HA cleanly with replicaCount=3 + RWO git + Redis (no RWM needed)
+  - it: renders HA with one canonical-store PVC per StatefulSet ordinal
     set:
       relayUrl: wss://nimino.example.com
       ownerPubkey: "0000000000000000000000000000000000000000000000000000000000000000"
       externalPostgresql.url: postgres://u:p@h:5432/d
-      externalRedis.url: redis://h:6379
       s3.endpoint: http://minio:9000
       s3.accessKey: a
       s3.secretKey: s
       replicaCount: 3
-      persistence.git.accessMode: ReadWriteOnce
     asserts:
       - equal:
           path: spec.replicas
           value: 3
         template: templates/deployment.yaml
       - equal:
-          path: spec.accessModes[0]
+          path: spec.volumeClaimTemplates[0].spec.accessModes[0]
           value: ReadWriteOnce
-        template: templates/pvc-git.yaml
+        template: templates/deployment.yaml
       - contains:
           path: spec.template.spec.containers[0].env
           content:
             name: NIMINO_HUDDLE_AUDIO_AVAILABLE
             value: "false"
         template: templates/deployment.yaml
+      - contains:
+          path: spec.template.spec.containers[0].env
+          content:
+            name: NIMINO_CLUSTER_MIN_PEERS
+            value: "2"
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.volumeClaimTemplates[0].metadata.name
+          value: node-data
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.clusterIP
+          value: None
+        template: templates/chirps-service.yaml
 
-  - it: mounts a per-pod emptyDir git scratch volume when persistence is disabled
+  - it: keeps Git scratch ephemeral while node data is durable
     set:
       relayUrl: wss://nimino.example.com
       ownerPubkey: "0000000000000000000000000000000000000000000000000000000000000000"
       externalPostgresql.url: postgres://u:p@h:5432/d
-      externalRedis.url: redis://h:6379
       s3.endpoint: http://minio:9000
       s3.accessKey: a
       s3.secretKey: s
       replicaCount: 5
-      persistence.git.enabled: false
     asserts:
       - equal:
           path: spec.replicas
@@ -170,23 +174,23 @@ tests:
             emptyDir:
               sizeLimit: 10Gi
         template: templates/deployment.yaml
-      # No PVC is rendered at all when persistence is disabled.
-      - hasDocuments:
-          count: 0
-        template: templates/pvc-git.yaml
+      - equal:
+          path: spec.volumeClaimTemplates[0].metadata.name
+          value: node-data
+        template: templates/deployment.yaml
 
-  - it: preserves image defaults when Pod extensions are empty
+  - it: preserves relay image defaults while preparing mandatory mTLS
     set:
       relayUrl: wss://nimino.example.com
       ownerPubkey: "0000000000000000000000000000000000000000000000000000000000000000"
       externalPostgresql.url: postgres://u:p@h:5432/d
-      externalRedis.url: redis://h:6379
       s3.endpoint: http://minio:9000
       s3.accessKey: a
       s3.secretKey: s
     asserts:
-      - notExists:
-          path: spec.template.spec.initContainers
+      - equal:
+          path: spec.template.spec.initContainers[0].name
+          value: prepare-chirps-mtls
         template: templates/deployment.yaml
       - notExists:
           path: spec.template.spec.containers[0].command
@@ -200,7 +204,6 @@ tests:
       relayUrl: wss://nimino.example.com
       ownerPubkey: "0000000000000000000000000000000000000000000000000000000000000000"
       externalPostgresql.url: postgres://u:p@h:5432/d
-      externalRedis.url: redis://h:6379
       s3.endpoint: http://minio:9000
       s3.accessKey: a
       s3.secretKey: s
@@ -233,16 +236,16 @@ tests:
           emptyDir: {}
     asserts:
       - equal:
-          path: spec.template.spec.initContainers[0].name
+          path: spec.template.spec.initContainers[1].name
           value: install-wrapper
         template: templates/deployment.yaml
       - equal:
-          path: spec.template.spec.initContainers[0].securityContext.runAsNonRoot
+          path: spec.template.spec.initContainers[1].securityContext.runAsNonRoot
           value: true
         template: templates/deployment.yaml
       # Extension fragments are deliberately rendered with toYaml, not tpl.
       - equal:
-          path: spec.template.spec.initContainers[0].env[0].value
+          path: spec.template.spec.initContainers[1].env[0].value
           value: '{{ .Release.Name }}'
         template: templates/deployment.yaml
       - equal:
@@ -268,14 +271,13 @@ tests:
             emptyDir: {}
         template: templates/deployment.yaml
 
-  - it: appends generic init containers after the bundled MinIO readiness gate
+  - it: appends generic init containers after mTLS and MinIO preparation
     release:
       name: rel
     set:
       relayUrl: wss://nimino.example.com
       ownerPubkey: "0000000000000000000000000000000000000000000000000000000000000000"
       postgresql.enabled: true
-      redis.enabled: true
       minio.enabled: true
       extraInitContainers:
         - name: install-wrapper
@@ -283,9 +285,13 @@ tests:
     asserts:
       - equal:
           path: spec.template.spec.initContainers[0].name
-          value: wait-for-bucket
+          value: prepare-chirps-mtls
         template: templates/deployment.yaml
       - equal:
           path: spec.template.spec.initContainers[1].name
+          value: wait-for-bucket
+        template: templates/deployment.yaml
+      - equal:
+          path: spec.template.spec.initContainers[2].name
           value: install-wrapper
         template: templates/deployment.yaml

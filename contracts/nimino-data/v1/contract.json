@@ -109,7 +109,7 @@
     ],
     "publishRule": "replace only when input identity and output identity match exactly"
   },
-  "antiEntropyContract": "nimino.sync/v1",
+  "antiEntropyContract": "nimino.sync/v2",
   "projectionLifecycleContract": "nimino.projection-lifecycle/v1",
   "effectLedgerContract": "nimino.effect-ledger/v1",
   "repairContract": "nimino.data-ops/v1",

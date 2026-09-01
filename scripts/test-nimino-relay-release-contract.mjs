@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 const contract = JSON.parse(
   readFileSync("contracts/nimino-relay-release/v1/contract.json", "utf8"),
@@ -15,12 +15,6 @@ const workflow = readFileSync(
   ".github/workflows/nimino-relay-release.yml",
   "utf8",
 );
-const legacyDocker = readFileSync(".github/workflows/docker.yml", "utf8");
-const legacyChart = readFileSync(".github/workflows/helm-chart.yml", "utf8");
-const legacyAutoTag = readFileSync(
-  ".github/workflows/auto-tag-on-release-pr-merge.yml",
-  "utf8",
-);
 const dockerfile = readFileSync("Dockerfile", "utf8");
 const chart = readFileSync("deploy/charts/nimino/Chart.yaml", "utf8");
 const values = readFileSync("deploy/charts/nimino/values.yaml", "utf8");
@@ -28,6 +22,11 @@ const compose = readFileSync("deploy/compose/compose.yml", "utf8");
 const composeRunner = readFileSync("deploy/compose/run.sh", "utf8");
 const justfile = readFileSync("Justfile", "utf8");
 const hooks = readFileSync("lefthook.yml", "utf8");
+const relayMain = readFileSync("crates/nimino-relay/src/main.rs", "utf8");
+const clusterRuntime = readFileSync(
+  "crates/nimino-relay/src/cluster_runtime.rs",
+  "utf8",
+);
 
 function check(condition, message) {
   if (!condition) throw new Error(message);
@@ -35,12 +34,6 @@ function check(condition, message) {
 
 function canonical(id) {
   return naming.surfaces.find((surface) => surface.id === id)?.canonical;
-}
-
-function triggers(source) {
-  const start = source.indexOf("\non:\n");
-  const end = source.indexOf("\npermissions:", start);
-  return source.slice(start, end);
 }
 
 check(contract.schemaVersion === 1, "wrong relay release schema");
@@ -95,6 +88,7 @@ for (const proof of [
   "compose-config",
   "three-node-chirps-negotiation",
   "three-node-data-convergence",
+  "content-addressed-object-repair",
   "keyless-signatures",
   "provenance-attestation",
 ]) {
@@ -110,8 +104,12 @@ for (const signal of [
   "push-by-digest=true",
   "CANONICAL_REPOSITORY: asopitech-labs/nimino",
   "nimino-cluster-scenarios",
+  "nimino-sync-scenarios",
+  "nimino-object-scenarios",
+  "nimino-projection-scenarios",
   "nimino-data-ops-scenarios",
   "helm upgrade --install nimino",
+  "rollout status statefulset/nimino",
   "cosign sign --yes",
   "cosign sign-blob --yes",
   "nimino-relay-candidate",
@@ -123,6 +121,7 @@ for (const signal of [
 }
 for (const forbidden of [
   "ghcr.io/block/buzz",
+  "ghcr.io/block/nimino",
   "relay-v",
   "chart-v",
   ":latest",
@@ -133,22 +132,16 @@ for (const forbidden of [
     `legacy relay publication remains: ${forbidden}`,
   );
 }
-for (const [name, source] of [
-  ["legacy Docker", legacyDocker],
-  ["legacy chart", legacyChart],
+for (const path of [
+  ".github/workflows/docker.yml",
+  ".github/workflows/helm-chart.yml",
+  ".github/workflows/auto-tag-on-release-pr-merge.yml",
 ]) {
   check(
-    !triggers(source).includes("push:") &&
-      !triggers(source).includes("workflow_dispatch:"),
-    `${name} publisher remains enabled`,
+    !existsSync(path),
+    `legacy publisher remains: ${path}`,
   );
 }
-check(
-  !legacyAutoTag.includes("relay-release/*") &&
-    !legacyAutoTag.includes("chart-release/*") &&
-    !legacyAutoTag.includes('TAG_PREFIX="chart-v"'),
-  "legacy relay/chart auto-tag lane remains enabled",
-);
 check(
   dockerfile.includes('org.opencontainers.image.title="Nimino"'),
   "container identity drifted",
@@ -167,6 +160,12 @@ check(
     dockerfile.includes("useradd  --uid 1000 --gid 1000"),
   "runtime non-root identity drifted",
 );
+check(
+  dockerfile.includes("nimino-core-worker") &&
+    dockerfile.includes("NIMINO_BOUNDARY_WORKER=/usr/local/bin/nimino-core-worker") &&
+    dockerfile.includes("EXPOSE 7443/udp"),
+  "container does not compose the Nim worker and Chirps transport",
+);
 check(chart.includes("name: nimino"), "chart name drifted");
 check(
   values.includes(`repository: ${contract.image.repository}`),
@@ -181,6 +180,20 @@ check(
     `image: ${contract.image.repository}@\${NIMINO_IMAGE_DIGEST:?set NIMINO_IMAGE_DIGEST to sha256:<digest>}`,
   ),
   "Compose image drifted",
+);
+check(
+  compose.includes("NIMINO_CHIRPS_BIND_ADDR") &&
+    compose.includes("nimino-cluster-data:/var/lib/nimino/cluster") &&
+    compose.includes("./chirps:/etc/nimino/chirps:ro"),
+  "Compose does not persist and configure the cluster runtime",
+);
+check(
+  relayMain.includes("RelayClusterRuntime::start") &&
+    /cluster_runtime\s*\.stop\(\)/.test(relayMain) &&
+    clusterRuntime.includes("SyncRuntime::start") &&
+    clusterRuntime.includes("MeshRuntime::start") &&
+    clusterRuntime.includes("BoundaryRuntime::start"),
+  "released relay does not own the Nim/Chirps/sync lifecycle",
 );
 check(
   composeRunner.includes("^sha256:[0-9a-f]{64}$"),

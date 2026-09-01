@@ -139,7 +139,7 @@ test.beforeEach(async ({ page }, testInfo) => {
       : testInfo.title.includes("cardless tweet preview")
         ? {
             linkPreviewMetadata: {
-              title: "Buzz (@buzz) on X",
+              title: "Nimino (@nimino) on X",
               siteName: "X (formerly Twitter)",
               description:
                 "This is a real tweet-style description long enough to wrap across several lines while preserving the message-like treatment. It keeps going with enough distinct words to exceed five rendered lines at the preview width, proving that the overflow-aware control appears only when the content is genuinely clipped rather than relying on a brittle character-count guess.",
@@ -155,15 +155,15 @@ test.beforeEach(async ({ page }, testInfo) => {
               // that fetches with the raw `#fragment` attached would miss these
               // keys and drop the card, which is exactly the bug under test.
               linkPreviewMetadataByHref: {
-                "https://github.com/block/buzz/pull/3767": {
-                  title: "Buzz pull request 3767",
+                "https://github.com/asopitech-labs/nimino/pull/3767": {
+                  title: "Nimino pull request 3767",
                   siteName: "GitHub",
                   description: "Fragment-bearing PR link.",
                   imageDataUrl: null,
                   imageDomain: null,
                 },
-                "https://github.com/block/buzz/pull/3867": {
-                  title: "Buzz pull request 3867",
+                "https://github.com/asopitech-labs/nimino/pull/3867": {
+                  title: "Nimino pull request 3867",
                   siteName: "GitHub",
                   description: "Plain PR link.",
                   imageDataUrl: null,
@@ -174,7 +174,7 @@ test.beforeEach(async ({ page }, testInfo) => {
           : testInfo.title.includes("mixed link preview image outcomes")
             ? {
                 linkPreviewMetadataByHref: {
-                  "https://github.com/block/buzz/pull/4001": {
+                  "https://github.com/asopitech-labs/nimino/pull/4001": {
                     title: "Loaded preview image",
                     siteName: "GitHub",
                     description: "The image request completed.",
@@ -184,7 +184,7 @@ test.beforeEach(async ({ page }, testInfo) => {
                     imageFetchState: "image",
                     imageRetryAfterMs: null,
                   },
-                  "https://github.com/block/buzz/pull/4002": {
+                  "https://github.com/asopitech-labs/nimino/pull/4002": {
                     title: "Rate-limited preview image",
                     siteName: "GitHub",
                     description: "Metadata remains available during cooldown.",
@@ -226,10 +226,10 @@ test.beforeEach(async ({ page }, testInfo) => {
                     testInfo.title.includes("composer no-image link embeds")
                   ? {
                       linkPreviewMetadata: {
-                        title: "Buzz",
+                        title: "Nimino",
                         siteName: "GitHub",
                         description:
-                          "Open-source collaboration for the Buzz app.",
+                          "Open-source collaboration for the Nimino app.",
                         imageDataUrl: null,
                         imageDomain: null,
                         faviconDataUrl:
@@ -242,7 +242,7 @@ test.beforeEach(async ({ page }, testInfo) => {
                       )
                     ? {
                         linkPreviewMetadata: {
-                          title: "Buzz pull request",
+                          title: "Nimino pull request",
                           siteName: "GitHub",
                           description:
                             "First paragraph line one.\nFirst paragraph line two.\n\nSecond paragraph.",
@@ -265,7 +265,7 @@ test.beforeEach(async ({ page }, testInfo) => {
                         )
                       ? {
                           linkPreviewMetadata: {
-                            title: "Buzz pull request",
+                            title: "Nimino pull request",
                             siteName: "GitHub",
                             description: "A sender-authored preview snapshot.",
                             imageDataUrl:
@@ -291,7 +291,7 @@ test.beforeEach(async ({ page }, testInfo) => {
                           )
                         ? {
                             linkPreviewMetadata: {
-                              title: "Buzz pull request",
+                              title: "Nimino pull request",
                               siteName: "GitHub",
                               description:
                                 "A sender-authored preview snapshot.",
@@ -313,7 +313,7 @@ test.beforeEach(async ({ page }, testInfo) => {
                           ? {
                               mediaProxyInitiallyUnavailable: true,
                               linkPreviewMetadata: {
-                                title: "Buzz pull request",
+                                title: "Nimino pull request",
                                 siteName: "GitHub",
                                 description:
                                   "A sender-authored preview snapshot.",
@@ -328,7 +328,7 @@ test.beforeEach(async ({ page }, testInfo) => {
                               testInfo.title.includes("supported Compact")
                             ? {
                                 linkPreviewMetadata: {
-                                  title: "Buzz pull request",
+                                  title: "Nimino pull request",
                                   siteName: "GitHub",
                                   description:
                                     "A sender-authored preview snapshot.",
@@ -519,7 +519,8 @@ test("markdown tables overflow wide content and fill the message when narrow", a
 test("sent link preview media uses the authenticated proxy in compact and rich cards", async ({
   page,
 }) => {
-  const previewUrl = "https://github.com/block/buzz/pull/3246?proxy=1";
+  const previewUrl =
+    "https://github.com/asopitech-labs/nimino/pull/3246?proxy=1";
   const fallbackMediaPattern =
     /^nimino-media:\/\/localhost\/media\/[\da-f]{64}\.png$/;
   const proxyMediaPattern =
@@ -597,7 +598,8 @@ test("sent link preview media uses the authenticated proxy in compact and rich c
 test("link preview style defaults to compact and Rich unfurls descriptions", async ({
   page,
 }) => {
-  const previewUrl = "https://github.com/block/buzz/pull/3246?inline=1";
+  const previewUrl =
+    "https://github.com/asopitech-labs/nimino/pull/3246?inline=1";
   await page.setViewportSize({ width: 800, height: 900 });
   await page.goto("/");
   await page.getByTestId("channel-general").click();
@@ -712,7 +714,7 @@ for (const [pasteShape, wrapUrl] of [
   test(`${pasteShape} link preview paste paints before cold resolver work`, async ({
     page,
   }) => {
-    const previewUrl = `https://github.com/block/buzz/pull/3246?paste=${pasteShape}`;
+    const previewUrl = `https://github.com/asopitech-labs/nimino/pull/3246?paste=${pasteShape}`;
     await page.goto("/");
     await page.getByTestId("channel-general").click();
     const input = page.getByTestId("message-input");
@@ -758,7 +760,8 @@ for (const [pasteShape, wrapUrl] of [
 test("display-text link preview produces and sends its preview", async ({
   page,
 }) => {
-  const previewUrl = "https://github.com/block/buzz/pull/3246?display=text";
+  const previewUrl =
+    "https://github.com/asopitech-labs/nimino/pull/3246?display=text";
   await page.goto("/");
   await page.getByTestId("channel-general").click();
 
@@ -797,7 +800,8 @@ test("display-text link preview produces and sends its preview", async ({
 test("rich link preview preserves description newlines after sending", async ({
   page,
 }) => {
-  const previewUrl = "https://github.com/block/buzz/pull/3246?newlines=1";
+  const previewUrl =
+    "https://github.com/asopitech-labs/nimino/pull/3246?newlines=1";
   await page.addInitScript(() =>
     localStorage.setItem("nimino.appearance.linkPreviewStyle", "rich"),
   );
@@ -826,12 +830,12 @@ test("completed link previews normalize a trailing-fragment URL and still send",
   // gets a card like the others; the message body keeps the original URL.
   const previewUrls = [
     "https://twitter.com/tellaho",
-    "https://github.com/block/buzz/pull/3246",
+    "https://github.com/asopitech-labs/nimino/pull/3246",
     "https://x.com/tellaho/status/1884289176381841506#",
   ];
   const canonicalUrls = [
     "https://twitter.com/tellaho",
-    "https://github.com/block/buzz/pull/3246",
+    "https://github.com/asopitech-labs/nimino/pull/3246",
     "https://x.com/tellaho/status/1884289176381841506",
   ];
   const pastedText = previewUrls.join("\n");
@@ -901,7 +905,8 @@ test("unresolvable preview disappears after the terminal miss", async ({
 test("explicit cancellation suppresses a pending link preview and sends without it", async ({
   page,
 }) => {
-  const previewUrl = "https://github.com/block/buzz/pull/3246?send=pending";
+  const previewUrl =
+    "https://github.com/asopitech-labs/nimino/pull/3246?send=pending";
   await page.goto("/");
   await page.getByTestId("channel-general").click();
   await page.getByTestId("message-input").fill(previewUrl);
@@ -975,7 +980,7 @@ test("explicit cancellation suppresses a pending link preview and sends without 
 test("Enter during an in-flight snapshot upload hands off and sends once", async ({
   page,
 }) => {
-  const previewUrl = "https://github.com/block/buzz/pull/3246";
+  const previewUrl = "https://github.com/asopitech-labs/nimino/pull/3246";
   await page.goto("/");
   await page.getByTestId("channel-general").click();
   const input = page.getByTestId("message-input");
@@ -1015,7 +1020,8 @@ test("Enter during an in-flight snapshot upload hands off and sends once", async
 test("async metadata beyond old cutoff still produces preview image", async ({
   page,
 }) => {
-  const previewUrl = "https://github.com/block/buzz/pull/3246?slow=metadata";
+  const previewUrl =
+    "https://github.com/asopitech-labs/nimino/pull/3246?slow=metadata";
   await page.goto("/");
   await page.getByTestId("channel-general").click();
   const input = page.getByTestId("message-input");
@@ -1038,7 +1044,8 @@ test("async metadata beyond old cutoff still produces preview image", async ({
 test("async upload beyond metadata budget retains preview image", async ({
   page,
 }) => {
-  const previewUrl = "https://github.com/block/buzz/pull/3246?slow=image";
+  const previewUrl =
+    "https://github.com/asopitech-labs/nimino/pull/3246?slow=image";
   await page.goto("/");
   await page.getByTestId("channel-general").click();
   const input = page.getByTestId("message-input");
@@ -1069,7 +1076,8 @@ test("async upload beyond metadata budget retains preview image", async ({
 test("Skip wins the upload race and sends without preview", async ({
   page,
 }) => {
-  const previewUrl = "https://github.com/block/buzz/pull/3246?skip=1";
+  const previewUrl =
+    "https://github.com/asopitech-labs/nimino/pull/3246?skip=1";
   await page.goto("/");
   await page.getByTestId("channel-general").click();
   const input = page.getByTestId("message-input");
@@ -1101,7 +1109,8 @@ test("Skip wins the upload race and sends without preview", async ({
 test("promoted link preview send clears Sending after REST publication", async ({
   page,
 }) => {
-  const previewUrl = "https://github.com/block/buzz/pull/3246?pending=preview";
+  const previewUrl =
+    "https://github.com/asopitech-labs/nimino/pull/3246?pending=preview";
   await page.goto("/");
   await page.getByTestId("channel-general").click();
   const input = page.getByTestId("message-input");
@@ -1128,7 +1137,8 @@ test("promoted link preview send clears Sending after REST publication", async (
 test("settled-empty promoted link preview send uses REST and clears Sending after Skip", async ({
   page,
 }) => {
-  const previewUrl = "https://github.com/block/buzz/pull/3246?pending=empty";
+  const previewUrl =
+    "https://github.com/asopitech-labs/nimino/pull/3246?pending=empty";
   await page.goto("/");
   await page.getByTestId("channel-general").click();
   const input = page.getByTestId("message-input");
@@ -1164,7 +1174,8 @@ test("draft auto-send promotes link preview preparation and sends exactly once",
   // A confirmed Drafts-panel send must fire once immediately, promote preview
   // preparation into the background flow, and eventually publish one enriched
   // event rather than consuming the one-shot trigger while the hook debounces.
-  const previewUrl = "https://github.com/block/buzz/pull/3246?draft=autosend";
+  const previewUrl =
+    "https://github.com/asopitech-labs/nimino/pull/3246?draft=autosend";
   const channelId = "9a1657ac-f7aa-5db0-b632-d8bbeb6dfb50";
 
   // Seed a channel draft under the legacy store key (migrated on startup). The
@@ -1244,7 +1255,8 @@ test("draft auto-send promotes link preview preparation and sends exactly once",
 test("rapid Enter presses on a ready link preview send exactly once", async ({
   page,
 }) => {
-  const previewUrl = "https://github.com/block/buzz/pull/3246?rapid=1";
+  const previewUrl =
+    "https://github.com/asopitech-labs/nimino/pull/3246?rapid=1";
   await page.goto("/");
   await page.getByTestId("channel-general").click();
   const input = page.getByTestId("message-input");
@@ -1281,7 +1293,8 @@ test("rapid Enter presses on a ready link preview send exactly once", async ({
 test("pasting a link and immediately pressing Enter prepares it after submit", async ({
   page,
 }) => {
-  const previewUrl = "https://github.com/block/buzz/pull/3246?fast=send";
+  const previewUrl =
+    "https://github.com/asopitech-labs/nimino/pull/3246?fast=send";
   await page.goto("/");
   await page.getByTestId("channel-general").click();
   const input = page.getByTestId("message-input");
@@ -1305,7 +1318,8 @@ test("pasting a link and immediately pressing Enter prepares it after submit", a
 test("a snapshot media upload failure preserves a metadata-only preview", async ({
   page,
 }) => {
-  const previewUrl = "https://github.com/block/buzz/pull/3246?upload=fail";
+  const previewUrl =
+    "https://github.com/asopitech-labs/nimino/pull/3246?upload=fail";
   await page.goto("/");
   await page.getByTestId("channel-general").click();
   const input = page.getByTestId("message-input");
@@ -1327,7 +1341,7 @@ test("a snapshot media upload failure preserves a metadata-only preview", async 
     "snapshot",
     "1",
     previewUrl,
-    "Buzz pull request",
+    "Nimino pull request",
     "GitHub",
     "A sender-authored preview snapshot.",
   ]);
@@ -1336,7 +1350,8 @@ test("a snapshot media upload failure preserves a metadata-only preview", async 
 
 test("editing a message excludes link previews entirely", async ({ page }) => {
   const message = `Edit-me ${Date.now()}`;
-  const previewUrl = "https://github.com/block/buzz/pull/3246?edit=1";
+  const previewUrl =
+    "https://github.com/asopitech-labs/nimino/pull/3246?edit=1";
   await page.goto("/");
   await page.getByTestId("channel-general").click();
   const input = page.getByTestId("message-input");
@@ -1375,7 +1390,8 @@ test("editing a message excludes link previews entirely", async ({ page }) => {
 test("hiding composer link previews suppresses the whole draft and emits the blanket marker", async ({
   page,
 }) => {
-  const firstUrl = "https://github.com/block/buzz/pull/3246?hide=all";
+  const firstUrl =
+    "https://github.com/asopitech-labs/nimino/pull/3246?hide=all";
   const secondUrl = "https://linear.app/acme/issue/ABC-123/hidden-too";
   await page.goto("/");
   await page.getByTestId("channel-general").click();
@@ -1410,7 +1426,7 @@ test("hiding composer link previews suppresses the whole draft and emits the bla
 test("composer link preview embeds stay attachment-sized while loading and ready", async ({
   page,
 }) => {
-  const previewUrl = "https://github.com/block/buzz/pull/3246";
+  const previewUrl = "https://github.com/asopitech-labs/nimino/pull/3246";
 
   for (const width of [800, 420]) {
     await page.setViewportSize({ width: 800, height: 700 });
@@ -1475,7 +1491,8 @@ test("composer link preview embeds stay attachment-sized while loading and ready
 test("compact link preview image geometry truncates long titles to one line", async ({
   page,
 }) => {
-  const previewUrl = "https://github.com/block/buzz/pull/3246?geometry=1";
+  const previewUrl =
+    "https://github.com/asopitech-labs/nimino/pull/3246?geometry=1";
   // Sent snapshot media is relay-hosted and rewritten through the
   // authenticated media proxy (#5627), so serve the fixture from the mock
   // proxy origin rather than the raw relay origin.
@@ -1524,7 +1541,8 @@ test("compact link preview image geometry truncates long titles to one line", as
 test("composer no-image link embeds keep the attachment footprint", async ({
   page,
 }) => {
-  const previewUrl = "https://github.com/block/buzz/pull/3246?inline=none";
+  const previewUrl =
+    "https://github.com/asopitech-labs/nimino/pull/3246?inline=none";
   await page.goto("/");
   await page.getByTestId("channel-general").click();
   await page.getByTestId("message-input").fill(previewUrl);
@@ -1534,7 +1552,7 @@ test("composer no-image link embeds keep the attachment footprint", async ({
   await expect(card).toHaveAttribute("data-image-state", "none");
   await expect(card.locator("[data-link-preview-thumbnail]")).toBeVisible();
   await expect(card.locator('[data-slot="attachment-title"]')).toContainText(
-    /github\.com|Buzz/,
+    /github\.com|Nimino/,
   );
   await expect(card).toHaveCSS("height", "55px");
 });
@@ -1542,8 +1560,8 @@ test("composer no-image link embeds keep the attachment footprint", async ({
 test("mixed link preview image outcomes keep Compact and Rich fallbacks stable", async ({
   page,
 }) => {
-  const loadedUrl = "https://github.com/block/buzz/pull/4001";
-  const rateLimitedUrl = "https://github.com/block/buzz/pull/4002";
+  const loadedUrl = "https://github.com/asopitech-labs/nimino/pull/4001";
+  const rateLimitedUrl = "https://github.com/asopitech-labs/nimino/pull/4002";
   await page.goto("/");
   await page.getByTestId("channel-general").click();
   await page
@@ -1593,9 +1611,10 @@ test("fragment link previews render a card per canonical URL", async ({
   // cards total. A resolver that keys previews on the raw fragment-bearing URL
   // drops the fragment cards entirely (the reported bug).
   const fragmentUrlA =
-    "https://github.com/block/buzz/pull/3767#pullrequestreview-4857569498";
-  const fragmentUrlB = "https://github.com/block/buzz/pull/3767#issuecomment-1";
-  const plainUrl = "https://github.com/block/buzz/pull/3867";
+    "https://github.com/asopitech-labs/nimino/pull/3767#pullrequestreview-4857569498";
+  const fragmentUrlB =
+    "https://github.com/asopitech-labs/nimino/pull/3767#issuecomment-1";
+  const plainUrl = "https://github.com/asopitech-labs/nimino/pull/3867";
   await page.goto("/");
   await page.getByTestId("channel-general").click();
   await page
@@ -1629,7 +1648,7 @@ test("link preview browser image errors render a fallback", async ({
   await page.getByTestId("channel-general").click();
   await page
     .getByTestId("message-input")
-    .fill("https://github.com/block/buzz/pull/4003");
+    .fill("https://github.com/asopitech-labs/nimino/pull/4003");
   await waitForReadyComposerSnapshots(page);
   await page.getByTestId("send-message").click();
 
@@ -2056,7 +2075,7 @@ test("sends a thread message to its parent channel with a root-thread link", asy
   const attachmentSha = "d".repeat(64);
   const attachmentUrl = `http://localhost:3000/media/${attachmentSha}.txt`;
   const customEmojiUrl = "https://example.com/send-to-channel-party.svg";
-  const previewUrl = "https://github.com/block/buzz/pull/5305";
+  const previewUrl = "https://github.com/asopitech-labs/nimino/pull/5305";
   const ownReplyContent = [
     `${replySummary} with @alice :party:`,
     `[launch-notes.txt](${attachmentUrl})`,
@@ -2222,7 +2241,7 @@ test("sends a thread message to its parent channel with a root-thread link", asy
     mentionPubkeys: [TEST_IDENTITIES.alice.pubkey],
     mentionTags: [mentionTag],
     parentEventId: null,
-    sentFromThreadTag: ["buzz:sent-from-thread", rootId, rootContent],
+    sentFromThreadTag: ["nimino:sent-from-thread", rootId, rootContent],
   });
 
   await page.getByTestId("auxiliary-panel-close").click();

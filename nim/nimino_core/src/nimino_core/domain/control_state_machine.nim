@@ -18,6 +18,7 @@ type
 
   ControlEffect* = enum
     ceReject
+    ceVote
     ceElectLeader
     ceAppend
     ceCommit
@@ -34,6 +35,7 @@ type
     cseInvalidVoters
     cseStaleTerm
     cseCandidateNotVoter
+    cseCandidateLogStale
     cseQuorumRequired
     cseLeaderRequired
     cseAuthorityStale
@@ -89,6 +91,12 @@ type
     candidateId*: string
     supporters*: seq[string]
 
+  VoteRequest* = object
+    term*: uint64
+    candidateId*: string
+    lastIndex*: uint64
+    lastTerm*: uint64
+
   AppendRequest* = object
     leaderId*: string
     term*: uint64
@@ -96,6 +104,13 @@ type
     commandId*: string
     payload*: string
     targetVoters*: seq[string]
+
+  ReplicationRequest* = object
+    leaderId*: string
+    term*: uint64
+    supporters*: seq[string]
+    previousIndex*: uint64
+    entry*: ControlEntry
 
   CommitRequest* = object
     index*: uint64
@@ -121,6 +136,10 @@ type
     error*: ControlStateError
     state*: ControlState
     appliedEntry*: Option[ControlEntry]
+
+  ControlQuorumDecision* = object
+    granted*: bool
+    error*: ControlStateError
 
   RecoveryInput* = object
     metadataRevision*: uint64
@@ -202,6 +221,15 @@ proc initControlState*(voters: seq[string]): ControlState =
     oldVoters: voters,
   )
 
+proc checkControlQuorum*(
+    state: ControlState; supporters: seq[string]
+): ControlQuorumDecision =
+  if not validStateShape(state):
+    return ControlQuorumDecision(error: cseInvalidVoters)
+  if not hasQuorum(state.phase, state.oldVoters, state.newVoters, supporters):
+    return ControlQuorumDecision(error: cseQuorumRequired)
+  ControlQuorumDecision(granted: true, error: cseNone)
+
 proc reject(state: ControlState; error: ControlStateError): ControlPlan =
   ControlPlan(
     effect: ceReject,
@@ -232,6 +260,49 @@ proc normalizedProof(state: ControlState; supporters: seq[string]): seq[string] 
   for voter in activeVoters(state):
     if voter in supporters:
       result.add(voter)
+
+proc lastLogTerm(state: ControlState): uint64 =
+  if state.log.len > 0:
+    return state.log[^1].term
+  if state.snapshot.isSome:
+    return state.snapshot.get().lastIncludedTerm
+  0
+
+proc planVote*(state: ControlState; request: VoteRequest): ControlPlan =
+  if not validStateShape(state):
+    return reject(state, cseInvalidVoters)
+  if request.term < state.term or
+      (request.term == state.term and state.votedFor.isSome and
+      state.votedFor.get() != request.candidateId):
+    return reject(state, cseStaleTerm)
+  if request.candidateId.len == 0 or request.candidateId notin activeVoters(state):
+    return reject(state, cseCandidateNotVoter)
+  let localTerm = lastLogTerm(state)
+  if request.lastTerm < localTerm or
+      (request.lastTerm == localTerm and request.lastIndex < state.lastIndex):
+    return reject(state, cseCandidateLogStale)
+  let revision = nextMetadataRevision(state)
+  if revision.isNone:
+    return reject(state, cseFactConflict)
+
+  var next = state
+  next.metadataRevision = revision.get()
+  next.term = request.term
+  next.votedFor = some(request.candidateId)
+  next.leaderId = ""
+  next.leaderTerm = 0
+  next.leaderProof = @[]
+  plan(
+    state,
+    next,
+    ceVote,
+    @[
+      ControlStoreAction(
+        kind: cpaMetadata,
+        expectedMetadataRevision: state.metadataRevision,
+      )
+    ],
+  )
 
 proc planElection*(state: ControlState; request: ElectionRequest): ControlPlan =
   if not validStateShape(state):
@@ -312,6 +383,50 @@ proc planAppend*(state: ControlState; request: AppendRequest): ControlPlan =
     next,
     ceAppend,
     @[ControlStoreAction(kind: cpaLog, previousIndex: state.lastIndex)],
+  )
+
+proc planReplication*(
+    state: ControlState; request: ReplicationRequest
+): ControlPlan =
+  if not validStateShape(state):
+    return reject(state, cseInvalidVoters)
+  if request.leaderId.len == 0 or request.leaderId notin activeVoters(state):
+    return reject(state, cseLeaderRequired)
+  if request.term != state.term or request.term == 0 or
+      not hasQuorum(state.phase, state.oldVoters, state.newVoters, request.supporters):
+    return reject(state, cseAuthorityStale)
+  if request.previousIndex < state.commitIndex or
+      request.previousIndex > state.lastIndex or
+      request.previousIndex == high(uint64) or
+      request.entry.index != request.previousIndex + 1:
+    return reject(state, cseLogGap)
+  if request.entry.term > request.term or request.entry.voterEpoch != state.voterEpoch or
+      request.entry.commandId.len == 0:
+    return reject(state, cseFactConflict)
+  let appendShape = AppendRequest(
+    leaderId: request.leaderId,
+    term: request.term,
+    kind: request.entry.kind,
+    commandId: request.entry.commandId,
+    payload: request.entry.payload,
+    targetVoters: request.entry.targetVoters,
+  )
+  if not entryAllowed(state, appendShape):
+    return reject(state, cseEntryKindInvalid)
+
+  var next = state
+  next.term = request.term
+  next.votedFor = some(request.leaderId)
+  next.leaderId = request.leaderId
+  next.leaderTerm = request.term
+  next.leaderProof = normalizedProof(state, request.supporters)
+  next.log = state.log.filterIt(it.index <= request.previousIndex) & @[request.entry]
+  next.lastIndex = request.entry.index
+  plan(
+    state,
+    next,
+    ceAppend,
+    @[ControlStoreAction(kind: cpaLog, previousIndex: request.previousIndex)],
   )
 
 proc entryAt(state: ControlState; index: uint64): Option[ControlEntry] =

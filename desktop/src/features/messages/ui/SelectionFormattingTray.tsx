@@ -195,7 +195,7 @@ export function SelectionFormattingTray({
           ? "-translate-x-1/2 -translate-y-full"
           : "-translate-x-1/2",
       )}
-      data-buzz-selection-formatting-tray
+      data-nimino-selection-formatting-tray
       data-testid="selection-formatting-tray"
       onMouseDown={(event) => event.preventDefault()}
       role="toolbar"

@@ -3,7 +3,7 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 import { installMockBridge } from "../helpers/bridge";
 import { waitForAnimations } from "../helpers/animations";
 
-const THEMES = ["buzz", "catppuccin-mocha"] as const;
+const THEMES = ["nimino", "catppuccin-mocha"] as const;
 
 async function seedTheme(page: Page, theme: (typeof THEMES)[number]) {
   await page.addInitScript((value) => {
@@ -41,7 +41,7 @@ async function expectMutedSupportingText(
   const footer = trigger
     .page()
     .getByRole("tooltip")
-    .locator('[data-buzz-tooltip-metadata-type=""]');
+    .locator('[data-nimino-tooltip-metadata-type=""]');
   await expect(footer).toHaveText(expectedText);
   await expect(footer).toHaveClass(/text-secondary-foreground\/80/);
   await expect(footer).not.toHaveClass(/text-primary-foreground/);
@@ -119,7 +119,7 @@ for (const theme of THEMES) {
     const links = [
       `nimino://channel/${channelId}`,
       `nimino://message?channel=${channelId}&id=mock-general-welcome`,
-      `nimino://issue?id=${issueId}&owner=${owner}&d=buzz-world`,
+      `nimino://issue?id=${issueId}&owner=${owner}&d=nimino-world`,
     ].join(" ");
     const composer = page.getByTestId("message-input");
     await composer.evaluate((element, text) => {
@@ -134,7 +134,7 @@ for (const theme of THEMES) {
       );
     }, links);
 
-    const composerChips = composer.locator('[data-composer-buzz-link=""]');
+    const composerChips = composer.locator('[data-composer-nimino-link=""]');
     await expect(composerChips).toHaveCount(3);
     await page.getByTestId("send-message").click();
 
@@ -152,9 +152,9 @@ for (const theme of THEMES) {
     await page.mouse.move(0, 0);
     await expectMutedSupportingText(
       row.getByRole("button", {
-        name: /Open issue .* in repository buzz-world/,
+        name: /Open issue .* in repository nimino-world/,
       }),
-      "Issue · buzz-world",
+      "Issue · nimino-world",
     );
   });
 }

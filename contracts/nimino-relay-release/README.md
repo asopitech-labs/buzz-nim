@@ -10,7 +10,7 @@ into the one verified release set.
 The image, chart, Compose bundle, and evidence are pinned by digest. OCI
 artifacts and blobs receive keyless Sigstore signatures; the unified workflow
 attests the resulting release-set manifest. No `latest`, `main`, `relay-v`,
-`chart-v`, Block, or Buzz publication alias is produced.
+`chart-v`, Block, or Nimino publication alias is produced.
 
 This issue publishes immutable candidates only. Promotion/rollback belongs to
 #63; physical deletion of disabled predecessor workflows belongs to #65.

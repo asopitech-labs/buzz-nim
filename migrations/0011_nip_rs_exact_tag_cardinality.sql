@@ -44,7 +44,7 @@ WHERE source.community_id = watermark.community_id
 -- strip the retained row's mentions). Corrected paths opt in transaction-locally.
 CREATE FUNCTION guard_nip_rs_hard_delete() RETURNS trigger AS $$
 BEGIN
-    IF current_setting('buzz.nip_rs_hard_delete', true) IS DISTINCT FROM 'on' THEN
+    IF current_setting('nimino.nip_rs_hard_delete', true) IS DISTINCT FROM 'on' THEN
         RAISE EXCEPTION 'NIP-RS hard delete requires corrected writer opt-in'
             USING ERRCODE = 'check_violation';
     END IF;
@@ -146,7 +146,7 @@ BEGIN
            FROM jsonb_array_elements(CASE WHEN jsonb_typeof(NEW.tags) = 'array' THEN NEW.tags ELSE '[]'::jsonb END) tag
            WHERE tag = '["t", "read-state"]'::jsonb
        ) = 1 THEN
-        PERFORM set_config('buzz.nip_rs_hard_delete', 'on', true);
+        PERFORM set_config('nimino.nip_rs_hard_delete', 'on', true);
 
         DELETE FROM events
         WHERE community_id = NEW.community_id

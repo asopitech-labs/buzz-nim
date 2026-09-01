@@ -167,18 +167,18 @@
       ]
     },
     {
-      "id": "release.container-repository.sprig",
+      "id": "release.container-repository.agent",
       "match": "oci-repository",
-      "canonical": "ghcr.io/asopitech-labs/nimino-sprig",
+      "canonical": "ghcr.io/asopitech-labs/nimino-agent",
       "legacy": ["ghcr.io/block/buzz-sprig"],
       "fixtures": [
         {
           "input": "ghcr.io/block/buzz-sprig",
-          "output": "ghcr.io/asopitech-labs/nimino-sprig"
+          "output": "ghcr.io/asopitech-labs/nimino-agent"
         },
         {
           "input": "ghcr.io/block/buzz-sprig:sha-deadbee@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-          "output": "ghcr.io/asopitech-labs/nimino-sprig:sha-deadbee@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "output": "ghcr.io/asopitech-labs/nimino-agent:sha-deadbee@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         }
       ]
     },

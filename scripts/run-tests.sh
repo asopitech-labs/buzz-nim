@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# run-tests.sh — Run Buzz test suite
+# run-tests.sh — Run Nimino test suite
 # =============================================================================
 # Usage:
 #   ./scripts/run-tests.sh              # run all tests (default)
@@ -46,7 +46,6 @@ else
   export PGUSER=nimino
   export PGPASSWORD=nimino_dev
   export PGDATABASE=nimino
-  export REDIS_URL="redis://localhost:6379"
 fi
 
 # ---- Track results ----------------------------------------------------------
@@ -78,37 +77,37 @@ ensure_infra() {
 run_unit_tests() {
   section "Unit Tests (no infra required)"
 
-  run_test_step "buzz-core tests" \
-    cargo test -p buzz-core --lib -- --nocapture
+  run_test_step "nimino-core tests" \
+    cargo test -p nimino-core --lib -- --nocapture
 
-  run_test_step "buzz-auth unit tests" \
-    cargo test -p buzz-auth --lib -- --nocapture
+  run_test_step "nimino-auth unit tests" \
+    cargo test -p nimino-auth --lib -- --nocapture
 
-  run_test_step "buzz-voice tests" \
-    cargo test -p buzz-voice --lib -- --nocapture
+  run_test_step "nimino-voice tests" \
+    cargo test -p nimino-voice --lib -- --nocapture
 
-  run_test_step "buzz-cli tests" \
-    cargo test -p buzz-cli -- --nocapture
+  run_test_step "nimino-cli tests" \
+    cargo test -p nimino-cli -- --nocapture
 
-  # buzz-db migrator/lint unit tests (no infra): guard the embedded-migrator
+  # nimino-db migrator/lint unit tests (no infra): guard the embedded-migrator
   # invariant (exactly the consolidated 0001; cutover/backfill stays an operator
   # script, not startup state) and the tenant-scoping lints. The Postgres-backed
-  # buzz-db tests are #[ignore]d; nothing here (or in integration mode below,
-  # which runs `cargo test -p buzz-db` without --ignored) runs them — they need a
+  # nimino-db tests are #[ignore]d; nothing here (or in integration mode below,
+  # which runs `cargo test -p nimino-db` without --ignored) runs them — they need a
   # separate isolated-DB gate, so --lib keeps this step infra-free.
-  run_test_step "buzz-db unit tests" \
-    cargo test -p buzz-db --lib -- --nocapture
+  run_test_step "nimino-db unit tests" \
+    cargo test -p nimino-db --lib -- --nocapture
 
   # Multi-tenant conformance gate: independent replay checker + golden
-  # fixtures (buzz-conformance). Pure in-process trace replay, no infra.
-  run_test_step "buzz-conformance tests" \
-    cargo test -p buzz-conformance -- --nocapture
+  # fixtures (nimino-conformance). Pure in-process trace replay, no infra.
+  run_test_step "nimino-conformance tests" \
+    cargo test -p nimino-conformance -- --nocapture
 
   # Kubernetes backend provider: pure decision layers driven by a fake
   # substrate, no cluster. Mirrors the nextest path in `just test-unit` —
   # the two lists must stay in step or the fallback silently covers less.
-  run_test_step "buzz-backend-kubernetes tests" \
-    cargo test -p buzz-backend-kubernetes -- --nocapture
+  run_test_step "nimino-backend-kubernetes tests" \
+    cargo test -p nimino-backend-kubernetes -- --nocapture
 
   run_test_step "nimino-store transaction and recovery tests" \
     cargo test -p nimino-store -- --nocapture
@@ -116,22 +115,22 @@ run_unit_tests() {
   run_test_step "nimino WSL launcher boundary tests" \
     cargo test -p nimino-wsl-launcher -- --nocapture
 
-  run_test_step "buzz-dev-mcp capability and execution tests" \
-    cargo test -p buzz-dev-mcp -- --nocapture
+  run_test_step "nimino-dev-mcp capability and execution tests" \
+    cargo test -p nimino-dev-mcp -- --nocapture
 
-  run_test_step "build buzz-dev-mcp for framing" \
-    cargo build -p buzz-dev-mcp
+  run_test_step "build nimino-dev-mcp for framing" \
+    cargo build -p nimino-dev-mcp
 
-  run_test_step "buzz-dev-mcp stdio framing test" \
-    node scripts/test-nimino-mcp-framing.mjs target/debug/buzz-dev-mcp
+  run_test_step "nimino-dev-mcp stdio framing test" \
+    node scripts/test-nimino-mcp-framing.mjs target/debug/nimino-dev-mcp
 
-  # buzz-agent model-capabilities corpus: the Rust half of the cross-language
+  # nimino-agent model-capabilities corpus: the Rust half of the cross-language
   # drift guard. model_capabilities.rs embeds scripts/model-capabilities.json +
   # scripts/normative-corpus.json via include_str! and replays the full locked
   # corpus as pure in-process tests (no infra). Mirrors the nextest path in
   # `just test-unit` — the two lists must stay in step.
-  run_test_step "buzz-agent unit tests" \
-    cargo test -p buzz-agent --lib -- --nocapture
+  run_test_step "nimino-agent unit tests" \
+    cargo test -p nimino-agent --lib -- --nocapture
 }
 
 # ---- DB / integration tests (infra required) --------------------------------
@@ -141,14 +140,14 @@ run_integration_tests() {
 
   ensure_infra
 
-  run_test_step "buzz-db tests" \
-    cargo test -p buzz-db -- --nocapture
+  run_test_step "nimino-db tests" \
+    cargo test -p nimino-db -- --nocapture
 
-  if find crates/buzz-auth/tests -maxdepth 1 -name '*.rs' -print -quit 2>/dev/null | grep -q .; then
-    run_test_step "buzz-auth integration tests" \
-      cargo test -p buzz-auth --test '*' -- --nocapture
+  if find crates/nimino-auth/tests -maxdepth 1 -name '*.rs' -print -quit 2>/dev/null | grep -q .; then
+    run_test_step "nimino-auth integration tests" \
+      cargo test -p nimino-auth --test '*' -- --nocapture
   else
-    run_test_step "buzz-auth (no integration tests found)" true
+    run_test_step "nimino-auth (no integration tests found)" true
   fi
 
   run_test_step "workspace integration tests" \

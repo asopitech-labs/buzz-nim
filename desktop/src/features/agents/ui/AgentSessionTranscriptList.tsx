@@ -23,7 +23,7 @@ import {
 } from "@/shared/ui/dialog";
 import { Toggle } from "@/shared/ui/toggle";
 import { AnimatedCount } from "@/shared/ui/AnimatedCount";
-import { BuzzMark } from "@/shared/ui/buzz-logo/BuzzMark";
+import { NiminoMark } from "@/shared/ui/nimino-logo/NiminoMark";
 import type { PromptSection, TranscriptItem } from "./agentSessionTypes";
 import { TurnLivenessIndicator } from "./TurnLivenessIndicator";
 import { PromptSectionList as PromptContextSections } from "./PromptSectionAccordion";
@@ -208,7 +208,7 @@ export function AgentSessionTranscriptList({
       <div className={scrollContainerClassNames}>
         <div className="flex h-full min-h-40 flex-col items-center justify-center px-6 py-10 text-center">
           {isLoading ? (
-            <BuzzMark
+            <NiminoMark
               ariaLabel="Waiting for ACP activity"
               className="mx-auto w-6 text-muted-foreground"
             />

@@ -3,10 +3,6 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
 
-  redis:
-    ports:
-      - "${REDIS_PORT:-6379}:6379"
-
   minio:
     ports:
       - "${MINIO_API_PORT:-9000}:9000"

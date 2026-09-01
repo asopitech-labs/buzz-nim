@@ -8,7 +8,7 @@ import std/[options, strutils]
 
 const
   SyncProtocolName* = "nimino.sync"
-  SyncProtocolVersion* = 1'u16
+  SyncProtocolVersion* = 2'u16
   MaxSyncRecords* = 1_000'u16
   MaxSyncEncodedBytes* = 1_048_576'u32
 
@@ -24,6 +24,7 @@ type
     syReject
     syNoop
     syRequestRange
+    syRequestSnapshot
     syApplyBatch
     syAcknowledgeDuplicate
     syComplete
@@ -216,17 +217,18 @@ proc acceptRemoteDigest*(
     return reject(state, scopeError)
   if not isSha256(frame.prefixDigest):
     return reject(state, seDigestInvalid)
-  if frame.checkpoint < state.checkpoint:
-    return reject(state, seRemoteBehind)
-  if frame.checkpoint == state.checkpoint:
-    if frame.prefixDigest != state.checkpointDigest:
-      return reject(state, seDigestMismatch)
+  if frame.prefixDigest == state.checkpointDigest:
     var complete = state
     complete.revision += 1
     complete.phase = spComplete
     complete.remoteCheckpoint = frame.checkpoint
     complete.remoteDigest = frame.prefixDigest
     return SyncDecision(effect: syComplete, error: seNone, state: complete)
+  if frame.checkpoint < state.checkpoint:
+    return reject(state, seRemoteBehind)
+  if frame.checkpoint == state.checkpoint and
+      state.localNodeId > state.remoteNodeId:
+    return SyncDecision(effect: syNoop, error: seNone, state: state)
 
   let nextDeadline = deadline(nowTick, state.timeoutTicks)
   if nextDeadline.isNone:
@@ -237,7 +239,7 @@ proc acceptRemoteDigest*(
   waiting.remoteCheckpoint = frame.checkpoint
   waiting.remoteDigest = frame.prefixDigest
   waiting.deadlineTick = nextDeadline.get()
-  SyncDecision(effect: syRequestRange, error: seNone, state: waiting)
+  SyncDecision(effect: syRequestSnapshot, error: seNone, state: waiting)
 
 proc nextRangeRequest*(state: SyncState): Option[RangeRequestFrame] =
   if not validState(state) or state.phase != spWaitingBatch:

@@ -69,7 +69,7 @@ export function DiffViewer({
   }
 
   return (
-    <div className={cn("buzz-diff-theme", className)}>
+    <div className={cn("nimino-diff-theme", className)}>
       <div className="space-y-3">
         {files.map((file) => {
           const label = getDiffFileLabel(file, fallbackFilePath);
@@ -120,14 +120,14 @@ export function DiffViewer({
               {file.hunks.length > 0 ? (
                 <Diff
                   className={cn(
-                    "buzz-diff-table",
+                    "nimino-diff-table",
                     viewType === "split" ? "min-w-[780px]" : "w-full",
                   )}
-                  codeClassName="buzz-diff-code"
+                  codeClassName="nimino-diff-code"
                   diffType={diffType}
-                  gutterClassName="buzz-diff-gutter"
+                  gutterClassName="nimino-diff-gutter"
                   hunks={file.hunks}
-                  lineClassName="buzz-diff-line"
+                  lineClassName="nimino-diff-line"
                   viewType={viewType}
                 >
                   {(hunks) =>

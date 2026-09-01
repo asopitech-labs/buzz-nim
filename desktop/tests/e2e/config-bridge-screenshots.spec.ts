@@ -192,7 +192,7 @@ test.describe("config bridge screenshots", () => {
     await expect(panel.getByText("gpt-4o-mini", { exact: true })).toHaveCount(
       0,
     );
-    await expect(panel.getByText("Set in Buzz")).toHaveCount(0);
+    await expect(panel.getByText("Set in Nimino")).toHaveCount(0);
     await settleAnimations(panel);
 
     await panel.screenshot({ path: `${SHOTS}/01-folded-config-panel.png` });
@@ -286,19 +286,19 @@ test.describe("config bridge screenshots", () => {
     await panel.screenshot({ path: `${SHOTS}/05-advanced-expanded.png` });
   });
 
-  test("06 — buzz-agent empty MCP servers", async ({ page }) => {
+  test("06 — nimino-agent empty MCP servers", async ({ page }) => {
     await installMockBridge(page, {
       managedAgents: [
         {
           pubkey: NIMINO_AGENT_PUBKEY,
-          name: "Buzz Agent",
+          name: "Nimino Agent",
           status: "running" as const,
           channelNames: ["agents"],
         },
       ],
     });
 
-    const panel = await openAgentProfileFromChannel(page, "Buzz Agent", {
+    const panel = await openAgentProfileFromChannel(page, "Nimino Agent", {
       anchorText: "MCP servers",
       tab: "Runtime",
     });

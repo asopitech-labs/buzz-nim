@@ -42,7 +42,7 @@ function resetDevWebviewStateFromUrl() {
     return;
   }
 
-  // WebKit groups every Buzz binary under one disk directory, but storage is
+  // WebKit groups every Nimino binary under one disk directory, but storage is
   // isolated by origin. Clearing here resets only this dev server's origin;
   // deleting the shared WebKit directory would also destroy installed-app state.
   window.localStorage.clear();
@@ -84,14 +84,14 @@ function configureDevE2eBridgeFromUrl() {
 function renderApp() {
   ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <React.StrictMode>
-      {/* block/buzz#5078 — catch any uncaught render error so a WebKit
+      {/* asopitech-labs/nimino#5078 — catch any uncaught render error so a WebKit
           SecurityError from localStorage can't blank the whole window. */}
       <RootErrorBoundary>
         <CommunitiesProvider>
           <CommunityOnboardingProvider
             enabled={huddleWindowChannelId() === null}
           >
-            <ThemeProvider defaultTheme="buzz">
+            <ThemeProvider defaultTheme="nimino">
               <TooltipProvider>
                 <EmojiBurstProvider>
                   <PoofBurstProvider>

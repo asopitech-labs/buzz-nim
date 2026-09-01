@@ -760,7 +760,7 @@ test("an abandoned concurrent render cannot invalidate the committed snapshot ta
 
 // ── Composer clone-URL classification ────────────────────────────────────────
 //
-// A same-relay `/git/<owner>/<repo>` clone URL is a Buzz repository entity: the
+// A same-relay `/git/<owner>/<repo>` clone URL is a Nimino repository entity: the
 // renderer normalizes it onto `nimino://repo` and shows it as an inline chip, not
 // a standalone card. The composer must reach the same verdict from the same
 // active relay origin — without it the URL is classified as an external
@@ -771,7 +771,7 @@ const CLONE_OWNER = "a".repeat(64);
 const RELAY_ORIGIN = "https://relay.example.com";
 const CLONE_HREF = `${RELAY_ORIGIN}/git/${CLONE_OWNER}/relay-tools.git`;
 
-test("composer input classifies a same-relay clone URL as a Buzz entity", async () => {
+test("composer input classifies a same-relay clone URL as a Nimino entity", async () => {
   const { updateComposerLinkPreviewInput } = await import(
     "./useComposerLinkPreviews.tsx"
   );
@@ -847,7 +847,7 @@ test("composer never fetches a snapshot for a same-relay clone URL", async () =>
     assert.equal(
       fetchCalls,
       0,
-      "a Buzz repository entity must not enter external snapshot fetching",
+      "a Nimino repository entity must not enter external snapshot fetching",
     );
     assert.equal(result.current.previewList, null);
     assert.deepEqual(result.current.getReadyTags(), []);

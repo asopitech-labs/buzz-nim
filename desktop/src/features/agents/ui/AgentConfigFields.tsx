@@ -52,13 +52,13 @@ import { resolveModelLabel } from "@/features/agents/lib/formatAgentModelLabel";
 import {
   NIMINO_AGENT_THINKING_EFFORT,
   getProviderEffortConfig,
-} from "@/features/agents/ui/buzzAgentConfig";
+} from "@/features/agents/ui/niminoAgentConfig";
 import {
   EffortSelectField,
   NumericTuningFields,
   useEffortAutoClear,
   type NumericDescriptor,
-} from "@/features/agents/ui/buzzAgentModelTuningFields";
+} from "@/features/agents/ui/niminoAgentModelTuningFields";
 import { SettingsOptionGroup } from "@/features/settings/ui/SettingsOptionGroup";
 import { AdvancedRequiredBadge } from "./AdvancedRequiredBadge";
 import { CardMintKeyCue } from "./CardMintKeyCue";
@@ -333,7 +333,7 @@ export function AgentConfigFields({
     selectedRuntimeId,
   )
     ? selectedRuntimeId
-    : "buzz-agent";
+    : "nimino-agent";
   const bakedEnvKeys = React.useMemo(
     () => bakedEnv.map((entry) => entry.key),
     [bakedEnv],
@@ -597,7 +597,7 @@ export function AgentConfigFields({
         hidden.add(providerId);
       }
     }
-    if (selectedRuntimeId !== "buzz-agent") {
+    if (selectedRuntimeId !== "nimino-agent") {
       hidden.add("relay-mesh");
     }
     return hidden;

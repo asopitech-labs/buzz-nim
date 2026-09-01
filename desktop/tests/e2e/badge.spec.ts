@@ -148,7 +148,7 @@ test("direct-message rows become prominent only when unread", async ({
   page,
 }) => {
   await page.addInitScript(() => {
-    window.localStorage.setItem("nimino-theme", "buzz-dark");
+    window.localStorage.setItem("nimino-theme", "nimino-dark");
   });
   await page.goto("/");
   const directMessage = page.getByTestId("channel-alice-tyler");
@@ -218,7 +218,7 @@ test("dark mode keeps selected labels regular and channel-level unread labels bo
   page,
 }) => {
   await page.addInitScript(() => {
-    window.localStorage.setItem("nimino-theme", "buzz-dark");
+    window.localStorage.setItem("nimino-theme", "nimino-dark");
   });
   await page.goto("/");
 

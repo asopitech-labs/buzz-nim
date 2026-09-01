@@ -95,13 +95,13 @@ pub(super) fn is_databricks_provider(provider: Option<&str>) -> bool {
     )
 }
 
-fn databricks_agent_provider(provider: &str) -> buzz_agent_pkg::config::Provider {
+fn databricks_agent_provider(provider: &str) -> nimino_agent_pkg::config::Provider {
     if provider.trim().eq_ignore_ascii_case("databricks_v2")
         || provider.trim().eq_ignore_ascii_case("databricks-v2")
     {
-        buzz_agent_pkg::config::Provider::DatabricksV2
+        nimino_agent_pkg::config::Provider::DatabricksV2
     } else {
-        buzz_agent_pkg::config::Provider::Databricks
+        nimino_agent_pkg::config::Provider::Databricks
     }
 }
 
@@ -134,12 +134,12 @@ impl DatabricksAuthIntent {
 }
 
 pub(super) fn databricks_sign_in_required_error() -> String {
-    "Databricks sign-in is required; save this agent, then open its model picker to sign in, or run `buzz-agent auth databricks`"
+    "Databricks sign-in is required; save this agent, then open its model picker to sign in, or run `nimino-agent auth databricks`"
         .to_string()
 }
 
 pub(super) fn databricks_sign_in_timed_out_error() -> String {
-    "Databricks sign-in timed out; open the model picker to retry, or run `buzz-agent auth databricks`"
+    "Databricks sign-in timed out; open the model picker to retry, or run `nimino-agent auth databricks`"
         .to_string()
 }
 
@@ -167,21 +167,23 @@ pub(super) async fn discover_databricks_models(
         None => return Ok(None),
     };
     let api_key = env_or_process_value(env, "DATABRICKS_TOKEN").unwrap_or_default();
-    let config = buzz_agent_pkg::config::Config::for_discovery(
+    let config = nimino_agent_pkg::config::Config::for_discovery(
         databricks_agent_provider(provider_name),
         api_key.clone(),
         host.clone(),
     );
     let redaction_env = redaction_env_with_value(env, "DATABRICKS_TOKEN", &api_key);
 
-    let entries = match buzz_agent_pkg::discover_databricks_models(&config).await {
+    let entries = match nimino_agent_pkg::discover_databricks_models(&config).await {
         Ok(entries) => entries,
-        Err(buzz_agent_pkg::AgentError::LlmAuth(_)) if should_start_interactive_auth(&api_key) => {
+        Err(nimino_agent_pkg::AgentError::LlmAuth(_))
+            if should_start_interactive_auth(&api_key) =>
+        {
             let _auth = AUTH_GATE.lock().await;
-            match buzz_agent_pkg::discover_databricks_models(&config).await {
+            match nimino_agent_pkg::discover_databricks_models(&config).await {
                 // A peer sign-in under the gate already succeeded.
                 Ok(entries) => entries,
-                Err(buzz_agent_pkg::AgentError::LlmAuth(_)) => {
+                Err(nimino_agent_pkg::AgentError::LlmAuth(_)) => {
                     // Passive surfaces suppress the browser while a recent
                     // failure/cancel is cooling down; the explicit picker path
                     // always launches (and clears any stale cooldown).
@@ -189,14 +191,14 @@ pub(super) async fn discover_databricks_models(
                         return Err(databricks_sign_in_required_error());
                     }
                     run_interactive_databricks_auth(
-                        buzz_agent_pkg::authenticate_databricks(&host),
+                        nimino_agent_pkg::authenticate_databricks(&host),
                         AUTH_FLOW_TIMEOUT,
                         &AUTH_COOLDOWNS,
                         &host,
                         &redaction_env,
                     )
                     .await?;
-                    buzz_agent_pkg::discover_databricks_models(&config)
+                    nimino_agent_pkg::discover_databricks_models(&config)
                         .await
                         .map_err(|error| {
                             format_redacted_error(
@@ -215,10 +217,10 @@ pub(super) async fn discover_databricks_models(
                 }
             }
         }
-        Err(buzz_agent_pkg::AgentError::LlmAuth(error)) if !api_key.is_empty() => {
+        Err(nimino_agent_pkg::AgentError::LlmAuth(error)) if !api_key.is_empty() => {
             return Err(databricks_static_token_error(&error, &redaction_env));
         }
-        Err(buzz_agent_pkg::AgentError::LlmAuth(_)) => {
+        Err(nimino_agent_pkg::AgentError::LlmAuth(_)) => {
             return Err(databricks_sign_in_required_error());
         }
         Err(error) => {
@@ -274,7 +276,7 @@ pub(super) async fn run_interactive_databricks_auth<Fut>(
     redaction_env: &BTreeMap<String, String>,
 ) -> Result<(), String>
 where
-    Fut: std::future::Future<Output = Result<(), buzz_agent_pkg::AgentError>>,
+    Fut: std::future::Future<Output = Result<(), nimino_agent_pkg::AgentError>>,
 {
     match tokio::time::timeout(timeout, auth).await {
         Ok(Ok(())) => {

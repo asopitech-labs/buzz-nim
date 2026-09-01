@@ -6,7 +6,7 @@ import {
   deriveNumericDescriptors,
   structuredEnvKeys,
 } from "./agentConfigCore.ts";
-import { NUMERIC_KIND_MIN } from "../ui/buzzAgentModelTuningFields.tsx";
+import { NUMERIC_KIND_MIN } from "../ui/niminoAgentModelTuningFields.tsx";
 
 const config = {
   env_vars: { NIMINO_AGENT_THINKING_EFFORT: "high" },
@@ -46,10 +46,10 @@ function field(model, kind) {
   return model.fields.find((candidate) => candidate.kind === kind);
 }
 
-test("Buzz Agent exposes provider, model, and Buzz-owned effort", () => {
+test("Nimino Agent exposes provider, model, and Nimino-owned effort", () => {
   const model = deriveAgentConfigFieldModel({
     config,
-    runtime: runtime("buzz-agent", {
+    runtime: runtime("nimino-agent", {
       modelEnvVar: "NIMINO_AGENT_MODEL",
       providerEnvVar: "NIMINO_AGENT_PROVIDER",
       thinkingEnvVar: "NIMINO_AGENT_THINKING_EFFORT",
@@ -61,7 +61,7 @@ test("Buzz Agent exposes provider, model, and Buzz-owned effort", () => {
     model.fields.map((item) => item.kind),
     ["provider", "model", "effort"],
   );
-  assert.equal(field(model, "effort").optionSource, "buzzAgentCatalog");
+  assert.equal(field(model, "effort").optionSource, "niminoAgentCatalog");
   assert.deepEqual(field(model, "effort").targetApplication, {
     kind: "envVar",
     key: "NIMINO_AGENT_THINKING_EFFORT",
@@ -135,7 +135,7 @@ test("Codex omits separate effort because model IDs own it", () => {
 });
 
 test("catalog mismatch cleanup is named and restricted to onboarding", () => {
-  const selectedRuntime = runtime("buzz-agent", {
+  const selectedRuntime = runtime("nimino-agent", {
     modelEnvVar: "NIMINO_AGENT_MODEL",
     providerEnvVar: "NIMINO_AGENT_PROVIDER",
     thinkingEnvVar: "NIMINO_AGENT_THINKING_EFFORT",
@@ -168,10 +168,10 @@ test("catalog mismatch cleanup is named and restricted to onboarding", () => {
 // model. Capability facts flow catalog → descriptor → UI; no runtime-ID
 // comparison decides numeric-field visibility.
 
-test("buzz-agent derives three numeric descriptors from catalog fields", () => {
+test("nimino-agent derives three numeric descriptors from catalog fields", () => {
   const model = deriveAgentConfigFieldModel({
     config,
-    runtime: runtime("buzz-agent", {
+    runtime: runtime("nimino-agent", {
       modelEnvVar: "NIMINO_AGENT_MODEL",
       providerEnvVar: "NIMINO_AGENT_PROVIDER",
       thinkingEnvVar: "NIMINO_AGENT_THINKING_EFFORT",
@@ -292,7 +292,7 @@ test("numeric descriptor value is read from env_vars when set", () => {
   };
   const model = deriveAgentConfigFieldModel({
     config: cfgWithTuning,
-    runtime: runtime("buzz-agent", {
+    runtime: runtime("nimino-agent", {
       maxTokensEnvVar: "NIMINO_AGENT_MAX_OUTPUT_TOKENS",
       contextLimitEnvVar: "NIMINO_AGENT_MAX_CONTEXT_TOKENS",
       maxRoundsEnvVar: "NIMINO_AGENT_MAX_ROUNDS",
@@ -314,7 +314,7 @@ test("numeric descriptor value is null when env var is absent", () => {
   };
   const model = deriveAgentConfigFieldModel({
     config: cfgEmpty,
-    runtime: runtime("buzz-agent", {
+    runtime: runtime("nimino-agent", {
       maxTokensEnvVar: "NIMINO_AGENT_MAX_OUTPUT_TOKENS",
       contextLimitEnvVar: "NIMINO_AGENT_MAX_CONTEXT_TOKENS",
       maxRoundsEnvVar: "NIMINO_AGENT_MAX_ROUNDS",
@@ -341,9 +341,9 @@ test("numeric descriptor value is null when env var is absent", () => {
 
 test("structuredEnvKeys_global_includes_effort_key_and_numeric_keys", () => {
   // Global surface renders effort + all numeric descriptors.
-  const buzzAgentModel = deriveAgentConfigFieldModel({
+  const niminoAgentModel = deriveAgentConfigFieldModel({
     config,
-    runtime: runtime("buzz-agent", {
+    runtime: runtime("nimino-agent", {
       modelEnvVar: "NIMINO_AGENT_MODEL",
       providerEnvVar: "NIMINO_AGENT_PROVIDER",
       thinkingEnvVar: "NIMINO_AGENT_THINKING_EFFORT",
@@ -355,7 +355,7 @@ test("structuredEnvKeys_global_includes_effort_key_and_numeric_keys", () => {
   });
 
   // Global renders all renderable descriptors.
-  const renderedDescriptors = buzzAgentModel.fields.filter(
+  const renderedDescriptors = niminoAgentModel.fields.filter(
     (f) => f.render === "control",
   );
   const keys = structuredEnvKeys(renderedDescriptors);
@@ -378,11 +378,11 @@ test("structuredEnvKeys_global_includes_effort_key_and_numeric_keys", () => {
   );
 });
 
-test("structuredEnvKeys_per_agent_buzz_agent_includes_effort_and_numeric_keys", () => {
-  // Per-agent buzz-agent renders effort + all 3 numeric descriptors.
-  const buzzAgentModel = deriveAgentConfigFieldModel({
+test("structuredEnvKeys_per_agent_nimino_agent_includes_effort_and_numeric_keys", () => {
+  // Per-agent nimino-agent renders effort + all 3 numeric descriptors.
+  const niminoAgentModel = deriveAgentConfigFieldModel({
     config,
-    runtime: runtime("buzz-agent", {
+    runtime: runtime("nimino-agent", {
       thinkingEnvVar: "NIMINO_AGENT_THINKING_EFFORT",
       maxTokensEnvVar: "NIMINO_AGENT_MAX_OUTPUT_TOKENS",
       contextLimitEnvVar: "NIMINO_AGENT_MAX_CONTEXT_TOKENS",
@@ -391,7 +391,7 @@ test("structuredEnvKeys_per_agent_buzz_agent_includes_effort_and_numeric_keys", 
     scope: "definition",
   });
 
-  const renderedDescriptors = buzzAgentModel.fields.filter(
+  const renderedDescriptors = niminoAgentModel.fields.filter(
     (f) => f.render === "control",
   );
   const keys = structuredEnvKeys(renderedDescriptors);
@@ -484,7 +484,7 @@ test("deriveNumericDescriptors_undefined_runtime_returns_empty", () => {
 
 test("deriveNumericDescriptors_runtime_with_all_three_fields", () => {
   const ds = deriveNumericDescriptors(
-    runtime("buzz-agent", {
+    runtime("nimino-agent", {
       maxTokensEnvVar: "NIMINO_AGENT_MAX_OUTPUT_TOKENS",
       contextLimitEnvVar: "NIMINO_AGENT_MAX_CONTEXT_TOKENS",
       maxRoundsEnvVar: "NIMINO_AGENT_MAX_ROUNDS",
@@ -520,7 +520,7 @@ test("deriveNumericDescriptors_matches_deriveAgentConfigFieldModel_numeric_subse
   // The standalone helper must produce the same descriptor set (without values)
   // that deriveAgentConfigFieldModel embeds, so surfaces that call the helper
   // directly get a consistent policy with the full field model.
-  const runtimeEntry = runtime("buzz-agent", {
+  const runtimeEntry = runtime("nimino-agent", {
     maxTokensEnvVar: "NIMINO_AGENT_MAX_OUTPUT_TOKENS",
     contextLimitEnvVar: "NIMINO_AGENT_MAX_CONTEXT_TOKENS",
     maxRoundsEnvVar: "NIMINO_AGENT_MAX_ROUNDS",
@@ -553,7 +553,7 @@ test("deriveNumericDescriptors_matches_deriveAgentConfigFieldModel_numeric_subse
 
 // ── NUMERIC_KIND_MIN: kind-specific input minima ──────────────────────────
 //
-// max output tokens and context limit must have min=1 (buzz-agent rejects 0).
+// max output tokens and context limit must have min=1 (nimino-agent rejects 0).
 // max rounds allows 0 (meaning unlimited).
 
 test("NUMERIC_KIND_MIN_maxOutputTokens_is_1", () => {

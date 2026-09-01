@@ -42,7 +42,7 @@ import {
 } from "@/features/projects/projectPullRequests.mjs";
 import { cn } from "@/shared/lib/cn";
 import { normalizePubkey } from "@/shared/lib/pubkey";
-import { BuzzLoadingState } from "@/shared/ui/BuzzLoadingState";
+import { NiminoLoadingState } from "@/shared/ui/NiminoLoadingState";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/shared/ui/tooltip";
 import { UserAvatar } from "@/shared/ui/UserAvatar";
 import {
@@ -633,7 +633,7 @@ export function ProjectsActivityFeed(props: ProjectsActivityFeedProps) {
   );
 
   if (props.isLoading && items.length === 0) {
-    return <BuzzLoadingState label="Loading project activity" />;
+    return <NiminoLoadingState label="Loading project activity" />;
   }
 
   if (items.length === 0) {

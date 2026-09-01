@@ -87,7 +87,7 @@ for (const decision of decisions) {
   );
 }
 
-const kindSource = readFileSync(join(root, "crates", "buzz-core", "src", "kind.rs"), "utf8");
+const kindSource = readFileSync(join(root, "crates", "nimino-core", "src", "kind.rs"), "utf8");
 const registeredKinds = sortedUnique(
   [...kindSource.matchAll(/pub const (?:KIND_[A-Z0-9_]+|RELAY_ADMIN_[A-Z0-9_]+): u32 = (\d+);/g)].map(
     (match) => Number(match[1]),
@@ -107,7 +107,7 @@ check(
   "deleted kind remains registered",
 );
 
-const nip11 = readFileSync(join(root, "crates", "buzz-relay", "src", "nip11.rs"), "utf8");
+const nip11 = readFileSync(join(root, "crates", "nimino-relay", "src", "nip11.rs"), "utf8");
 const supportedNips = nip11
   .match(/SUPPORTED_NIPS: &\[u32\] = &\[([^\]]+)\]/)?.[1]
   .split(",")
@@ -132,10 +132,10 @@ check(
 );
 
 const routeSources = [
-  "crates/buzz-relay/src/router.rs",
-  "crates/buzz-relay/src/api/admin/mod.rs",
-  "crates/buzz-relay/src/api/git/mod.rs",
-  "crates/buzz-relay/src/api/git/transport.rs",
+  "crates/nimino-relay/src/router.rs",
+  "crates/nimino-relay/src/api/admin/mod.rs",
+  "crates/nimino-relay/src/api/git/mod.rs",
+  "crates/nimino-relay/src/api/git/transport.rs",
 ];
 const registeredRoutes = sortedUnique(
   routeSources.flatMap((path) => {
@@ -144,9 +144,14 @@ const registeredRoutes = sortedUnique(
   }),
 );
 const classifiedRoutes = sortedUnique(
-  contract.surfaces.filter((surface) => surface.type === "route").flatMap((surface) => surface.values),
+  contract.surfaces
+    .filter((surface) => surface.type === "route" && surface.decision === "keep")
+    .flatMap((surface) => surface.values),
 );
 check(same(classifiedRoutes, registeredRoutes), "relay route inventory changed without classification");
+for (const route of contract.surfaces.find((surface) => surface.id === "route.legacy").values) {
+  check(!registeredRoutes.includes(route), `legacy route remains registered: ${route}`);
+}
 
 const nipDocs = execFileSync("git", ["ls-files", "docs/nips/NIP-*.md"], { cwd: root })
   .toString("utf8")
@@ -162,7 +167,7 @@ const classifiedDocs = sortedUnique(
 );
 check(same(classifiedDocs, nipDocs), "custom NIP schema inventory changed without classification");
 
-const bridge = readFileSync(join(root, "crates", "buzz-relay", "src", "api", "bridge.rs"), "utf8");
+const bridge = readFileSync(join(root, "crates", "nimino-relay", "src", "api", "bridge.rs"), "utf8");
 const bridgeExtractors = bridge.slice(
   bridge.indexOf("// The CLI injects extension fields"),
   bridge.indexOf("const BRIDGE_WINDOW_DEFAULT_LIMIT"),

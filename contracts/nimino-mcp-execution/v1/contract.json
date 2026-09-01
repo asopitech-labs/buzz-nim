@@ -4,7 +4,7 @@
   "version": 1,
   "compatibilityMode": false,
   "owner": "rust-adapter",
-  "crate": "crates/buzz-dev-mcp",
+  "crate": "crates/nimino-dev-mcp",
   "configuration": {
     "environment": "NIMINO_MCP_CAPABILITIES",
     "separator": ",",

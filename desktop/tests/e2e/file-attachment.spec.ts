@@ -479,7 +479,7 @@ test("dropping a file on the channel column attaches it to the composer", async 
         '[data-testid="drop-zone-overlay"]',
       );
       const contentSurface = document.querySelector<HTMLElement>(
-        "[data-buzz-content-surface]",
+        "[data-nimino-content-surface]",
       );
       if (!(overlayElement && contentSurface)) return null;
       const overlayStyle = getComputedStyle(overlayElement);
@@ -520,7 +520,7 @@ test("dropping a file on the channel column attaches it to the composer", async 
   );
 });
 
-for (const theme of ["buzz", "buzz-dark", "github-light", "github-dark"]) {
+for (const theme of ["nimino", "nimino-dark", "github-light", "github-dark"]) {
   test(`drop prompt has accessible text contrast in ${theme}`, async ({
     page,
   }) => {

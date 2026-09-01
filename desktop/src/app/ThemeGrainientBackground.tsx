@@ -2,11 +2,11 @@ export function ThemeGrainientBackground() {
   return (
     <div
       aria-hidden="true"
-      className="buzz-setup-grainient"
+      className="nimino-setup-grainient"
       data-testid="setup-grainient-background"
     >
-      <div className="buzz-setup-grainient__wash" />
-      <div className="buzz-setup-grainient__veil" />
+      <div className="nimino-setup-grainient__wash" />
+      <div className="nimino-setup-grainient__veil" />
     </div>
   );
 }

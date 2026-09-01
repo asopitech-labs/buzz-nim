@@ -33,10 +33,10 @@
     "workflows.runs": "domain.workflow.policy",
     "workflows.approve": "domain.workflow.policy"
   },
-  "rustAdapter": "crates/buzz-cli",
+  "rustAdapter": "crates/nimino-cli",
   "legacyRustPolicy": [
-    "crates/buzz-cli/src/lib.rs::Cli/Cmd/*Cmd",
-    "crates/buzz-cli/src/error.rs::exit_code/print_error/is_retryable_error"
+    "crates/nimino-cli/src/lib.rs::Cli/Cmd/*Cmd",
+    "crates/nimino-cli/src/error.rs::exit_code/print_error/is_retryable_error"
   ],
   "physicalRemovalOwner": 66,
   "cutoverOwner": 12

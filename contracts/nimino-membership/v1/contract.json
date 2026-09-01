@@ -11,45 +11,33 @@
     "crates/nimino-boundary/src/contract.rs",
     "crates/nimino-boundary/src/runtime.rs"
   ],
-  "rustPolicySitesToShrink": [
+  "productionPolicyCallers": [
     {
-      "path": "crates/buzz-relay/src/handlers/side_effects.rs",
-      "symbols": ["validate_admin_event", "handle_join_request", "handle_leave_request"]
+      "path": "crates/nimino-relay/src/handlers/side_effects.rs",
+      "markers": ["MembershipPolicyRequest::Channel", "decide_channel_membership"]
     },
     {
-      "path": "crates/buzz-db/src/channel.rs",
-      "symbols": ["add_member", "remove_member"]
+      "path": "crates/nimino-relay/src/handlers/relay_admin.rs",
+      "markers": ["MembershipPolicyRequest::Relay"]
     },
     {
-      "path": "crates/buzz-relay/src/handlers/relay_admin.rs",
-      "symbols": ["execute_relay_admin_command"]
+      "path": "crates/nimino-relay/src/api/invites.rs",
+      "markers": ["command: InviteCommand::Mint", "command: InviteCommand::Claim"]
     },
     {
-      "path": "crates/buzz-db/src/relay_members.rs",
-      "symbols": [
-        "add_relay_member",
-        "remove_relay_member",
-        "remove_relay_member_if_role",
-        "update_relay_member_role",
-        "transfer_ownership"
-      ]
-    },
-    {
-      "path": "crates/buzz-relay/src/api/invites.rs",
-      "symbols": ["validate_mint_request", "mint_invite", "claim_invite"]
-    },
-    {
-      "path": "crates/buzz-db/src/relay_invite.rs",
-      "symbols": ["validate_mint_inputs", "claim_relay_invite"]
-    },
-    {
-      "path": "crates/buzz-relay/src/api/operator.rs",
-      "symbols": ["transfer_community"]
+      "path": "crates/nimino-relay/src/api/operator.rs",
+      "markers": ["MembershipPolicyRequest::OwnershipTransfer"]
     }
   ],
-  "rustCompatibilityPathsToDelete": [
+  "rustPolicySitesToShrink": [],
+  "rustEffectAdaptersToRetain": [
+    "crates/nimino-db/src/channel.rs",
+    "crates/nimino-db/src/relay_members.rs",
+    "crates/nimino-db/src/relay_invite.rs"
+  ],
+  "deletedCompatibilityMarkers": [
     {
-      "path": "crates/buzz-relay/src/api/invites.rs",
+      "path": "crates/nimino-relay/src/api/invites.rs",
       "marker": "v1 HMAC path (stateless tokens, drain window)"
     }
   ],

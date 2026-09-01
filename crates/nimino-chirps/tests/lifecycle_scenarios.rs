@@ -464,10 +464,16 @@ async fn run_scenario(
             .send(primary_client.local_node_id(), b"rejoined".to_vec())
             .await
             .expect("rejoin message");
-        let received = tokio::time::timeout(STEP_TIMEOUT, messages.recv())
-            .await
-            .expect("rejoin receive timeout")
-            .expect("rejoin receive");
+        let received = tokio::time::timeout(STEP_TIMEOUT, async {
+            loop {
+                let received = messages.recv().await.expect("rejoin receive");
+                if received.from() == stable_node_id && received.payload() == b"rejoined" {
+                    break received;
+                }
+            }
+        })
+        .await
+        .expect("rejoin receive timeout");
         assert_eq!(received.from(), stable_node_id);
         assert_eq!(received.payload(), b"rejoined");
     }

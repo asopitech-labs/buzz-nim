@@ -20,7 +20,7 @@ import {
   resolveUserLabel,
   type UserProfileLookup,
 } from "@/features/profile/lib/identity";
-import { BuzzLoadingState } from "@/shared/ui/BuzzLoadingState";
+import { NiminoLoadingState } from "@/shared/ui/NiminoLoadingState";
 import { Card } from "@/shared/ui/card";
 import { DropdownMenuItem } from "@/shared/ui/dropdown-menu";
 import { CopyShareLinkMenuItem } from "./CopyShareLinkMenuItem";
@@ -244,7 +244,7 @@ export function ProjectsPullRequestsList({
   );
 
   if (isLoading) {
-    return <BuzzLoadingState label="Loading reviews" />;
+    return <NiminoLoadingState label="Loading reviews" />;
   }
 
   const loadNotice = (

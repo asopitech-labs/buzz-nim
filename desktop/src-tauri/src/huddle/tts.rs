@@ -869,7 +869,7 @@ fn tts_worker(
                     );
                     // The monitor already stopped any queued playback. Discard
                     // synthesis that completed after cancellation so stale audio
-                    // never reaches the player, while keeping buzz-voice's
+                    // never reaches the player, while keeping nimino-voice's
                     // extracted April engine API unchanged.
                     synthesis_outcome = "cancelled";
                     break 'playback_chunks;

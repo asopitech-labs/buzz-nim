@@ -26,7 +26,7 @@ use super::{
     retention::{get_retained_event, open_retention_db, retain_event, RetainedEvent},
     ManagedAgentRecord,
 };
-use buzz_core_pkg::kind::KIND_MANAGED_AGENT;
+use nimino_core_pkg::kind::KIND_MANAGED_AGENT;
 use nostr::JsonUtil;
 
 /// Reconcile `managed-agents.json` into kind:30177 events in the retention

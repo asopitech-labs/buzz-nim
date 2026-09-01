@@ -560,13 +560,13 @@ export function AgentInstanceEditDialog({
   function handleProviderDropdownChange(nextValue: string) {
     const nextProvider =
       nextValue === AUTO_PROVIDER_DROPDOWN_VALUE ? "" : nextValue;
-    if (nextProvider === "relay-mesh" && selectedRuntimeId !== "buzz-agent") {
-      handleRuntimeDropdownChange("buzz-agent");
+    if (nextProvider === "relay-mesh" && selectedRuntimeId !== "nimino-agent") {
+      handleRuntimeDropdownChange("nimino-agent");
     }
     const nextSelection = selectionOnProviderDropdownChange(selection, {
       runtime:
         nextProvider === "relay-mesh"
-          ? "buzz-agent"
+          ? "nimino-agent"
           : (selectedRuntime?.id ?? selectedRuntimeId),
       nextValue,
       clearModelWhenApiKeyMissing: false,

@@ -595,10 +595,10 @@ test("shows profile save feedback as a toast", async ({ page }) => {
 });
 
 test("nests the avatar edit button in a clipped notch", async ({ page }) => {
-  // Under the Buzz default theme the settings nav overrides `--sidebar-active`
+  // Under the Nimino default theme the settings nav overrides `--sidebar-active`
   // (white pill on the gradient) while the avatar edit button deliberately
   // keeps the root accent-driven token, so the shared-token comparison below
-  // only holds outside the Buzz theme.
+  // only holds outside the Nimino theme.
   await page.addInitScript(() => {
     window.localStorage.setItem("nimino-theme", "github-light");
   });
@@ -781,7 +781,7 @@ test("uploads local profile avatar files before saving", async ({ page }) => {
   await expect(page.getByTestId("profile-avatar-url")).toHaveValue("");
 
   const pastedAvatarUrl = await page.evaluate(
-    () => new URL("/buzz.svg", window.location.href).href,
+    () => new URL("/nimino.svg", window.location.href).href,
   );
   await page.getByTestId("profile-avatar-url").click();
   await page.keyboard.insertText(pastedAvatarUrl);
@@ -828,7 +828,7 @@ test("renders emoji avatars with a static background layer", async ({
     "background-color",
     "rgb(255, 231, 92)",
   );
-  await expect(avatarPreview).not.toHaveClass(/buzz-avatar-squish/);
+  await expect(avatarPreview).not.toHaveClass(/nimino-avatar-squish/);
   await expect(page.getByTestId("profile-avatar-preview-emoji")).toHaveText(
     "😀",
   );
@@ -1319,7 +1319,7 @@ test("renders agent profile ingress subviews from the Playwright mock bridge", a
       return {
         heroHeight: Number.parseFloat(
           getComputedStyle(layout).getPropertyValue(
-            "--buzz-profile-sticky-hero-height",
+            "--nimino-profile-sticky-hero-height",
           ),
         ),
         tabsTop: tabs ? Number.parseFloat(getComputedStyle(tabs).top) : 0,
@@ -2417,8 +2417,8 @@ test("opens settings with the keyboard shortcut and updates theme", async ({
   ).toBeVisible();
   await page.getByTestId("settings-nav-appearance").click();
 
-  // Default is Buzz in System mode; Playwright's default color scheme is
-  // light, so the app boots with the light Buzz theme.
+  // Default is Nimino in System mode; Playwright's default color scheme is
+  // light, so the app boots with the light Nimino theme.
   await expect
     .poll(() =>
       page.evaluate(() => document.documentElement.classList.contains("light")),
@@ -2586,7 +2586,7 @@ test("storage clear resets composed font size and keyboard zoom across windows",
   const readTypographyState = () =>
     page.evaluate(() => {
       const probe = document.createElement("span");
-      probe.style.fontSize = "var(--buzz-type-rem)";
+      probe.style.fontSize = "var(--nimino-type-rem)";
       document.documentElement.appendChild(probe);
       const typeRemPx =
         Math.round(Number.parseFloat(getComputedStyle(probe).fontSize) * 100) /

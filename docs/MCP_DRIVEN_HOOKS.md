@@ -2,7 +2,7 @@
 
 ## Overview
 
-Buzz-agent supports lifecycle hooks — MCP tools that the agent calls at
+Nimino-agent supports lifecycle hooks — MCP tools that the agent calls at
 defined points in its execution loop. Any MCP server can participate by
 exposing tools with the `_` prefix. Hooks are invisible to the LLM, advisory
 to the agent, and operator-configured.
@@ -67,13 +67,13 @@ Hooks are **off by default**. The operator must explicitly opt in via
 
 ### Not a hook: the reply guard
 
-`buzz-agent` has one in-process objection at the `_Stop` gate that is **not** an
+`nimino-agent` has one in-process objection at the `_Stop` gate that is **not** an
 MCP hook and exposes no hook tool: the reply guard
 (`NIMINO_AGENT_REQUIRE_REPLY=1`), which reminds the model to publish when a turn is
-about to end with nothing posted to Buzz. There is no `_ReplyGuard` tool to
+about to end with nothing posted to Nimino. There is no `_ReplyGuard` tool to
 implement and no server to allowlist — the env var and the recognition contract
 are documented in
-[crates/buzz-agent/README.md](../crates/buzz-agent/README.md#reply-guard).
+[crates/nimino-agent/README.md](../crates/nimino-agent/README.md#reply-guard).
 
 It is mentioned here only because it shares this lifecycle point and this
 budget: its reminders count against `NIMINO_AGENT_STOP_MAX_REJECTIONS` like any

@@ -494,7 +494,7 @@ export function AppSidebar({
           ) : null}
 
           <SidebarContent
-            className="buzz-sidebar-scrollbar overscroll-none [overflow-anchor:none]"
+            className="nimino-sidebar-scrollbar overscroll-none [overflow-anchor:none]"
             data-sidebar-background
             ref={scrollRef}
           >
@@ -753,7 +753,7 @@ export function AppSidebar({
           </SidebarContent>
         </div>
 
-        <div className="relative z-30 shrink-0" data-buzz-glass-footer-wrap>
+        <div className="relative z-30 shrink-0" data-nimino-glass-footer-wrap>
           {unreadBelowCount > 0 ? (
             <MoreUnreadButton
               bottomClassName="bottom-full"

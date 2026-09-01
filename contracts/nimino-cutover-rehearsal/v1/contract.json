@@ -44,7 +44,7 @@
       "do-not-resume-writes-until-restored-digests-match"
     ],
     "forbidden": [
-      "buzz-compatibility-shim",
+      "nimino-compatibility-shim",
       "dual-write",
       "down-migration",
       "in-place-restore"

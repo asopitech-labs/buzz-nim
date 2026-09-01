@@ -7,7 +7,7 @@ use super::{
     parse_desktop_recovery_code, recovery_result_after_completion, validate_recovery_payload_type,
     PairingHandle, PairingSession, PayloadType,
 };
-use buzz_core_pkg::pairing::qr::encode_qr;
+use nimino_core_pkg::pairing::qr::encode_qr;
 
 #[tokio::test]
 async fn overlapping_starts_are_serialized() {

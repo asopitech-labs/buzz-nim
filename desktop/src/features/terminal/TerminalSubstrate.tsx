@@ -127,7 +127,7 @@ export function TerminalSubstrate({
       (activeSessionId && frame ? [{ sessionId: activeSessionId, frame }] : []),
     [activeSessionId, frame, sessionFrames],
   );
-  const [owner, setOwner] = React.useState<"buzz" | "terminal">("buzz");
+  const [owner, setOwner] = React.useState<"nimino" | "terminal">("nimino");
   const [viewport, setViewport] = React.useState({ columns: 1, rows: 1 });
   const [selectionRows, setSelectionRows] = React.useState<
     readonly TerminalSelectionRow[]
@@ -156,14 +156,14 @@ export function TerminalSubstrate({
   );
   const terminalStyle = terminalPalette
     ? ({
-        "--buzz-terminal-background": terminalPalette.background,
-        "--buzz-terminal-foreground": terminalPalette.foreground,
+        "--nimino-terminal-background": terminalPalette.background,
+        "--nimino-terminal-foreground": terminalPalette.foreground,
       } as React.CSSProperties)
     : undefined;
 
-  const forceBuzzFallback = React.useEffectEvent(() => {
+  const forceNiminoFallback = React.useEffectEvent(() => {
     handoffRef.current = { ...INITIAL_HANDOFF_STATE };
-    setOwner("buzz");
+    setOwner("nimino");
   });
 
   const sendInput = React.useEffectEvent((text: string) => {
@@ -185,7 +185,7 @@ export function TerminalSubstrate({
   /**
    * Tab chords are handled at the window in capture phase, like the ⌘J
    * handoff, so they win over the focused textarea. Gated on terminal
-   * ownership: in Buzz mode these keys belong to the rest of the app.
+   * ownership: in Nimino mode these keys belong to the rest of the app.
    */
   const runTabChord = React.useEffectEvent((event: KeyboardEvent): boolean => {
     if (owner !== "terminal" || event.isComposing) return false;
@@ -244,7 +244,7 @@ export function TerminalSubstrate({
   );
 
   React.useEffect(() => {
-    if (!enabled) forceBuzzFallback();
+    if (!enabled) forceNiminoFallback();
   }, [enabled]);
 
   React.useEffect(() => {
@@ -304,7 +304,7 @@ export function TerminalSubstrate({
 
   React.useLayoutEffect(() => {
     if (!enabled) {
-      forceBuzzFallback();
+      forceNiminoFallback();
       return;
     }
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -324,7 +324,7 @@ export function TerminalSubstrate({
       if (onToggle) onToggle();
       else {
         setOwner((current) => {
-          const next = current === "terminal" ? "buzz" : "terminal";
+          const next = current === "terminal" ? "nimino" : "terminal";
           if (next === "terminal") {
             textareaRef.current?.focus({ preventScroll: true });
           }
@@ -400,7 +400,7 @@ export function TerminalSubstrate({
     if (!canvas || !terminalPalette) return;
     const context = canvas.getContext("2d", { alpha: false });
     if (!context) {
-      forceBuzzFallback();
+      forceNiminoFallback();
       return;
     }
     const dpr = window.devicePixelRatio || 1;
@@ -475,8 +475,8 @@ export function TerminalSubstrate({
 
   return (
     <section
-      aria-label="Buzz Term"
-      className="buzz-terminal-substrate"
+      aria-label="Nimino Term"
+      className="nimino-terminal-substrate"
       data-terminal-mode={mode}
       data-terminal-owner={owner}
       data-terminal-visible={visible ? "true" : "false"}
@@ -505,12 +505,12 @@ export function TerminalSubstrate({
     >
       {mode === "docked" ? (
         <hr
-          aria-label="Resize Buzz Term"
+          aria-label="Resize Nimino Term"
           aria-orientation="horizontal"
           aria-valuemax={Math.round(window.innerHeight * 0.7)}
           aria-valuemin={180}
           aria-valuenow={Math.round(dockHeight)}
-          className="buzz-terminal-resize-handle"
+          className="nimino-terminal-resize-handle"
           onKeyDown={(event) => {
             if (event.key !== "ArrowUp" && event.key !== "ArrowDown") return;
             event.preventDefault();
@@ -531,7 +531,7 @@ export function TerminalSubstrate({
             window.cancelAnimationFrame(resizeReportFrameRef.current);
             const handle = event.currentTarget;
             const substrate = handle.closest<HTMLElement>(
-              ".buzz-terminal-substrate",
+              ".nimino-terminal-substrate",
             );
             if (!substrate) return;
             const pointerId = event.pointerId;
@@ -600,20 +600,20 @@ export function TerminalSubstrate({
           tabIndex={0}
         />
       ) : null}
-      <div className="buzz-terminal-contract-bar">
-        <div className="buzz-terminal-tabs" role="tablist">
+      <div className="nimino-terminal-contract-bar">
+        <div className="nimino-terminal-tabs" role="tablist">
           {sessions.map((session, index) => (
             <div
               className={cn(
-                "buzz-terminal-tab",
-                session.active && "buzz-terminal-tab-active",
+                "nimino-terminal-tab",
+                session.active && "nimino-terminal-tab-active",
               )}
               key={session.id}
               role="presentation"
             >
               <button
                 aria-label={`Close ${session.title}`}
-                className="buzz-terminal-close"
+                className="nimino-terminal-close"
                 disabled={session.closing}
                 onClick={() => runTabAction(() => onCloseSession(session.id))}
                 type="button"
@@ -623,13 +623,13 @@ export function TerminalSubstrate({
               <button
                 aria-label={`Terminal ${index + 1}${session.closing ? ", closing" : session.title !== "SHELL" ? `, ${session.title}` : ""}`}
                 aria-selected={session.active}
-                className="buzz-terminal-tab-select"
+                className="nimino-terminal-tab-select"
                 disabled={session.closing}
                 onClick={() => runTabAction(() => onSelectSession(session.id))}
                 role="tab"
                 type="button"
               >
-                <span className="buzz-terminal-designator buzz-terminal-tab-title">
+                <span className="nimino-terminal-designator nimino-terminal-tab-title">
                   {session.title === "SHELL" ? (
                     <>
                       <ChevronRight />
@@ -640,26 +640,28 @@ export function TerminalSubstrate({
                   )}
                 </span>
                 {session.closing ? (
-                  <span className="buzz-terminal-tab-title">Closing…</span>
+                  <span className="nimino-terminal-tab-title">Closing…</span>
                 ) : null}
               </button>
             </div>
           ))}
           <button
-            aria-label="New Buzz Term tab"
-            className="buzz-terminal-new-tab"
+            aria-label="New Nimino Term tab"
+            className="nimino-terminal-new-tab"
             onClick={() => runTabAction(onNewSession)}
             type="button"
           >
             <Plus />
           </button>
         </div>
-        <div className="buzz-terminal-readout">
+        <div className="nimino-terminal-readout">
           <button
             aria-label={
-              mode === "maximized" ? "Restore Buzz Term" : "Maximize Buzz Term"
+              mode === "maximized"
+                ? "Restore Nimino Term"
+                : "Maximize Nimino Term"
             }
-            className="buzz-terminal-window-action"
+            className="nimino-terminal-window-action"
             onClick={() =>
               onModeChange(mode === "maximized" ? "docked" : "maximized")
             }
@@ -668,8 +670,8 @@ export function TerminalSubstrate({
             {mode === "maximized" ? <Minimize2 /> : <Maximize2 />}
           </button>
           <button
-            aria-label="Hide Buzz Term"
-            className="buzz-terminal-window-action"
+            aria-label="Hide Nimino Term"
+            className="nimino-terminal-window-action"
             onClick={onHide}
             type="button"
           >
@@ -677,11 +679,11 @@ export function TerminalSubstrate({
           </button>
         </div>
       </div>
-      <div className="buzz-terminal-viewport px-5 pt-2">
+      <div className="nimino-terminal-viewport px-5 pt-2">
         <canvas ref={canvasRef} />
         <div
           aria-hidden="true"
-          className="buzz-terminal-selection-layer"
+          className="nimino-terminal-selection-layer"
           onCopy={(event) => {
             const selection = window.getSelection();
             const grid = gridRef.current;
@@ -756,13 +758,13 @@ export function TerminalSubstrate({
           ))}
         </div>
         {welcomeVisible && banner ? (
-          <canvas className="buzz-terminal-welcome" ref={bannerCanvasRef} />
+          <canvas className="nimino-terminal-welcome" ref={bannerCanvasRef} />
         ) : null}
         <textarea
           aria-label="Terminal input"
           autoCapitalize="off"
           autoComplete="off"
-          className="buzz-terminal-input"
+          className="nimino-terminal-input"
           onCompositionEnd={() => {
             handoffRef.current = reduceHandoff(handoffRef.current, {
               type: "composition-end",
@@ -806,7 +808,7 @@ export function TerminalSubstrate({
         />
       </div>
       <div aria-live="polite" className="sr-only">
-        {owner === "terminal" ? "Buzz Term mode" : "Buzz mode"}
+        {owner === "terminal" ? "Nimino Term mode" : "Nimino mode"}
       </div>
     </section>
   );

@@ -270,7 +270,7 @@ export function useNotificationSettings(pubkey?: string) {
         }));
         setErrorMessage(
           nextPermission === "denied"
-            ? "Desktop notifications are blocked for Buzz. Enable them in system settings to turn alerts on."
+            ? "Desktop notifications are blocked for Nimino. Enable them in system settings to turn alerts on."
             : "Desktop notifications are unavailable in this environment.",
         );
         return false;
@@ -538,12 +538,12 @@ export function useHomeFeedNotifications(pubkey: string | undefined) {
     }
 
     window.addEventListener(
-      "buzz:e2e-home-feed-updated",
+      "nimino:e2e-home-feed-updated",
       handleMockHomeFeedUpdate,
     );
     return () => {
       window.removeEventListener(
-        "buzz:e2e-home-feed-updated",
+        "nimino:e2e-home-feed-updated",
         handleMockHomeFeedUpdate,
       );
     };

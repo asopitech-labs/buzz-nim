@@ -1,11 +1,11 @@
-import buzzAppIcon from "@/assets/app-icon@3x.png";
+import niminoAppIcon from "@/assets/app-icon@3x.png";
 import { claimInviteInBrowser } from "@/features/invite/invite-api";
 import {
   NIMINO_RELEASES_URL,
-  type BuzzDownloadPlatform,
-  detectBuzzDownloadPlatform,
-  resolveBuzzDownloadUrlForPlatform,
-} from "@/shared/lib/buzz-download";
+  type NiminoDownloadPlatform,
+  detectNiminoDownloadPlatform,
+  resolveNiminoDownloadUrlForPlatform,
+} from "@/shared/lib/nimino-download";
 import { hasNip07Provider } from "@/shared/lib/nostr-signer";
 import { relayWsUrl } from "@/shared/lib/relay-url";
 import { Button } from "@/shared/ui/button";
@@ -62,7 +62,7 @@ export function InvitePage({ code }: { code: string }) {
 
   React.useEffect(() => {
     let active = true;
-    detectBuzzDownloadPlatform(navigator).then(async (platform) => {
+    detectNiminoDownloadPlatform(navigator).then(async (platform) => {
       if (!active) return;
       if (
         platform.operatingSystem === "macos" &&
@@ -71,7 +71,7 @@ export function InvitePage({ code }: { code: string }) {
         setNeedsMacChoice(true);
         return;
       }
-      const url = await resolveBuzzDownloadUrlForPlatform(platform);
+      const url = await resolveNiminoDownloadUrlForPlatform(platform);
       if (active) setDownloadUrl(url);
     });
     return () => {
@@ -157,7 +157,7 @@ export function InvitePage({ code }: { code: string }) {
   }, []);
   const chooseMacDownload = async (
     event: React.MouseEvent<HTMLAnchorElement>,
-    platform: BuzzDownloadPlatform,
+    platform: NiminoDownloadPlatform,
   ) => {
     event.preventDefault();
     if (choosingMacDownloadRef.current) return;
@@ -167,7 +167,7 @@ export function InvitePage({ code }: { code: string }) {
     if (downloadWindow) downloadWindow.opener = null;
     setShowMacChoice(false);
     try {
-      const url = await resolveBuzzDownloadUrlForPlatform(platform);
+      const url = await resolveNiminoDownloadUrlForPlatform(platform);
       downloadWindow?.location.replace(url);
     } finally {
       choosingMacDownloadRef.current = false;
@@ -197,7 +197,7 @@ export function InvitePage({ code }: { code: string }) {
             className="h-12 w-12 overflow-hidden bg-black"
             style={{ borderRadius: "22.37%" }}
           >
-            <img alt="Buzz" className="h-full w-full" src={buzzAppIcon} />
+            <img alt="Nimino" className="h-full w-full" src={niminoAppIcon} />
           </div>
           <h1 className="mt-4 text-2xl font-semibold tracking-tight text-black">
             You&apos;re invited to
@@ -247,7 +247,7 @@ export function InvitePage({ code }: { code: string }) {
                 <a
                   href={`nimino://join?relay=${encodeURIComponent(relay)}&code=${encodeURIComponent(code)}`}
                 >
-                  Accept invite in Buzz
+                  Accept invite in Nimino
                 </a>
               </Button>
             ) : (
@@ -260,7 +260,7 @@ export function InvitePage({ code }: { code: string }) {
                 disabled={disabled}
                 onClick={openInvite}
               >
-                Accept invite in Buzz
+                Accept invite in Nimino
               </Button>
             )}
             {browserJoinError ? (

@@ -10,7 +10,6 @@ services:
       NIMINO_HEALTH_PORT: "8080"
       NIMINO_METRICS_PORT: "9102"
       DATABASE_URL: postgres://${POSTGRES_USER:-nimino}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-nimino}
-      REDIS_URL: redis://:${REDIS_PASSWORD:?set REDIS_PASSWORD}@redis:6379
       NIMINO_S3_ENDPOINT: http://minio:9000
       # Docker DNS resolves `minio`, not arbitrary `<bucket>.minio` hosts.
       NIMINO_S3_ADDRESSING_STYLE: path
@@ -20,14 +19,20 @@ services:
       NIMINO_GIT_REPO_PATH: /data/git
       NIMINO_AUTO_MIGRATE: ${NIMINO_AUTO_MIGRATE:-false}
       NIMINO_GIT_CONFORMANCE_PROBE: ${NIMINO_GIT_CONFORMANCE_PROBE:-true}
+      NIMINO_CHIRPS_BIND_ADDR: 0.0.0.0:7443
+      NIMINO_CHIRPS_SEEDS: ${NIMINO_CHIRPS_SEEDS:-}
+      NIMINO_CLUSTER_MIN_PEERS: ${NIMINO_CLUSTER_MIN_PEERS:-0}
+      NIMINO_CHIRPS_IDENTITY_PATH: /var/lib/nimino/cluster/node.identity
+      NIMINO_NODE_STORE_PATH: /var/lib/nimino/cluster/data.redb
     ports:
       - "${NIMINO_HTTP_PORT:-3000}:3000"
+      - "${NIMINO_CHIRPS_PORT:-7443}:7443/udp"
     volumes:
       - nimino-git-data:/data/git
+      - nimino-cluster-data:/var/lib/nimino/cluster
+      - ./chirps:/etc/nimino/chirps:ro
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
       minio:
         condition: service_healthy
@@ -49,7 +54,7 @@ services:
       - nimino-net
 
   postgres:
-    image: postgres:17-alpine
+    image: docker.io/library/postgres:17-alpine
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-nimino}
       POSTGRES_USER: ${POSTGRES_USER:-nimino}
@@ -67,25 +72,8 @@ services:
     networks:
       - nimino-net
 
-  redis:
-    image: redis:7-alpine
-    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?set REDIS_PASSWORD}"]
-    environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:?set REDIS_PASSWORD}
-    volumes:
-      - nimino-redis-data:/data
-    healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep -q PONG"]
-      interval: 5s
-      timeout: 3s
-      retries: 12
-      start_period: 5s
-    restart: unless-stopped
-    networks:
-      - nimino-net
-
   minio:
-    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
+    image: docker.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: ${NIMINO_S3_ACCESS_KEY:?set NIMINO_S3_ACCESS_KEY}
@@ -103,7 +91,7 @@ services:
       - nimino-net
 
   minio-init:
-    image: minio/mc:RELEASE.2025-08-13T08-35-41Z
+    image: docker.io/minio/mc:RELEASE.2025-08-13T08-35-41Z
     depends_on:
       minio:
         condition: service_healthy
@@ -125,15 +113,15 @@ volumes:
   nimino-postgres-data:
     labels:
       com.nimino.volume: postgres
-  nimino-redis-data:
-    labels:
-      com.nimino.volume: redis
   nimino-minio-data:
     labels:
       com.nimino.volume: minio
   nimino-git-data:
     labels:
       com.nimino.volume: git
+  nimino-cluster-data:
+    labels:
+      com.nimino.volume: cluster
 
 networks:
   nimino-net:

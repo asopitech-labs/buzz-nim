@@ -32,6 +32,7 @@
     "compose-config",
     "three-node-chirps-negotiation",
     "three-node-data-convergence",
+    "content-addressed-object-repair",
     "keyless-signatures",
     "provenance-attestation"
   ],

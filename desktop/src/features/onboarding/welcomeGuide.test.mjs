@@ -4,8 +4,6 @@ import test from "node:test";
 import {
   activateWelcomeTeamPersonasSequentially,
   buildWelcomeStarterCreateInput,
-  LEGACY_WELCOME_GUIDE_SYSTEM_PROMPT,
-  pickWelcomeGuideAgent,
   pickWelcomeGuideAgentForRelay,
   pickWelcomeTeamStarterAgentForRelay,
   welcomeStarterRuntimeUpdate,
@@ -29,11 +27,11 @@ function makeAgent(overrides = {}) {
     name: WELCOME_GUIDE_AGENT_NAME,
     personaId: null,
     relayUrl: RELAY_A,
-    acpCommand: "buzz-acp",
-    agentCommand: "buzz-agent",
+    acpCommand: "nimino-acp",
+    agentCommand: "nimino-agent",
     agentCommandOverride: null,
     agentArgs: [],
-    mcpCommand: "buzz-dev-mcp",
+    mcpCommand: "nimino-dev-mcp",
     turnTimeoutSeconds: 120,
     idleTimeoutSeconds: null,
     maxTurnDurationSeconds: null,
@@ -60,49 +58,6 @@ function makeAgent(overrides = {}) {
     ...overrides,
   };
 }
-
-test("pickWelcomeGuideAgent reuses a legacy Kit guide", () => {
-  const legacyKit = makeAgent({
-    name: "Kit",
-    pubkey: PUB_A,
-    systemPrompt: LEGACY_WELCOME_GUIDE_SYSTEM_PROMPT,
-  });
-
-  assert.equal(pickWelcomeGuideAgent([legacyKit]), legacyKit);
-});
-
-test("pickWelcomeGuideAgent prefers a running legacy guide over stopped builtin Fizz", () => {
-  const stoppedBuiltinFizz = makeAgent({
-    pubkey: PUB_A,
-    personaId: WELCOME_GUIDE_PERSONA_ID,
-    status: "stopped",
-  });
-  const runningLegacyKit = makeAgent({
-    name: "Kit",
-    pubkey: PUB_B,
-    status: "running",
-    systemPrompt: LEGACY_WELCOME_GUIDE_SYSTEM_PROMPT,
-  });
-
-  assert.equal(
-    pickWelcomeGuideAgent([stoppedBuiltinFizz, runningLegacyKit]),
-    runningLegacyKit,
-  );
-});
-
-test("pickWelcomeGuideAgent ignores non-Kit agents with the legacy prompt", () => {
-  const nonKit = makeAgent({
-    pubkey: PUB_A,
-    name: "Scout",
-    systemPrompt: LEGACY_WELCOME_GUIDE_SYSTEM_PROMPT,
-  });
-  const fizz = makeAgent({
-    pubkey: PUB_C,
-    personaId: WELCOME_GUIDE_PERSONA_ID,
-  });
-
-  assert.equal(pickWelcomeGuideAgent([nonKit, fizz]), fizz);
-});
 
 test("pickWelcomeGuideAgentForRelay ignores Fizz agents from other communities", () => {
   const otherCommunityFizz = makeAgent({
@@ -173,11 +128,11 @@ test("all Welcome starters use the onboarding runtime preference", async () => {
     canAutoInstall: false,
     underlyingCliPath: "/bin/claude",
   };
-  const buzzAgent = {
+  const niminoAgent = {
     ...claude,
-    id: "buzz-agent",
-    label: "Buzz Agent",
-    command: "buzz-agent",
+    id: "nimino-agent",
+    label: "Nimino Agent",
+    command: "nimino-agent",
   };
 
   for (const starter of WELCOME_TEAM_STARTERS) {
@@ -195,7 +150,7 @@ test("all Welcome starters use the onboarding runtime preference", async () => {
         isBuiltIn: true,
         isActive: true,
       },
-      [buzzAgent, claude],
+      [niminoAgent, claude],
       "claude",
       RELAY_A,
     );
@@ -227,7 +182,7 @@ test("existing Welcome starter rematerializes runtime-specific fields atomically
       name: "Fizz",
       agentCommand: "codex-acp",
       agentArgs: ["--new"],
-      mcpCommand: "buzz-dev-mcp",
+      mcpCommand: "nimino-dev-mcp",
       model: "gpt-5.6-sol",
       provider: null,
     }),
@@ -236,7 +191,7 @@ test("existing Welcome starter rematerializes runtime-specific fields atomically
       agentCommand: "codex-acp",
       harnessOverride: true,
       agentArgs: ["--new"],
-      mcpCommand: "buzz-dev-mcp",
+      mcpCommand: "nimino-dev-mcp",
       model: "gpt-5.6-sol",
       provider: null,
     },
@@ -283,7 +238,7 @@ test("existing Welcome starter needs no update when runtime already matches", ()
       name: "Fizz",
       agentCommand: "codex-acp",
       agentArgs: ["--same"],
-      mcpCommand: "buzz-dev-mcp",
+      mcpCommand: "nimino-dev-mcp",
       model: null,
       provider: null,
     }),

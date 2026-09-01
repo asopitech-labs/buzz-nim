@@ -43,7 +43,7 @@
   "persistence": {
     "adapter": "NodeStorePort.commit_canonical",
     "class": "canonical",
-    "replication": "nimino.sync/v1",
+    "replication": "nimino.sync/v2",
     "operationalEvidence": "workflow_execution_entry"
   },
   "workflowDecisionOwner": 29,

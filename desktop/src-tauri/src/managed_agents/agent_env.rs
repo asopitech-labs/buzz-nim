@@ -1,6 +1,6 @@
 //! Build-time agent env passthrough.
 //!
-//! Internal builds (buzz-releases) bake arbitrary `KEY=VALUE` pairs into the
+//! Internal builds (nimino-releases) bake arbitrary `KEY=VALUE` pairs into the
 //! binary via `NIMINO_BUILD_AGENT_ENV` (base64-encoded, newline-delimited).
 //! OSS builds leave the compile-time var unset — nothing is injected.
 
@@ -29,7 +29,7 @@ pub(super) fn idle_pool_sleep_env(lazy: bool) -> &'static str {
 
 /// Return the baked-in build-time env pairs as a map.
 ///
-/// Internal builds (buzz-releases) bake provider/model defaults and arbitrary
+/// Internal builds (nimino-releases) bake provider/model defaults and arbitrary
 /// `KEY=VALUE` pairs into the binary at compile time. This function returns
 /// those pairs as an owned map so callers can fold them into an in-process env
 /// at the **lowest** precedence layer — user/persona values layered on top
@@ -110,7 +110,7 @@ pub(crate) fn discovery_env_with_baked_floor(
 /// Call this BEFORE writing record/persona metadata env vars so that the
 /// record's explicit choices (written after) override the baked defaults.
 /// User-supplied `record.env_vars` (written last) always win.
-pub(crate) fn build_buzz_agent_provider_defaults(cmd: &mut std::process::Command) {
+pub(crate) fn build_nimino_agent_provider_defaults(cmd: &mut std::process::Command) {
     for (key, value) in baked_build_env() {
         cmd.env(key, value);
     }
@@ -140,17 +140,17 @@ pub(crate) fn parse_agent_env_lines(raw: &str) -> Vec<(&str, &str)> {
 #[cfg(test)]
 mod tests {
     use super::{
-        baked_build_env, build_buzz_agent_provider_defaults, build_env_map,
+        baked_build_env, build_env_map, build_nimino_agent_provider_defaults,
         discovery_env_with_baked_floor, parse_agent_env_lines,
     };
 
     #[test]
-    fn buzz_agent_provider_defaults_empty_in_oss_build() {
+    fn nimino_agent_provider_defaults_empty_in_oss_build() {
         // OSS (and normal test) builds set neither NIMINO_BUILD_NIMINO_AGENT_*,
         // so nothing is baked in and no NIMINO_AGENT_* is injected on spawn.
         let mut cmd = std::process::Command::new("env");
         cmd.env_clear();
-        build_buzz_agent_provider_defaults(&mut cmd);
+        build_nimino_agent_provider_defaults(&mut cmd);
         let output = cmd.output().expect("env should run");
         let stdout = String::from_utf8_lossy(&output.stdout);
         assert!(
@@ -249,7 +249,7 @@ mod tests {
 
     // ── baked defaults ordering regression ───────────────────────────────
     //
-    // `build_buzz_agent_provider_defaults` must run BEFORE
+    // `build_nimino_agent_provider_defaults` must run BEFORE
     // `runtime_metadata_env_vars` writes the record's provider/model so that
     // record values win (last-write-wins). This test simulates the ordering by
     // writing the baked default first, then overwriting with the record value.
@@ -392,7 +392,7 @@ mod tests {
     // ── baked reserved-key filtering ──────────────────────────────────────
     //
     // The baked map is written into a spawned agent's environment LAST (see
-    // `managed_agents/runtime.rs`), after Buzz sets the access gates. If a
+    // `managed_agents/runtime.rs`), after Nimino sets the access gates. If a
     // baked reserved key survived here, an internal build packaged with
     // `NIMINO_ACP_RESPOND_TO=anyone` would answer anyone while the UI shows
     // "Only me". `build.rs` rejects such a key at build time; these tests pin

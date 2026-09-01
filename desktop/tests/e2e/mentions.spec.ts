@@ -381,7 +381,7 @@ test("duplicate owned agents preserve provenance and exact pubkey selection", as
   await expect(relayRow).toContainText("agent");
   await expect(
     relayRow.getByTestId("mention-agent-provenance"),
-  ).toHaveAttribute("aria-label", "From another Buzz setup");
+  ).toHaveAttribute("aria-label", "From another Nimino setup");
   await expect(
     relayRow.getByText("Other setup", { exact: true }),
   ).toBeVisible();
@@ -462,7 +462,7 @@ test("duplicate owned agents preserve provenance and exact pubkey selection", as
   ).toHaveCount(0);
   await expect(remoteSidebarMarker).toHaveAttribute(
     "aria-label",
-    "From another Buzz setup",
+    "From another Nimino setup",
   );
   await expect(remoteSidebarMarker).toHaveText("Other setup");
   const remoteSidebarRow = page.getByTestId(`sidebar-member-${relayPubkey}`);
@@ -3160,7 +3160,7 @@ test("profile popover wave sends a direct message for a human profile", async ({
       expect.objectContaining({
         command: "send_channel_message",
         payload: expect.objectContaining({
-          content: expect.stringContaining("<!-- buzz:wave:v1 -->"),
+          content: expect.stringContaining("<!-- nimino:wave:v1 -->"),
         }),
       }),
     ]),

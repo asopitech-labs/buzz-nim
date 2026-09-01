@@ -278,7 +278,7 @@ pub async fn update_managed_agent(
         && crate::managed_agents::persona_events::active_pending_event(
             &app,
             &state,
-            buzz_core_pkg::kind::KIND_MANAGED_AGENT,
+            nimino_core_pkg::kind::KIND_MANAGED_AGENT,
             &summary.pubkey,
         )?
     {

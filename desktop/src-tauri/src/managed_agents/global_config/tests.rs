@@ -55,7 +55,7 @@ fn validate_rejects_derived_key_goose_model() {
 }
 
 #[test]
-fn validate_rejects_derived_key_buzz_agent_provider() {
+fn validate_rejects_derived_key_nimino_agent_provider() {
     let config = config_with_env(&[("NIMINO_AGENT_PROVIDER", "anthropic")]);
     let err = validate_global_config(&config).unwrap_err();
     assert!(
@@ -306,7 +306,7 @@ fn bare_record() -> ManagedAgentRecord {
         auth_tag: None,
         relay_url: "ws://localhost:3000".to_string(),
         avatar_url: None,
-        acp_command: "buzz-acp".to_string(),
+        acp_command: "nimino-acp".to_string(),
         agent_command: "goose".to_string(),
         agent_command_override: None,
         agent_args: vec![],
@@ -490,7 +490,7 @@ fn inherited_shared_compute_translates_to_supported_agent_transport() {
         provider: Some(super::super::RELAY_MESH_PROVIDER_ID.to_string()),
         ..Default::default()
     };
-    let runtime = super::super::known_acp_runtime("buzz-agent").expect("buzz-agent runtime");
+    let runtime = super::super::known_acp_runtime("nimino-agent").expect("nimino-agent runtime");
 
     let effective = super::super::readiness::resolve_effective_agent_env(
         &record,

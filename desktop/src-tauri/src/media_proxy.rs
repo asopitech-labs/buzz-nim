@@ -155,7 +155,7 @@ pub async fn spawn_media_proxy(http_client: reqwest::Client, app_handle: tauri::
 /// WKWebView's networking stack bypasses the VPN tunnel, causing 403s from Cloudflare Access.
 /// This handler routes `nimino-media://localhost/{path}` through reqwest, which
 /// runs in the Tauri process and goes through the VPN.
-pub async fn handle_buzz_media(
+pub async fn handle_nimino_media(
     app: &tauri::AppHandle,
     request: &http::Request<Vec<u8>>,
 ) -> http::Response<Vec<u8>> {

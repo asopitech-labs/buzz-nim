@@ -65,7 +65,7 @@ export function IdentityKeyHelpDialog() {
         </DialogTrigger>
       </OnboardingFooter>
       <DialogContent
-        className="buzz-onboarding-neutral-theme max-w-[47.5rem] -translate-y-5"
+        className="nimino-onboarding-neutral-theme max-w-[47.5rem] -translate-y-5"
         closeButtonClassName={ONBOARDING_INK_ICON_CLASS}
         data-system-color-scheme="light"
         data-testid="identity-key-help-dialog"
@@ -78,22 +78,23 @@ export function IdentityKeyHelpDialog() {
           </DialogTitle>
           <DialogDescription
             asChild
-            className="mt-6 space-y-4 text-pretty text-base leading-7 text-[color:var(--buzz-onboarding-backup-ink)]"
+            className="mt-6 space-y-4 text-pretty text-base leading-7 text-[color:var(--nimino-onboarding-backup-ink)]"
           >
             <div>
               <p>
-                Buzz uses an identity key instead of a traditional account. It’s
-                created on your device and represents you whenever you use Buzz.
+                Nimino uses an identity key instead of a traditional account.
+                It’s created on your device and represents you whenever you use
+                Nimino.
               </p>
               <p>
-                Your identity belongs to you, not Buzz. There’s no password to
-                reset, and Buzz can’t recover your key if you lose it. Keep a
+                Your identity belongs to you, not Nimino. There’s no password to
+                reset, and Nimino can’t recover your key if you lose it. Keep a
                 backup somewhere safe and never share it. Anyone with your key
                 can act as you.
               </p>
               <p>
-                If you’re new to Buzz, create a new identity key. If you already
-                have a Nostr identity, use your existing key.
+                If you’re new to Nimino, create a new identity key. If you
+                already have a Nostr identity, use your existing key.
               </p>
             </div>
           </DialogDescription>

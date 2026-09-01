@@ -14,7 +14,7 @@
   },
   "contracts": {
     "data": "nimino.data/v1",
-    "sync": "nimino.sync/v1",
+    "sync": "nimino.sync/v2",
     "convergence": "nimino.convergence/v1",
     "projection": "nimino.projection-lifecycle/v1",
     "objects": "nimino.object-sync/v1",

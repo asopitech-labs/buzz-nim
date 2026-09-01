@@ -66,10 +66,10 @@ fn normalize_relay_mesh(
 
     let model_ref = config.model_ref.trim();
     if model_ref.is_empty() {
-        return Err("Buzz shared compute model is required".to_string());
+        return Err("Nimino shared compute model is required".to_string());
     }
     if backend != &BackendKind::Local {
-        return Err("Buzz shared compute agents must use the local backend".to_string());
+        return Err("Nimino shared compute agents must use the local backend".to_string());
     }
 
     Ok(Some(RelayMeshConfig {
@@ -400,7 +400,7 @@ pub async fn create_managed_agent(
     crate::managed_agents::validate_user_env_keys(&input.env_vars)?;
 
     // Validate & normalize the respond-to allowlist BEFORE any side effects.
-    // The harness has its own validator (buzz-acp/src/config.rs) but we want
+    // The harness has its own validator (nimino-acp/src/config.rs) but we want
     // to catch malformed input at the boundary so the agent never tries to
     // start with a list that will crash it on launch. The mode/allowlist
     // pairing (and the definition-default fallback) is resolved later at the
@@ -477,12 +477,12 @@ pub async fn create_managed_agent(
     // No tokens are minted. Fail closed: bad auth tag → don't create agent.
     let auth_tag = {
         let owner_keys = state.signing_keys()?;
-        // Bridge nostr 0.37 → 0.36 (buzz-sdk) via hex round-trip.
+        // Bridge nostr 0.37 → 0.36 (nimino-sdk) via hex round-trip.
         let compat_owner = nostr::Keys::parse(&owner_keys.secret_key().to_secret_hex())
             .map_err(|e| format!("failed to bridge owner keys: {e}"))?;
         let compat_agent = nostr::PublicKey::from_hex(&agent_keys.public_key().to_hex())
             .map_err(|e| format!("failed to bridge agent pubkey: {e}"))?;
-        let tag = buzz_sdk_pkg::nip_oa::compute_auth_tag(&compat_owner, &compat_agent, "")
+        let tag = nimino_sdk_pkg::nip_oa::compute_auth_tag(&compat_owner, &compat_agent, "")
             .map_err(|e| format!("failed to compute NIP-OA auth tag: {e}"))?;
         Some(tag)
     };

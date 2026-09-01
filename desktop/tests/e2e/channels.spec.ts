@@ -617,7 +617,7 @@ test("start a new direct message from the sidebar", async ({ page }) => {
     selectedCharlieBox.y + selectedCharlieBox.height / 2,
   );
   await page.mouse.down();
-  await expect(page.locator(".buzz-poof-burst")).toHaveCount(1);
+  await expect(page.locator(".nimino-poof-burst")).toHaveCount(1);
   await page.mouse.up();
   await expect(selectedCharlie).not.toBeVisible();
   await page.getByTestId("new-dm-search").fill("charlie");

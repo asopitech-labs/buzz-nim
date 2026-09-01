@@ -649,14 +649,14 @@ export function createMockAgentMemoryListing(
 
 I prefer concise updates, explicit next steps, and visual polish before edge-case handling.
 
-See [[mem/preferences/ui-density]] and [[mem/projects/buzz-memory-viewer]] for details.
+See [[mem/preferences/ui-density]] and [[mem/projects/nimino-memory-viewer]] for details.
 
 A retired launch checklist used to live at [[mem/archive/deleted-launch-checklist]], but that memory was deleted after the plan changed.`,
       eventId: "mock-core",
       createdAt: 1_700_000_000,
       outgoingRefs: [
         "mem/preferences/ui-density",
-        "mem/projects/buzz-memory-viewer",
+        "mem/projects/nimino-memory-viewer",
         "mem/archive/deleted-launch-checklist",
       ],
     },
@@ -676,14 +676,14 @@ A retired launch checklist used to live at [[mem/archive/deleted-launch-checklis
         outgoingRefs: [],
       },
       {
-        slug: "mem/projects/buzz-memory-viewer",
-        body: "Building the IXI-7 read-only memory viewer in the profile panel.\n\nChild memory: [[mem/projects/buzz-memory-viewer/notes]]",
+        slug: "mem/projects/nimino-memory-viewer",
+        body: "Building the IXI-7 read-only memory viewer in the profile panel.\n\nChild memory: [[mem/projects/nimino-memory-viewer/notes]]",
         eventId: "mock-project",
         createdAt: 1_700_000_300,
-        outgoingRefs: ["mem/projects/buzz-memory-viewer/notes"],
+        outgoingRefs: ["mem/projects/nimino-memory-viewer/notes"],
       },
       {
-        slug: "mem/projects/buzz-memory-viewer/notes",
+        slug: "mem/projects/nimino-memory-viewer/notes",
         body: "Tree should auto-expand core. Everything else collapsed with a one-line preview.",
         eventId: "mock-project-notes",
         createdAt: 1_700_000_400,

@@ -36,7 +36,7 @@ app.kubernetes.io/name: {{ include "nimino.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end -}}
 
-{{/* Relay-specific selector: scopes the relay Deployment + Service so they do
+{{/* Relay-specific selector: scopes the relay StatefulSet + Service so they do
      not also match the quickstart MinIO pods, which share the base
      selectorLabels but carry their own component label. */}}
 {{- define "nimino.relaySelectorLabels" -}}
@@ -110,6 +110,27 @@ secrets.existingSecret, use that. Otherwise use the chart-managed one.
 {{- else -}}
 {{- .Values.replicaCount -}}
 {{- end -}}
+{{- end -}}
+
+{{/* Maximum ordinal that can be scheduled by the fixed voter set. */}}
+{{- define "nimino.clusterNodeCount" -}}
+{{- if .Values.autoscaling.enabled -}}
+{{- .Values.autoscaling.maxReplicas -}}
+{{- else -}}
+{{- .Values.replicaCount -}}
+{{- end -}}
+{{- end -}}
+
+{{/* Deterministic 16-byte ASCII identities, rendered as the runtime's hex IDs. */}}
+{{- define "nimino.clusterVoters" -}}
+{{- $root := . -}}
+{{- $voters := list -}}
+{{- range $ordinal := until (include "nimino.clusterNodeCount" $root | int) -}}
+{{- $seed := printf "%s-%d" (include "nimino.fullname" $root) $ordinal -}}
+{{- $identity := substr 0 16 (sha256sum $seed) -}}
+{{- $voters = append $voters (printf "%x" $identity) -}}
+{{- end -}}
+{{- join "," $voters -}}
 {{- end -}}
 
 {{/* Effective huddle-audio availability. Nil means safe chart default: on for

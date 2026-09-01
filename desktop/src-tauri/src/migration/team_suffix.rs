@@ -2,13 +2,13 @@
 //!
 //! Records written before the runtime team framing landed have their team
 //! instructions BAKED into `system_prompt` by the now-removed
-//! `compose_prompt()` in buzz-persona:
+//! `compose_prompt()` in nimino-persona:
 //!
 //! ```text
 //! {persona_prompt}\n\n---\n# Team Instructions\n{instructions}
 //! ```
 //!
-//! `with_team()` in `buzz-acp/src/pool.rs` now appends the LIVE
+//! `with_team()` in `nimino-acp/src/pool.rs` now appends the LIVE
 //! `[Team Instructions]` section on top of that stored value, so an affected
 //! agent receives two team-instruction blocks per turn — the frozen copy first,
 //! the live one second — and the observer feed renders two Team Instructions

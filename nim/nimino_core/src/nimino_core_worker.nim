@@ -7,14 +7,20 @@ import nimino_core
 import nimino_core/boundary/[
   agent_policy_codec,
   cluster_lifecycle_codec,
+  control_policy_codec,
   cli_policy_codec,
   community_policy_codec,
   dm_policy_codec,
+  effect_policy_codec,
   event_policy_codec,
   framing,
+  lease_policy_codec,
   membership_policy_codec,
   moderation_policy_codec,
+  object_policy_codec,
+  projection_policy_codec,
   protocol,
+  sync_policy_codec,
   workflow_policy_codec,
 ]
 
@@ -37,6 +43,12 @@ proc helloResult(): JsonNode =
     "domain.cli.policy",
     "domain.agent.policy",
     "domain.cluster.lifecycle",
+    "domain.control.policy",
+    "domain.lease.policy",
+    "domain.effect.policy",
+    "domain.object.policy",
+    "domain.projection.policy",
+    "domain.sync.policy",
   ]
 
 proc execute(request: BoundaryRequest; negotiated: var bool): string =
@@ -160,6 +172,42 @@ proc execute(request: BoundaryRequest; negotiated: var bool): string =
       request.requestId,
       request.operationName,
       executeClusterLifecycle(request.operation.data, request.requestId),
+    )
+  of boControlPolicy:
+    result = encodeSuccess(
+      request.requestId,
+      request.operationName,
+      executeControlPolicy(request.operation.data, request.requestId),
+    )
+  of boLeasePolicy:
+    result = encodeSuccess(
+      request.requestId,
+      request.operationName,
+      executeLeasePolicy(request.operation.data, request.requestId),
+    )
+  of boEffectPolicy:
+    result = encodeSuccess(
+      request.requestId,
+      request.operationName,
+      executeEffectPolicy(request.operation.data, request.requestId),
+    )
+  of boObjectPolicy:
+    result = encodeSuccess(
+      request.requestId,
+      request.operationName,
+      executeObjectPolicy(request.operation.data, request.requestId),
+    )
+  of boProjectionPolicy:
+    result = encodeSuccess(
+      request.requestId,
+      request.operationName,
+      executeProjectionPolicy(request.operation.data, request.requestId),
+    )
+  of boSyncPolicy:
+    result = encodeSuccess(
+      request.requestId,
+      request.operationName,
+      executeSyncPolicy(request.operation.data, request.requestId),
     )
   else:
     result = encodeFailure(

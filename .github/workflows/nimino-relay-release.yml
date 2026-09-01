@@ -14,6 +14,7 @@ on:
       - "deploy/charts/nimino/**"
       - "deploy/compose/**"
       - "contracts/nimino-relay-release/**"
+      - "contracts/nimino-object-sync/**"
       - "contracts/nimino-release-set/**"
       - "scripts/nimino-release-set.mjs"
       - "scripts/test-nimino-relay-release-contract.mjs"
@@ -50,7 +51,6 @@ jobs:
         env:
           NIMINO_IMAGE_DIGEST: sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
           POSTGRES_PASSWORD: contract-postgres
-          REDIS_PASSWORD: contract-redis
           NIMINO_S3_ACCESS_KEY: contract-access
           NIMINO_S3_SECRET_KEY: contract-secret-key
         run: docker compose -f deploy/compose/compose.yml config --quiet
@@ -74,6 +74,16 @@ jobs:
       - uses: Swatinem/rust-cache@779b2ca901a859ea0906cf43be8d33c3f22f8134 # v2.8.2
       - name: Real Chirps scenario evidence
         run: just nimino-cluster-scenarios output=target/nim/nimino-cluster-scenarios.json
+      - name: Real Chirps data synchronization evidence
+        run: just nimino-sync-scenarios output=target/nim/nimino-sync-scenarios.json
+      - name: Content-addressed object replication evidence
+        run: |
+          set -o pipefail
+          just nimino-object-scenarios 2>&1 | tee target/nim/nimino-object-scenarios.log
+      - name: Projection drop and rebuild evidence
+        run: |
+          set -o pipefail
+          just nimino-projection-scenarios 2>&1 | tee target/nim/nimino-projection-scenarios.log
       - name: Data convergence and repair evidence
         run: |
           set -o pipefail
@@ -83,6 +93,9 @@ jobs:
           name: relay-release-evidence
           path: |
             target/nim/nimino-cluster-scenarios.json
+            target/nim/nimino-sync-scenarios.json
+            target/nim/nimino-object-scenarios.log
+            target/nim/nimino-projection-scenarios.log
             target/nim/nimino-data-ops-scenarios.log
           if-no-files-found: error
 
@@ -199,15 +212,24 @@ jobs:
           docker pull "${IMAGE_NAME}@${IMAGE_DIGEST}"
           docker tag "${IMAGE_NAME}@${IMAGE_DIGEST}" "${IMAGE_NAME}:candidate-${GITHUB_SHA}"
           kind load docker-image "${IMAGE_NAME}:candidate-${GITHUB_SHA}"
+          kubectl create namespace nimino-system
+          openssl req -x509 -newkey rsa:2048 -nodes -days 1 -subj '/CN=nimino-chirps' \
+            -keyout /tmp/chirps-key.pem -out /tmp/chirps-cert.pem
+          openssl x509 -in /tmp/chirps-cert.pem -outform DER -out /tmp/tls.crt
+          openssl pkcs8 -topk8 -nocrypt -in /tmp/chirps-key.pem -outform DER -out /tmp/tls.key
+          cp /tmp/tls.crt /tmp/ca.crt
+          kubectl -n nimino-system create secret generic nimino-chirps \
+            --from-file=tls.crt=/tmp/tls.crt --from-file=tls.key=/tmp/tls.key --from-file=ca.crt=/tmp/ca.crt
           helm dependency build deploy/charts/nimino
           helm upgrade --install nimino deploy/charts/nimino \
-            --namespace nimino-system --create-namespace \
+            --namespace nimino-system \
             -f deploy/charts/nimino/ci/quickstart-values.yaml \
             --set image.repository="${IMAGE_NAME}" \
             --set image.tag="candidate-${GITHUB_SHA}" \
             --set image.pullPolicy=IfNotPresent \
+            --set replicaCount=3 \
             --wait --timeout 10m
-          kubectl -n nimino-system rollout status deployment/nimino --timeout=2m
+          kubectl -n nimino-system rollout status statefulset/nimino --timeout=2m
       - name: Package and sign immutable artifacts
         id: artifacts
         env:
@@ -227,6 +249,9 @@ jobs:
             -czf "dist/nimino-compose-${VERSION}.tar.gz" deploy/compose
           printf '%s\n' "$IMAGE_DIGEST" > dist/nimino-relay-image.digest
           cp evidence/nimino-cluster-scenarios.json dist/
+          cp evidence/nimino-sync-scenarios.json dist/
+          cp evidence/nimino-object-scenarios.log dist/
+          cp evidence/nimino-projection-scenarios.log dist/
           cp evidence/nimino-data-ops-scenarios.log dist/
           cosign sign-blob --yes --bundle dist/nimino-chart.sigstore.json "dist/nimino-${VERSION}.tgz"
           cosign sign-blob --yes --bundle dist/nimino-compose.sigstore.json "dist/nimino-compose-${VERSION}.tar.gz"

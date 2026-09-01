@@ -7,7 +7,6 @@ set:
   relayUrl: wss://nimino.example.com
   ownerPubkey: "0000000000000000000000000000000000000000000000000000000000000000"
   externalPostgresql.url: postgres://u:p@h:5432/d
-  externalRedis.url: redis://h:6379
   s3.endpoint: http://minio:9000
   s3.accessKey: a
   s3.secretKey: s
@@ -37,6 +36,9 @@ tests:
           path: spec.scaleTargetRef.name
           value: RELEASE-NAME-nimino
       - equal:
+          path: spec.scaleTargetRef.kind
+          value: StatefulSet
+      - equal:
           path: spec.metrics[0].resource.target.averageUtilization
           value: 65
       - equal:
@@ -65,7 +67,7 @@ tests:
           path: spec.metrics[0].resource.name
           value: cpu
 
-  - it: leaves Deployment replicas to the HPA and disables in-process huddle audio
+  - it: leaves StatefulSet replicas to the HPA and disables in-process huddle audio
     template: templates/deployment.yaml
     set:
       autoscaling.enabled: true

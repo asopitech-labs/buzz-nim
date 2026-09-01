@@ -1069,9 +1069,9 @@ function createMockRelayMembershipEvent(): RelayEvent {
 /**
  * Per-user custom emoji sets (kind:30030) the mock WS serves for
  * `listCustomEmoji` REQs. The community palette is the client-side UNION of
- * every member's own set (d=`buzz:custom-emoji`). We serve TWO member-authored
+ * every member's own set (d=`nimino:custom-emoji`). We serve TWO member-authored
  * sets from distinct pubkeys so the e2e exercises the union/collapse path, not
- * a single relay-owned set. `:buzz:` is the stable shortcode exercised by
+ * a single relay-owned set. `:nimino:` is the stable shortcode exercised by
  * custom-emoji.spec.ts (claimed by BOTH members with different URLs, so the
  * palette must collapse it to one deterministic winner); `:narf:` and
  * `:bufo_joy:` prove a second member's distinct emoji unions in.
@@ -1083,7 +1083,7 @@ function createMockCustomEmojiSetEvents(): RelayEvent[] {
       "",
       [
         ["d", CUSTOM_EMOJI_SET_D_TAG],
-        ["emoji", "buzz", "https://example.com/e2e/buzz.png"],
+        ["emoji", "nimino", "https://example.com/e2e/nimino.png"],
         // A relay-hosted emoji whose URL matches rewriteRelayUrl()'s pattern,
         // used by the reaction guard to assert the proxy rewrite fires.
         ["emoji", REACTION_EMOJI_SHORTCODE, REACTION_EMOJI_URL],
@@ -1098,9 +1098,9 @@ function createMockCustomEmojiSetEvents(): RelayEvent[] {
       [
         ["d", CUSTOM_EMOJI_SET_D_TAG],
         ["emoji", "narf", "https://example.com/e2e/narf.png"],
-        // member B claims :buzz: with a DIFFERENT url — unionCustomEmoji must
+        // member B claims :nimino: with a DIFFERENT url — unionCustomEmoji must
         // collapse it to one deterministic winner, never expose two URLs.
-        ["emoji", "buzz", "https://example.com/e2e/buzz-b.png"],
+        ["emoji", "nimino", "https://example.com/e2e/nimino-b.png"],
         ["emoji", "bufo_joy", "https://example.com/e2e/bufo-joy.png"],
       ],
       "b".repeat(64),
@@ -1468,7 +1468,7 @@ let mockMediaProxyPort = MOCK_MEDIA_PROXY_PORT;
 
 // A relay-hosted custom emoji used by the reaction guard. Its URL matches
 // `rewriteRelayUrl()`'s `/media/{64-hex}.{ext}` pattern on the relay origin, so
-// reacting with it exercises the proxy rewrite (unlike the `:buzz:` fixture,
+// reacting with it exercises the proxy rewrite (unlike the `:nimino:` fixture,
 // whose external example.com URL passes through unchanged).
 const REACTION_EMOJI_SHORTCODE = "react";
 const REACTION_EMOJI_SHA = "c".repeat(64);
@@ -1854,7 +1854,7 @@ function buildMockConfigSurface(pubkey: string): {
     normalized: {
       model: {
         value: "gpt-4o",
-        origin: "buzzExplicit",
+        origin: "niminoExplicit",
         overriddenValue: "gpt-4o-mini",
         overriddenOrigin: "configFile",
         isRequired: false,
@@ -2179,7 +2179,7 @@ function buildMockConfigSurface(pubkey: string): {
   };
 
   // Mixed-provenance showcase — top-level rows carry different origins so the
-  // panel witnesses distinct provenance labels in one frame: "Set in Buzz",
+  // panel witnesses distinct provenance labels in one frame: "Set in Nimino",
   // "Inherited from template", "From config file (...)" and
   // "From environment variable (...)".
   const multiOriginSurface = {
@@ -2189,7 +2189,7 @@ function buildMockConfigSurface(pubkey: string): {
     normalized: {
       model: {
         value: "gpt-4o",
-        origin: "buzzExplicit",
+        origin: "niminoExplicit",
         overriddenValue: null,
         overriddenOrigin: null,
         isRequired: false,
@@ -2238,10 +2238,10 @@ function buildMockConfigSurface(pubkey: string): {
     },
   };
 
-  const buzzAgentSurface = {
+  const niminoAgentSurface = {
     ...gooseSurface,
-    runtimeId: "buzz-agent",
-    runtimeLabel: "Buzz Agent",
+    runtimeId: "nimino-agent",
+    runtimeLabel: "Nimino Agent",
     advanced: [],
     extensions: [],
     sources: {
@@ -2270,7 +2270,7 @@ function buildMockConfigSurface(pubkey: string): {
     case PUBKEY_MULTI_ORIGIN:
       return multiOriginSurface;
     case PUBKEY_NIMINO_AGENT:
-      return buzzAgentSurface;
+      return niminoAgentSurface;
     default:
       return gooseSurface;
   }
@@ -2282,13 +2282,13 @@ function buildSeededManagedAgent(seed: MockManagedAgentSeed): MockManagedAgent {
 
   // Resolve agent_command and agent_args from the well-known default catalog
   // so the fixture mirrors real wire shape. Hardcoding ["acp"] for all runtimes
-  // is incorrect: buzz-agent ships with no default args.
+  // is incorrect: nimino-agent ships with no default args.
   const DEFAULT_RUNTIME_COMMAND: Record<
     string,
     { command: string; args: string[] }
   > = {
     goose: { command: "goose", args: ["acp"] },
-    "buzz-agent": { command: "buzz-agent", args: [] },
+    "nimino-agent": { command: "nimino-agent", args: [] },
     claude: { command: "claude", args: [] },
     codex: { command: "codex", args: [] },
   };
@@ -2306,7 +2306,7 @@ function buildSeededManagedAgent(seed: MockManagedAgentSeed): MockManagedAgent {
     // must mirror the wire shape, not omit the key.
     runtime: seed.runtime ?? null,
     relay_url: DEFAULT_RELAY_WS_URL,
-    acp_command: "buzz-acp",
+    acp_command: "nimino-acp",
     agent_command: agentCommand,
     agent_args: agentArgs,
     mcp_command: "",
@@ -2338,7 +2338,7 @@ function buildSeededManagedAgent(seed: MockManagedAgentSeed): MockManagedAgent {
     respond_to_allowlist: seed.respondToAllowlist ?? [],
     private_key_nsec: `nsec1mock${seed.pubkey.slice(0, 20)}`,
     log_lines: [
-      `buzz-acp starting: relay=${DEFAULT_RELAY_WS_URL} agent_pubkey=${seed.pubkey} parallelism=1`,
+      `nimino-acp starting: relay=${DEFAULT_RELAY_WS_URL} agent_pubkey=${seed.pubkey} parallelism=1`,
       "profile created; harness not started",
     ],
   };
@@ -4266,7 +4266,7 @@ function isMockBroadcastReply(tags: string[][]): boolean {
 }
 
 /**
- * Mirror the relay's channel-window row set (buzz-db `thread.rs`, NIP-CW
+ * Mirror the relay's channel-window row set (nimino-db `thread.rs`, NIP-CW
  * §Top-level Classification): an event is a timeline row iff its depth is 0
  * (no reply marker → `rootEventId === null`) OR its depth is 1 (its parent is
  * the thread root) AND it is broadcast. Depth ≥ 2 replies never surface on the
@@ -5750,11 +5750,11 @@ function handleGetLikedNotes(): RawUserNotesResponse {
 
 const MOCK_PROJECT_SEEDS = [
   {
-    dtag: "buzz",
-    name: "buzz",
+    dtag: "nimino",
+    name: "nimino",
     description:
-      "Relay, desktop, and mobile clients for the Buzz community platform.",
-    cloneUrl: `${DEFAULT_RELAY_HTTP_URL}/git/${MOCK_IDENTITY_PUBKEY}/buzz`,
+      "Relay, desktop, and mobile clients for the Nimino community platform.",
+    cloneUrl: `${DEFAULT_RELAY_HTTP_URL}/git/${MOCK_IDENTITY_PUBKEY}/nimino`,
     webUrl: null,
     owner: MOCK_IDENTITY_PUBKEY,
     contributors: [ALICE_PUBKEY, BOB_PUBKEY, CHARLIE_PUBKEY],
@@ -5874,7 +5874,7 @@ function buildMockProjectEvents(): RelayEvent[] {
           ["name", seed.name],
           ["description", seed.description],
           [
-            "buzz-channel",
+            "nimino-channel",
             getConfig()?.mock?.projectAccessChannelId ??
               "9a1657ac-f7aa-5db0-b632-d8bbeb6dfb50",
           ],
@@ -5961,15 +5961,15 @@ function buildMockProjectEvents(): RelayEvent[] {
       KIND_PROJECT_ANNOUNCEMENT,
       "",
       [
-        ["d", "buzz"],
-        ["name", "buzz"],
-        ["description", "The complete Buzz community platform."],
-        ["a", `${KIND_REPO_ANNOUNCEMENT}:${projectOwner}:buzz`],
+        ["d", "nimino"],
+        ["name", "nimino"],
+        ["description", "The complete Nimino community platform."],
+        ["a", `${KIND_REPO_ANNOUNCEMENT}:${projectOwner}:nimino`],
         ["a", `${KIND_REPO_ANNOUNCEMENT}:${ALICE_PUBKEY}:relay-tools`],
       ],
       projectOwner,
       now,
-      "project-buzz".padEnd(64, "0"),
+      "project-nimino".padEnd(64, "0"),
     ),
   );
 
@@ -7980,7 +7980,7 @@ function withMockRuntimeConfigMetadata(
     model_env_var:
       "model_env_var" in runtime
         ? runtime.model_env_var
-        : runtime.id === "buzz-agent"
+        : runtime.id === "nimino-agent"
           ? "NIMINO_AGENT_MODEL"
           : runtime.id === "goose"
             ? "GOOSE_MODEL"
@@ -7988,7 +7988,7 @@ function withMockRuntimeConfigMetadata(
     provider_env_var:
       "provider_env_var" in runtime
         ? runtime.provider_env_var
-        : runtime.id === "buzz-agent"
+        : runtime.id === "nimino-agent"
           ? "NIMINO_AGENT_PROVIDER"
           : runtime.id === "goose"
             ? "GOOSE_PROVIDER"
@@ -7996,7 +7996,7 @@ function withMockRuntimeConfigMetadata(
     thinking_env_var:
       "thinking_env_var" in runtime
         ? runtime.thinking_env_var
-        : runtime.id === "buzz-agent"
+        : runtime.id === "nimino-agent"
           ? "NIMINO_AGENT_THINKING_EFFORT"
           : runtime.id === "goose"
             ? "GOOSE_THINKING_EFFORT"
@@ -8004,7 +8004,7 @@ function withMockRuntimeConfigMetadata(
     max_tokens_env_var:
       "max_tokens_env_var" in runtime
         ? runtime.max_tokens_env_var
-        : runtime.id === "buzz-agent"
+        : runtime.id === "nimino-agent"
           ? "NIMINO_AGENT_MAX_OUTPUT_TOKENS"
           : runtime.id === "goose"
             ? "GOOSE_MAX_TOKENS"
@@ -8012,7 +8012,7 @@ function withMockRuntimeConfigMetadata(
     context_limit_env_var:
       "context_limit_env_var" in runtime
         ? runtime.context_limit_env_var
-        : runtime.id === "buzz-agent"
+        : runtime.id === "nimino-agent"
           ? "NIMINO_AGENT_MAX_CONTEXT_TOKENS"
           : runtime.id === "goose"
             ? "GOOSE_CONTEXT_LIMIT"
@@ -8020,7 +8020,7 @@ function withMockRuntimeConfigMetadata(
     max_rounds_env_var:
       "max_rounds_env_var" in runtime
         ? runtime.max_rounds_env_var
-        : runtime.id === "buzz-agent"
+        : runtime.id === "nimino-agent"
           ? "NIMINO_AGENT_MAX_ROUNDS"
           : null,
   };
@@ -8135,16 +8135,16 @@ async function handleDiscoverAcpRuntimes(
       login_hint: undefined,
     },
     {
-      id: "buzz-agent",
-      label: "Buzz Agent",
+      id: "nimino-agent",
+      label: "Nimino Agent",
       avatar_url: "",
       availability: "available",
-      command: "buzz-agent",
-      binary_path: "/usr/local/bin/buzz-agent",
+      command: "nimino-agent",
+      binary_path: "/usr/local/bin/nimino-agent",
       default_args: [],
-      mcp_command: "buzz-dev-mcp",
-      install_hint: "Ships with the Buzz desktop app.",
-      install_instructions_url: "https://github.com/block/buzz",
+      mcp_command: "nimino-dev-mcp",
+      install_hint: "Ships with the Nimino desktop app.",
+      install_instructions_url: "https://github.com/asopitech-labs/nimino",
       can_auto_install: false,
       requires_external_cli: false,
       underlying_cli_path: null,
@@ -8368,10 +8368,12 @@ async function handleDiscoverManagedAgentPrereqs(
   return {
     acp: {
       command:
-        configuredPrereqs?.acp?.command ?? args.input?.acpCommand ?? "buzz-acp",
+        configuredPrereqs?.acp?.command ??
+        args.input?.acpCommand ??
+        "nimino-acp",
       resolved_path:
         configuredPrereqs?.acp?.resolvedPath ??
-        "/Users/wesb/dev/buzz/target/debug/buzz-acp",
+        "/Users/wesb/dev/nimino/target/debug/nimino-acp",
       available: configuredPrereqs?.acp?.available ?? true,
     },
     mcp: {
@@ -8966,7 +8968,7 @@ async function handleCreateManagedAgent(
     .replace(/-/g, "")
     .padEnd(64, "0")
     .slice(0, 64);
-  const agentCommand = args.input.agentCommand ?? "buzz-agent";
+  const agentCommand = args.input.agentCommand ?? "nimino-agent";
   const agentArgs =
     args.input.agentArgs && args.input.agentArgs.length > 0
       ? [...args.input.agentArgs]
@@ -8980,7 +8982,7 @@ async function handleCreateManagedAgent(
     // Create never pins a harness id — the record inherits from the persona.
     runtime: null,
     relay_url: args.input.relayUrl ?? DEFAULT_RELAY_WS_URL,
-    acp_command: args.input.acpCommand ?? "buzz-acp",
+    acp_command: args.input.acpCommand ?? "nimino-acp",
     agent_command: agentCommand,
     agent_args: agentArgs,
     mcp_command: args.input.mcpCommand ?? "",
@@ -9011,7 +9013,7 @@ async function handleCreateManagedAgent(
     respond_to_allowlist: [...mintRespondToAllowlist],
     private_key_nsec: `nsec1mock${pubkey.slice(0, 20)}`,
     log_lines: [
-      `buzz-acp starting: relay=${args.input.relayUrl ?? DEFAULT_RELAY_WS_URL} agent_pubkey=${pubkey} parallelism=${mintParallelism}`,
+      `nimino-acp starting: relay=${args.input.relayUrl ?? DEFAULT_RELAY_WS_URL} agent_pubkey=${pubkey} parallelism=${mintParallelism}`,
       args.input.systemPrompt?.trim()
         ? `system prompt override configured (${args.input.systemPrompt.trim().length} chars)`
         : "system prompt override not set",
@@ -9148,7 +9150,7 @@ async function handleStartManagedAgent(
         mockMeshState.models.some((model) => model.id === modelId));
     if (!hasLiveTarget) {
       throw new Error(
-        "Buzz shared compute cannot start because no live member is serving this model.",
+        "Nimino shared compute cannot start because no live member is serving this model.",
       );
     }
   }
@@ -9296,7 +9298,7 @@ async function handleUpdateManagedAgent(args: {
  * Mock-mode `search_messages` predicate, mirroring the relay's filter contract.
  *
  * `since`/`until` are NIP-01 bounds and both inclusive — the relay keeps events
- * where `since <= created_at <= until` (`crates/buzz-core/src/filter.rs`). The
+ * where `since <= created_at <= until` (`crates/nimino-core/src/filter.rs`). The
  * `before:` operator's exclusivity is encoded upstream in
  * `parseSearchOperators`, which subtracts a second; the mock must not subtract
  * it a second time.
@@ -9914,7 +9916,7 @@ async function handleEditMessage(
     ...emojiTags,
     ...mentionPubkeys.map((pubkey) => ["p", pubkey]),
     ...(mentionTags ?? []),
-    ...(mentionTags ? [["buzz:mention-snapshot"]] : []),
+    ...(mentionTags ? [["nimino:mention-snapshot"]] : []),
     ...(args.suppressLinkPreviews ? [["link-preview", "none"]] : []),
   ];
   const tags = [["h", args.channelId], ["e", args.eventId], ...extraTags];
@@ -10834,7 +10836,7 @@ export function maybeInstallE2eTauriMocks() {
   window.__NIMINO_E2E_PUSH_MOCK_FEED_ITEM__ = (item) => {
     const category = item.category === "mention" ? "mentions" : item.category;
     mockFeedOverrides[category].unshift(item);
-    window.dispatchEvent(new CustomEvent("buzz:e2e-home-feed-updated"));
+    window.dispatchEvent(new CustomEvent("nimino:e2e-home-feed-updated"));
     return item;
   };
   window.__NIMINO_E2E_REPLACE_MOCK_FEED_ITEM__ = (oldId, item) => {
@@ -10850,7 +10852,7 @@ export function maybeInstallE2eTauriMocks() {
     }
     // Insert the replacement at the front of the correct bucket.
     mockFeedOverrides[category].unshift(item);
-    window.dispatchEvent(new CustomEvent("buzz:e2e-home-feed-updated"));
+    window.dispatchEvent(new CustomEvent("nimino:e2e-home-feed-updated"));
     return item;
   };
   window.__NIMINO_E2E_MD_PARSE_COUNT__ = getMarkdownParseCount;
@@ -11658,7 +11660,7 @@ export function maybeInstallE2eTauriMocks() {
       case "check_builderlab_community_name":
         return {
           available: true,
-          normalized_host: `${(payload as { name?: string })?.name ?? "community"}.communities.buzz.xyz`,
+          normalized_host: `${(payload as { name?: string })?.name ?? "community"}.communities.nimino.xyz`,
         };
       case "create_builderlab_community": {
         const name = (payload as { name?: string })?.name ?? "community";
@@ -11666,7 +11668,7 @@ export function maybeInstallE2eTauriMocks() {
           community: activeConfig?.mock?.builderlabCreatedCommunity ?? {
             id: `hosted-${name}`,
             name,
-            normalized_host: `${name}.communities.buzz.xyz`,
+            normalized_host: `${name}.communities.nimino.xyz`,
           },
         };
       }
@@ -11683,7 +11685,7 @@ export function maybeInstallE2eTauriMocks() {
               name: "Gemma-4-E4B-it-Q4_K_M",
               size: "3.5GB",
               sizeGb: 3.5,
-              description: "Buzz-curated local agent model",
+              description: "Nimino-curated local agent model",
               fit: "comfortable",
               installed: true,
               recommended: true,
@@ -11791,7 +11793,7 @@ export function maybeInstallE2eTauriMocks() {
       }
       case "save_ncryptsec_copy": {
         const paths = activeConfig?.mock?.backupSavePaths ?? [
-          "/tmp/buzz-identity.ncryptsec",
+          "/tmp/nimino-identity.ncryptsec",
         ];
         const index = Math.min(backupSaveCallCount, paths.length - 1);
         backupSaveCallCount += 1;
@@ -12093,11 +12095,11 @@ export function maybeInstallE2eTauriMocks() {
                 "export function useProjectRepoSnapshotQuery(project) {\n  return useQuery({ queryKey: [project.id, 'repo-snapshot'] });\n}\n",
             },
             {
-              path: "crates/buzz-relay/src/api/git/transport.rs",
+              path: "crates/nimino-relay/src/api/git/transport.rs",
               kind: "blob",
               size: 33120,
               preview_content:
-                "// Smart HTTP git transport\n// Handles upload-pack and receive-pack for Buzz git repos.\n",
+                "// Smart HTTP git transport\n// Handles upload-pack and receive-pack for Nimino git repos.\n",
             },
           ],
         };
@@ -12117,7 +12119,7 @@ export function maybeInstallE2eTauriMocks() {
           commit_body: [
             "See the [project guide](https://example.com/project-guide).",
             "",
-            "![Architecture](/buzz.svg)",
+            "![Architecture](/nimino.svg)",
             "",
             "![Demo](https://example.com/project-demo.mp4)",
           ].join("\n"),
@@ -12216,7 +12218,7 @@ export function maybeInstallE2eTauriMocks() {
         };
       case "clone_project_repository": {
         // Clones land in reposDir/<repo-name>, matching the terminal mocks.
-        const path = "/tmp/buzz/REPOS/buzz";
+        const path = "/tmp/nimino/REPOS/nimino";
         const commit = "0123456789abcdef0123456789abcdef01234567";
         window.__NIMINO_E2E_PROJECT_REPO_SYNC_STATUS__ = {
           local_path: path,
@@ -12544,15 +12546,15 @@ export function maybeInstallE2eTauriMocks() {
           input: { expectedCommit: string };
         };
         return {
-          path: "/tmp/buzz/REPOS/buzz",
+          path: "/tmp/nimino/REPOS/nimino",
           cloned: false,
-          recoveryRef: `refs/buzz/merge-recovery/${input.expectedCommit}`,
-          targetRef: `refs/buzz/merge-recovery-target/${"f".repeat(40)}`,
+          recoveryRef: `refs/nimino/merge-recovery/${input.expectedCommit}`,
+          targetRef: `refs/nimino/merge-recovery-target/${"f".repeat(40)}`,
         };
       }
       case "open_project_terminal":
         return {
-          path: "/tmp/buzz/REPOS/buzz",
+          path: "/tmp/nimino/REPOS/nimino",
           cloned: false,
         };
       case "get_relay_ws_url":
@@ -12561,12 +12563,6 @@ export function maybeInstallE2eTauriMocks() {
         return getRelayWsUrl(activeConfig);
       case "auto_connect_default_relay_enabled":
         return activeConfig?.autoConnectDefaultRelay ?? false;
-      case "get_legacy_workspace_storage":
-        return {
-          workspaces: null,
-          activeWorkspaceId: null,
-          onboardingCompletions: [],
-        };
       case "take_pending_community_deep_link":
         // Mirrors the Rust queue: peek the head; acknowledge removes it.
         return mockPendingCommunityDeepLinks[0] ?? null;
@@ -12908,7 +12904,7 @@ export function maybeInstallE2eTauriMocks() {
             (candidate) => candidate.id === input.id,
           );
           const snapshot = {
-            format: "buzz-agent-snapshot",
+            format: "nimino-agent-snapshot",
             version: 1,
             definition: {
               name: persona?.display_name ?? "E2E Agent",
@@ -13203,7 +13199,7 @@ export function maybeInstallE2eTauriMocks() {
           }
           if (mockMeshState.models.length === 0) {
             throw new Error(
-              "no Buzz shared compute serving members are available",
+              "no Nimino shared compute serving members are available",
             );
           }
         }
@@ -13538,7 +13534,7 @@ export function maybeInstallE2eTauriMocks() {
         const jsonBytes = Array.from(
           new TextEncoder().encode(
             JSON.stringify({
-              format: "buzz-agent-snapshot",
+              format: "nimino-agent-snapshot",
               version: 1,
               definition: { system_prompt: "E2E imported agent prompt." },
               profile: { display_name: "Imported Agent" },

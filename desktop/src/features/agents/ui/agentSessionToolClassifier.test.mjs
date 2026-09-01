@@ -3,7 +3,7 @@ import test from "node:test";
 
 import {
   classifyTool,
-  parseBuzzCliCommand,
+  parseNiminoCliCommand,
   tokenizeShellCommand,
 } from "./agentSessionToolClassifier.ts";
 
@@ -31,8 +31,8 @@ test("tokenizeShellCommand preserves quoted strings and command separators", () 
   );
 });
 
-test("parseBuzzCliCommand returns null preview for echo-piped stdin sends", () => {
-  const descriptor = parseBuzzCliCommand(
+test("parseNiminoCliCommand returns null preview for echo-piped stdin sends", () => {
+  const descriptor = parseNiminoCliCommand(
     'echo "Permission wired" | nimino messages send --channel agents --content -',
   );
 
@@ -42,8 +42,8 @@ test("parseBuzzCliCommand returns null preview for echo-piped stdin sends", () =
   assert.equal(descriptor?.operation, "messages.send");
 });
 
-test("parseBuzzCliCommand returns null preview for printf-piped stdin sends", () => {
-  const descriptor = parseBuzzCliCommand(
+test("parseNiminoCliCommand returns null preview for printf-piped stdin sends", () => {
+  const descriptor = parseNiminoCliCommand(
     "printf 'hello\\n\\nworld\\n' | nimino messages send --channel a6e0737c-4205-4bcc-9741-2aad800e613f --content -",
   );
 
@@ -51,8 +51,8 @@ test("parseBuzzCliCommand returns null preview for printf-piped stdin sends", ()
   assert.equal(descriptor?.preview, null);
 });
 
-test("parseBuzzCliCommand returns null preview for heredoc/cat stdin sends", () => {
-  const descriptor = parseBuzzCliCommand(
+test("parseNiminoCliCommand returns null preview for heredoc/cat stdin sends", () => {
+  const descriptor = parseNiminoCliCommand(
     'nimino messages send --channel some-uuid --content "$(cat /tmp/file)"',
   );
 
@@ -60,8 +60,8 @@ test("parseBuzzCliCommand returns null preview for heredoc/cat stdin sends", () 
   assert.equal(descriptor?.preview, null);
 });
 
-test("parseBuzzCliCommand returns null preview for --content with embedded command substitution", () => {
-  const descriptor = parseBuzzCliCommand(
+test("parseNiminoCliCommand returns null preview for --content with embedded command substitution", () => {
+  const descriptor = parseNiminoCliCommand(
     'nimino messages send --channel some-uuid --content "prefix $(cat /tmp/f)"',
   );
 
@@ -69,8 +69,8 @@ test("parseBuzzCliCommand returns null preview for --content with embedded comma
   assert.equal(descriptor?.preview, null);
 });
 
-test("parseBuzzCliCommand returns null preview for --content with a bare variable", () => {
-  const descriptor = parseBuzzCliCommand(
+test("parseNiminoCliCommand returns null preview for --content with a bare variable", () => {
+  const descriptor = parseNiminoCliCommand(
     'nimino messages send --channel some-uuid --content "$MESSAGE"',
   );
 
@@ -78,8 +78,8 @@ test("parseBuzzCliCommand returns null preview for --content with a bare variabl
   assert.equal(descriptor?.preview, null);
 });
 
-test("parseBuzzCliCommand returns null preview for --content with a prefixed variable", () => {
-  const descriptor = parseBuzzCliCommand(
+test("parseNiminoCliCommand returns null preview for --content with a prefixed variable", () => {
+  const descriptor = parseNiminoCliCommand(
     'nimino messages send --channel some-uuid --content "prefix $MESSAGE"',
   );
 
@@ -87,8 +87,8 @@ test("parseBuzzCliCommand returns null preview for --content with a prefixed var
   assert.equal(descriptor?.preview, null);
 });
 
-test("parseBuzzCliCommand preserves inline --content for sends", () => {
-  const descriptor = parseBuzzCliCommand(
+test("parseNiminoCliCommand preserves inline --content for sends", () => {
+  const descriptor = parseNiminoCliCommand(
     'nimino messages send --channel agents --content "Hello from inline"',
   );
 
@@ -96,8 +96,8 @@ test("parseBuzzCliCommand preserves inline --content for sends", () => {
   assert.equal(descriptor?.preview, "Hello from inline");
 });
 
-test("parseBuzzCliCommand preserves --content=inline for sends", () => {
-  const descriptor = parseBuzzCliCommand(
+test("parseNiminoCliCommand preserves --content=inline for sends", () => {
+  const descriptor = parseNiminoCliCommand(
     "nimino messages send --channel agents --content=Acknowledged",
   );
 
@@ -105,7 +105,7 @@ test("parseBuzzCliCommand preserves --content=inline for sends", () => {
   assert.equal(descriptor?.preview, "Acknowledged");
 });
 
-test("parseBuzzCliCommand never surfaces --channel as preview for sends", () => {
+test("parseNiminoCliCommand never surfaces --channel as preview for sends", () => {
   const commands = [
     "printf 'msg' | nimino messages send --channel my-uuid --content -",
     'nimino messages send --channel my-uuid --content "$(cat /tmp/f)"',
@@ -113,7 +113,7 @@ test("parseBuzzCliCommand never surfaces --channel as preview for sends", () => 
   ];
 
   for (const cmd of commands) {
-    const descriptor = parseBuzzCliCommand(cmd);
+    const descriptor = parseNiminoCliCommand(cmd);
     assert.equal(descriptor?.renderClass, "message");
     assert.notEqual(
       descriptor?.preview,
@@ -127,7 +127,7 @@ test("classifyTool promotes load_skill to skill-read descriptors", () => {
   const descriptor = classifyTool({
     title: "load_skill",
     toolName: "load_skill",
-    buzzToolName: null,
+    niminoToolName: null,
     args: { name: "block-safe-github" },
     result: "# Safe GitHub usage at Block\n",
     isError: false,
@@ -147,7 +147,7 @@ test("classifyTool promotes supporting-file load_skill to skill-read file descri
   const descriptor = classifyTool({
     title: "load_skill",
     toolName: "load_skill",
-    buzzToolName: null,
+    niminoToolName: null,
     args: { name: "block-safe-github/references/foo.md" },
     result: "# Reference\n",
     isError: false,
@@ -158,27 +158,29 @@ test("classifyTool promotes supporting-file load_skill to skill-read file descri
   assert.equal(descriptor.groupKey, "skill:load-file");
 });
 
-test("classifyTool promotes buzz CLI shell commands to relay operations", () => {
+test("classifyTool promotes nimino CLI shell commands to relay operations", () => {
   const descriptor = classifyTool({
     title: "Shell",
     toolName: "dev__shell",
-    buzzToolName: null,
-    args: { command: "nimino channels get --channel buzz-agent-observability" },
+    niminoToolName: null,
+    args: {
+      command: "nimino channels get --channel nimino-agent-observability",
+    },
     result: "{}",
     isError: false,
   });
 
   assert.equal(descriptor.renderClass, "relay-op");
   assert.equal(descriptor.label, "Channels Get");
-  assert.equal(descriptor.preview, "buzz-agent-observability");
-  assert.equal(descriptor.groupKey, "buzz-cli:channels.get");
+  assert.equal(descriptor.preview, "nimino-agent-observability");
+  assert.equal(descriptor.groupKey, "nimino-cli:channels.get");
 });
 
 test("classifyTool falls back once to a generic descriptor", () => {
   const descriptor = classifyTool({
     title: "Mystery",
     toolName: "mcp__mystery",
-    buzzToolName: null,
+    niminoToolName: null,
     args: { path: "notes.md" },
     result: "",
     isError: false,

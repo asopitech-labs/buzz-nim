@@ -4,14 +4,14 @@
 
 ## Abstract
 
-This document specifies the protocol by which Buzz Desktop delegates the
+This document specifies the protocol by which Nimino Desktop delegates the
 execution of a managed agent to a **remote substrate** — any compute
 environment other than the local machine — through a **backend provider
 binary**, and specifies the lifecycle contract every provider and every
 remotely-run agent must satisfy. It covers three layers:
 
 1. **The provider protocol** — a zero-registration plugin contract between the
-   desktop and any executable named `buzz-backend-<id>`: discovery, the `info`
+   desktop and any executable named `nimino-backend-<id>`: discovery, the `info`
    and `deploy` operations, payload schema, and the security obligations on
    both sides of that boundary.
 2. **The remote lifecycle model** — how a remote agent is started, observed,
@@ -20,8 +20,8 @@ remotely-run agent must satisfy. It covers three layers:
    presence is the sole status signal; shutdown is a relay message; liveness
    bounds are enforced by the agent harness itself, not by the desktop.
 3. **The Kubernetes binding** — the first conforming provider,
-   `buzz-backend-kubernetes`, which realizes the contract as a bare Pod
-   running the `sprig` image.
+   `nimino-backend-kubernetes`, which realizes the contract as a bare Pod
+   running the `Nimino agent bundle` image.
 
 We state five invariants — **identity fail-closed**, **no secrets in
 configuration**, **presence-is-status**, **at-most-one-live-instance**, and
@@ -29,8 +29,8 @@ configuration**, **presence-is-status**, **at-most-one-live-instance**, and
 rules.
 
 A scoping note that governs the whole document: the desktop is **one
-launcher among many**. What makes a process a live Buzz agent is a keypair,
-a NIP-OA auth tag, and a relay URL, handed as environment to the `buzz-acp`
+launcher among many**. What makes a process a live Nimino agent is a keypair,
+a NIP-OA auth tag, and a relay URL, handed as environment to the `nimino-acp`
 harness; anything that can set that environment and exec the harness — a
 bash script, a systemd unit, a CI job, or this document's provider protocol
 — is a conforming launcher. §Launchers states which obligations bind whom.
@@ -49,7 +49,7 @@ substrate, how their state is observed, and how their lifetime is bounded. It
 deliberately does **not** specify:
 
 - **Agent conversational behavior.** What the agent does with events is
-  governed by the ACP harness (`buzz-acp`) and the NIPs it implements
+  governed by the ACP harness (`nimino-acp`) and the NIPs it implements
   (NIP-OA, NIP-AE, NIP-AA, …), unchanged by where the harness runs.
 - **Malicious-provider containment.** A provider binary receives the agent's
   `nsec` by design — that is its job. The protocol *bounds the desktop's
@@ -70,9 +70,9 @@ deliberately does **not** specify:
 
 Five principals:
 
-- **Desktop** `D` — the Buzz Desktop app. Holds the agent's identity (nsec in
+- **Desktop** `D` — the Nimino Desktop app. Holds the agent's identity (nsec in
   the OS keyring), its configuration record, and the only UI. Trusted.
-- **Provider** `P` — an executable `buzz-backend-<id>` on `D`'s machine.
+- **Provider** `P` — an executable `nimino-backend-<id>` on `D`'s machine.
   Invoked one process per operation: JSON request on stdin, JSON response on
   stdout, exit code carrying one bit (zero = output trustworthy, nonzero =
   failure regardless of stdout — §Invocation). **Untrusted by `D`** for everything except
@@ -81,9 +81,9 @@ Five principals:
 - **Substrate** `S` — the remote compute environment `P` deploys into (a
   Kubernetes cluster for the binding in this document). Opaque to `D`;
   `D` never talks to `S`.
-- **Agent** `A` — a `buzz-acp` harness process (plus the ACP agent under it)
+- **Agent** `A` — a `nimino-acp` harness process (plus the ACP agent under it)
   running on `S`, holding the nsec it was given, connected to the relay.
-- **Relay** `R` — the Buzz relay. The *only* channel that connects `D` to a
+- **Relay** `R` — the Nimino relay. The *only* channel that connects `D` to a
   running `A`. Everything `D` knows about a live remote agent, it learns
   from `R`.
 
@@ -106,7 +106,7 @@ The defining constraint, stated as a design axiom:
 An agent's identity is a Nostr keypair. The **agent record** on `D` carries:
 `name`, `relay_url`, the nsec (keyring-hydrated), the NIP-OA `auth` tag
 attesting owner authorization, `agent_command`/`agent_args` (the ACP agent the
-harness spawns — `goose`, `claude-agent-acp`, `codex-acp`, `buzz-agent`, or
+harness spawns — `goose`, `claude-agent-acp`, `codex-acp`, `nimino-agent`, or
 any user-supplied command: this is the **configurable harness** requirement),
 effective `system_prompt`/`model`/`provider`, timeout and parallelism knobs,
 the `respond_to` gate, merged `env_vars`, and a `backend` discriminator:
@@ -119,8 +119,8 @@ That path is not the definition of a remote agent, and this section states
 the actual layering, because the obligations in this document do not all
 bind at the same layer. Three contracts, nested:
 
-1. **The agent/harness contract — binds every launcher.** A live Buzz agent
-   is a `buzz-acp` process holding a keypair, a NIP-OA auth tag (or resolved
+1. **The agent/harness contract — binds every launcher.** A live Nimino agent
+   is a `nimino-acp` process holding a keypair, a NIP-OA auth tag (or resolved
    owner pubkey), and a relay URL, delivered as environment. The relay
    authenticates the keypair and the auth tag — never the launcher. At this
    layer live: fail-closed identity (I1's property, enforced wherever the
@@ -204,7 +204,7 @@ one.
   `backend_agent_id`) is bookkeeping, not liveness. Staleness bound: presence
   can be wrong for the window between an abnormal agent death (SIGKILL, node
   loss) and the relay's presence expiry — **180 seconds**
-  (`PRESENCE_TTL_SECS`, `buzz-pubsub/src/presence.rs:16`; the vision's
+  (the process-local presence TTL; the vision's
   "a bounded wrong dot, never an indefinite one"), the accepted
   cost of M1. The specific number is a relay-wide constant, not a
   remote-agent choice: #3783 raised it from 90s to keep a three-heartbeat
@@ -308,7 +308,7 @@ one.
 
 `D` scans, in order: the directory containing the desktop executable, every
 entry of `PATH`, and `~/.local/bin`, for executables named
-`buzz-backend-<id>`. The suffix after the prefix is the provider id and MUST
+`nimino-backend-<id>`. The suffix after the prefix is the provider id and MUST
 match `[a-z0-9][a-z0-9_-]*`. On Windows, an `.exe`/`.bat`/`.cmd` extension
 MUST be stripped before the id is derived (see §Known Defects — as of
 `28ae6cd21` it is not, so Windows providers probe but cannot deploy). First
@@ -322,7 +322,7 @@ deploy-time errors MUST be able to surface: the selected binary's full
 path, any shadowed candidates for the same id (later-PATH duplicates), and
 candidates rejected for malformed names. A deploy error that names which
 binary ran answers the first question a user with two copies of
-`buzz-backend-kubernetes` will ask. (At `28ae6cd21` discovery records only
+`nimino-backend-kubernetes` will ask. (At `28ae6cd21` discovery records only
 the winning path — a desktop change alongside Known Defect 3's.)
 
 **Resolution rule.** Every subsequent operation resolves the provider id
@@ -503,7 +503,7 @@ byte, and definition-provided `agent_args` are lost when the instance's own
 args are empty. `launch.env` is that descriptor's layered env, which is
 where per-runtime model/provider injection lives (`GOOSE_MODEL`/
 `GOOSE_PROVIDER` for goose; nothing for `provider_locked` runtimes like
-Claude; `NIMINO_AGENT_MODEL`/`NIMINO_AGENT_PROVIDER` for buzz-agent). A fixed
+Claude; `NIMINO_AGENT_MODEL`/`NIMINO_AGENT_PROVIDER` for nimino-agent). A fixed
 `provider → NIMINO_AGENT_PROVIDER` mapping is wrong for three of the four
 built-in runtimes and is why this block exists.
 
@@ -537,7 +537,7 @@ mis-tiered (below):
   brains on every launch"). Remote pods take the lazy arm: an idle LLM pool
   in a cluster is billable waste with no user watching it warm up.
 - `MCP_HOOK_SERVERS=*` when the resolved runtime has `mcp_hooks`
-  (`runtime.rs:594-598`; buzz-agent only at `28ae6cd21`) — gates the
+  (`runtime.rs:594-598`; nimino-agent only at `28ae6cd21`) — gates the
   `_Stop`/`_PostCompact` hook tools.
 - `NIMINO_ACP_SYSTEM_PROMPT`, `NIMINO_ACP_IDLE_TIMEOUT`,
   `NIMINO_ACP_MAX_TURN_DURATION`, `NIMINO_ACP_AGENTS` — resolved by the desktop
@@ -588,7 +588,7 @@ process to sweep.
    `NIMINO_ACP_AGENT_OWNER`, the inactivity bound, `NIMINO_ACP_MCP_COMMAND`,
    and `NIMINO_MANAGED_AGENT_START_NONCE`. For the nonce, the provider MUST
    set it to the attempt's **generation token** (§K8s Secrets): the harness
-   stamps it into every observer lifecycle frame (`buzz-acp/lib.rs:1501`),
+   stamps it into every observer lifecycle frame (`nimino-acp/lib.rs:1501`),
    so the Secret generation and the lifecycle correlator become one
    identity instead of an empty string.
 
@@ -599,7 +599,7 @@ failure. The provider/image re-derives:
 
 - the harness and agent binaries: `launch.command` is a *name*, resolved
   against the image's own `PATH` (`NIMINO_ACP_AGENT_COMMAND`), and
-  `NIMINO_ACP_MCP_COMMAND=buzz-dev-mcp` likewise;
+  `NIMINO_ACP_MCP_COMMAND=nimino-dev-mcp` likewise;
 - `CLAUDE_CODE_EXECUTABLE` — a `resolve_command()` host path
   (`configure_runtime_cli`, `runtime.rs:424-446`), same class as the
   command paths: image-local resolution or unset;
@@ -614,13 +614,13 @@ failure. The provider/image re-derives:
 `auth_tag` (→ `NIMINO_AUTH_TAG`) or a non-null `launch.owner_pubkey`
 (→ `NIMINO_ACP_AGENT_OWNER`) before any mutation; if both are null it MUST
 refuse the deploy. Without an owner the harness cannot match `!shutdown`
-(`buzz-acp/src/lib.rs: resolve_agent_owner`, main-loop owner check) and the
+(`nimino-acp/src/lib.rs: resolve_agent_owner`, main-loop owner check) and the
 agent answers its own stop command conversationally — §Stop would be
 describing a mechanism that does not work. `NIMINO_ACP_AGENT_OWNER` is a
 reserved key, so this value can only arrive as authoritative launch data,
 never through user env.
 
-**Buzz shared compute (relay-mesh) is non-deployable, and this is forced,
+**Nimino shared compute (relay-mesh) is non-deployable, and this is forced,
 not chosen.** The mesh rewrite resolves to an OpenAI-compatible transport at
 `http://127.0.0.1:9337/v1` (`relay_mesh.rs: RELAY_MESH_API_BASE_URL`) — a
 loopback proxy on the desktop. Serializing that policy into a pod points the
@@ -662,7 +662,7 @@ no-op'd against, deleted, GC'd, or have its Secret touched; the provider
 MUST either ignore it or fail with an explicit collision error. Only
 annotation-verified objects proceed.
 
-**Auto-repair is fenced to Buzz-authored, positively identified residue
+**Auto-repair is fenced to Nimino-authored, positively identified residue
 (normative).** The destructive rows below (delete residue, replace a
 never-started body, GC a Secret) are legitimate *only because* every object
 they touch carries positive **protocol ownership evidence** — and identity
@@ -671,7 +671,7 @@ full-pubkey annotation, and the create-intent fingerprint prove "matches
 our schema for this public identity"; all three are public, so any cluster
 writer can reproduce them on an object this provider never created. Every
 object this provider creates therefore also carries an explicit
-management marker — `app.kubernetes.io/managed-by: buzz-backend-kubernetes`
+management marker — `app.kubernetes.io/managed-by: nimino-backend-kubernetes`
 plus a binding schema-version label (§Pod shape) — and **no destructive
 repair or GC action fires unless the marker is present**, on top of the
 annotation check and the UID+`resourceVersion` fence every delete already
@@ -680,7 +680,7 @@ writer can forge metadata by definition, and an actor with write access to
 the namespace can already delete the pod outright — the marker's job is
 making *accidental* schema collisions and third-party objects fail closed,
 not defeating a hostile admin. The vision's rule that a never-started body
-is substrate-operator residue survives with one qualifier: *Buzz-authored*
+is substrate-operator residue survives with one qualifier: *Nimino-authored*
 create-state (a Secret our provider wrote, a pod carrying our verified
 annotations and marker) is the reconciler's to clear, because it is state
 the user cannot reasonably clear themselves; *substrate* wreckage —
@@ -807,7 +807,7 @@ the latter, not the former.
 
 **Create-intent fingerprint (normative).** The divergence discriminator
 in the never-started rows is a recorded annotation,
-`buzz.block.xyz/create-intent`, written at pod create — the same shape as
+`nimino.block.xyz/create-intent`, written at pod create — the same shape as
 the image-reference and pubkey annotations the pod already carries. Its
 value is an **unkeyed SHA-256** over a canonical serialization of the
 provider's **non-secret create-intent template**, computed *before* the
@@ -988,9 +988,9 @@ after both prerequisites, §Pod shape; the universal rule is I5's),
 harness exit completes the pod on every intentional path — turning
 agent-level I5 into substrate-level I5.
 
-## The Kubernetes Binding (`buzz-backend-kubernetes`)
+## The Kubernetes Binding (`nimino-backend-kubernetes`)
 
-The first conforming provider: a Rust crate in `block/buzz`, distributed as a
+The first conforming provider: a Rust crate in `asopitech-labs/nimino`, distributed as a
 standalone binary. Everything above is the contract; this section is its
 realization.
 
@@ -1009,7 +1009,7 @@ plugin binary in the error rather than surfacing a kube-rs stack.
 ### Namespace {#k8s-namespace}
 
 One stable namespace per user-visible choice; the provider emits a freshly
-generated `buzz-agents-<rand6>` as the `namespace` field's schema *default*
+generated `nimino-agents-<rand6>` as the `namespace` field's schema *default*
 on every `info` call, so the UI prefills a visible, editable random name with
 zero UI changes ("random default" satisfied at the schema layer). If the
 namespace does not exist the provider attempts to create it; on RBAC denial
@@ -1018,24 +1018,24 @@ run — it MUST NOT fall back to `default`.
 
 ### Image
 
-`ghcr.io/block/buzz-sprig`: Alpine base + `bash` (required by the dev-MCP
-shell tool) + `git` + CA certificates + the static musl `sprig` multicall
-binary with its personality links (`buzz-acp`, `buzz-agent`, `buzz-dev-mcp`,
-`rg`, `tree`, `buzz`, `git-credential-nostr`, `git-sign-nostr`) + a baked
+`ghcr.io/asopitech-labs/nimino-agent`: Alpine base + `bash` (required by the dev-MCP
+shell tool) + `git` + CA certificates + the static musl `Nimino agent bundle` multicall
+binary with its personality links (`nimino-acp`, `nimino-agent`, `nimino-dev-mcp`,
+`rg`, `tree`, `nimino`, `git-credential-nostr`, `git-sign-nostr`) + a baked
 system gitconfig wiring the nostr signing and credential helpers. The baked
 credential-helper config MUST be scoped to the relay's git URL — mirroring
 the local spawn's `credential.<relay-url>/git.helper` scoping — never a
 global `credential.helper`: a global nostr helper would answer for every
 remote, including github.com. ~15–25MB;
-not FROM-scratch (bash and git preclude it). Sprig-only: alternate-harness
+not FROM-scratch (bash and git preclude it). Nimino agent bundle-only: alternate-harness
 dependencies (node for Claude Code / Codex) come via the `image` override
 field, not a fatter default. Tagging follows the relay image's matrix —
-`sha-<short>` on main, semver on `sprig-v*` tags (the sprig tarball's
+`sha-<short>` on main, semver on `nimino-v*` tags (the Nimino agent bundle tarball's
 `+git.<sha>` version string is not a legal Docker tag). **The default image
 reference MUST be pinned by digest, not tag**: the provider bakes, at
 compile time, the multi-arch manifest digest of the image built from its
 own commit and defaults `image` to
-`ghcr.io/block/buzz-sprig@sha256:<that-digest>` — a `sha-<git-sha>` *tag*
+`ghcr.io/asopitech-labs/nimino-agent@sha256:<that-digest>` — a `sha-<git-sha>` *tag*
 is traceable but still movable (registry tags are mutable pointers;
 Kubernetes distinguishes movable tags from immutable digests for exactly
 this reason), and the object holding it runs with an nsec. The provider
@@ -1043,9 +1043,9 @@ records the reference it used in a pod annotation, and rejects `:latest`.
 User `image` overrides accept tag, digest, or full custom registry
 reference — visibly the user's trust decision, with the resolved image ID
 recorded in the same annotation for post-hoc attribution.
-**An image override MUST contain the runtime ABI** — the `buzz-acp`
+**An image override MUST contain the runtime ABI** — the `nimino-acp`
 entrypoint and everything §Entrypoint and launch ABI requires — not merely
-alternate-harness dependencies. A conforming custom image is "buzz-sprig
+alternate-harness dependencies. A conforming custom image is "nimino-Nimino agent bundle
 plus your tools", never "your tools instead".
 
 ### Entrypoint and launch ABI {#k8s-entrypoint}
@@ -1054,7 +1054,7 @@ Two conforming implementations must produce interchangeable pods, so the
 launch contract is normative.
 
 **Entrypoint.** The container runs the harness as its signal-receiving
-process. Sprig is a multicall binary with no supervisor personality —
+process. Nimino agent bundle is a multicall binary with no supervisor personality —
 nothing reaps children or forwards signals — so the entrypoint MUST end in
 `exec`:
 
@@ -1062,10 +1062,10 @@ nothing reaps children or forwards signals — so the entrypoint MUST end in
 #!/bin/bash
 set -e
 # nest scaffolding, if DECISION A lands, goes here
-exec buzz-acp   # exec, not a call — buzz-acp must be PID 1
+exec nimino-acp   # exec, not a call — nimino-acp must be PID 1
 ```
 
-`bash -c "setup && buzz-acp"` (no `exec`) is non-conforming: bash becomes
+`bash -c "setup && nimino-acp"` (no `exec`) is non-conforming: bash becomes
 PID 1, and a PID-1 bash with no trap never delivers SIGTERM to the harness
 (PID 1 receives kernel-level default-handler signal immunity), so the pod
 rides out the entire grace period and is SIGKILLed with presence still
@@ -1094,7 +1094,7 @@ individually:
 | `turn_timeout_seconds` | not mapped — deprecated upstream and ignored; the local spawn also does not emit it |
 | `respond_to` | `NIMINO_ACP_RESPOND_TO` |
 | `respond_to_allowlist` | `NIMINO_ACP_RESPOND_TO_ALLOWLIST`, comma-joined |
-| — | `NIMINO_ACP_MCP_COMMAND=buzz-dev-mcp` (image-local; the dev-MCP requirement) |
+| — | `NIMINO_ACP_MCP_COMMAND=nimino-dev-mcp` (image-local; the dev-MCP requirement) |
 | `provider_config.inactivity_seconds` | `NIMINO_ACP_EXIT_AFTER_INACTIVITY` (schema default 7200; the I5 opt-in, §Auto-Stop — the config field and this env var are one knob, not two) |
 
 The top-level `model`/`provider` payload fields are display/bookkeeping
@@ -1159,28 +1159,28 @@ regardless of `HOME`.
     node loss surfacing as presence `offline` awaiting a fresh Start.
 - **Naming/labeling — the exact contract** (63-char label-value limit; a hex
   pubkey is 64 chars, one over):
-  - pod name: `buzz-agent-<first-12-hex-of-pubkey>` — also the returned
+  - pod name: `nimino-agent-<first-12-hex-of-pubkey>` — also the returned
     `agent_id`
-  - label `buzz.block.xyz/agent-pubkey: <first-32-hex>` — the selector key
+  - label `nimino.block.xyz/agent-pubkey: <first-32-hex>` — the selector key
     for reconciliation and GC. 128 bits is collision-*resistant*, not
     collision-free, which is why the annotation check below is normative,
     not decorative
-  - label `app.kubernetes.io/managed-by: buzz-backend-kubernetes` and label
-    `buzz.block.xyz/binding-version: <schema-version>` — the **management
+  - label `app.kubernetes.io/managed-by: nimino-backend-kubernetes` and label
+    `nimino.block.xyz/binding-version: <schema-version>` — the **management
     marker** (§Deploy State Machine auto-repair fence): present on every
     pod and Secret this provider creates, and **required before any
     destructive repair or GC action**. Identity labels/annotations prove
     identity; the marker asserts protocol ownership — without it, an object
     that merely matches our schema fails closed to the operator
-  - annotation `buzz.block.xyz/agent-pubkey-full: <full-64-hex>` —
+  - annotation `nimino.block.xyz/agent-pubkey-full: <full-64-hex>` —
     **load-bearing**: per §Deploy State Machine step 1, every label-selected
     object's annotation MUST equal the derived pubkey before the provider
     no-ops against it, deletes it, mutates its Secret, or returns its name
-  - annotation `buzz.block.xyz/create-intent: <sha256-of-intent-template>` — the
+  - annotation `nimino.block.xyz/create-intent: <sha256-of-intent-template>` — the
     recorded create intent (§Deploy State Machine, create-intent
     fingerprint), written at pod create; the divergence discriminator for
     never-started pods
-  - Secret name: `buzz-agent-<first-12-hex>-<gen>`, where `<gen>` is a random
+  - Secret name: `nimino-agent-<first-12-hex>-<gen>`, where `<gen>` is a random
     per-create-attempt **generation token** — unique, never reused, carrying
     the same labels (identity + management marker) and annotation. The
     pod's `envFrom` references this exact
@@ -1229,7 +1229,7 @@ regardless of `HOME`.
   `allowPrivilegeEscalation: false`, capabilities drop-all,
   `seccompProfile.type: RuntimeDefault`; never privileged, `hostPID`,
   `hostNetwork`, or `hostPath`. `readOnlyRootFilesystem` is *not* required
-  in v1 — the sprig toolchain writes outside the workspace mount — but is a
+  in v1 — the Nimino agent bundle toolchain writes outside the workspace mount — but is a
   named candidate once the image's write surface is mapped. The
   `service_account` config field selects an identity for scheduling/RBAC
   purposes only; it MUST NOT silently re-enable token mounting — API-token
@@ -1252,7 +1252,7 @@ payload fields per the reserved-key rule) plus `env_vars`; consumed via
 `envFrom`.
 
 **Secret creation is per-attempt, immutable, and uniquely named**
-(`buzz-agent-<first-12-hex>-<gen>`, §Pod shape). The rationale is a
+(`nimino-agent-<first-12-hex>-<gen>`, §Pod shape). The rationale is a
 concurrency race a deterministic shared Secret name cannot survive: two
 concurrent deploys carrying *different* payloads would both write the shared
 Secret, the loser's write could land last, and the winner's pod —
@@ -1287,7 +1287,7 @@ does. Residual exposure, stated: any principal with
 pod-exec or secret-read in the namespace can read the nsec. This is the
 substrate-security boundary from §Non-Goals — the namespace is the isolation
 unit, and users deploying to shared namespaces accept its ambient RBAC. The
-in-pod narrowing that sprig's dev-MCP shim performs (strips the key from its
+in-pod narrowing that Nimino agent bundle's dev-MCP shim performs (strips the key from its
 own env, re-materializes as a 0600 keyfile for the git helpers) limits
 accidental leakage into subprocess environments, not hostile cluster access.
 
@@ -1402,7 +1402,7 @@ deliberately baked out of v1 to preserve budget.
 
 ### Distribution
 
-Its own release workflow (macOS arm64/x64 + Linux musl; the sprig workflow's
+Its own release workflow (macOS arm64/x64 + Linux musl; the Nimino agent bundle workflow's
 ubuntu × musl matrix cannot produce the laptop-side binary), artifacts
 attached to releases, installed to `~/.local/bin` (already on the discovery
 path). v1 ships no Windows binary [DECISION B]; desktop bundling into the
@@ -1698,13 +1698,13 @@ Desktop- and harness-side, discovered during this design:
 | Mesh rewrite (why relay-mesh is non-deployable) | `desktop/src-tauri/src/managed_agents/relay_mesh.rs`; create-time rejection in `commands/agents.rs` (`normalize_relay_mesh`) |
 | Reserved-key strip | `desktop/src-tauri/src/managed_agents/env_vars.rs` (`RESERVED_ENV_KEYS`) |
 | Unconditional deploy on Start | `desktop/src-tauri/src/commands/agents.rs` (`start_managed_agent`) |
-| Presence publish / offline-on-exit | `crates/buzz-acp/src/lib.rs` (`publish_presence`, shutdown path) |
-| `!shutdown` owner check | `crates/buzz-acp/src/lib.rs` (main loop) |
-| Graceful shutdown path (budget enforcement *to be added* — Known Defect 7) | `crates/buzz-acp/src/lib.rs` (pool shutdown, then drain / reap / presence / relay close) |
-| Clean-exit exit-code contract | *to be added*: `crates/buzz-acp` distinguished exit codes + pinning test (Known Defect 6; gates `OnFailure`) |
-| Auto-stop flag | *to be added*: `crates/buzz-acp/src/config.rs` + a pool-independent timer (NOT the `pool_ready`-gated maintenance tick — Known Defect 4) + `RESERVED_ENV_KEYS` entry |
-| Kubernetes binding | *to be added*: `crates/buzz-backend-kubernetes` |
-| Sprig image | *to be added*: `Dockerfile.sprig` + workflow |
+| Presence publish / offline-on-exit | `crates/nimino-acp/src/lib.rs` (`publish_presence`, shutdown path) |
+| `!shutdown` owner check | `crates/nimino-acp/src/lib.rs` (main loop) |
+| Graceful shutdown path (budget enforcement *to be added* — Known Defect 7) | `crates/nimino-acp/src/lib.rs` (pool shutdown, then drain / reap / presence / relay close) |
+| Clean-exit exit-code contract | *to be added*: `crates/nimino-acp` distinguished exit codes + pinning test (Known Defect 6; gates `OnFailure`) |
+| Auto-stop flag | *to be added*: `crates/nimino-acp/src/config.rs` + a pool-independent timer (NOT the `pool_ready`-gated maintenance tick — Known Defect 4) + `RESERVED_ENV_KEYS` entry |
+| Kubernetes binding | *to be added*: `crates/nimino-backend-kubernetes` |
+| Nimino agent image | *to be added*: `Nimino agent bundle` + workflow |
 
 ## Open Decisions
 
@@ -1738,7 +1738,7 @@ Marked `[DECISION]` inline; consolidated:
   (shared-compute agents are local-only until an in-image mesh client
   exists).
 - **G. Remote override semantics** — the spec keeps local semantics: user
-  env continues to beat Buzz behavior defaults remotely (three-tier
+  env continues to beat Nimino behavior defaults remotely (three-tier
   precedence, §Launch data), because the alternative is a quiet behavior
   fork between local and remote spawns of the same record. Flagged because
   it is a policy statement about what power users may do to remote pods.
@@ -1756,7 +1756,7 @@ Marked `[DECISION]` inline; consolidated:
   (§Deploy State Machine) lets a config *change* replace a never-started
   pod, closing the config wedge. Ruled on the vision-consistency half:
   Start-time auto-repair of never-started bodies is legitimate, **fenced
-  to Buzz-authored, positively identified residue** (§Deploy State Machine
+  to Nimino-authored, positively identified residue** (§Deploy State Machine
   auto-repair rule) — the vision's "never-started body is operator
   residue" line gains that qualifier rather than being waived. The
   remaining product question: does v1 owe users an explicit in-product
@@ -1767,7 +1767,7 @@ Marked `[DECISION]` inline; consolidated:
 
 ## Summary
 
-Remote agents extend Buzz's managed-agent model across a deliberately thin
+Remote agents extend Nimino's managed-agent model across a deliberately thin
 boundary: one untrusted binary, two JSON operations, and a relay. The
 desktop's obligations end at a well-formed, fail-closed deploy payload; the
 provider's obligations are convergence and honesty about state; the agent's

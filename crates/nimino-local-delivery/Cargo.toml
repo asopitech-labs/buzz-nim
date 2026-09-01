@@ -1,0 +1,17 @@
+[package]
+name = "nimino-local-delivery"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Process-local presence and bounded security caches for Nimino"
+
+[dependencies]
+nimino-auth = { workspace = true }
+nimino-core = { workspace = true }
+nostr = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+uuid = { workspace = true }

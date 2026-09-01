@@ -555,7 +555,7 @@ test("does not teleport upward when user abandons fetch by jumping to bottom", a
 
 const REAL_NIMINO_BUGS_IMAGE_SHA =
   "ff2862080bac3d009f97cad4bb94e6efec328eaaee058a405e854acd49fc1483";
-const REAL_NIMINO_BUGS_IMAGE_URL = `https://sprout-oss.stage.blox.sqprod.co/media/${REAL_NIMINO_BUGS_IMAGE_SHA}.png`;
+const REAL_NIMINO_BUGS_IMAGE_URL = `https://relay.nimino.example/media/${REAL_NIMINO_BUGS_IMAGE_SHA}.png`;
 const REAL_NIMINO_BUGS_IMAGE_TAG = [
   "imeta",
   `url ${REAL_NIMINO_BUGS_IMAGE_URL}`,
@@ -566,7 +566,7 @@ const REAL_NIMINO_BUGS_IMAGE_TAG = [
   "filename image.png",
 ] as string[];
 
-test("reserves real buzz-bugs imeta image height before image loads", async ({
+test("reserves real nimino-bugs imeta image height before image loads", async ({
   page,
 }) => {
   await page.route("**/media/**", () => new Promise(() => {}));

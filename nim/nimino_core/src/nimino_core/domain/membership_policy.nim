@@ -176,14 +176,14 @@ proc decideChannelMembership*(
   of mcJoin:
     if not request.actorIsTarget:
       return reject(mpeSelfMutation)
-    if request.visibility == cvPrivate:
-      return reject(mpeInviteRequired)
     if request.targetRole != mrNone:
       return MembershipDecision(
         action: maNoop,
         error: mpeNone,
         effectiveRole: request.targetRole,
       )
+    if request.visibility == cvPrivate:
+      return reject(mpeInviteRequired)
     MembershipDecision(action: maInsert, error: mpeNone,
         effectiveRole: mrMember)
   of mcLeave:

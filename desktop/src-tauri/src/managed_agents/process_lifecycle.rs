@@ -46,10 +46,10 @@ impl Drop for JobHandle {
 /// failed spawn.
 ///
 /// Assignment happens immediately after spawn, on the same parent thread. The
-/// child (buzz-acp) does spawn its 24 workers before it connects to the relay,
+/// child (nimino-acp) does spawn its 24 workers before it connects to the relay,
 /// so the window between our spawn and our assignment is NOT structurally empty.
 /// What closes it is assign-latency: `OpenProcess` + `AssignProcessToJobObject`
-/// are a few synchronous Win32 calls (microseconds), while buzz-acp must init
+/// are a few synchronous Win32 calls (microseconds), while nimino-acp must init
 /// tokio, parse its config, and spawn 24 children (tens-to-hundreds of ms), so
 /// the assign reliably wins before any worker exists. Once assigned, Windows
 /// places every subsequently-spawned descendant in the job automatically.

@@ -393,6 +393,9 @@ CREATE TABLE workflow_runs (
     status              run_status NOT NULL DEFAULT 'pending',
     trigger_event_id    BYTEA,
     current_step        INT NOT NULL DEFAULT 0,
+    revision            BIGINT NOT NULL DEFAULT 0 CHECK (revision >= 0),
+    transition_ids      JSONB NOT NULL DEFAULT '[]'::jsonb
+                        CHECK (jsonb_typeof(transition_ids) = 'array'),
     execution_trace     JSONB NOT NULL DEFAULT '[]',
     trigger_context     JSONB,
     started_at          TIMESTAMPTZ,
@@ -855,7 +858,7 @@ BEGIN
     IF NEW.channel_id IS NOT NULL AND NEW.kind <> 9007 THEN
         BEGIN
             PERFORM pg_advisory_xact_lock_shared(hashtextextended(
-                'buzz_channel_ttl:' || NEW.community_id::text || ':' || NEW.channel_id::text, 0));
+                'nimino_channel_ttl:' || NEW.community_id::text || ':' || NEW.channel_id::text, 0));
 
             SELECT ttl_seconds INTO channel_ttl
             FROM channels
@@ -907,7 +910,7 @@ BEGIN
     END IF;
 
     PERFORM pg_advisory_xact_lock(hashtextextended(
-        'buzz_channel_membership:' || NEW.community_id::text || ':' || NEW.channel_id::text,
+        'nimino_channel_membership:' || NEW.community_id::text || ':' || NEW.channel_id::text,
         0
     ));
 
@@ -967,7 +970,7 @@ CREATE TRIGGER trg_events_guard_channel_roster_snapshot
 
 -- Replica-fence floor guard (keep in sync with migrations/0021). A deferred
 -- constraint trigger re-checks, inside COMMIT processing, that channel-bearing
--- event rows are no older than `buzz.created_at_floor` seconds before commit
+-- event rows are no older than `nimino.created_at_floor` seconds before commit
 -- time (clock_timestamp(), NOT the transaction-frozen now()). This turns the
 -- relay's ingest-time created_at envelope into a commit-time storage
 -- invariant, which is what lets keyset-cursor pages below the replica fence
@@ -979,7 +982,7 @@ CREATE TRIGGER trg_events_guard_channel_roster_snapshot
 CREATE FUNCTION events_created_at_floor_guard() RETURNS trigger
 LANGUAGE plpgsql AS $$
 DECLARE
-    floor_secs numeric := nullif(current_setting('buzz.created_at_floor', true), '')::numeric;
+    floor_secs numeric := nullif(current_setting('nimino.created_at_floor', true), '')::numeric;
 BEGIN
     IF floor_secs IS NOT NULL
        AND floor_secs > 0
@@ -1034,7 +1037,7 @@ CREATE TABLE community_deletion_requests (
     community_host TEXT NOT NULL,
     stage TEXT NOT NULL DEFAULT 'submitted' CHECK (stage IN (
         'submitted', 'inventoried', 'approved', 'fenced', 'drained',
-        'bindings_removed', 'postgres_purged', 'cache_purged',
+        'bindings_removed', 'postgres_purged',
         'logically_verified', 'retention_pending', 'aborted'
     )),
     requested_by TEXT NOT NULL,
@@ -1054,7 +1057,7 @@ CREATE TABLE community_deletion_requests (
     retry_count INTEGER NOT NULL DEFAULT 0 CHECK (retry_count >= 0),
     retry_stage TEXT CHECK (retry_stage IS NULL OR retry_stage IN (
         'approved', 'fenced', 'drained', 'bindings_removed',
-        'postgres_purged', 'cache_purged', 'logically_verified'
+        'postgres_purged', 'logically_verified'
     )),
     next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     last_error TEXT,
@@ -1289,7 +1292,7 @@ INSERT INTO _operator_global_tables (table_name, reason) VALUES
 
 CREATE FUNCTION community_deletion_lock_key(target UUID) RETURNS BIGINT
 LANGUAGE SQL IMMUTABLE STRICT PARALLEL SAFE AS $$
-    SELECT hashtextextended('buzz-community-deletion:' || target::text, 0)
+    SELECT hashtextextended('nimino-community-deletion:' || target::text, 0)
 $$;
 -- Keep the deletion control plane writable while its target tenant is fenced.
 -- This predicate is the single SQL source of truth used by attachment and live
@@ -1369,8 +1372,8 @@ BEGIN
     END IF;
 
     -- Authorization is evaluated independently for every community checked.
-    executor_community := current_setting('buzz.deletion_executor_community', true);
-    executor_generation := current_setting('buzz.deletion_fence_generation', true);
+    executor_community := current_setting('nimino.deletion_executor_community', true);
+    executor_generation := current_setting('nimino.deletion_fence_generation', true);
     IF executor_community = target::TEXT
        AND executor_generation ~ '^[0-9]+$'
        AND executor_generation::BIGINT = generation THEN
@@ -1379,11 +1382,11 @@ BEGIN
 
     -- A serving mutation admitted before quiescing may finish only while its
     -- exact durable lease remains current and bound to this fence generation.
-    serving_community := current_setting('buzz.serving_write_community', true);
-    serving_lease_id := current_setting('buzz.serving_write_lease_id', true);
-    serving_owner := current_setting('buzz.serving_write_owner', true);
-    serving_generation := current_setting('buzz.serving_write_generation', true);
-    serving_fence_generation := current_setting('buzz.serving_write_fence_generation', true);
+    serving_community := current_setting('nimino.serving_write_community', true);
+    serving_lease_id := current_setting('nimino.serving_write_lease_id', true);
+    serving_owner := current_setting('nimino.serving_write_owner', true);
+    serving_generation := current_setting('nimino.serving_write_generation', true);
+    serving_fence_generation := current_setting('nimino.serving_write_fence_generation', true);
     IF lifecycle IN ('active', 'quiescing')
        AND serving_community = target::TEXT
        AND serving_lease_id ~ '^[0-9a-fA-F-]{36}$'
@@ -1439,8 +1442,8 @@ $$;
 CREATE FUNCTION enforce_community_tombstone() RETURNS TRIGGER
 LANGUAGE plpgsql AS $$
 DECLARE
-    executor_community TEXT := current_setting('buzz.deletion_executor_community', true);
-    executor_generation TEXT := current_setting('buzz.deletion_fence_generation', true);
+    executor_community TEXT := current_setting('nimino.deletion_executor_community', true);
+    executor_generation TEXT := current_setting('nimino.deletion_fence_generation', true);
     expected_generation BIGINT;
 BEGIN
     IF TG_OP = 'DELETE' THEN

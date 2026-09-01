@@ -7,7 +7,6 @@ import {
   loadCommunities,
   loadCommunityDiscoveryAfterLeave,
   markCommunityDiscoveryAfterLeave,
-  migrateLegacyCommunityStorage,
   saveCommunities,
   shouldAutoConnectDefaultRelay,
 } from "./communityStorage.ts";
@@ -27,35 +26,9 @@ function createMemoryStorage(initial = {}) {
   };
 }
 
-test("migrateLegacyCommunityStorage promotes current Buzz workspace state", () => {
-  const storage = createMemoryStorage({
-    "nimino-workspaces": '[{"id":"current"}]',
-    "nimino-active-workspace-id": "current",
-  });
-
-  migrateLegacyCommunityStorage(storage);
-
-  assert.equal(storage.getItem("nimino-communities"), '[{"id":"current"}]');
-  assert.equal(storage.getItem("nimino-active-community-id"), "current");
-});
-
-test("migrateLegacyCommunityStorage does not overwrite new community state", () => {
-  const storage = createMemoryStorage({
-    "nimino-communities": '[{"id":"new"}]',
-    "nimino-active-community-id": "new",
-    "nimino-workspaces": '[{"id":"old"}]',
-    "nimino-active-workspace-id": "old",
-  });
-
-  migrateLegacyCommunityStorage(storage);
-
-  assert.equal(storage.getItem("nimino-communities"), '[{"id":"new"}]');
-  assert.equal(storage.getItem("nimino-active-community-id"), "new");
-});
-
 test("signed-build relay defaults auto-connect during first-run onboarding", () => {
   assert.equal(
-    shouldAutoConnectDefaultRelay("wss://buzz.block.builderlab.xyz"),
+    shouldAutoConnectDefaultRelay("wss://nimino.block.builderlab.xyz"),
     true,
   );
   assert.equal(shouldAutoConnectDefaultRelay("ws://localhost:3000"), false);
@@ -74,8 +47,6 @@ test("signed-build relay defaults auto-connect during first-run onboarding", () 
 test("failed first-community write preserves existing community data", () => {
   const storage = createMemoryStorage({
     "nimino-communities": '[{"id":"existing"}]',
-    "nimino-workspaces": '[{"id":"legacy"}]',
-    "nimino-active-workspace-id": "legacy",
   });
   storage.setItem = (key, value) => {
     if (key === "nimino-communities") {
@@ -89,8 +60,6 @@ test("failed first-community write preserves existing community data", () => {
   assert.equal(initFirstCommunity("wss://relay.example.com", "pubkey"), null);
   assert.equal(storage.getItem("nimino-communities"), '[{"id":"existing"}]');
   assert.equal(storage.getItem("nimino-active-community-id"), null);
-  assert.equal(storage.getItem("nimino-workspaces"), '[{"id":"legacy"}]');
-  assert.equal(storage.getItem("nimino-active-workspace-id"), "legacy");
 });
 
 test("loading an existing community clears stale final-leave discovery", () => {
@@ -121,13 +90,10 @@ test("clearCommunityStorage preserves completed final-leave discovery", () => {
   const storage = createMemoryStorage({
     "nimino-communities": "new",
     "nimino-active-community-id": "new",
-    "nimino-workspaces": "old",
-    "nimino-active-workspace-id": "old",
     "nimino-community-discovery-after-leave": "1",
   });
 
   clearCommunityStorage(storage);
-  migrateLegacyCommunityStorage(storage);
 
   assert.equal(storage.length, 1);
   assert.equal(loadCommunityDiscoveryAfterLeave(storage), true);

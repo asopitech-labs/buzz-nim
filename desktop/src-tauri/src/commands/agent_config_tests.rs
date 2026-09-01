@@ -19,7 +19,7 @@ fn with_no_goose_config<T>(body: impl FnOnce() -> T) -> T {
         .lock()
         .unwrap_or_else(|err| err.into_inner());
     let prior = std::env::var_os("GOOSE_PATH_ROOT");
-    std::env::set_var("GOOSE_PATH_ROOT", "/nonexistent-buzz-test-path");
+    std::env::set_var("GOOSE_PATH_ROOT", "/nonexistent-nimino-test-path");
     let output = body();
     match prior {
         Some(value) => std::env::set_var("GOOSE_PATH_ROOT", value),
@@ -73,7 +73,7 @@ fn agent_record() -> ManagedAgentRecord {
         auth_tag: None,
         relay_url: "ws://localhost:3000".to_string(),
         avatar_url: None,
-        acp_command: "buzz-acp".to_string(),
+        acp_command: "nimino-acp".to_string(),
         agent_command: "goose".to_string(),
         agent_args: vec![],
         mcp_command: "".to_string(),
@@ -170,7 +170,7 @@ fn session_cache(current_model: &str, model_overridden: bool) -> SessionConfigCa
 /// model/provider/prompt for linked instances, so a non-`None` value here
 /// can only be leftover snapshot bytes from before a persona edit — the
 /// panel must report the persona's current model, tagged `PersonaDefault`,
-/// not the stale byte as `BuzzExplicit`.
+/// not the stale byte as `NiminoExplicit`.
 #[test]
 fn linked_stale_record_model_never_outranks_persona_model() {
     let mut record = agent_record();
@@ -226,7 +226,7 @@ fn linked_blank_definition_model_falls_through_to_global_default() {
 /// authoritative — the stale-record clearing above is scoped to linked
 /// instances only.
 #[test]
-fn definition_less_explicit_record_model_keeps_buzz_explicit_origin() {
+fn definition_less_explicit_record_model_keeps_nimino_explicit_origin() {
     let mut record = agent_record();
     record.persona_id = None;
     record.model = Some("explicit-model".to_string());
@@ -243,7 +243,7 @@ fn definition_less_explicit_record_model_keeps_buzz_explicit_origin() {
 
     let model = surface.normalized.model.as_ref().expect("model resolved");
     assert_eq!(model.value.as_deref(), Some("explicit-model"));
-    assert_eq!(model.origin, ConfigOrigin::BuzzExplicit);
+    assert_eq!(model.origin, ConfigOrigin::NiminoExplicit);
 }
 
 /// Part A — pending-pick: a genuine-explicit pick X with a divergent live
@@ -271,7 +271,7 @@ fn pending_pick_keeps_explicit_x_and_does_not_surface_live_y() {
     let model = surface.normalized.model.expect("model resolved");
 
     assert_eq!(model.value.as_deref(), Some("model-x"));
-    assert_eq!(model.origin, ConfigOrigin::BuzzExplicit);
+    assert_eq!(model.origin, ConfigOrigin::NiminoExplicit);
     assert_ne!(model.origin, ConfigOrigin::RuntimeOverride);
     assert_ne!(model.overridden_value.as_deref(), Some("model-y"));
 }
@@ -279,10 +279,10 @@ fn pending_pick_keeps_explicit_x_and_does_not_surface_live_y() {
 /// W2 — genuine-explicit live switch: record.model = X, no persona,
 /// `model_overridden == true`, live model = Y. The live Y must render as the
 /// primary with a `RuntimeOverride` origin and X as the secondary tagged
-/// `BuzzExplicit` (its true source — NOT `PersonaDefault`). FAILS against the
+/// `NiminoExplicit` (its true source — NOT `PersonaDefault`). FAILS against the
 /// shipped no-persona early-return, which left X as primary and Y struck.
 #[test]
-fn genuine_explicit_live_switch_renders_y_over_x_buzz_explicit_secondary() {
+fn genuine_explicit_live_switch_renders_y_over_x_nimino_explicit_secondary() {
     let mut record = agent_record();
     record.persona_id = None;
     record.model = Some("model-x".to_string());
@@ -302,7 +302,7 @@ fn genuine_explicit_live_switch_renders_y_over_x_buzz_explicit_secondary() {
     assert_eq!(model.value.as_deref(), Some("model-y"));
     assert_eq!(model.origin, ConfigOrigin::RuntimeOverride);
     assert_eq!(model.overridden_value.as_deref(), Some("model-x"));
-    assert_eq!(model.overridden_origin, Some(ConfigOrigin::BuzzExplicit));
+    assert_eq!(model.overridden_origin, Some(ConfigOrigin::NiminoExplicit));
 }
 
 /// Y==X collision: a genuine-explicit agent live-switches to the SAME value
@@ -338,7 +338,7 @@ fn genuine_explicit_live_switch_to_same_model_yields_clean_field() {
 
     assert_eq!(model.value.as_deref(), Some("model-x"));
     // Equal-value switch must NOT stamp RuntimeOverride — baseline origin wins.
-    assert_eq!(model.origin, ConfigOrigin::BuzzExplicit);
+    assert_eq!(model.origin, ConfigOrigin::NiminoExplicit);
     assert_ne!(model.origin, ConfigOrigin::RuntimeOverride);
     assert_eq!(model.overridden_value, None);
     assert_eq!(model.overridden_origin, None);
@@ -412,7 +412,7 @@ fn global_default_live_switch_renders_global_model_as_secondary_global_default()
     assert_eq!(
         model.overridden_origin,
         Some(ConfigOrigin::GlobalDefault),
-        "override baseline origin must be GlobalDefault, not PersonaDefault or BuzzExplicit"
+        "override baseline origin must be GlobalDefault, not PersonaDefault or NiminoExplicit"
     );
 }
 

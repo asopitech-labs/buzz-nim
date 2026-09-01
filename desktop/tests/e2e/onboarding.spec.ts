@@ -683,7 +683,7 @@ test("fresh existing-identity path leads with private-key recovery", async ({
     page.getByRole("heading", { name: "Enter your private key" }),
   ).toBeVisible();
   await expect(
-    page.getByText("Paste your private key to sign in to Buzz."),
+    page.getByText("Paste your private key to sign in to Nimino."),
   ).toBeVisible();
   await expect(page.getByTestId("nostr-import-card")).toBeVisible();
   await expect(page.getByTestId("nostr-import-file-button")).toHaveText(
@@ -756,7 +756,7 @@ test("fresh existing-identity path leads with private-key recovery", async ({
   const recoveryDialog = page.getByTestId("identity-recovery-dialog");
   await expect(recoveryDialog).toBeVisible();
   await expect(
-    recoveryDialog.getByRole("heading", { name: "Use your Buzz identity" }),
+    recoveryDialog.getByRole("heading", { name: "Use your Nimino identity" }),
   ).toBeVisible();
   await expect(
     recoveryDialog.getByTestId("identity-recovery-qr"),
@@ -1160,7 +1160,7 @@ test("first-community owner can connect an existing hosted community", async ({
         {
           id: "owned-community",
           name: "North Star",
-          normalized_host: "north-star.communities.buzz.xyz",
+          normalized_host: "north-star.communities.nimino.xyz",
         },
       ],
     },
@@ -1195,7 +1195,7 @@ test("first-community owner can connect an existing hosted community", async ({
         ),
       ),
     )
-    .toContain("wss://north-star.communities.buzz.xyz");
+    .toContain("wss://north-star.communities.nimino.xyz");
   await page.getByTestId("community-profile-back").click();
   await expect(
     page.getByRole("heading", { name: "Choose a community" }),
@@ -1239,7 +1239,7 @@ test("first-community owner can create and connect a hosted community", async ({
   await page.getByTestId("community-choice-create").click();
   await page.getByRole("button", { name: "Sign in to continue" }).click();
   await expect(
-    page.getByRole("heading", { name: "Finish connecting Buzz" }),
+    page.getByRole("heading", { name: "Finish connecting Nimino" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Connect and continue" }).click();
   const createSurface = page.getByTestId("hosted-community-create-surface");
@@ -1288,7 +1288,7 @@ test("first-community owner can create and connect a hosted community", async ({
         ),
       ),
     )
-    .toContain("wss://bee-lab.communities.buzz.xyz");
+    .toContain("wss://bee-lab.communities.nimino.xyz");
 });
 
 test("hosted community address line stays within the card for a long name", async ({
@@ -1317,7 +1317,7 @@ test("hosted community address line stays within the card for a long name", asyn
   await page.getByTestId("community-choice-create").click();
   await page.getByRole("button", { name: "Sign in to continue" }).click();
   await expect(
-    page.getByRole("heading", { name: "Finish connecting Buzz" }),
+    page.getByRole("heading", { name: "Finish connecting Nimino" }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Connect and continue" }).click();
 
@@ -1459,7 +1459,7 @@ test("first-community owner can replace a mismatched account identity", async ({
   await page.getByTestId("community-choice-create").click();
   await expect(
     page.getByRole("heading", {
-      name: "This account uses a different Buzz identity",
+      name: "This account uses a different Nimino identity",
     }),
   ).toBeVisible();
   await page
@@ -1512,11 +1512,11 @@ test("first-community explains when the local identity belongs to another accoun
     .click();
   await expect(
     page.getByText(
-      "This device's Buzz identity belongs to a different Builderlab account and can't be moved from here. Sign out, then sign in with the account that already owns this identity.",
+      "This device's Nimino identity belongs to a different Builderlab account and can't be moved from here. Sign out, then sign in with the account that already owns this identity.",
     ),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Finish connecting Buzz" }),
+    page.getByRole("heading", { name: "Finish connecting Nimino" }),
   ).toBeVisible();
 });
 
@@ -1610,12 +1610,12 @@ test("first-community shows the scenario cards for localhost", async ({
   await expect(
     page
       .getByTestId("welcome-setup")
-      .locator(".buzz-onboarding-transition-line"),
+      .locator(".nimino-onboarding-transition-line"),
   ).toHaveAttribute("data-onboarding-direction", "forward");
   await expect(
     page
       .getByTestId("welcome-setup")
-      .locator(".buzz-onboarding-transition-line"),
+      .locator(".nimino-onboarding-transition-line"),
   ).toHaveAttribute("data-onboarding-effect", "line-slide");
   const joinBack = page.getByTestId("welcome-join-back");
   await expect(joinBack).toBeVisible();
@@ -1623,7 +1623,7 @@ test("first-community shows the scenario cards for localhost", async ({
   await expect(
     page
       .getByTestId("welcome-setup")
-      .locator(".buzz-onboarding-transition-line"),
+      .locator(".nimino-onboarding-transition-line"),
   ).toHaveAttribute("data-onboarding-direction", "backward");
 
   await page.getByTestId("welcome-setup-back").click();
@@ -1657,7 +1657,7 @@ test("first-community direct join reaches profile", async ({ page }) => {
   await page.getByRole("button", { name: /Join a community/ }).click();
   await page
     .getByTestId("invite-redeem-input")
-    .fill("wss://onboarding.communities.buzz.xyz");
+    .fill("wss://onboarding.communities.nimino.xyz");
   await page.getByTestId("invite-redeem-submit").click();
 
   await expect(
@@ -1707,7 +1707,7 @@ test("community onboarding reuses an existing relay profile", async ({
           id: "txn-existing-profile",
           source: "add-community",
           stage: "profile",
-          relayUrl: "wss://onboarding.communities.buzz.xyz",
+          relayUrl: "wss://onboarding.communities.nimino.xyz",
           communityName: "Onboarding",
           communityId: "e2e-default-community",
           createdAt: timestamp,
@@ -1724,7 +1724,7 @@ test("community onboarding reuses an existing relay profile", async ({
     page,
     { profileHasEvent: true },
     {
-      relayWsUrl: "wss://onboarding.communities.buzz.xyz",
+      relayWsUrl: "wss://onboarding.communities.nimino.xyz",
       skipOnboardingSeed: true,
     },
   );
@@ -1748,7 +1748,7 @@ test("community onboarding reuses an existing relay profile", async ({
   await expect(
     page
       .getByTestId("community-onboarding-flow")
-      .locator(".buzz-onboarding-transition-line"),
+      .locator(".nimino-onboarding-transition-line"),
   ).toHaveAttribute("data-onboarding-direction", "forward");
   await expect(
     page.getByRole("heading", { name: "Build your profile" }),
@@ -1760,7 +1760,7 @@ test("community onboarding reuses an existing relay profile", async ({
   await expect(
     page
       .getByTestId("community-onboarding-flow")
-      .locator(".buzz-onboarding-transition-line"),
+      .locator(".nimino-onboarding-transition-line"),
   ).toHaveAttribute("data-onboarding-direction", "backward");
 });
 
@@ -1788,7 +1788,7 @@ test("first-community direct join cancel returns to request access", async ({
   await page.getByRole("button", { name: /Join a community/ }).click();
   await page
     .getByTestId("invite-redeem-input")
-    .fill("wss://onboarding.communities.buzz.xyz");
+    .fill("wss://onboarding.communities.nimino.xyz");
   await page.getByTestId("invite-redeem-submit").click();
   await expect(page.getByText("Connecting securely…")).toBeVisible();
   await page.getByRole("button", { name: "Cancel" }).click();
@@ -1846,7 +1846,7 @@ test("canceling a join to an existing inactive community preserves it", async ({
     },
     {
       pubkey: BLANK_TYLER_IDENTITY.pubkey,
-      relayUrl: "wss://onboarding.communities.buzz.xyz",
+      relayUrl: "wss://onboarding.communities.nimino.xyz",
     },
   );
   await installMockBridge(
@@ -1868,7 +1868,7 @@ test("canceling a join to an existing inactive community preserves it", async ({
         id: "existing-community-join",
         source: "add-community",
         stage: "connecting",
-        relayUrl: "wss://onboarding.communities.buzz.xyz",
+        relayUrl: "wss://onboarding.communities.nimino.xyz",
         communityName: "Existing",
         createdAt: timestamp,
         updatedAt: timestamp,
@@ -2228,7 +2228,7 @@ test("connected first-community profile keeps Back bottom-left and balances the 
   await page.getByRole("tab", { name: "Emoji" }).click();
   await selectFirstEmojiFromPicker(page);
   const liveEmoji = page.getByTestId("community-avatar-live-preview-emoji");
-  await expect(liveEmoji).toHaveClass(/buzz-avatar-squish/);
+  await expect(liveEmoji).toHaveClass(/nimino-avatar-squish/);
   await expect(
     page.getByTestId("community-avatar-live-preview-panel"),
   ).toHaveCSS("background-color", "rgba(0, 0, 0, 0)");
@@ -2428,7 +2428,7 @@ test("pending avatar stays navigable, clears failures, and retries", async ({
   const avatar = page.getByTestId("community-avatar-circle");
   const pendingSpinner = page
     .getByTestId("community-avatar-circle-upload-pending")
-    .locator(".sprout-arc-spinner");
+    .locator(".nimino-arc-spinner");
   const [avatarBox, spinnerBox] = await Promise.all([
     avatar.boundingBox(),
     pendingSpinner.boundingBox(),
@@ -3198,7 +3198,7 @@ test("first-run onboarding posts the live Fizz kickoff", async ({ page }) => {
   // Greeted by the name typed above — the @mention pill also files the opener
   // into the new user's Inbox mentions feed.
   await expect(page.getByTestId("message-timeline")).toContainText(
-    "Hi Morty QA, I'm Fizz. Welcome to Buzz.",
+    "Hi Morty QA, I'm Fizz. Welcome to Nimino.",
   );
   await expect(page.getByTestId("message-timeline")).toContainText(
     "Honey and Pollen, introduce yourselves",
@@ -3222,7 +3222,7 @@ test("first-run onboarding lands before Welcome team bootstrap completes", async
   await expectPrivateWelcomeLanding(page);
   await expect(page.getByTestId("app-loading-gate")).toHaveCount(0);
   await expect(page.getByTestId("message-timeline")).toContainText(
-    "Hi Morty QA, I'm Fizz. Welcome to Buzz.",
+    "Hi Morty QA, I'm Fizz. Welcome to Nimino.",
   );
   await page.waitForTimeout(1_500);
   expect(await commandCount(page, "create_managed_agent")).toBe(3);
@@ -4088,7 +4088,7 @@ test("denied on relay A then paste relay B invite URL switches community to B", 
   await expect(page.getByText("I am 18 years of age or older.")).toBeVisible();
   await page.getByLabel("I am 18 years of age or older.").check();
   await page
-    .getByLabel("I agree to the Buzz Terms of Service and Privacy Policy.")
+    .getByLabel("I agree to the Nimino Terms of Service and Privacy Policy.")
     .check();
   await page.getByTestId("invite-redeem-submit").click();
 

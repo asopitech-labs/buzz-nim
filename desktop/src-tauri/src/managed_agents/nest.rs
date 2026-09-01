@@ -1,7 +1,7 @@
-//! Buzz Nest — persistent agent workspace at `~/.nimino`.
+//! Nimino Nest — persistent agent workspace at `~/.nimino`.
 //!
 //! Creates a shared knowledge directory on first launch so every
-//! Buzz-spawned agent starts with orientation (AGENTS.md) and a
+//! Nimino-spawned agent starts with orientation (AGENTS.md) and a
 //! place to accumulate research, plans, and logs across sessions.
 //!
 //! Static template content in AGENTS.md (above the managed-section markers)
@@ -41,8 +41,8 @@ const NEST_DIRS: &[&str] = &[
 /// Fully static — no runtime interpolation, no secrets, no user paths.
 pub(crate) const AGENTS_MD: &str = include_str!("nest_agents.md");
 
-/// Default SKILL.md content for the buzz-cli skill.
-/// Written to ~/.nimino/.agents/skills/buzz-cli/SKILL.md on first init.
+/// Default SKILL.md content for the nimino-cli skill.
+/// Written to ~/.nimino/.agents/skills/nimino-cli/SKILL.md on first init.
 const NIMINO_CLI_SKILL_MD: &str = include_str!("nest_skill.md");
 
 /// Template content version for AGENTS.md static content (above managed markers).
@@ -54,11 +54,11 @@ const NEST_AGENTS_VERSION: u32 = 4;
 /// Bump this when changing `nest_skill.md` to trigger refresh on existing installs.
 const NEST_SKILL_VERSION: u32 = 5;
 
-const BEGIN_MARKER: &str = "<!-- BEGIN BUZZ MANAGED";
-const END_MARKER: &str = "<!-- END BUZZ MANAGED -->";
+const BEGIN_MARKER: &str = "<!-- BEGIN NIMINO MANAGED";
+const END_MARKER: &str = "<!-- END NIMINO MANAGED -->";
 
 /// Canonical skill directory path relative to the nest root.
-const CANONICAL_SKILL_DIR: &str = ".agents/skills/buzz-cli";
+const CANONICAL_SKILL_DIR: &str = ".agents/skills/nimino-cli";
 
 /// Nest directory name for production builds.
 const NEST_DIR_PROD: &str = ".nimino";
@@ -108,7 +108,7 @@ pub fn nest_dir() -> Option<PathBuf> {
     }
 }
 
-/// Creates the Buzz nest at `~/.nimino` if it doesn't already exist.
+/// Creates the Nimino nest at `~/.nimino` if it doesn't already exist.
 ///
 /// Delegates to [`ensure_nest_at`] with the resolved nest directory.
 /// Returns an error string if the home directory cannot be resolved.
@@ -117,13 +117,13 @@ pub fn ensure_nest() -> Result<(), String> {
     ensure_nest_at(&root)
 }
 
-/// Creates a Buzz nest at the given `root` path.
+/// Creates a Nimino nest at the given `root` path.
 ///
 /// - Creates the root directory and all subdirectories.
 /// - Writes `AGENTS.md` only if it doesn't already exist.
-/// - Writes `.agents/skills/buzz-cli/SKILL.md` only if it doesn't already exist.
+/// - Writes `.agents/skills/nimino-cli/SKILL.md` only if it doesn't already exist.
 /// - Creates harness-specific symlinks pointing to the canonical
-///   `.agents/skills/buzz-cli` directory for each known provider.
+///   `.agents/skills/nimino-cli` directory for each known provider.
 /// - Sets 700 permissions on the root, all subdirectories, and the skill
 ///   directory tree (Unix).
 ///
@@ -187,7 +187,7 @@ pub fn ensure_nest_at(root: &Path) -> Result<(), String> {
         }
     }
 
-    // Write buzz-cli skill to the harness-agnostic .agents path.
+    // Write nimino-cli skill to the harness-agnostic .agents path.
     // The first-init write uses the new canonical path; migration from
     // the old .claude path is handled in refresh_skill_md_if_stale.
     let agents_skill_dir = root.join(CANONICAL_SKILL_DIR);
@@ -212,7 +212,7 @@ pub fn ensure_nest_at(root: &Path) -> Result<(), String> {
     }
 
     // Create harness-specific symlinks for all known providers.
-    // Migration of the old .claude/skills/buzz-cli real dir is handled in
+    // Migration of the old .claude/skills/nimino-cli real dir is handled in
     // refresh_skill_md_if_stale; ensure_skill_symlinks skips paths that already exist.
     ensure_skill_symlinks(root)?;
 
@@ -292,7 +292,7 @@ fn ensure_skill_symlinks(root: &Path) -> Result<(), String> {
     for skill_dir in known_skill_dirs() {
         let parent = root.join(skill_dir);
         fs::create_dir_all(&parent).map_err(|e| format!("create {}: {e}", parent.display()))?;
-        let link = parent.join("buzz-cli");
+        let link = parent.join("nimino-cli");
         if link.symlink_metadata().is_ok() {
             continue; // symlink or real path exists — skip
         }
@@ -331,8 +331,8 @@ pub fn cli_link_name(is_dev: bool) -> &'static str {
 /// overwrite each other's target — the same isolation that separates the
 /// `~/.nimino` and `~/.nimino-dev` nests (see [`NEST_DIR_DEV`]).
 ///
-/// On every boot: replaces any existing symlink unconditionally (the `buzz` /
-/// `buzz-dev` name is our namespace), creates a new one if absent, and leaves
+/// On every boot: replaces any existing symlink unconditionally (the `nimino` /
+/// `nimino-dev` name is our namespace), creates a new one if absent, and leaves
 /// regular files alone to avoid clobbering a user-compiled binary.
 ///
 /// Non-fatal: callers should ignore errors — the symlink is a convenience
@@ -388,7 +388,7 @@ fn read_version_file(path: &Path) -> u32 {
 
 /// Refresh AGENTS.md static content if the template version has changed.
 ///
-/// Preserves everything from the `<!-- BEGIN BUZZ MANAGED` marker onward
+/// Preserves everything from the `<!-- BEGIN NIMINO MANAGED` marker onward
 /// (the dynamic section managed by `upsert_managed_section`). Replaces
 /// only the static template content above the marker.
 fn refresh_agents_md_if_stale(root: &Path) -> Result<(), String> {
@@ -447,16 +447,16 @@ fn refresh_agents_md_if_stale(root: &Path) -> Result<(), String> {
 ///
 /// SKILL.md has no user-editable sections — it is fully overwritten on version bump.
 fn refresh_skill_md_if_stale(root: &Path) -> Result<(), String> {
-    let agents_skill_dir = root.join(".agents/skills/buzz-cli");
+    let agents_skill_dir = root.join(".agents/skills/nimino-cli");
     let version_path = agents_skill_dir.join(".skill-version");
     if read_version_file(&version_path) >= NEST_SKILL_VERSION {
         return Ok(());
     }
 
-    // Migration: if .claude/skills/buzz-cli exists as a real directory
+    // Migration: if .claude/skills/nimino-cli exists as a real directory
     // (pre-migration install), copy user's SKILL.md to the new location
     // then remove the old directory so we can replace it with a symlink.
-    let old_skill_dir = root.join(".claude/skills/buzz-cli");
+    let old_skill_dir = root.join(".claude/skills/nimino-cli");
     let old_is_real_dir = old_skill_dir
         .symlink_metadata()
         .map(|m| m.file_type().is_dir())
@@ -492,13 +492,13 @@ fn refresh_skill_md_if_stale(root: &Path) -> Result<(), String> {
             .map_err(|e| format!("remove {}: {e}", old_skill_dir.display()))?;
     }
 
-    // Create/replace the .claude/skills/buzz-cli symlink.
+    // Create/replace the .claude/skills/nimino-cli symlink.
     #[cfg(unix)]
     {
         let claude_skills_dir = root.join(".claude/skills");
         fs::create_dir_all(&claude_skills_dir)
             .map_err(|e| format!("create {}: {e}", claude_skills_dir.display()))?;
-        let symlink_path = root.join(".claude/skills/buzz-cli");
+        let symlink_path = root.join(".claude/skills/nimino-cli");
         // Remove any stale symlink before (re)creating.
         let symlink_exists = symlink_path
             .symlink_metadata()
@@ -509,7 +509,7 @@ fn refresh_skill_md_if_stale(root: &Path) -> Result<(), String> {
                 .map_err(|e| format!("remove symlink {}: {e}", symlink_path.display()))?;
         }
         create_symlink(
-            std::path::Path::new("../../.agents/skills/buzz-cli"),
+            std::path::Path::new("../../.agents/skills/nimino-cli"),
             &symlink_path,
         )
         .map_err(|e| format!("symlink {}: {e}", symlink_path.display()))?;
@@ -547,7 +547,7 @@ pub fn render_dynamic_section(
         .filter(|a| !is_archived(a, archived))
         .collect();
     let active_agents = if live.is_empty() {
-        "## Active Agents\n\n*(No agents deployed yet. Add agents in the Buzz desktop app.)*"
+        "## Active Agents\n\n*(No agents deployed yet. Add agents in the Nimino desktop app.)*"
             .to_string()
     } else {
         let mut table =

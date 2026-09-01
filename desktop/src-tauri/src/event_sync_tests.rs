@@ -127,7 +127,7 @@ fn migrate_personas_new_persona_after_first_run_gets_retained() {
 #[test]
 fn migrate_personas_edited_persona_re_retains_pending() {
     use crate::managed_agents::retention::{get_retained_event, mark_synced, open_retention_db};
-    use buzz_core_pkg::kind::KIND_PERSONA;
+    use nimino_core_pkg::kind::KIND_PERSONA;
 
     let base = tempfile::tempdir().unwrap();
     write_base_personas(base.path(), &one_persona());
@@ -186,7 +186,7 @@ fn migrate_personas_supersedes_future_dated_head() {
     use crate::managed_agents::retention::{
         get_retained_event, open_retention_db, retain_event, RetainedEvent,
     };
-    use buzz_core_pkg::kind::KIND_PERSONA;
+    use nimino_core_pkg::kind::KIND_PERSONA;
 
     let base = tempfile::tempdir().unwrap();
     write_base_personas(base.path(), &one_persona());
@@ -253,7 +253,7 @@ fn migrate_teams_supersedes_future_dated_head() {
     use crate::managed_agents::retention::{
         get_retained_event, open_retention_db, retain_event, RetainedEvent,
     };
-    use buzz_core_pkg::kind::KIND_TEAM;
+    use nimino_core_pkg::kind::KIND_TEAM;
 
     let base = tempfile::tempdir().unwrap();
     let team = serde_json::json!([{

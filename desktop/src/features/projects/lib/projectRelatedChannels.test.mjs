@@ -12,8 +12,8 @@ const CHANNEL_B = "22222222-2222-4222-8222-222222222222";
 
 function makeProject(overrides = {}) {
   return {
-    id: "project-buzz",
-    name: "buzz",
+    id: "project-nimino",
+    name: "nimino",
     projectChannelId: null,
     repositories: [],
     ...overrides,
@@ -22,8 +22,8 @@ function makeProject(overrides = {}) {
 
 function makeRepository(overrides = {}) {
   return {
-    id: "repo-buzz",
-    name: "buzz",
+    id: "repo-nimino",
+    name: "nimino",
     channelId: CHANNEL_A,
     ...overrides,
   };
@@ -57,15 +57,15 @@ test("collects one row per repository channel binding", () => {
   assert.deepEqual(rows, [
     {
       channelId: CHANNEL_A,
-      projectId: "project-buzz",
-      projectName: "buzz",
-      repositoryId: "repo-buzz",
-      repositoryName: "buzz",
+      projectId: "project-nimino",
+      projectName: "nimino",
+      repositoryId: "repo-nimino",
+      repositoryName: "nimino",
     },
     {
       channelId: CHANNEL_A,
-      projectId: "project-buzz",
-      projectName: "buzz",
+      projectId: "project-nimino",
+      projectName: "nimino",
       repositoryId: "repo-relay",
       repositoryName: "relay-tools",
     },
@@ -115,10 +115,10 @@ test("keeps a project channel only when no repository in that project shares it"
     [
       {
         channelId: CHANNEL_A,
-        projectId: "project-buzz",
-        projectName: "buzz",
-        repositoryId: "repo-buzz",
-        repositoryName: "buzz",
+        projectId: "project-nimino",
+        projectName: "nimino",
+        repositoryId: "repo-nimino",
+        repositoryName: "nimino",
       },
     ],
   );
@@ -133,15 +133,15 @@ test("keeps a project channel only when no repository in that project shares it"
     [
       {
         channelId: CHANNEL_A,
-        projectId: "project-buzz",
-        projectName: "buzz",
-        repositoryId: "repo-buzz",
-        repositoryName: "buzz",
+        projectId: "project-nimino",
+        projectName: "nimino",
+        repositoryId: "repo-nimino",
+        repositoryName: "nimino",
       },
       {
         channelId: CHANNEL_B,
-        projectId: "project-buzz",
-        projectName: "buzz",
+        projectId: "project-nimino",
+        projectName: "nimino",
         repositoryId: null,
         repositoryName: null,
       },
@@ -165,21 +165,21 @@ test("row keys distinguish project-level bindings from repository bindings", () 
   assert.equal(
     projectRelatedChannelRowKey({
       channelId: CHANNEL_A,
-      projectId: "project-buzz",
-      projectName: "buzz",
+      projectId: "project-nimino",
+      projectName: "nimino",
       repositoryId: null,
       repositoryName: null,
     }),
-    `${CHANNEL_A}:project-buzz:project`,
+    `${CHANNEL_A}:project-nimino:project`,
   );
   assert.equal(
     projectRelatedChannelRowKey({
       channelId: CHANNEL_A,
-      projectId: "project-buzz",
-      projectName: "buzz",
-      repositoryId: "repo-buzz",
-      repositoryName: "buzz",
+      projectId: "project-nimino",
+      projectName: "nimino",
+      repositoryId: "repo-nimino",
+      repositoryName: "nimino",
     }),
-    `${CHANNEL_A}:project-buzz:repo-buzz`,
+    `${CHANNEL_A}:project-nimino:repo-nimino`,
   );
 });

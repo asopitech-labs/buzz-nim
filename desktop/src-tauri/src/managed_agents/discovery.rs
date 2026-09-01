@@ -5,7 +5,7 @@ use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 
 use crate::managed_agents::{
-    buzz_managed_command_path, buzz_managed_node_bin_dir, buzz_managed_npm_bin_dir,
+    nimino_managed_command_path, nimino_managed_node_bin_dir, nimino_managed_npm_bin_dir,
     AcpAvailabilityStatus, AcpRuntimeCatalogEntry, AuthStatus, CommandAvailabilityInfo,
     HarnessSource,
 };
@@ -32,7 +32,7 @@ const GOOSE_AVATAR_URL: &str = "https://goose-docs.ai/img/logo_dark.png";
 const CLAUDE_CODE_AVATAR_URL: &str = "https://anthropic.gallerycdn.vsassets.io/extensions/anthropic/claude-code/2.1.77/1773707456892/Microsoft.VisualStudio.Services.Icons.Default";
 const CODEX_AVATAR_URL: &str = "https://openai.gallerycdn.vsassets.io/extensions/openai/chatgpt/26.5313.41514/1773706730621/Microsoft.VisualStudio.Services.Icons.Default";
 const NIMINO_AGENT_AVATAR_URL: &str =
-    "https://raw.githubusercontent.com/block/buzz/refs/heads/main/crates/buzz-agent/buzz-agent.png";
+    "https://raw.githubusercontent.com/asopitech-labs/nimino/refs/heads/main/crates/nimino-agent/nimino-agent.png";
 fn common_binary_paths() -> &'static [PathBuf] {
     static PATHS: OnceLock<Vec<PathBuf>> = OnceLock::new();
     PATHS.get_or_init(|| {
@@ -42,10 +42,10 @@ fn common_binary_paths() -> &'static [PathBuf] {
             PathBuf::from("/usr/bin"),
             PathBuf::from("/home/linuxbrew/.linuxbrew/bin"),
         ];
-        if let Some(managed_node_bin) = buzz_managed_node_bin_dir() {
+        if let Some(managed_node_bin) = nimino_managed_node_bin_dir() {
             paths.insert(0, managed_node_bin);
         }
-        if let Some(managed_bin) = buzz_managed_npm_bin_dir() {
+        if let Some(managed_bin) = nimino_managed_npm_bin_dir() {
             paths.insert(0, managed_bin);
         }
         if let Some(home) = dirs::home_dir() {
@@ -100,7 +100,7 @@ const KNOWN_ACP_RUNTIMES: &[KnownAcpRuntime] = &[
         adapter_install_commands: &[],
         cli_install_instructions_url: "https://goose-docs.ai/docs/getting-started/installation/",
         adapter_install_instructions_url: "",
-        cli_install_hint: "Buzz talks to Goose through the Goose CLI.",
+        cli_install_hint: "Nimino talks to Goose through the Goose CLI.",
         adapter_install_hint: "",
         skill_dir: Some(".goose/skills"),
         supports_acp_model_switching: false,
@@ -133,8 +133,8 @@ const KNOWN_ACP_RUNTIMES: &[KnownAcpRuntime] = &[
         adapter_install_commands: &["npm install -g @agentclientprotocol/claude-agent-acp"],
         cli_install_instructions_url: "https://code.claude.com/docs/en/getting-started",
         adapter_install_instructions_url: "https://github.com/agentclientprotocol/claude-agent-acp",
-        cli_install_hint: "Buzz talks to Claude Code through the Claude Code CLI.",
-        adapter_install_hint: "Buzz talks to the Claude Code CLI through an ACP adapter. Install it with: npm install -g @agentclientprotocol/claude-agent-acp.",
+        cli_install_hint: "Nimino talks to Claude Code through the Claude Code CLI.",
+        adapter_install_hint: "Nimino talks to the Claude Code CLI through an ACP adapter. Install it with: npm install -g @agentclientprotocol/claude-agent-acp.",
         skill_dir: Some(".claude/skills"),
         supports_acp_model_switching: false,
         model_env_var: None,
@@ -158,7 +158,7 @@ const KNOWN_ACP_RUNTIMES: &[KnownAcpRuntime] = &[
         commands: &["codex-acp"],
         aliases: &[],
         avatar_url: CODEX_AVATAR_URL,
-        mcp_command: Some("buzz-dev-mcp"),
+        mcp_command: Some("nimino-dev-mcp"),
         mcp_hooks: false,
         underlying_cli: Some("codex"),
         cli_install_commands: &["curl -fsSL https://chatgpt.com/codex/install.sh | sh"],
@@ -166,8 +166,8 @@ const KNOWN_ACP_RUNTIMES: &[KnownAcpRuntime] = &[
         adapter_install_commands: &["npm install -g @agentclientprotocol/codex-acp"],
         cli_install_instructions_url: "https://developers.openai.com/codex/cli/",
         adapter_install_instructions_url: "https://github.com/agentclientprotocol/codex-acp",
-        cli_install_hint: "Buzz talks to Codex through the Codex CLI.",
-        adapter_install_hint: "Buzz talks to the Codex CLI through an ACP adapter. Install it with: npm install -g @agentclientprotocol/codex-acp.",
+        cli_install_hint: "Nimino talks to Codex through the Codex CLI.",
+        adapter_install_hint: "Nimino talks to the Codex CLI through an ACP adapter. Install it with: npm install -g @agentclientprotocol/codex-acp.",
         skill_dir: Some(".codex/skills"),
         supports_acp_model_switching: false,
         model_env_var: None,
@@ -187,20 +187,20 @@ const KNOWN_ACP_RUNTIMES: &[KnownAcpRuntime] = &[
         auth_probe_args: Some(&["codex", "login", "status"]),
     },
     KnownAcpRuntime {
-        id: "buzz-agent",
-        label: "Buzz Agent",
-        commands: &["buzz-agent"],
+        id: "nimino-agent",
+        label: "Nimino Agent",
+        commands: &["nimino-agent"],
         aliases: &[],
         avatar_url: NIMINO_AGENT_AVATAR_URL,
-        mcp_command: Some("buzz-dev-mcp"),
+        mcp_command: Some("nimino-dev-mcp"),
         mcp_hooks: true,
         underlying_cli: None,
         cli_install_commands: &[],
         cli_install_commands_windows: &[],
         adapter_install_commands: &[],
-        cli_install_instructions_url: "https://github.com/block/buzz",
-        adapter_install_instructions_url: "https://github.com/block/buzz",
-        cli_install_hint: "Ships with the Buzz desktop app.",
+        cli_install_instructions_url: "https://github.com/asopitech-labs/nimino",
+        adapter_install_instructions_url: "https://github.com/asopitech-labs/nimino",
+        cli_install_hint: "Ships with the Nimino desktop app.",
         adapter_install_hint: "",
         skill_dir: None,
         supports_acp_model_switching: true,
@@ -291,14 +291,14 @@ pub(crate) fn known_acp_runtime_exact(id: &str) -> Option<&'static KnownAcpRunti
 }
 
 /// The agent command a freshly-created agent defaults to when the create
-/// request supplies none. Resolves the bundled `buzz-agent` from the catalog so
+/// request supplies none. Resolves the bundled `nimino-agent` from the catalog so
 /// the default cannot drift from the provider definition. Falls back to the id
 /// if the catalog entry is missing. (Previous default was bare `goose`, which
-/// is not on PATH on a stock Windows install; buzz-agent ships with the app.)
+/// is not on PATH on a stock Windows install; nimino-agent ships with the app.)
 pub fn default_agent_command() -> String {
-    known_acp_runtime_exact("buzz-agent")
+    known_acp_runtime_exact("nimino-agent")
         .and_then(|p| p.commands.first().copied())
-        .unwrap_or("buzz-agent")
+        .unwrap_or("nimino-agent")
         .to_string()
 }
 
@@ -452,7 +452,7 @@ fn default_agent_args(command: &str) -> Option<Vec<String>> {
     match normalize_command_identity(command).as_str() {
         "goose" => Some(vec!["acp".to_string()]),
         "codex" | "codex-acp" | "claude-agent-acp" | "claude-code-acp" | "claude-code"
-        | "claudecode" | "buzz-agent" => Some(Vec::new()),
+        | "claudecode" | "nimino-agent" => Some(Vec::new()),
         _ => None,
     }
 }
@@ -553,7 +553,7 @@ fn resolve_cache() -> &'static std::sync::Mutex<std::collections::HashMap<String
 /// The cache eliminates redundant login-shell spawns when multiple agents share
 /// the same binaries (e.g. `npx`, `uvx`).
 pub fn resolve_command(command: &str) -> Option<PathBuf> {
-    if let Some(managed) = resolve_buzz_managed_command(command) {
+    if let Some(managed) = resolve_nimino_managed_command(command) {
         return Some(managed);
     }
 
@@ -583,14 +583,14 @@ pub fn resolve_command(command: &str) -> Option<PathBuf> {
 
 /// Cache-only command resolution for the cheap discovery path.
 ///
-/// Consults the Buzz-managed shim dir (a filesystem stat, never a spawn) and
+/// Consults the Nimino-managed shim dir (a filesystem stat, never a spawn) and
 /// the resolve cache; on a miss it reports the command absent rather than
 /// resolving live via `resolve_command_uncached` → `find_via_login_shell`,
 /// which spawns a login shell on the channel-switch / composer hot path — the
 /// freeze the cheap path exists to avoid. `resolve_command` (the forced path)
 /// is the sole prober and cache populator.
 pub fn resolve_command_cached(command: &str) -> Option<PathBuf> {
-    if let Some(managed) = resolve_buzz_managed_command(command) {
+    if let Some(managed) = resolve_nimino_managed_command(command) {
         return Some(managed);
     }
     resolve_cache()
@@ -696,11 +696,11 @@ fn command_basenames(command: &str) -> Vec<String> {
     candidates
 }
 
-fn resolve_buzz_managed_command(command: &str) -> Option<PathBuf> {
+fn resolve_nimino_managed_command(command: &str) -> Option<PathBuf> {
     let basenames = command_basenames(command);
     basenames
         .iter()
-        .find_map(|basename| buzz_managed_command_path(command, basename))
+        .find_map(|basename| nimino_managed_command_path(command, basename))
 }
 
 fn resolve_command_uncached(command: &str) -> Option<PathBuf> {
@@ -715,7 +715,7 @@ fn resolve_command_uncached(command: &str) -> Option<PathBuf> {
         return path.exists().then_some(path);
     }
 
-    if let Some(managed) = resolve_buzz_managed_command(command) {
+    if let Some(managed) = resolve_nimino_managed_command(command) {
         return Some(managed);
     }
 
@@ -810,7 +810,7 @@ fn runtime_needs_npm(runtime: &KnownAcpRuntime) -> bool {
 
 /// Returns `true` when `cmd` is an npm global install/uninstall invocation.
 ///
-/// Buzz rewrites these catalog commands to an app-private npm prefix before
+/// Nimino rewrites these catalog commands to an app-private npm prefix before
 /// execution; the global shape remains in the catalog so existing install plans
 /// and Doctor's Node.js-required detection stay simple.
 pub(crate) fn is_npm_global_install(cmd: &str) -> bool {
@@ -934,7 +934,7 @@ pub fn missing_command_message(command: &str, role: &str) -> String {
     }
 
     format!(
-        "{role} `{command}` was not found. Make sure it is installed and on your PATH. Antivirus software can quarantine bundled binaries — if that happened, restore the file or reinstall Buzz. (Source builds: see TESTING.md.)"
+        "{role} `{command}` was not found. Make sure it is installed and on your PATH. Antivirus software can quarantine bundled binaries — if that happened, restore the file or reinstall Nimino. (Source builds: see TESTING.md.)"
     )
 }
 
@@ -964,10 +964,10 @@ pub(crate) fn classify_runtime(
     }
 }
 
-/// The oldest `codex-acp` version supported by Buzz managed agents.
+/// The oldest `codex-acp` version supported by Nimino managed agents.
 ///
 /// Older 1.x adapters are detected successfully, but can still bundle a Codex runtime
-/// that does not reliably give `buzz` CLI subprocesses outbound relay access.
+/// that does not reliably give `nimino` CLI subprocesses outbound relay access.
 ///
 /// Bump policy: raise this only when a newer adapter fixes a defect that breaks managed
 /// agents, and only to a version already published on npm — every user below the floor is
@@ -1198,14 +1198,14 @@ fn discover_acp_runtime_phase1(runtime: &'static KnownAcpRuntime, force: bool) -
         | AcpAvailabilityStatus::NotInstalled => runtime.cli_install_instructions_url,
     };
 
-    // node_required now means Buzz cannot provide npm for this platform.
-    // On supported desktop platforms, Buzz downloads a private Node/npm
+    // node_required now means Nimino cannot provide npm for this platform.
+    // On supported desktop platforms, Nimino downloads a private Node/npm
     // runtime into app data before running npm-backed adapter installs.
     let node_required = matches!(
         availability,
         AcpAvailabilityStatus::AdapterMissing | AcpAvailabilityStatus::NotInstalled
     ) && runtime_needs_npm(runtime)
-        && buzz_managed_node_bin_dir().is_none()
+        && nimino_managed_node_bin_dir().is_none()
         && resolve("npm").is_none()
         && resolve("node").is_none();
 

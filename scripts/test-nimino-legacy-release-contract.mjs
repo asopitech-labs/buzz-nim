@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { basename, join } from "node:path";
+import { join } from "node:path";
 
 const manifest = JSON.parse(
   readFileSync("contracts/nimino-legacy-release/v1/manifest.json", "utf8"),
@@ -17,7 +17,7 @@ const releasing = readFileSync(manifest.sourceOfTruth, "utf8");
 assert.equal(manifest.schemaVersion, 1);
 assert.equal(manifest.contract, "nimino.legacy-release");
 assert.equal(manifest.issue, 65);
-assert.equal(manifest.phase, "cutover-ready");
+assert.equal(manifest.phase, "removed");
 assert.equal(manifest.compatibilityMode, false);
 assert.equal(manifest.physicalDeletionOwner, 66);
 assert.equal(manifest.physicalPromotionOwner, 68);
@@ -36,20 +36,31 @@ const trackedWorkflows = readdirSync(".github/workflows")
   .map((name) => join(".github/workflows", name));
 unique(workflowPaths, "workflow path");
 assert.deepEqual(
-  sorted(workflowPaths),
+  sorted(
+    manifest.workflowInventory
+      .filter(({ action }) => action === "keep")
+      .map(({ path }) => path),
+  ),
   sorted(trackedWorkflows),
-  "workflow inventory is not exact",
+  "surviving workflow inventory is not exact",
 );
 for (const workflow of manifest.workflowInventory) {
   assert.ok(["delete", "keep", "rename"].includes(workflow.action));
   if (workflow.action === "delete" || workflow.action === "rename")
     assert.ok(workflow.replacement, `missing replacement for ${workflow.path}`);
+  assert.equal(
+    existsSync(workflow.path),
+    workflow.action === "keep",
+    `workflow deletion state drifted: ${workflow.path}`,
+  );
 }
 
 const releaseKeep = manifest.workflowInventory
   .filter(
     ({ action, path }) =>
-      action === "keep" && path !== ".github/workflows/ci.yml",
+      action === "keep" &&
+      path !== ".github/workflows/ci.yml" &&
+      path !== ".github/workflows/nimino-benchmark.yml",
   )
   .map(({ path }) => path);
 assert.deepEqual(releaseKeep, [
@@ -58,7 +69,7 @@ assert.deepEqual(releaseKeep, [
   ".github/workflows/nimino-relay-release.yml",
 ]);
 const legacyTarget =
-  /(?:block\/buzz|squareup\/|ghcr\.io\/block\/|sqprod\.co|block\.xyz|sprout-oss|artifactory|buildkite)/i;
+  /(?:block\/(?:buzz|nimino)|squareup\/|ghcr\.io\/block\/|sqprod\.co|block\.xyz|sprout-oss|artifactory|buildkite)/i;
 for (const path of releaseKeep)
   assert.ok(
     !legacyTarget.test(readFileSync(path, "utf8")),
@@ -71,23 +82,10 @@ for (const script of manifest.scriptInventory) {
   assert.ok(["delete", "keep"].includes(script.action));
   assert.equal(
     existsSync(script.path),
-    script.state !== "absent",
+    script.action === "keep",
     `script state drifted: ${script.path}`,
   );
 }
-const scriptBasenames = new Set(scriptPaths.map((path) => basename(path)));
-for (const { path, action } of manifest.workflowInventory) {
-  if (action !== "delete") continue;
-  const source = readFileSync(path, "utf8");
-  for (const match of source.matchAll(
-    /(?:desktop\/)?scripts\/([A-Za-z0-9_.-]+)/g,
-  ))
-    assert.ok(
-      scriptBasenames.has(match[1]),
-      `unclassified legacy workflow script: ${path}:${match[1]}`,
-    );
-}
-
 const referencedCredentials = new Set();
 for (const path of trackedWorkflows) {
   const source = readFileSync(path, "utf8");
@@ -101,15 +99,25 @@ const classifiedCredentials = manifest.credentialInventory.map(
 );
 unique(classifiedCredentials, "credential");
 assert.deepEqual(
-  sorted(classifiedCredentials),
+  sorted(
+    manifest.credentialInventory
+      .filter(({ action }) => action === "keep")
+      .map(({ kind, name }) => `${kind}:${name}`),
+  ),
   sorted(referencedCredentials),
-  "workflow credential inventory is not exact",
+  "surviving workflow credential inventory is not exact",
 );
+for (const { kind, name, action } of manifest.credentialInventory)
+  if (action === "delete")
+    assert.ok(
+      !referencedCredentials.has(`${kind}:${name}`),
+      `retired credential remains referenced: ${name}`,
+    );
 
 const internalPatterns = new RegExp(
   [
     "Block/Square",
-    "block/buzz",
+    "block/(?:buzz|nimino)",
     "squareup/",
     "ghcr\\.io/block/",
     "sqprod\\.co",
@@ -140,15 +148,25 @@ const scanPaths = execFileSync(
   .trim()
   .split("\n")
   .filter(Boolean)
+  .filter((path) => existsSync(path))
   .filter((path) => path !== "scripts/test-nimino-legacy-release-contract.mjs");
 const foundInternalPaths = scanPaths.filter((path) =>
   internalPatterns.test(readFileSync(path, "utf8")),
 );
 assert.deepEqual(
-  sorted(Object.keys(manifest.internalReferenceClassification)),
+  sorted(
+    Object.entries(manifest.internalReferenceClassification)
+      .filter(([, action]) => action !== "delete")
+      .map(([path]) => path),
+  ),
   sorted(foundInternalPaths),
   "internal reference paths are missing or unclassified",
 );
+for (const [path, action] of Object.entries(
+  manifest.internalReferenceClassification,
+))
+  if (action === "delete")
+    assert.ok(!existsSync(path), `retired internal path remains: ${path}`);
 
 for (const target of [
   "squareup/buzz-releases",

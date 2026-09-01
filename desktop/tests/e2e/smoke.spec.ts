@@ -103,7 +103,7 @@ async function chooseSharedComputeProvider(
   await page
     .getByRole("menuitemradio", {
       exact: true,
-      name: "Buzz shared compute",
+      name: "Nimino shared compute",
     })
     .click();
 }
@@ -123,7 +123,7 @@ test("creates a new mocked stream", async ({ page }) => {
   await expect(page.getByTestId("chat-title")).toContainText(channelName);
 });
 
-test("Buzz shared compute explains automatic model selection", async ({
+test("Nimino shared compute explains automatic model selection", async ({
   page,
 }) => {
   await page.goto("/");
@@ -158,7 +158,7 @@ test("Buzz shared compute explains automatic model selection", async ({
   await expect(page.locator("#persona-custom-model")).toHaveCount(0);
 });
 
-test("create agent persists Buzz shared compute with auto model", async ({
+test("create agent persists Nimino shared compute with auto model", async ({
   page,
 }) => {
   const agentName = `Shared compute agent ${Date.now()}`;
@@ -196,7 +196,7 @@ test("create agent persists Buzz shared compute with auto model", async ({
   }, agentName);
 
   expect(createPayload).toMatchObject({
-    agentCommand: "buzz-agent",
+    agentCommand: "nimino-agent",
     model: "auto",
     provider: "relay-mesh",
     spawnAfterCreate: true,
@@ -218,7 +218,7 @@ test("create agent supports parallelism and system prompt overrides", async ({
     .locator("#persona-system-prompt")
     .fill("You are concise and parallelize independent work.");
 
-  // The buzz-agent runtime auto-selects once the ACP runtime catalog loads;
+  // The nimino-agent runtime auto-selects once the ACP runtime catalog loads;
   // Customize reveals the per-agent LLM provider and model fields.
   await page.getByRole("tab", { name: "Customize for this agent" }).click();
   const llmProvider = page.locator("#persona-llm-provider");

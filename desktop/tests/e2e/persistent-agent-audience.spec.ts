@@ -485,7 +485,7 @@ test("channel automatic mentions carry into threads and stay synchronized", asyn
   await expect(channelAutomaticMention).toHaveCount(0);
 });
 
-for (const theme of ["buzz", "buzz-dark"]) {
+for (const theme of ["nimino", "nimino-dark"]) {
   test(`captures the mention-button placement in ${theme}`, async ({
     page,
   }) => {

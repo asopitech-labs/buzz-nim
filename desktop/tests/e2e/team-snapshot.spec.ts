@@ -426,7 +426,7 @@ test("team sharing keeps link copy and export in the shared surface", async ({
   ).toHaveCSS("position", "relative");
   const idleCopyLinkButtonBox = await copyLinkButton.boundingBox();
   await copyLinkButton.click();
-  await expect(copyLinkButton.locator(".sprout-arc-spinner")).toBeVisible();
+  await expect(copyLinkButton.locator(".nimino-arc-spinner")).toBeVisible();
   await expect(copyLinkButton).toContainText("Copying…");
   await expect(copyLinkButton).toHaveCSS("opacity", "1");
   await expect(recipientSearch).toBeEnabled();

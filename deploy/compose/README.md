@@ -9,6 +9,8 @@ the root `docker-compose.yml`, which remains local development infrastructure.
 cd deploy/compose
 cp .env.example .env
 $EDITOR .env       # replace every CHANGE_ME value
+# Add DER chirps/tls.crt, PKCS#8 DER chirps/tls.key, and DER chirps/ca.crt.
+# chmod 600 chirps/tls.key
 ./run.sh start
 ```
 
@@ -31,16 +33,20 @@ keypair.
   verified release set. Compose fixes the repository to
   `ghcr.io/asopitech-labs/nimino`; tags and predecessor repositories cannot be
   substituted.
-- Keep `NIMINO_RELAY_PRIVATE_KEY`, `NIMINO_GIT_HOOK_HMAC_SECRET`, database/Redis,
-  and S3 secrets stable across restarts.
+- Keep `NIMINO_RELAY_PRIVATE_KEY`, `NIMINO_GIT_HOOK_HMAC_SECRET`, database, and
+  S3 secrets stable across restarts.
 - `RELAY_OWNER_PUBKEY` is intentionally not prefixed with `NIMINO_`; it must be a
   64-character hex Nostr pubkey when closed relay mode is enabled.
 - `NIMINO_AUTO_MIGRATE` is opt-in. Set `NIMINO_AUTO_MIGRATE=true` or run
-  `buzz-admin migrate` before starting the relay when bootstrapping a fresh
+  `nimino-admin migrate` before starting the relay when bootstrapping a fresh
   database. Auto-migration requires an image that includes embedded SQLx
   migrations.
-- The stack uses Postgres, Redis, MinIO, and a git data volume because
-  those are real Nimino dependencies today. Minimal mode can simplify this later.
+- The stack uses PostgreSQL, MinIO, a Git work volume, and a persistent
+  per-node Chirps sync-store volume. Ephemeral socket delivery and admission
+  caches stay inside each relay process.
+- `chirps/tls.crt`, `chirps/tls.key`, and `chirps/ca.crt` are mandatory DER
+  trust material. The private key must not be group/world-readable. Keep the
+  identity file in the cluster volume stable across restarts.
 - The bundled Compose stack fixes the relay endpoint to `http://minio:9000` and
   `NIMINO_S3_ADDRESSING_STYLE=path`: Docker DNS resolves `minio`, not
   `<bucket>.minio`. It is not configurable for an external S3 provider through

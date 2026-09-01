@@ -5,8 +5,6 @@ import { getStorageItem, removeStorageItem } from "@/shared/lib/safeStorage";
 
 const COMMUNITIES_KEY = "nimino-communities";
 const ACTIVE_COMMUNITY_KEY = "nimino-active-community-id";
-const LEGACY_WORKSPACES_KEY = "nimino-workspaces";
-const LEGACY_ACTIVE_WORKSPACE_KEY = "nimino-active-workspace-id";
 const COMMUNITY_DISCOVERY_AFTER_LEAVE_KEY =
   "nimino-community-discovery-after-leave";
 
@@ -32,38 +30,8 @@ export async function expandTilde(input: string): Promise<string | undefined> {
   return trimmed;
 }
 
-export function migrateLegacyCommunityStorage(
-  storage: Storage = localStorage,
-): void {
-  try {
-    if (storage.getItem(COMMUNITIES_KEY) === null) {
-      const legacyCommunities = storage.getItem(LEGACY_WORKSPACES_KEY);
-      if (legacyCommunities !== null) {
-        storage.setItem(COMMUNITIES_KEY, legacyCommunities);
-      }
-    }
-    if (storage.getItem(ACTIVE_COMMUNITY_KEY) === null) {
-      const legacyActiveCommunity = storage.getItem(
-        LEGACY_ACTIVE_WORKSPACE_KEY,
-      );
-      if (legacyActiveCommunity !== null) {
-        storage.setItem(ACTIVE_COMMUNITY_KEY, legacyActiveCommunity);
-      }
-    }
-  } catch (error) {
-    // WebKit throws SecurityError from getItem when storage access is denied
-    // for the origin (block/buzz#5078). Fencing here so the app can still
-    // boot with an empty/default community list instead of a blank window.
-    console.warn(
-      "[communityStorage] migrateLegacyCommunityStorage failed (storage denied?):",
-      error,
-    );
-  }
-}
-
 export function loadCommunities(): Community[] {
   try {
-    migrateLegacyCommunityStorage();
     const raw = getStorageItem(COMMUNITIES_KEY);
     if (!raw) {
       return [];
@@ -116,7 +84,7 @@ export function loadCommunityDiscoveryAfterLeave(
   try {
     return storage.getItem(COMMUNITY_DISCOVERY_AFTER_LEAVE_KEY) === "1";
   } catch (error) {
-    // block/buzz#5078 — storage access can be denied for the origin; degrade
+    // asopitech-labs/nimino#5078 — storage access can be denied for the origin; degrade
     // to the default ("didn't just leave") instead of crashing the boot path.
     console.warn(
       "[communityStorage] loadCommunityDiscoveryAfterLeave failed:",
@@ -146,13 +114,10 @@ export function markCommunityDiscoveryAfterLeave(
 export function clearCommunityStorage(storage: Storage = localStorage): void {
   storage.removeItem(COMMUNITIES_KEY);
   storage.removeItem(ACTIVE_COMMUNITY_KEY);
-  storage.removeItem(LEGACY_WORKSPACES_KEY);
-  storage.removeItem(LEGACY_ACTIVE_WORKSPACE_KEY);
 }
 
 export function loadActiveCommunityId(): string | null {
-  migrateLegacyCommunityStorage();
-  // block/buzz#5078 — WebKit can throw SecurityError from a denied-storage
+  // asopitech-labs/nimino#5078 — WebKit can throw SecurityError from a denied-storage
   // getItem. Fail closed so the boot path renders the default community UI
   // instead of unmounting the root.
   return getStorageItem(ACTIVE_COMMUNITY_KEY);
@@ -195,9 +160,9 @@ export function deriveCommunityName(relayUrl: string): string {
       return "Local Dev";
     }
     const parts = host.split(".");
-    // Detect staging environments (e.g. buzz-oss.stage.blox.sqprod.co)
+    // Detect staging environments (e.g. staging.relay.nimino.example)
     if (parts.some((p) => p === "stage" || p === "staging")) {
-      return "Buzz (staging)";
+      return "Nimino (staging)";
     }
     // Use the first subdomain segment or the domain itself
     if (parts.length >= 2) {
@@ -225,7 +190,7 @@ export function initFirstCommunity(
     pubkey,
     addedAt: new Date().toISOString(),
   };
-  // block/buzz#5078 — read the prior active id through the throw-safe helper;
+  // asopitech-labs/nimino#5078 — read the prior active id through the throw-safe helper;
   // a denied-storage origin would otherwise kill onboarding before a single
   // write is attempted.
   const previousActiveCommunityId = getStorageItem(ACTIVE_COMMUNITY_KEY);

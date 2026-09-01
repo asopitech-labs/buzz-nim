@@ -7,7 +7,7 @@ pub(super) fn run(
     steps: &mut Vec<InstallStepResult>,
     reporter: &InstallReporter,
 ) {
-    // Observe PATH changes and binaries added after Buzz launched.
+    // Observe PATH changes and binaries added after Nimino launched.
     crate::managed_agents::refresh_login_shell_path();
     crate::managed_agents::clear_resolve_cache();
 
@@ -34,11 +34,11 @@ fn failure(
         success: false,
         stdout: String::new(),
         stderr: format!(
-            "The installer finished, but Buzz still could not use {runtime_id} (observed: {observed})."
+            "The installer finished, but Nimino still could not use {runtime_id} (observed: {observed})."
         ),
         exit_code: None,
         hint: Some(
-            "Buzz requires the vendor CLI executable, not only its desktop app. If the CLI was installed while Buzz was open, restart Buzz and check again."
+            "Nimino requires the vendor CLI executable, not only its desktop app. If the CLI was installed while Nimino was open, restart Nimino and check again."
                 .to_string(),
         ),
     })

@@ -13,7 +13,11 @@ use std::{
 
 use sha2::{Digest, Sha256};
 
-/// Maximum accepted replication chunk; equal to the Chirps message ceiling.
+mod replication;
+
+pub use replication::{ObjectSyncClient, ObjectSyncError, ObjectSyncRuntime};
+
+/// Maximum accepted local staging chunk; network frames use a smaller bound.
 pub const MAX_CHUNK_BYTES: usize = 1_048_576;
 /// Largest object admitted by the v1 manifest and local adapter.
 pub const MAX_OBJECT_BYTES: u64 = 68_719_476_736;
@@ -256,6 +260,35 @@ impl LocalObjectStore {
             return Err(ObjectStoreError::ReadLimit { size, limit });
         }
         fs::read(path).map_err(map_not_found)
+    }
+
+    /// Read one bounded range from a complete object without allocating it all.
+    pub fn read_chunk(
+        &self,
+        digest: &str,
+        expected_size: u64,
+        offset: u64,
+        max_len: usize,
+    ) -> Result<Vec<u8>, ObjectStoreError> {
+        if max_len == 0 || max_len > MAX_CHUNK_BYTES || offset >= expected_size {
+            return Err(ObjectStoreError::InvalidInput("invalid object range"));
+        }
+        let path = self.object_path(digest)?;
+        let size = fs::metadata(&path).map_err(map_not_found)?.len();
+        if size != expected_size {
+            return Err(ObjectStoreError::Incomplete {
+                expected: expected_size,
+                actual: size,
+            });
+        }
+        let length = usize::try_from(expected_size - offset)
+            .unwrap_or(usize::MAX)
+            .min(max_len);
+        let mut file = File::open(path).map_err(map_not_found)?;
+        file.seek(SeekFrom::Start(offset))?;
+        let mut chunk = vec![0; length];
+        file.read_exact(&mut chunk)?;
+        Ok(chunk)
     }
 
     /// Delete one exact installed object. Already-absent is idempotent success.

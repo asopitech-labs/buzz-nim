@@ -5,7 +5,7 @@ use serde_json::Value;
 use thiserror::Error;
 
 /// On-disk schema understood by this adapter.
-pub const SCHEMA_VERSION: u64 = 1;
+pub const SCHEMA_VERSION: u64 = 2;
 /// Largest accepted serialized JSON record.
 pub const MAX_RECORD_BYTES: usize = 1_048_576;
 /// Largest atomic write batch accepted by the adapter.
@@ -188,6 +188,14 @@ pub enum StoreError {
     /// A completed stage cannot accept more rows.
     #[error("projection stage is already complete")]
     ProjectionStageComplete,
+    /// A derived projection consumer lost its durable checkpoint CAS.
+    #[error("projection checkpoint conflict: expected {expected}, actual {actual}")]
+    ProjectionCheckpointConflict {
+        /// Checkpoint supplied by the consumer.
+        expected: u64,
+        /// Current durable consumer checkpoint.
+        actual: u64,
+    },
     /// Append-only storage already contains the supplied typed key.
     #[error("append-only log key already exists")]
     DuplicateLogKey,
@@ -256,6 +264,30 @@ pub trait NodeStorePort: Send + Sync {
         after_sequence: u64,
         limit: usize,
     ) -> Result<Vec<StoredRecord>, StoreError>;
+
+    /// Reads the current canonical state across all record types in key order.
+    fn canonical_page(
+        &self,
+        community_id: &str,
+        after: Option<(&str, &str)>,
+        limit: usize,
+    ) -> Result<Vec<StoredRecord>, StoreError>;
+
+    /// Returns the last canonical change applied by a local derived projection.
+    fn projection_checkpoint(
+        &self,
+        community_id: &str,
+        projection: &str,
+    ) -> Result<u64, StoreError>;
+
+    /// Atomically advances a local derived projection checkpoint.
+    fn advance_projection_checkpoint(
+        &self,
+        community_id: &str,
+        projection: &str,
+        expected_checkpoint: u64,
+        next_checkpoint: u64,
+    ) -> Result<(), StoreError>;
 
     /// Creates a schema-verified backup with atomic no-clobber installation.
     fn backup_to(&self, destination: &Path) -> Result<(), StoreError>;

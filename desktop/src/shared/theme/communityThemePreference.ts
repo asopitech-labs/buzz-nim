@@ -15,7 +15,7 @@ export type CommunityThemePreference = {
 
 export const DEFAULT_COMMUNITY_THEME: CommunityThemePreference = Object.freeze({
   version: 1,
-  theme: "buzz",
+  theme: "nimino",
   accent: "#3b82f6",
   followSystem: true,
 });

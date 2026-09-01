@@ -39,10 +39,6 @@ spec:
           # prefer the URL stored in values vs. the Secret. Pick one.
           url: ""
 
-        externalRedis:
-          url: ""
-
-
         s3:
           endpoint: "https://s3.us-east-1.amazonaws.com"
           bucket: "nimino-media"
@@ -52,9 +48,7 @@ spec:
 
         persistence:
           git:
-            enabled: true
-            accessMode: ReadWriteOnce      # RWO is fine at any replicaCount (object-store-backed git)
-            storageClass: ""               # any RWO class; no shared/RWX filesystem needed
+            # Bounded per-pod emptyDir for object-store-backed Git scratch.
             size: 50Gi
 
         ingress:

@@ -28,7 +28,7 @@ test("Home owns Inbox and Activity with keyboard history", async ({ page }) => {
   ).toBeVisible();
   await expect(page.getByTestId("open-pulse-view")).toHaveCount(0);
   await waitForAnimations(page);
-  await page.locator("[data-buzz-content-surface]").last().screenshot({
+  await page.locator("[data-nimino-content-surface]").last().screenshot({
     path: "test-results/navigation-consolidation/home-activity.png",
   });
 
@@ -90,7 +90,7 @@ async function hoverUntilMetadataTooltip(
       await chip.hover();
       return page
         .getByRole("tooltip")
-        .locator('[data-buzz-tooltip-metadata-content=""]')
+        .locator('[data-nimino-tooltip-metadata-content=""]')
         .count();
     })
     .toBeGreaterThan(0);
@@ -452,7 +452,7 @@ test("settings shortcut returns without opening search dialog", async ({
   await expect(page.getByTestId("search-results")).not.toBeVisible();
 });
 
-test("mixed Buzz permalinks render as chips in the composer", async ({
+test("mixed Nimino permalinks render as chips in the composer", async ({
   page,
 }) => {
   await page.goto("/");
@@ -466,9 +466,9 @@ test("mixed Buzz permalinks render as chips in the composer", async ({
   const links = [
     `nimino://message?channel=${channelId}&id=mock-general-welcome`,
     `nimino://channel/${channelId}`,
-    `nimino://repo?owner=${owner}&d=buzz-world`,
-    `nimino://pr?id=${pullRequestId}&owner=${owner}&d=buzz-world`,
-    `nimino://issue?id=${issueId}&owner=${owner}&d=buzz-world`,
+    `nimino://repo?owner=${owner}&d=nimino-world`,
+    `nimino://pr?id=${pullRequestId}&owner=${owner}&d=nimino-world`,
+    `nimino://issue?id=${issueId}&owner=${owner}&d=nimino-world`,
   ].join(" ");
   const composerInput = page.getByTestId("message-input");
   await composerInput.evaluate((element, text) => {
@@ -483,14 +483,14 @@ test("mixed Buzz permalinks render as chips in the composer", async ({
     );
   }, links);
 
-  const chips = composerInput.locator('[data-composer-buzz-link=""]');
+  const chips = composerInput.locator('[data-composer-nimino-link=""]');
   await expect(chips).toHaveCount(5);
   await expect(chips.nth(0)).toHaveText("general");
   await expect(chips.nth(1)).toHaveText("general");
-  await expect(chips.nth(2)).toHaveText("buzz-world");
+  await expect(chips.nth(2)).toHaveText("nimino-world");
   // PR and issue chips both use repository identity only, matching rendered chips.
-  await expect(chips.nth(3)).toHaveText("buzz-world");
-  await expect(chips.nth(4)).toHaveText("buzz-world");
+  await expect(chips.nth(3)).toHaveText("nimino-world");
+  await expect(chips.nth(4)).toHaveText("nimino-world");
   await expect(chips.nth(1)).toHaveClass(/inline-chip-icon-channel/);
   await expect(chips.nth(2)).toHaveClass(/inline-chip-icon-repo/);
   await expect(chips.nth(3)).toHaveClass(/inline-chip-icon-pr/);
@@ -543,7 +543,7 @@ test("message links to visible root messages open the thread panel", async ({
   await expect(composerLink).toHaveText(/general(?: · mock-gen)?/);
   await expect(composerLink).toHaveClass(/mention-chip/);
   await expect(composerLink).toHaveClass(/inline-chip-icon-message/);
-  await expect(composerLink).toHaveAttribute("data-buzz-link", "");
+  await expect(composerLink).toHaveAttribute("data-nimino-link", "");
   await expect(composerLink).toHaveAttribute("title", "Thread in #general");
   await expect(composerInput).not.toContainText("nimino://message");
   await page.getByTestId("send-message").click();
@@ -594,7 +594,7 @@ test("message links to visible root messages open the thread panel", async ({
   await hoverUntilMetadataTooltip(page, rootThreadLink);
   const messageTooltip = page.getByRole("tooltip");
   await expect(
-    messageTooltip.locator('[data-buzz-tooltip-metadata-content=""]'),
+    messageTooltip.locator('[data-nimino-tooltip-metadata-content=""]'),
   ).toHaveText("Welcome to general");
   // The tooltip proves metadata resolved; the inline chip must still carry the
   // channel label at the exact width it had while the fetch was in flight, and
@@ -604,10 +604,10 @@ test("message links to visible root messages open the thread panel", async ({
     pendingChipBox?.width,
   );
   await expect(
-    messageTooltip.locator('[data-buzz-tooltip-metadata-content=""]'),
+    messageTooltip.locator('[data-nimino-tooltip-metadata-content=""]'),
   ).toHaveClass(/line-clamp-3/);
   const messageFooter = messageTooltip.locator(
-    '[data-buzz-tooltip-metadata-type=""]',
+    '[data-nimino-tooltip-metadata-type=""]',
   );
   await expect(messageFooter).toHaveText(
     /#general · .+ · (just now|\d+[mhdw] ago)/,
@@ -632,7 +632,7 @@ test("message links to visible root messages open the thread panel", async ({
   await expect(
     page
       .getByRole("tooltip")
-      .locator('[data-buzz-tooltip-metadata-content=""]'),
+      .locator('[data-nimino-tooltip-metadata-content=""]'),
   ).toHaveText("Welcome to general");
   await expect
     .poll(() =>
@@ -661,10 +661,10 @@ test("message links to visible root messages open the thread panel", async ({
   await randomChannelLink.hover();
   const channelTooltip = page.getByRole("tooltip");
   await expect(
-    channelTooltip.locator('[data-buzz-tooltip-metadata-content=""]'),
+    channelTooltip.locator('[data-nimino-tooltip-metadata-content=""]'),
   ).toHaveText("Off-topic, fun stuff");
   const channelFooter = channelTooltip.locator(
-    '[data-buzz-tooltip-metadata-type=""]',
+    '[data-nimino-tooltip-metadata-type=""]',
   );
   await expect(channelFooter).toHaveText("Public channel");
   await expect(channelFooter).toHaveCSS("white-space", "normal");
@@ -672,7 +672,7 @@ test("message links to visible root messages open the thread panel", async ({
   await rootThreadLink.hover();
   await rootThreadLink.click({ button: "right" });
 
-  const linkMenu = page.locator("[data-buzz-link-context-menu]");
+  const linkMenu = page.locator("[data-nimino-link-context-menu]");
   await expect(linkMenu).toBeVisible();
   await randomChannelLink.click({ button: "right" });
   await expect(linkMenu).toHaveCount(1);
@@ -743,7 +743,7 @@ test("direct-message tooltip metadata stays on one physical line", async ({
 
   const footer = page
     .getByRole("tooltip")
-    .locator('[data-buzz-tooltip-metadata-type=""]');
+    .locator('[data-nimino-tooltip-metadata-type=""]');
   await expect(footer).toContainText("Direct message with alice-tyler");
   await expect(footer).toHaveCSS("white-space", "nowrap");
   await expect(footer).toHaveCSS("overflow", "hidden");
@@ -790,7 +790,7 @@ test("message links explain when preview metadata is unavailable", async ({
   await expect(missingMessageLink).toHaveText("general");
   // The label is metadata-independent now, so gate the hover on the state the
   // failed lookup does change: the unavailable styling.
-  await expect(missingMessageLink).toHaveClass(/buzz-link-unavailable/);
+  await expect(missingMessageLink).toHaveClass(/nimino-link-unavailable/);
   await missingMessageLink.hover();
   const unavailableTooltip = page.getByRole("tooltip");
   await expect(unavailableTooltip).toHaveText("Message unavailable");

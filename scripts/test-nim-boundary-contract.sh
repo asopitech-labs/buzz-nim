@@ -6,6 +6,11 @@ contract_dir="$repo_root/contracts/nim-rust-boundary/v1"
 rust_contract="$repo_root/crates/nimino-boundary/src/contract.rs"
 nim_contract="$repo_root/nim/nimino_core/src/nimino_core/boundary/protocol.nim"
 
+if ! command -v rg >/dev/null 2>&1; then
+  echo "rg is required for boundary source checks" >&2
+  exit 1
+fi
+
 expected_bundle="$(sed -n 's/^# bundle-sha256: //p' "$contract_dir/schema.sha256")"
 node - "$contract_dir" <<'NODE'
 const crypto = require("node:crypto");
@@ -99,6 +104,12 @@ for (const [schemaName, fixtureName] of [
   ["request.schema.json", "cli-policy.request.json"],
   ["request.schema.json", "agent-policy.request.json"],
   ["request.schema.json", "cluster-lifecycle.request.json"],
+  ["request.schema.json", "control-policy.request.json"],
+  ["request.schema.json", "lease-policy.request.json"],
+  ["request.schema.json", "effect-policy.request.json"],
+  ["request.schema.json", "object-policy.request.json"],
+  ["request.schema.json", "projection-policy.request.json"],
+  ["request.schema.json", "sync-policy.request.json"],
   ["response.schema.json", "echo.response.json"],
   ["response.schema.json", "event-policy.response.json"],
   ["response.schema.json", "community-policy.response.json"],
@@ -109,6 +120,12 @@ for (const [schemaName, fixtureName] of [
   ["response.schema.json", "cli-policy.response.json"],
   ["response.schema.json", "agent-policy.response.json"],
   ["response.schema.json", "cluster-lifecycle.response.json"],
+  ["response.schema.json", "control-policy.response.json"],
+  ["response.schema.json", "lease-policy.response.json"],
+  ["response.schema.json", "effect-policy.response.json"],
+  ["response.schema.json", "object-policy.response.json"],
+  ["response.schema.json", "projection-policy.response.json"],
+  ["response.schema.json", "sync-policy.response.json"],
   ["response.schema.json", "unknown-operation.response.json"],
 ]) {
   const schema = JSON.parse(fs.readFileSync(path.join(root, schemaName), "utf8"));
@@ -133,8 +150,8 @@ grep -Fq "$expected_bundle" "$nim_contract"
 grep -Fq 'nimino.core.boundary' "$rust_contract"
 grep -Fq 'nimino.core.boundary' "$nim_contract"
 
-if rg -n '^\s*(use|extern crate)\s+(buzz_|sqlx|redis|nostr|iroh|chirps)' \
-  "$repo_root/crates/nimino-boundary/src" --glob '*.rs'; then
+if rg -n '^\s*(use|extern crate)\s+(nimino_|sqlx|redis|nostr|iroh|chirps)' \
+  "$repo_root/crates/nimino-boundary/src" --glob '*.rs' --glob '!**/bin/**'; then
   echo "boundary adapter imports a forbidden domain/storage/cluster owner" >&2
   exit 1
 fi
@@ -156,12 +173,15 @@ if rg -n 'println!|print!' \
   "$repo_root/crates/nimino-boundary/src/cli.rs" \
   "$repo_root/crates/nimino-boundary/src/codec.rs" \
   "$repo_root/crates/nimino-boundary/src/community.rs" \
+  "$repo_root/crates/nimino-boundary/src/control.rs" \
   "$repo_root/crates/nimino-boundary/src/contract.rs" \
   "$repo_root/crates/nimino-boundary/src/dm.rs" \
   "$repo_root/crates/nimino-boundary/src/moderation.rs" \
   "$repo_root/crates/nimino-boundary/src/error.rs" \
+  "$repo_root/crates/nimino-boundary/src/lease.rs" \
   "$repo_root/crates/nimino-boundary/src/membership.rs" \
   "$repo_root/crates/nimino-boundary/src/runtime.rs" \
+  "$repo_root/crates/nimino-boundary/src/sync.rs" \
   "$repo_root/crates/nimino-boundary/src/workflow.rs"; then
   echo "library code must not write to the worker protocol stream" >&2
   exit 1

@@ -77,6 +77,15 @@ for (const entry of contract.rustPolicySitesToShrink) {
     );
   }
 }
+for (const entry of contract.productionPolicyCallers) {
+  const source = readFileSync(entry.path, "utf8");
+  for (const marker of entry.markers) {
+    check(
+      source.includes(marker),
+      `${entry.path}: production community policy call is missing ${marker}`,
+    );
+  }
+}
 
 console.log(
   `Nimino community contract verified (${corpus.cases.length} golden cases)`,

@@ -57,7 +57,7 @@ pub(crate) struct HarnessDefinition {
     #[serde(default)]
     pub args: Vec<String>,
     /// Environment variables injected at spawn time. Definition env is applied
-    /// first and LOSES on conflict with Buzz-injected vars — `NIMINO_MANAGED_AGENT`
+    /// first and LOSES on conflict with Nimino-injected vars — `NIMINO_MANAGED_AGENT`
     /// is always authoritative and cannot be overridden here.
     #[serde(default)]
     pub env: BTreeMap<String, String>,
@@ -175,7 +175,7 @@ fn validate_harness_definition(def: &HarnessDefinition) -> Result<(), String> {
     }
     // Args travel to the harness through the comma-delimited
     // `NIMINO_ACP_AGENT_ARGS` env transport (clap `value_delimiter = ','` on the
-    // buzz-acp side), so a literal comma inside one argument would silently
+    // nimino-acp side), so a literal comma inside one argument would silently
     // split into two arguments at runtime. Reject at the validation boundary —
     // shared by save (UI/Tauri) and load (hand-authored files) — so the
     // invariant holds regardless of how the definition arrives.
@@ -220,7 +220,7 @@ pub(crate) fn validate_harness_definition_pub(def: &HarnessDefinition) -> Result
 /// tier-1 runtimes — no hand-maintained copy.  Adding a preset to
 /// `PRESET_HARNESSES` automatically reserves its ID without a separate edit.
 fn builtin_ids() -> impl Iterator<Item = &'static str> {
-    const TIER1: &[&str] = &["goose", "claude", "codex", "buzz-agent"];
+    const TIER1: &[&str] = &["goose", "claude", "codex", "nimino-agent"];
     let tier2 = crate::managed_agents::discovery::preset_harness_ids();
     TIER1.iter().copied().chain(tier2.iter().copied())
 }
@@ -240,13 +240,13 @@ pub(crate) fn check_id_collision(id: &str) -> Result<(), String> {
 //
 // `known_acp_runtime` / `known_acp_runtime_exact` only search the static
 // `KNOWN_ACP_RUNTIMES` table, so custom and preset harnesses were invisible at
-// spawn time, causing silent fallback to buzz-agent.
+// spawn time, causing silent fallback to nimino-agent.
 //
 // The fix: `discover_acp_runtimes_from` populates this registry with every
 // non-builtin definition after each discovery run. Spawn, readiness, and
 // summary paths query `lookup_loaded_harness` to get the live definition for a
 // given id or command. If a harness id that an agent references is gone from the
-// registry, the caller gets a typed error — never a silent buzz-agent fallback.
+// registry, the caller gets a typed error — never a silent nimino-agent fallback.
 
 use std::sync::{Arc, RwLock};
 
@@ -537,7 +537,7 @@ mod tests {
     #[test]
     fn builtin_ids_are_rejected() {
         // Tier-1 hard-coded IDs must always be reserved.
-        for id in &["goose", "claude", "codex", "buzz-agent"] {
+        for id in &["goose", "claude", "codex", "nimino-agent"] {
             assert!(check_id_collision(id).is_err(), "{id} should be rejected");
         }
         // Tier-2 preset IDs must also be reserved (derived from PRESET_HARNESSES).
@@ -901,7 +901,7 @@ mod tests {
     }
 
     #[test]
-    fn validate_rejects_reserved_key_buzz_managed_agent() {
+    fn validate_rejects_reserved_key_nimino_managed_agent() {
         // NIMINO_MANAGED_AGENT and NIMINO_MANAGED_AGENT_START_NONCE are the
         // ownership markers — supplying them in a definition must be rejected.
         let mut env = BTreeMap::new();

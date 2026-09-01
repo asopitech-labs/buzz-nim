@@ -2,11 +2,11 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 
-use buzz_core_pkg::kind::KIND_PAIRING;
-use buzz_core_pkg::pairing::qr::{decode_qr, encode_qr, QrPayload};
-use buzz_core_pkg::pairing::session::PairingSession;
-use buzz_core_pkg::pairing::types::{AbortReason, PayloadType};
 use futures_util::{SinkExt, StreamExt};
+use nimino_core_pkg::kind::KIND_PAIRING;
+use nimino_core_pkg::pairing::qr::{decode_qr, encode_qr, QrPayload};
+use nimino_core_pkg::pairing::session::PairingSession;
+use nimino_core_pkg::pairing::types::{AbortReason, PayloadType};
 use nostr::ToBech32;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State};
@@ -692,7 +692,7 @@ fn event_to_relay_json(event: &nostr::Event) -> String {
     format!("[\"EVENT\",{}]", nostr::JsonUtil::as_json(event))
 }
 
-/// Parse a relay EVENT message into a nostr 0.36 Event (buzz-core compatible).
+/// Parse a relay EVENT message into a nostr 0.36 Event (nimino-core compatible).
 fn parse_relay_event(text: &str, sub_id: &str) -> Option<nostr::Event> {
     let arr: serde_json::Value = serde_json::from_str(text).ok()?;
     let arr = arr.as_array()?;

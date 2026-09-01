@@ -11,7 +11,7 @@ function makeTool(overrides = {}) {
     type: "tool",
     title: "Tool call",
     toolName: "shell",
-    buzzToolName: null,
+    niminoToolName: null,
     status: "completed",
     args: {},
     result: "",
@@ -23,11 +23,11 @@ function makeTool(overrides = {}) {
   };
 }
 
-test("buildCompactToolSummary formats Buzz send_message preview", () => {
+test("buildCompactToolSummary formats Nimino send_message preview", () => {
   const summary = buildCompactToolSummary(
     makeTool({
       toolName: "send_message",
-      buzzToolName: "send_message",
+      niminoToolName: "send_message",
       title: "Send Message",
       args: { content: "Hello team" },
     }),
@@ -42,7 +42,7 @@ test("buildCompactToolSummary formats Buzz send_message preview", () => {
 test("buildCompactToolSummary treats nimino messages send commands as messages", () => {
   const summary = buildCompactToolSummary(
     makeTool({
-      toolName: "buzz-dev-mcp__shell",
+      toolName: "nimino-dev-mcp__shell",
       args: {
         command:
           'nimino --format compact messages send --channel channel-1 --content "@Ned are you working"',
@@ -75,7 +75,7 @@ test("buildCompactToolSummary returns null preview for piped stdin sends", () =>
 test("buildCompactToolSummary formats shell command preview", () => {
   const summary = buildCompactToolSummary(
     makeTool({
-      toolName: "buzz-dev-mcp__shell",
+      toolName: "nimino-dev-mcp__shell",
       args: { command: "git status" },
     }),
   );
@@ -88,10 +88,10 @@ test("buildCompactToolSummary formats shell command preview", () => {
 
 test("buildCompactToolSummary formats view_image thumbnail source", () => {
   const source =
-    "https://sprout-oss.stage.blox.sqprod.co/media/ffd1b2721f2d52e19f0ca2be9aa7842cdec5b4e0215aaab2a67c26a2a76a6a83.png";
+    "https://relay.nimino.example/media/ffd1b2721f2d52e19f0ca2be9aa7842cdec5b4e0215aaab2a67c26a2a76a6a83.png";
   const summary = buildCompactToolSummary(
     makeTool({
-      toolName: "buzz-dev-mcp__view_image",
+      toolName: "nimino-dev-mcp__view_image",
       args: { source },
     }),
   );
@@ -192,7 +192,7 @@ test("buildCompactToolSummary uses running and failed labels", () => {
   );
 });
 
-test("buildCompactToolSummary promotes non-send buzz CLI commands to relay ops", () => {
+test("buildCompactToolSummary promotes non-send nimino CLI commands to relay ops", () => {
   const summary = buildCompactToolSummary(
     makeTool({
       toolName: "shell",
@@ -210,7 +210,7 @@ test("buildCompactToolSummary promotes non-send buzz CLI commands to relay ops",
   assert.equal(summary.shellContent, "nimino channels get --channel channel-1");
 });
 
-test("buildCompactToolSummary exposes shellContent for shell-sourced buzz CLI reads", () => {
+test("buildCompactToolSummary exposes shellContent for shell-sourced nimino CLI reads", () => {
   const command =
     "sleep 45; nimino messages thread --channel channel-uuid --event abc | tail -n 20";
   const summary = buildCompactToolSummary(
@@ -232,11 +232,11 @@ test("buildCompactToolSummary exposes shellContent for shell-sourced buzz CLI re
   });
 });
 
-test("buildCompactToolSummary derives structured actions for native Buzz MCP tools", () => {
+test("buildCompactToolSummary derives structured actions for native Nimino MCP tools", () => {
   const summary = buildCompactToolSummary(
     makeTool({
       toolName: "get_channel",
-      buzzToolName: "get_channel",
+      niminoToolName: "get_channel",
       args: {
         channel_id: "channel-1",
       },

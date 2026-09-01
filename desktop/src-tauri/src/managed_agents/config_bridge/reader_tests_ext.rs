@@ -13,7 +13,7 @@ use super::*;
 #[test]
 fn numeric_context_limit_inherits_from_persona_env() {
     let record = test_record();
-    let runtime = buzz_agent_runtime();
+    let runtime = nimino_agent_runtime();
     let tiers = persona_env_tiers("NIMINO_AGENT_MAX_CONTEXT_TOKENS", "200000");
 
     let surface = read_config_surface(&record, Some(runtime), None, &tiers, None);
@@ -30,14 +30,14 @@ fn record_max_tokens_overrides_global_env_with_secondary() {
         "NIMINO_AGENT_MAX_OUTPUT_TOKENS".to_string(),
         "8192".to_string(),
     );
-    let runtime = buzz_agent_runtime();
+    let runtime = nimino_agent_runtime();
     let tiers = global_env_tiers("NIMINO_AGENT_MAX_OUTPUT_TOKENS", "16384");
 
     let surface = read_config_surface(&record, Some(runtime), None, &tiers, None);
 
     let field = surface.normalized.max_output_tokens.unwrap();
     assert_eq!(field.value.as_deref(), Some("8192"));
-    assert_eq!(field.origin, ConfigOrigin::BuzzExplicit);
+    assert_eq!(field.origin, ConfigOrigin::NiminoExplicit);
     // Global value is the overridden secondary.
     assert_eq!(field.overridden_value.as_deref(), Some("16384"));
     assert_eq!(field.overridden_origin, Some(ConfigOrigin::GlobalDefault));
@@ -126,7 +126,7 @@ fn structured_fallback_intact_when_no_env_representation() {
 #[test]
 fn post_sanitization_empty_global_env_falls_through_to_persona_tier() {
     let record = test_record();
-    let runtime = buzz_agent_rt();
+    let runtime = nimino_agent_rt();
     // No global env (stripped); persona provides the valid fallback.
     let tiers = persona_env_tiers("NIMINO_AGENT_THINKING_EFFORT", "medium");
 
@@ -144,11 +144,11 @@ fn post_sanitization_empty_global_env_falls_through_to_persona_tier() {
 // definition-less record with both structured and env prompt — env wins.
 
 /// Pass-3 clarification: record.system_prompt = A + record env
-/// NIMINO_ACP_SYSTEM_PROMPT = B → B wins as BuzzExplicit.
+/// NIMINO_ACP_SYSTEM_PROMPT = B → B wins as NiminoExplicit.
 /// The env block sits above the struct block per v3 candidate-preparation
 /// contract; current reader semantics (struct before env) would be wrong.
 #[test]
-fn record_env_prompt_wins_over_record_struct_prompt_as_buzz_explicit() {
+fn record_env_prompt_wins_over_record_struct_prompt_as_nimino_explicit() {
     let mut record = test_record();
     record.system_prompt = Some("struct-prompt-A".to_string());
     record.env_vars.insert(
@@ -161,10 +161,10 @@ fn record_env_prompt_wins_over_record_struct_prompt_as_buzz_explicit() {
 
     let prompt = surface.normalized.system_prompt.unwrap();
     assert_eq!(prompt.value.as_deref(), Some("env-prompt-B"));
-    assert_eq!(prompt.origin, ConfigOrigin::BuzzExplicit);
+    assert_eq!(prompt.origin, ConfigOrigin::NiminoExplicit);
     // Struct prompt is the secondary.
     assert_eq!(prompt.overridden_value.as_deref(), Some("struct-prompt-A"));
-    assert_eq!(prompt.overridden_origin, Some(ConfigOrigin::BuzzExplicit));
+    assert_eq!(prompt.overridden_origin, Some(ConfigOrigin::NiminoExplicit));
 }
 
 // ── Definition env tier tests (Layer 2b) ─────────────────────────────────────
@@ -259,24 +259,24 @@ fn reserved_key_absent_from_definition_env_falls_through() {
 
 // ── B4/B5 canonical effort_level tier tests ────────────────────────────────
 //
-// record.effort_level is the Buzz-canonical seeded value (the effort a spawn
+// record.effort_level is the Nimino-canonical seeded value (the effort a spawn
 // applies at next session start via `apply_effort_env`). It must surface as
-// BuzzExplicit and take precedence over the config-file tier, but not over a
+// NiminoExplicit and take precedence over the config-file tier, but not over a
 // record env var override.
 
-/// B4: record.effort_level surfaces as BuzzExplicit when no env var is set.
+/// B4: record.effort_level surfaces as NiminoExplicit when no env var is set.
 #[test]
-fn b4_canonical_effort_level_surfaces_as_buzz_explicit() {
+fn b4_canonical_effort_level_surfaces_as_nimino_explicit() {
     let mut record = test_record();
     record.effort_level = Some("high".to_string());
-    let runtime = buzz_agent_runtime();
+    let runtime = nimino_agent_runtime();
     let surface = read_config_surface(&record, Some(runtime), None, &no_tiers(), None);
     let effort = surface
         .normalized
         .thinking_effort
         .expect("effort must surface from canonical record tier");
     assert_eq!(effort.value.as_deref(), Some("high"));
-    assert_eq!(effort.origin, ConfigOrigin::BuzzExplicit);
+    assert_eq!(effort.origin, ConfigOrigin::NiminoExplicit);
 }
 
 /// B4: record.effort_level shadows the config-file tier.
@@ -285,14 +285,14 @@ fn b4_canonical_effort_level_shadows_file_tier() {
     let mut record = test_record();
     record.effort_level = Some("medium".to_string());
     // No env var set — the config-file tier would win if canonical were absent.
-    let runtime = buzz_agent_runtime();
+    let runtime = nimino_agent_runtime();
     let surface = read_config_surface(&record, Some(runtime), None, &no_tiers(), None);
     let effort = surface
         .normalized
         .thinking_effort
         .expect("canonical effort must shadow file tier");
     assert_eq!(effort.value.as_deref(), Some("medium"));
-    assert_eq!(effort.origin, ConfigOrigin::BuzzExplicit);
+    assert_eq!(effort.origin, ConfigOrigin::NiminoExplicit);
 }
 
 /// B4: a record env var override still wins over record.effort_level, which
@@ -305,14 +305,14 @@ fn b4_record_env_var_wins_over_canonical_effort_level() {
         "NIMINO_AGENT_THINKING_EFFORT".to_string(),
         "high".to_string(),
     );
-    let runtime = buzz_agent_runtime();
+    let runtime = nimino_agent_runtime();
     let surface = read_config_surface(&record, Some(runtime), None, &no_tiers(), None);
     let effort = surface
         .normalized
         .thinking_effort
         .expect("env var must win over canonical effort");
     assert_eq!(effort.value.as_deref(), Some("high"));
-    assert_eq!(effort.origin, ConfigOrigin::BuzzExplicit);
+    assert_eq!(effort.origin, ConfigOrigin::NiminoExplicit);
     assert_eq!(effort.overridden_value.as_deref(), Some("low"));
 }
 
@@ -320,7 +320,7 @@ fn b4_record_env_var_wins_over_canonical_effort_level() {
 #[test]
 fn b4_none_canonical_effort_does_not_surface() {
     let record = test_record(); // effort_level defaults to None
-    let runtime = buzz_agent_runtime();
+    let runtime = nimino_agent_runtime();
     let surface = read_config_surface(&record, Some(runtime), None, &no_tiers(), None);
     assert!(
         surface.normalized.thinking_effort.is_none(),
@@ -396,7 +396,7 @@ fn claude_config_dir_none_falls_back_to_home_claude_json() {
 fn effort_option_selected_by_category_drives_all_facts() {
     let mut record = test_record();
     record.effort_level = Some("high".to_string());
-    let runtime = buzz_agent_rt();
+    let runtime = nimino_agent_rt();
     let cache = SessionConfigCache {
         config_options: vec![AcpConfigOptionEntry {
             config_id: "thinking-level".to_string(),
@@ -431,7 +431,7 @@ fn effort_option_selected_by_category_drives_all_facts() {
         .thinking_effort
         .expect("effort must surface with both configured and running facts");
     assert_eq!(effort.value.as_deref(), Some("high"));
-    assert_eq!(effort.origin, ConfigOrigin::BuzzExplicit);
+    assert_eq!(effort.origin, ConfigOrigin::NiminoExplicit);
     assert_eq!(effort.overridden_value.as_deref(), Some("default"));
     assert_eq!(
         effort.overridden_origin,

@@ -124,8 +124,8 @@
     },
     {
       "path": "RELEASING.md",
-      "symbol": "Linux `.deb`",
-      "signal": "The desktop release already produces Linux GUI artifacts rather than requiring a Windows shell."
+      "symbol": "qualified Ubuntu 24.04 bundle",
+      "signal": "The release pipeline produces a qualified WSL2 bundle rather than requiring a Windows-native shell."
     }
   ],
   "sources": [

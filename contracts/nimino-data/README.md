@@ -1,7 +1,7 @@
 # Nimino data contract
 
 Version 1 is the pure contract between Nim domain owners and the storage,
-replication, and projection work in Epic #10. It is a hard cut from the Buzz DB
+replication, and projection work in Epic #10. It is a hard cut from the Nimino DB
 API: no SQL shape, Rust type, Postgres transaction, or Chirps message is part of
 the contract.
 

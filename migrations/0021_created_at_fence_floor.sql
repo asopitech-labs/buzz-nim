@@ -21,7 +21,7 @@
 -- profile/discovery snapshots) legitimately carry client-signed historical
 -- timestamps and never appear in keyset-paged windows.
 --
--- Enforcement is opt-in per session via the buzz.created_at_floor GUC
+-- Enforcement is opt-in per session via the nimino.created_at_floor GUC
 -- (seconds). The relay's writer pool sets it on every connection
 -- (after_connect); when the GUC is unset or blank the guard is a no-op so
 -- pg_restore/backfills and test fixtures that legitimately write historical
@@ -44,7 +44,7 @@
 CREATE FUNCTION events_created_at_floor_guard() RETURNS trigger
 LANGUAGE plpgsql AS $$
 DECLARE
-    floor_secs numeric := nullif(current_setting('buzz.created_at_floor', true), '')::numeric;
+    floor_secs numeric := nullif(current_setting('nimino.created_at_floor', true), '')::numeric;
 BEGIN
     IF floor_secs IS NOT NULL
        AND floor_secs > 0

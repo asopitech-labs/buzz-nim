@@ -25,7 +25,7 @@ export function useProjectRepoPresentation(
     host,
     webUrl,
     canCloneLocally:
-      host.kind === "buzz" ||
+      host.kind === "nimino" ||
       (host.kind === "external" && host.host === "github.com"),
     controls: {
       externalUrl: host.kind === "external" ? webUrl : null,

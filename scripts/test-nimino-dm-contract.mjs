@@ -20,6 +20,22 @@ const nimWorker = readFileSync(
   "nim/nimino_core/src/nimino_core_worker.nim",
   "utf8",
 );
+const ingest = readFileSync(
+  "crates/nimino-relay/src/handlers/ingest.rs",
+  "utf8",
+);
+const commands = readFileSync(
+  "crates/nimino-relay/src/handlers/command_executor.rs",
+  "utf8",
+);
+const req = readFileSync(
+  "crates/nimino-relay/src/handlers/req.rs",
+  "utf8",
+);
+const fanout = readFileSync(
+  "crates/nimino-relay/src/handlers/event.rs",
+  "utf8",
+);
 
 function check(condition, message) {
   if (!condition) throw new Error(message);
@@ -34,6 +50,15 @@ check(
     rustBoundary.includes('"domain.dm.policy"') &&
     nimWorker.includes('"domain.dm.policy"'),
   "typed DM policy operation is not wired on both boundary sides",
+);
+check(
+  ingest.includes("BoundaryRequest::dm_policy") &&
+    commands.includes("DmPolicyRequest::Mutation") &&
+    ingest.includes("DmAccessOperation::Write") &&
+    req.includes("DmAccessOperation::Read") &&
+    req.includes("DmAccessOperation::Visibility") &&
+    fanout.includes("DmAccessOperation::Read"),
+  "production DM mutation/read/write/visibility paths do not all call Nim",
 );
 check(
   nimPolicy.includes("proc decideDmMutation*") &&

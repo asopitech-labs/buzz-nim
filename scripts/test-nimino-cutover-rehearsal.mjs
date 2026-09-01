@@ -32,7 +32,7 @@ assert.equal(contract.failedPromotionContract, `${promotion.contract}/v1`);
 assert.equal(promotion.partialFailurePolicy, "restore-last-known-good");
 assert.equal(contract.physicalCutoverOwner, 68);
 for (const forbidden of [
-  "buzz-compatibility-shim",
+  "nimino-compatibility-shim",
   "dual-write",
   "down-migration",
   "in-place-restore",

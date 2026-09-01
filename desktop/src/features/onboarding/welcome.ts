@@ -15,9 +15,9 @@ export const STARTER_WELCOME_CHANNEL_NAME = "welcome-everyone";
 export const STARTER_WELCOME_CHANNEL_DESCRIPTION =
   "Say hi, ask a question, or share what brought you here.";
 export const WELCOME_CHANNEL_READY_EVENT =
-  "buzz:onboarding-welcome-channel-ready";
+  "nimino:onboarding-welcome-channel-ready";
 export const WELCOME_SURFACE_READY_EVENT =
-  "buzz:onboarding-welcome-surface-ready";
+  "nimino:onboarding-welcome-surface-ready";
 
 const PENDING_WELCOME_CHANNEL_STORAGE_KEY =
   "nimino:onboarding-welcome-channel.v1";

@@ -45,9 +45,9 @@
   "durableStore": {
     "adapter": "crates/nimino-store",
     "tables": [
-      "nimino_control_metadata_v1",
-      "nimino_control_log_v1",
-      "nimino_control_snapshot_v1"
+      "nimino_control_metadata_v2",
+      "nimino_control_log_v2",
+      "nimino_control_snapshot_v2"
     ],
     "metadata": "revision-CAS term/vote/commit/apply record in one fsynced transaction",
     "log": "contiguous prefix with atomic replacement limited to the uncommitted suffix",

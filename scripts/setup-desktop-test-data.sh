@@ -7,7 +7,7 @@ DB_PORT="${NIMINO_DB_PORT:-5432}"
 DB_USER="${NIMINO_DB_USER:-nimino}"
 DB_PASS="${NIMINO_DB_PASS:-nimino_dev}"
 DB_NAME="${NIMINO_DB_NAME:-nimino}"
-DB_DOCKER_CONTAINER="${NIMINO_DB_DOCKER_CONTAINER:-buzz-postgres}"
+DB_DOCKER_CONTAINER="${NIMINO_DB_DOCKER_CONTAINER:-nimino-postgres}"
 
 SYSTEM_PUBKEY="0000000000000000000000000000000000000000000000000000000000000000"
 ALICE_PUBKEY="953d3363262e86b770419834c53d2446409db6d918a57f8f339d495d54ab001f"
@@ -75,15 +75,15 @@ if [[ ! "${COMMUNITY_ID}" =~ ^[0-9a-fA-F-]{36}$ ]]; then
   exit 1
 fi
 
-UUID_GENERAL=$(uuid5_hex "buzz.channel.general")
-UUID_RANDOM=$(uuid5_hex "buzz.channel.random")
-UUID_ENGINEERING=$(uuid5_hex "buzz.channel.engineering")
-UUID_AGENTS=$(uuid5_hex "buzz.channel.agents")
-UUID_WATERCOOLER=$(uuid5_hex "buzz.channel.watercooler")
-UUID_ANNOUNCEMENTS=$(uuid5_hex "buzz.channel.announcements")
-UUID_DM_ALICE_TYLER=$(uuid5_hex "buzz.channel.dm.alice-tyler")
-UUID_DM_BOB_TYLER=$(uuid5_hex "buzz.channel.dm.bob-tyler")
-UUID_DM_BOB_CHARLIE_TYLER=$(uuid5_hex "buzz.channel.dm.bob-charlie-tyler")
+UUID_GENERAL=$(uuid5_hex "nimino.channel.general")
+UUID_RANDOM=$(uuid5_hex "nimino.channel.random")
+UUID_ENGINEERING=$(uuid5_hex "nimino.channel.engineering")
+UUID_AGENTS=$(uuid5_hex "nimino.channel.agents")
+UUID_WATERCOOLER=$(uuid5_hex "nimino.channel.watercooler")
+UUID_ANNOUNCEMENTS=$(uuid5_hex "nimino.channel.announcements")
+UUID_DM_ALICE_TYLER=$(uuid5_hex "nimino.channel.dm.alice-tyler")
+UUID_DM_BOB_TYLER=$(uuid5_hex "nimino.channel.dm.bob-tyler")
+UUID_DM_BOB_CHARLIE_TYLER=$(uuid5_hex "nimino.channel.dm.bob-charlie-tyler")
 
 run_sql "
 INSERT INTO channels

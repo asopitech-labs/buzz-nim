@@ -56,26 +56,26 @@ fn parse_entity_deep_link_rejects_malformed_and_non_canonical_links() {
     for raw in [
         // Missing or malformed identifiers.
         format!("nimino://repo?owner={owner}"),
-        "nimino://repo?owner=nope&d=buzz-world".to_owned(),
+        "nimino://repo?owner=nope&d=nimino-world".to_owned(),
         format!("nimino://repo?owner={owner}&d=.hidden"),
         format!("nimino://repo?owner={owner}&d=has%20space"),
-        format!("nimino://pr?owner={owner}&d=buzz-world"),
-        format!("nimino://pr?id=short&owner={owner}&d=buzz-world"),
+        format!("nimino://pr?owner={owner}&d=nimino-world"),
+        format!("nimino://pr?id=short&owner={owner}&d=nimino-world"),
         // Coordinate links take no event id.
-        format!("nimino://repo?id={event_id}&owner={owner}&d=buzz-world"),
+        format!("nimino://repo?id={event_id}&owner={owner}&d=nimino-world"),
         // Non-canonical: unknown param, duplicate param, path, fragment.
-        format!("nimino://repo?owner={owner}&d=buzz-world&relay=wss%3A%2F%2Fx.example"),
-        format!("nimino://repo?owner={owner}&owner={owner}&d=buzz-world"),
+        format!("nimino://repo?owner={owner}&d=nimino-world&relay=wss%3A%2F%2Fx.example"),
+        format!("nimino://repo?owner={owner}&owner={owner}&d=nimino-world"),
         // Unknown tab value, duplicate tab, and tab on an event link.
-        format!("nimino://repo?owner={owner}&d=buzz-world&tab=overview"),
-        format!("nimino://repo?owner={owner}&d=buzz-world&tab=prs&tab=prs"),
-        format!("nimino://repo?owner={owner}&d=buzz-world&tab=files&commit={event_id}"),
-        format!("nimino://repo?owner={owner}&d=buzz-world&tab=commits&commit=short"),
-        format!("nimino://pr?id={event_id}&owner={owner}&d=buzz-world&tab=prs"),
-        format!("nimino://repo/extra?owner={owner}&d=buzz-world"),
-        format!("nimino://repo?owner={owner}&d=buzz-world#top"),
+        format!("nimino://repo?owner={owner}&d=nimino-world&tab=overview"),
+        format!("nimino://repo?owner={owner}&d=nimino-world&tab=prs&tab=prs"),
+        format!("nimino://repo?owner={owner}&d=nimino-world&tab=files&commit={event_id}"),
+        format!("nimino://repo?owner={owner}&d=nimino-world&tab=commits&commit=short"),
+        format!("nimino://pr?id={event_id}&owner={owner}&d=nimino-world&tab=prs"),
+        format!("nimino://repo/extra?owner={owner}&d=nimino-world"),
+        format!("nimino://repo?owner={owner}&d=nimino-world#top"),
         // Not an entity host.
-        format!("nimino://message?owner={owner}&d=buzz-world"),
+        format!("nimino://message?owner={owner}&d=nimino-world"),
     ] {
         assert!(
             parse_entity_deep_link(&Url::parse(&raw).unwrap()).is_none(),
@@ -233,7 +233,7 @@ fn pending_entity_links_survive_until_acknowledged_in_order() {
 #[test]
 fn pending_entity_links_dedupe_launch_and_open_callbacks() {
     let queue = PendingEntityDeepLinks::default();
-    let href = "nimino://project?owner=aa&d=buzz".to_owned();
+    let href = "nimino://project?owner=aa&d=nimino".to_owned();
     let first = queue.enqueue(href.clone());
     let duplicate = queue.enqueue(href);
 
@@ -244,7 +244,7 @@ fn pending_entity_links_dedupe_launch_and_open_callbacks() {
 
 fn valid_nostr_bind_url() -> Url {
     Url::parse(
-        "nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=buzz%3Anostr-identity&action=bind_nostr_identity&protocol=buzz-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard",
+        "nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=nimino%3Anostr-identity&action=bind_nostr_identity&protocol=nimino-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard",
     )
     .unwrap()
 }
@@ -252,11 +252,11 @@ fn valid_nostr_bind_url() -> Url {
 #[test]
 fn parse_add_community_deep_link_extracts_relay_and_name() {
     let url = Url::parse(
-        "nimino://add-community?relay=wss%3A%2F%2Facme.communities.buzz.xyz&name=Acme%20Team&ignored=value",
+        "nimino://add-community?relay=wss%3A%2F%2Facme.communities.nimino.xyz&name=Acme%20Team&ignored=value",
     )
     .unwrap();
     let payload = parse_add_community_deep_link(&url).unwrap();
-    assert_eq!(payload.relay_url, "wss://acme.communities.buzz.xyz");
+    assert_eq!(payload.relay_url, "wss://acme.communities.nimino.xyz");
     assert_eq!(payload.name.as_deref(), Some("Acme Team"));
 }
 
@@ -353,7 +353,7 @@ fn parse_message_deep_link_extracts_required_params() {
 }
 
 #[test]
-fn parse_message_deep_link_accepts_buzz_scheme() {
+fn parse_message_deep_link_accepts_nimino_scheme() {
     let url = Url::parse("nimino://message?channel=abc&id=xyz").unwrap();
     let payload = parse_message_deep_link(&url).expect("required params present");
     assert_eq!(payload["channelId"], "abc");
@@ -442,9 +442,9 @@ fn parse_nostr_bind_deep_link_accepts_valid_url() {
     assert_eq!(payload.challenge_id, "550e8400-e29b-41d4-a716-446655440000");
     assert_eq!(payload.nonce, "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567");
     assert_eq!(payload.verification_code, "123456");
-    assert_eq!(payload.audience, "buzz:nostr-identity");
+    assert_eq!(payload.audience, "nimino:nostr-identity");
     assert_eq!(payload.action, "bind_nostr_identity");
-    assert_eq!(payload.protocol, "buzz-nostr-identity");
+    assert_eq!(payload.protocol, "nimino-nostr-identity");
     assert_eq!(payload.version, "1");
     assert_eq!(payload.origin, "https://example.com");
     assert_eq!(payload.expires_at, "2999-01-01T00:00:00Z");
@@ -454,29 +454,29 @@ fn parse_nostr_bind_deep_link_accepts_valid_url() {
 
 #[test]
 fn parse_nostr_bind_deep_link_accepts_same_origin_callback_url() {
-    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=buzz%3Anostr-identity&action=bind_nostr_identity&protocol=buzz-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard&callback_url=https%3A%2F%2Fexample.com%2Fbuzz%3FmockSession%3D1").unwrap();
+    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=nimino%3Anostr-identity&action=bind_nostr_identity&protocol=nimino-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard&callback_url=https%3A%2F%2Fexample.com%2Fnimino%3FmockSession%3D1").unwrap();
     let payload = parse_nostr_bind_deep_link(&url).unwrap();
     assert_eq!(
         payload.callback_url.as_deref(),
-        Some("https://example.com/buzz?mockSession=1")
+        Some("https://example.com/nimino?mockSession=1")
     );
 }
 
 #[test]
 fn parse_nostr_bind_deep_link_accepts_browser_fragment_return() {
-    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=buzz%3Anostr-identity&action=bind_nostr_identity&protocol=buzz-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=browser_fragment_v1&callback_url=https%3A%2F%2Fexample.com%2Fbuzz").unwrap();
+    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=nimino%3Anostr-identity&action=bind_nostr_identity&protocol=nimino-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=browser_fragment_v1&callback_url=https%3A%2F%2Fexample.com%2Fnimino").unwrap();
     let payload = parse_nostr_bind_deep_link(&url).unwrap();
 
     assert_eq!(payload.return_mode, "browser_fragment_v1");
     assert_eq!(
         payload.callback_url.as_deref(),
-        Some("https://example.com/buzz")
+        Some("https://example.com/nimino")
     );
 }
 
 #[test]
 fn parse_nostr_bind_deep_link_requires_callback_for_browser_fragment_return() {
-    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=buzz%3Anostr-identity&action=bind_nostr_identity&protocol=buzz-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=browser_fragment_v1").unwrap();
+    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=nimino%3Anostr-identity&action=bind_nostr_identity&protocol=nimino-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=browser_fragment_v1").unwrap();
 
     assert_eq!(
         parse_nostr_bind_deep_link(&url).unwrap_err(),
@@ -486,91 +486,91 @@ fn parse_nostr_bind_deep_link_requires_callback_for_browser_fragment_return() {
 
 #[test]
 fn parse_nostr_bind_deep_link_rejects_cross_origin_callback_url() {
-    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=buzz%3Anostr-identity&action=bind_nostr_identity&protocol=buzz-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard&callback_url=https%3A%2F%2Fevil.example%2Fbuzz").unwrap();
+    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=nimino%3Anostr-identity&action=bind_nostr_identity&protocol=nimino-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard&callback_url=https%3A%2F%2Fevil.example%2Fnimino").unwrap();
     assert!(parse_nostr_bind_deep_link(&url).is_err());
 }
 
 #[test]
 fn parse_nostr_bind_deep_link_rejects_http_callback_url() {
-    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=buzz%3Anostr-identity&action=bind_nostr_identity&protocol=buzz-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard&callback_url=http%3A%2F%2Fexample.com%2Fbuzz").unwrap();
+    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=nimino%3Anostr-identity&action=bind_nostr_identity&protocol=nimino-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard&callback_url=http%3A%2F%2Fexample.com%2Fnimino").unwrap();
     assert!(parse_nostr_bind_deep_link(&url).is_err());
 }
 
 #[test]
 fn parse_nostr_bind_deep_link_rejects_missing_challenge_id() {
-    let url = Url::parse("nimino://nostr-bind?nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=buzz%3Anostr-identity&action=bind_nostr_identity&protocol=buzz-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
+    let url = Url::parse("nimino://nostr-bind?nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=nimino%3Anostr-identity&action=bind_nostr_identity&protocol=nimino-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
     assert!(parse_nostr_bind_deep_link(&url).is_err());
 }
 
 #[test]
 fn parse_nostr_bind_deep_link_rejects_empty_nonce() {
-    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=&verification_code=123456&audience=buzz%3Anostr-identity&action=bind_nostr_identity&protocol=buzz-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
+    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=&verification_code=123456&audience=nimino%3Anostr-identity&action=bind_nostr_identity&protocol=nimino-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
     assert!(parse_nostr_bind_deep_link(&url).is_err());
 }
 
 #[test]
 fn parse_nostr_bind_deep_link_rejects_missing_verification_code() {
-    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&audience=buzz%3Anostr-identity&action=bind_nostr_identity&protocol=buzz-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
+    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&audience=nimino%3Anostr-identity&action=bind_nostr_identity&protocol=nimino-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
     assert!(parse_nostr_bind_deep_link(&url).is_err());
 }
 
 #[test]
 fn parse_nostr_bind_deep_link_rejects_short_verification_code() {
-    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=12345&audience=buzz%3Anostr-identity&action=bind_nostr_identity&protocol=buzz-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
+    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=12345&audience=nimino%3Anostr-identity&action=bind_nostr_identity&protocol=nimino-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
     assert!(parse_nostr_bind_deep_link(&url).is_err());
 }
 
 #[test]
 fn parse_nostr_bind_deep_link_rejects_long_verification_code() {
-    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=1234567&audience=buzz%3Anostr-identity&action=bind_nostr_identity&protocol=buzz-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
+    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=1234567&audience=nimino%3Anostr-identity&action=bind_nostr_identity&protocol=nimino-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
     assert!(parse_nostr_bind_deep_link(&url).is_err());
 }
 
 #[test]
 fn parse_nostr_bind_deep_link_rejects_non_digit_verification_code() {
-    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=12345a&audience=buzz%3Anostr-identity&action=bind_nostr_identity&protocol=buzz-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
+    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=12345a&audience=nimino%3Anostr-identity&action=bind_nostr_identity&protocol=nimino-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
     assert!(parse_nostr_bind_deep_link(&url).is_err());
 }
 
 #[test]
 fn parse_nostr_bind_deep_link_rejects_wrong_action() {
-    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=buzz%3Anostr-identity&action=wrong&protocol=buzz-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
+    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=nimino%3Anostr-identity&action=wrong&protocol=nimino-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
     assert!(parse_nostr_bind_deep_link(&url).is_err());
 }
 
 #[test]
 fn parse_nostr_bind_deep_link_rejects_wrong_audience() {
-    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=other&action=bind_nostr_identity&protocol=buzz-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
+    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=other&action=bind_nostr_identity&protocol=nimino-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
     assert!(parse_nostr_bind_deep_link(&url).is_err());
 }
 
 #[test]
 fn parse_nostr_bind_deep_link_rejects_non_https_origin() {
-    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=buzz%3Anostr-identity&action=bind_nostr_identity&protocol=buzz-nostr-identity&version=1&origin=http%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
+    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=nimino%3Anostr-identity&action=bind_nostr_identity&protocol=nimino-nostr-identity&version=1&origin=http%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
     assert!(parse_nostr_bind_deep_link(&url).is_err());
 }
 
 #[test]
 fn parse_nostr_bind_deep_link_rejects_origin_with_path() {
-    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=buzz%3Anostr-identity&action=bind_nostr_identity&protocol=buzz-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com%2Fbind&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
+    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=nimino%3Anostr-identity&action=bind_nostr_identity&protocol=nimino-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com%2Fbind&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
     assert!(parse_nostr_bind_deep_link(&url).is_err());
 }
 
 #[test]
 fn parse_nostr_bind_deep_link_rejects_origin_with_credentials() {
-    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=buzz%3Anostr-identity&action=bind_nostr_identity&protocol=buzz-nostr-identity&version=1&origin=https%3A%2F%2Fuser%40example.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
+    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=nimino%3Anostr-identity&action=bind_nostr_identity&protocol=nimino-nostr-identity&version=1&origin=https%3A%2F%2Fuser%40example.com&expires_at=2999-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
     assert!(parse_nostr_bind_deep_link(&url).is_err());
 }
 
 #[test]
 fn parse_nostr_bind_deep_link_rejects_unsupported_return_mode() {
-    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=buzz%3Anostr-identity&action=bind_nostr_identity&protocol=buzz-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=callback").unwrap();
+    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=nimino%3Anostr-identity&action=bind_nostr_identity&protocol=nimino-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2999-01-01T00%3A00%3A00Z&return=callback").unwrap();
     assert!(parse_nostr_bind_deep_link(&url).is_err());
 }
 
 #[test]
 fn parse_nostr_bind_deep_link_accepts_expired_link_for_user_facing_error() {
-    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=buzz%3Anostr-identity&action=bind_nostr_identity&protocol=buzz-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2000-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
+    let url = Url::parse("nimino://nostr-bind?challenge_id=550e8400-e29b-41d4-a716-446655440000&nonce=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567&verification_code=123456&audience=nimino%3Anostr-identity&action=bind_nostr_identity&protocol=nimino-nostr-identity&version=1&origin=https%3A%2F%2Fexample.com&expires_at=2000-01-01T00%3A00%3A00Z&return=clipboard").unwrap();
     let payload = parse_nostr_bind_deep_link(&url).unwrap();
     assert_eq!(payload.expires_at, "2000-01-01T00:00:00Z");
 }

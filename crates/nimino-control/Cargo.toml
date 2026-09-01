@@ -1,0 +1,22 @@
+[package]
+name = "nimino-control"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+hex = { workspace = true }
+nimino-boundary = { path = "../nimino-boundary" }
+nimino-chirps = { path = "../nimino-chirps" }
+nimino-store = { path = "../nimino-store" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+tokio-util = { workspace = true }
+
+[dev-dependencies]
+rcgen = "0.12"
+tempfile = "3"

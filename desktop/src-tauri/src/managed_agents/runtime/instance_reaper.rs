@@ -1,17 +1,17 @@
 use super::*;
 
-/// Binary names for the Buzz desktop/Tauri process. Used by dead-instance
+/// Binary names for the Nimino desktop/Tauri process. Used by dead-instance
 /// detection to confirm the owning desktop is still alive.
 const DESKTOP_BINARY_NAMES: &[&str] = &[
-    "Buzz",
-    "buzz-desktop",
-    "buzz_desktop",
+    "Nimino",
+    "nimino-desktop",
+    "nimino_desktop",
     // Linux limits /proc/<pid>/comm to 15 visible bytes, truncating the
-    // AppImage shim's real executable name, `buzz-desktop.bin`.
-    "buzz-desktop.bi",
+    // AppImage shim's real executable name, `nimino-desktop.bin`.
+    "nimino-desktop.bi",
 ];
 
-/// Check if a process name matches a known Buzz desktop binary.
+/// Check if a process name matches a known Nimino desktop binary.
 pub(super) fn is_desktop_binary(name: &str) -> bool {
     DESKTOP_BINARY_NAMES.contains(&name)
 }
@@ -44,7 +44,7 @@ pub(super) fn buffer_contains_identifier(buf: &[u8], id: &[u8]) -> bool {
 /// Extract the `NIMINO_MANAGED_AGENT` value from a process's environment.
 /// Returns `None` if the process doesn't have the marker or can't be read.
 #[cfg(target_os = "macos")]
-fn extract_buzz_marker_value(pid: u32) -> Option<String> {
+fn extract_nimino_marker_value(pid: u32) -> Option<String> {
     let prefix = b"NIMINO_MANAGED_AGENT=";
     let buf = sweep::procargs2_buffer(pid)?;
 
@@ -89,7 +89,7 @@ fn extract_buzz_marker_value(pid: u32) -> Option<String> {
 }
 
 #[cfg(all(unix, not(target_os = "macos")))]
-fn extract_buzz_marker_value(pid: u32) -> Option<String> {
+fn extract_nimino_marker_value(pid: u32) -> Option<String> {
     let prefix = b"NIMINO_MANAGED_AGENT=";
     let data = std::fs::read(format!("/proc/{pid}/environ")).ok()?;
     for entry in data.split(|&b| b == 0) {
@@ -101,12 +101,12 @@ fn extract_buzz_marker_value(pid: u32) -> Option<String> {
 }
 
 #[cfg(not(unix))]
-fn extract_buzz_marker_value(_pid: u32) -> Option<String> {
+fn extract_nimino_marker_value(_pid: u32) -> Option<String> {
     None
 }
 
-/// Check if a Buzz desktop process is still alive for the given instance ID.
-/// Scans all user-owned processes named "Buzz" or "buzz-desktop" and checks
+/// Check if a Nimino desktop process is still alive for the given instance ID.
+/// Scans all user-owned processes named "Nimino" or "nimino-desktop" and checks
 /// whether any has the identifier in its command-line args (KERN_PROCARGS2 buffer
 /// includes both argv and environ — the `--config` JSON from `tauri dev` contains
 /// the identifier string).
@@ -222,11 +222,11 @@ fn desktop_is_alive_for_instance(_instance_id: &str) -> bool {
     false
 }
 
-/// Reap agent processes belonging to dead Buzz desktop instances.
+/// Reap agent processes belonging to dead Nimino desktop instances.
 ///
 /// Scans all user processes for `NIMINO_MANAGED_AGENT=*`, groups them by
 /// instance ID, and for each foreign instance (≠ `our_instance_id`) checks
-/// whether a Buzz desktop binary is still alive for that instance. If not,
+/// whether a Nimino desktop binary is still alive for that instance. If not,
 /// all agents from that dead instance are reaped.
 #[cfg(target_os = "macos")]
 pub(crate) fn reap_dead_instance_agents(our_instance_id: &str, skip_pids: &[u32]) {
@@ -271,7 +271,7 @@ pub(crate) fn reap_dead_instance_agents(our_instance_id: &str, skip_pids: &[u32]
         // Do NOT name-gate via process_belongs_to_us — custom harnesses use
         // arbitrary binary names and NIMINO_MANAGED_AGENT is the authoritative
         // ownership proof.
-        let Some(agent_instance_id) = extract_buzz_marker_value(upid) else {
+        let Some(agent_instance_id) = extract_nimino_marker_value(upid) else {
             continue;
         };
         // Skip agents belonging to our own instance (handled by sweep_system_agent_processes).
@@ -331,7 +331,7 @@ pub(crate) fn reap_dead_instance_agents(our_instance_id: &str, skip_pids: &[u32]
         // Do NOT name-gate via process_belongs_to_us — custom harnesses use
         // arbitrary binary names and NIMINO_MANAGED_AGENT is the authoritative
         // ownership proof.
-        let Some(agent_instance_id) = extract_buzz_marker_value(upid) else {
+        let Some(agent_instance_id) = extract_nimino_marker_value(upid) else {
             continue;
         };
         if agent_instance_id == our_instance_id {

@@ -1,8 +1,9 @@
 use std::{fs, path::PathBuf};
 
 use nimino_store::{
-    canonical_prefix_digest, empty_prefix_digest, extend_prefix_digest, verify_range_digest,
-    CanonicalCommit, NodeStorePort, RecordWrite, RedbNodeStore, StoreError,
+    canonical_prefix_digest, canonical_prefix_digest_at, canonical_state_digest,
+    empty_prefix_digest, extend_prefix_digest, verify_range_digest, CanonicalCommit, NodeStorePort,
+    RecordWrite, RedbNodeStore, StoreError,
 };
 use serde_json::json;
 use uuid::Uuid;
@@ -58,6 +59,12 @@ fn recomputes_and_verifies_bounded_prefix_ranges() {
     assert_eq!(recomputed.checkpoint, 4);
     assert_eq!(recomputed.digest, final_digest);
     assert_eq!(recomputed.hex().len(), 64);
+    assert_eq!(
+        canonical_prefix_digest_at(&store, "community-a", 2, 1, || false)
+            .unwrap()
+            .digest,
+        first_digest
+    );
 
     drop(store);
     let reopened = RedbNodeStore::open(&path.0).unwrap();
@@ -94,4 +101,43 @@ fn prefix_recompute_is_cancelable_between_bounded_pages() {
     .unwrap_err();
     assert!(matches!(error, StoreError::SyncCancelled));
     assert_eq!(pages, 2);
+}
+
+#[test]
+fn state_digest_ignores_node_local_commit_order() {
+    let first_path = TestPath::new();
+    let second_path = TestPath::new();
+    let first = RedbNodeStore::open(&first_path.0).unwrap();
+    let second = RedbNodeStore::open(&second_path.0).unwrap();
+    let a = write("a", "one");
+    let b = write("b", "two");
+    first
+        .commit_canonical(CanonicalCommit {
+            intent_id: "first".into(),
+            community_id: "community-a".into(),
+            expected_checkpoint: 0,
+            writes: vec![a.clone(), b.clone()],
+        })
+        .unwrap();
+    second
+        .commit_canonical(CanonicalCommit {
+            intent_id: "second".into(),
+            community_id: "community-a".into(),
+            expected_checkpoint: 0,
+            writes: vec![b, a],
+        })
+        .unwrap();
+
+    assert_ne!(
+        canonical_prefix_digest(&first, "community-a", 1, || false).unwrap(),
+        canonical_prefix_digest(&second, "community-a", 1, || false).unwrap()
+    );
+    assert_eq!(
+        canonical_state_digest(&first, "community-a", 1, || false)
+            .unwrap()
+            .digest,
+        canonical_state_digest(&second, "community-a", 1, || false)
+            .unwrap()
+            .digest
+    );
 }

@@ -3,7 +3,7 @@
   "contract": "nimino.tauri-adapter-boundary",
   "compatibilityMode": false,
   "publicationState": "cutover-ready",
-  "inventory": {"commandCount": 339, "sourceFileCount": 87},
+  "inventory": {"commandCount": 338, "sourceFileCount": 86},
   "target": {
     "rust": ["platform-adapter", "network-adapter", "performance-adapter"],
     "nim": "domain-and-product-policy",
@@ -126,14 +126,13 @@
       "ownerIssue": 66,
       "target": "no compatibility wrapper or legacy mesh-LLM surface",
       "files": [
-        "desktop/src-tauri/src/commands/legacy_storage.rs",
         "desktop/src-tauri/src/commands/mesh_llm.rs",
         "desktop/src-tauri/src/mesh_llm_stubs.rs"
       ]
     }
   },
   "forbiddenRustPolicyDependencies": [
-    "buzz-auth", "buzz-db", "buzz-pubsub", "buzz-relay", "buzz-workflow"
+    "nimino-auth", "nimino-db", "nimino-local-delivery", "nimino-relay", "nimino-workflow"
   ],
   "hotPaths": [
     {

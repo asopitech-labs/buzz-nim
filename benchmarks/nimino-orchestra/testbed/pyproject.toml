@@ -1,0 +1,30 @@
+[project]
+name = "harbor-nimino-testbed"
+version = "0.1.0"
+description = "Trial provisioning and local Nimino stack tooling for nimino-orchestra"
+requires-python = ">=3.12"
+dependencies = [
+    "nimino-orchestra",
+    "coincurve>=20",
+    "psycopg[binary]>=3.2",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.4",
+    "ruff==0.16.3",
+]
+
+[tool.uv.sources]
+nimino-orchestra = { path = "..", editable = true }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88

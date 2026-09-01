@@ -319,7 +319,7 @@ const messaging = contract.runtimeMessaging;
 check(
   messaging.transportOnly === true &&
     messaging.peerViewIsAuthority === false &&
-    messaging.maxMessageBytes === 1024 * 1024 &&
+    messaging.maxMessageBytes === 63 * 1024 &&
     messaging.maxQueueCapacity === 4096 &&
     messaging.shutdownIsolation === "dedicated-tokio-runtime-thread" &&
     JSON.stringify(messaging.identityFacts) ===

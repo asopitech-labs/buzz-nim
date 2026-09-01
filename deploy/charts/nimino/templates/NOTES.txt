@@ -26,10 +26,9 @@
 ──────────────────────────────────────────────────────────────────────────────
   Profile
 ──────────────────────────────────────────────────────────────────────────────
-{{ if or .Values.postgresql.enabled .Values.redis.enabled .Values.minio.enabled }}
+{{ if or .Values.postgresql.enabled .Values.minio.enabled }}
 ⚠ QUICKSTART / EVALUATION PROFILE
   {{ if .Values.postgresql.enabled }}- In-cluster Postgres subchart (CloudPirates){{ end }}
-  {{ if .Values.redis.enabled }}- In-cluster Redis subchart (CloudPirates){{ end }}
   {{ if .Values.minio.enabled }}- In-cluster MinIO (eval-only, single replica; bucket "{{ .Values.s3.bucket }}" created by a bundled init Job){{ end }}
   - Chart auto-generates secrets via the `lookup` pattern. This is NOT
     GitOps-safe — secrets will silently rotate under ArgoCD/Flux. For
@@ -37,7 +36,7 @@
 
 {{ else }}
 ✓ PRODUCTION PROFILE
-  External Postgres, Redis (if enabled), S3.
+  External Postgres and S3.
   {{ if .Values.secrets.existingSecret }}- Secrets sourced from: {{ .Values.secrets.existingSecret }}{{ end }}
 {{ end }}
 
@@ -76,7 +75,7 @@
     examples/secret-sample.yaml.
 {{- end }}
 {{- if not .Values.secrets.existingSecret }}
-{{- if not (or .Values.postgresql.enabled .Values.redis.enabled) }}
+{{- if not .Values.postgresql.enabled }}
   ⚠ Chart-managed Secret is in use (no secrets.existingSecret). This is fine
     for `helm install` / `helm upgrade` but NOT safe under GitOps tools that
     `helm template` to render manifests — the `lookup` function returns empty

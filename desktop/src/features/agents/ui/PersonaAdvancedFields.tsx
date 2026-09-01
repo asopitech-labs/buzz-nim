@@ -9,18 +9,18 @@ import {
 } from "./RespondToField";
 import type { PersonaBehaviorDraft } from "./personaBehaviorDraft";
 import {
-  isBuzzAgentRuntime,
+  isNiminoAgentRuntime,
   NIMINO_AGENT_THINKING_EFFORT,
-} from "./buzzAgentConfig";
+} from "./niminoAgentConfig";
 import {
   AGENT_PARALLELISM_HELP,
   AGENT_PARALLELISM_PLACEHOLDER,
   parallelismCapHint,
 } from "../lib/agentParallelism";
 import {
-  BuzzAgentModelTuningFields,
+  NiminoAgentModelTuningFields,
   NumericTuningFields,
-} from "./buzzAgentModelTuningFields";
+} from "./niminoAgentModelTuningFields";
 import {
   CARD_MINT_KEY_ANNOTATIONS,
   PERSONA_FIELD_CONTROL_CLASS,
@@ -61,15 +61,15 @@ export function PersonaAdvancedFields({
   /** Env vars to display as inherited defaults in tuning-field placeholders.
    *  For templates, pass `globalConfig.env_vars` (the fallback layer). */
   inheritedEnvVars?: EnvVarsValue;
-  /** Active LLM model — forwarded to BuzzAgentModelTuningFields for effort filtering. */
+  /** Active LLM model — forwarded to NiminoAgentModelTuningFields for effort filtering. */
   model?: string;
-  /** Runtime id for the buzz-agent effort-tuning knob visibility gate. */
+  /** Runtime id for the nimino-agent effort-tuning knob visibility gate. */
   modelTuningRuntimeId?: string;
   namePoolText: string;
   onBehaviorDraftChange: (value: PersonaBehaviorDraft) => void;
   onEnvVarsChange: (value: EnvVarsValue) => void;
   onNamePoolTextChange: (value: string) => void;
-  /** Active LLM provider id — forwarded to BuzzAgentModelTuningFields for effort filtering. */
+  /** Active LLM provider id — forwarded to NiminoAgentModelTuningFields for effort filtering. */
   provider?: string;
   requiredEnvKeys?: readonly string[];
   fileSatisfiedEnvKeys?: readonly string[];
@@ -108,7 +108,7 @@ export function PersonaAdvancedFields({
   const effectiveHiddenKeys = React.useMemo(
     () => [
       ...hiddenEnvKeys,
-      ...(isBuzzAgentRuntime(modelTuningRuntimeId)
+      ...(isNiminoAgentRuntime(modelTuningRuntimeId)
         ? [NIMINO_AGENT_THINKING_EFFORT]
         : []),
       ...structuredEnvKeys(numericDescriptors),
@@ -265,9 +265,9 @@ export function PersonaAdvancedFields({
         />
       ) : null}
 
-      {/* Effort-tuning knob — only shown for buzz-agent. */}
-      {isBuzzAgentRuntime(modelTuningRuntimeId) ? (
-        <BuzzAgentModelTuningFields
+      {/* Effort-tuning knob — only shown for nimino-agent. */}
+      {isNiminoAgentRuntime(modelTuningRuntimeId) ? (
+        <NiminoAgentModelTuningFields
           envVars={envVars}
           inheritedEnvVars={inheritedEnvVars}
           model={model}

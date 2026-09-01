@@ -514,7 +514,7 @@ interface FeedbackAttachment {
 }
 
 const FEEDBACK_STATUS_KEY = "nimino-admin-inbox-feedback-status";
-const LEGACY_FEEDBACK_STATUS_KEY = "buzz-admin-feedback-status";
+const LEGACY_FEEDBACK_STATUS_KEY = "nimino-admin-feedback-status";
 
 function loadFeedbackStatuses(): FeedbackStatuses {
   try {
@@ -716,7 +716,7 @@ function date(value: string) {
     : parsed.toLocaleString();
 }
 
-function BuzzMark() {
+function NiminoMark() {
   return (
     <svg viewBox="0 0 466 309" aria-hidden="true">
       <path d="M91.7 62.8a91.7 91.7 0 0 0 0 183.4H128V62.8H91.7Zm282.6 0H338v183.4h36.3a91.7 91.7 0 1 0 0-183.4Z" />
@@ -860,10 +860,10 @@ export function App() {
       <header className="app-header">
         <Link href="/reports" className="brand">
           <span className="brand-mark">
-            <BuzzMark />
+            <NiminoMark />
           </span>
           <span>
-            Buzz <b>Admin</b>
+            Nimino <b>Admin</b>
           </span>
         </Link>
         <nav>

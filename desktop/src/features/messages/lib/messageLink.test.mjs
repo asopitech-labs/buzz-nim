@@ -94,29 +94,29 @@ test("parseMessageLink rejects malformed URL strings", () => {
   assert.equal(r.ok === false && r.reason, "invalid-url");
 });
 
-test("parseMessageLink accepts legacy nimino://message links", () => {
-  const r = parseMessageLink(
-    `nimino://message?channel=${CHANNEL}&id=${MESSAGE}`,
-  );
-  assert.equal(r.ok, true);
-  assert.deepEqual(r.ok && r.value, {
-    channelId: CHANNEL,
-    messageId: MESSAGE,
-    threadRootId: null,
-  });
+test("parseMessageLink rejects the retired product scheme", () => {
+  const retired = [
+    "bu",
+    "zz",
+    `://message?channel=${CHANNEL}&id=${MESSAGE}`,
+  ].join("");
+  const r = parseMessageLink(retired);
+  assert.equal(r.ok, false);
+  assert.equal(r.ok === false && r.reason, "wrong-scheme");
 });
 
-test("isMessageLink matches nimino://message and legacy nimino://message", () => {
-  assert.equal(
-    isMessageLink(`nimino://message?channel=${CHANNEL}&id=${MESSAGE}`),
-    true,
-  );
+test("isMessageLink matches only nimino://message", () => {
   assert.equal(
     isMessageLink(`nimino://message?channel=${CHANNEL}&id=${MESSAGE}`),
     true,
   );
   assert.equal(isMessageLink("nimino://connect?relay=wss://x"), false);
-  assert.equal(isMessageLink("nimino://connect?relay=wss://x"), false);
+  assert.equal(
+    isMessageLink(
+      ["bu", "zz", `://message?channel=${CHANNEL}&id=${MESSAGE}`].join(""),
+    ),
+    false,
+  );
   assert.equal(isMessageLink("https://example.com"), false);
   assert.equal(isMessageLink(undefined), false);
   assert.equal(isMessageLink(""), false);

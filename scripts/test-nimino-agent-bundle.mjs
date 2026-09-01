@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import {
   chmodSync,
+  existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
@@ -23,6 +24,9 @@ const output = join(work, "installed");
 const releaseSet = join(work, "release-set.json");
 const commit = "a".repeat(40);
 
+assert.equal(existsSync(join(root, "crates/sprig")), false);
+assert.equal(existsSync(join(root, "Dockerfile.sprig")), false);
+
 function run(command, args) {
   return spawnSync(command, args, { cwd: root, encoding: "utf8" });
 }
@@ -39,10 +43,10 @@ function stub(name) {
 
 mkdirSync(artifacts);
 const inputs = [
-  ["acp", stub("buzz-acp")],
-  ["agent", stub("buzz-agent")],
+  ["acp", stub("nimino-acp")],
+  ["agent", stub("nimino-agent")],
   ["cli", stub("nimino")],
-  ["mcp", stub("buzz-dev-mcp")],
+  ["mcp", stub("nimino-dev-mcp")],
   ["relay", stub("nimino-relay")],
 ];
 const created = run(process.execPath, [

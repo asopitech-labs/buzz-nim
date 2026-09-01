@@ -317,7 +317,7 @@ test("hidden spoiler images are excluded from gallery navigation until revealed"
   await page.keyboard.press("Escape");
   await expect(dialog).toHaveCount(0);
 
-  const spoiler = row.locator(".buzz-spoiler[data-spoiler]").first();
+  const spoiler = row.locator(".nimino-spoiler[data-spoiler]").first();
   await expect(spoiler).toHaveAttribute("data-revealed", "false");
   await spoiler.click();
   await expect(spoiler).toHaveAttribute("data-revealed", "true");

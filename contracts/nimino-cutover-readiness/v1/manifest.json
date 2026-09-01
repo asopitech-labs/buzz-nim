@@ -64,7 +64,7 @@
       "name": "chirps",
       "children": [27, 36, 43, 45],
       "keep": ["Alopex Chirps negotiation and bounded transport adapter"],
-      "delete": ["buzz-relay-mesh and cluster-domain ownership in transport"],
+      "delete": ["nimino-relay-mesh and cluster-domain ownership in transport"],
       "owner": { "implementation": [27, 36, 43, 45], "cleanup": 66 },
       "proof": {
         "contracts": [
@@ -193,7 +193,7 @@
       "children": [37, 41, 61, 62, 63, 65],
       "keep": ["one asopitech-labs Nimino release-set and protected promotion"],
       "delete": [
-        "Block, Square, Mobile, component-specific, and Buzz release authorities"
+        "Block, Square, Mobile, component-specific, and predecessor release authorities"
       ],
       "owner": { "implementation": [41, 61, 62, 63, 65], "cleanup": 66 },
       "proof": {

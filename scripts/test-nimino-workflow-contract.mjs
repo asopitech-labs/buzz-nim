@@ -79,12 +79,37 @@ for (const action of contract.actionKinds) {
   check(nimPolicy.includes(`wa${action.split("_").map((part) => part[0].toUpperCase() + part.slice(1)).join("")}`), `Nim workflow policy is missing ${action}`);
 }
 
-for (const entry of contract.rustPolicySitesToShrink) {
+for (const entry of contract.productionCutover) {
   const source = readFileSync(entry.path, "utf8");
   for (const symbol of entry.symbols) {
     check(source.includes(symbol), `${entry.path}: missing ${symbol}`);
   }
 }
+
+const productionSources = [
+  "crates/nimino-relay/src/main.rs",
+  "crates/nimino-relay/src/handlers/command_executor.rs",
+  "crates/nimino-relay/src/api/bridge.rs",
+  "crates/nimino-workflow/src/lib.rs",
+  "crates/nimino-workflow/src/executor.rs",
+  "crates/nimino-db/src/lib.rs",
+  "crates/nimino-db/src/workflow.rs",
+].map((path) => readFileSync(path, "utf8")).join("\n");
+for (const symbol of contract.forbiddenProductionSymbols) {
+  check(!productionSources.includes(symbol), `forbidden Rust workflow path remains: ${symbol}`);
+}
+check(
+  !readFileSync("crates/nimino-workflow/src/lib.rs", "utf8").includes(
+    "executor::evaluate_condition(",
+  ),
+  "Rust condition evaluator remains reachable from the workflow engine",
+);
+check(
+  !readFileSync("crates/nimino-workflow/src/lib.rs", "utf8").includes(
+    "executor::resolve_step_templates(",
+  ),
+  "Rust step planner remains reachable from the workflow engine",
+);
 
 console.log(
   `Nimino workflow contract verified (${corpus.cases.length} golden cases)`,

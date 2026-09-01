@@ -39,9 +39,9 @@ export type NostrBindDeepLinkPayload = {
   challengeId: string;
   nonce: string;
   verificationCode: string;
-  audience: "buzz:nostr-identity";
+  audience: "nimino:nostr-identity";
   action: "bind_nostr_identity";
-  protocol: "buzz-nostr-identity";
+  protocol: "nimino-nostr-identity";
   version: "1";
   origin: string;
   expiresAt: string;

@@ -150,11 +150,11 @@ pub async fn restore_managed_agents_on_launch(
         // process group whose parent harness exited).
         super::sweep_system_agent_processes(&super::current_instance_id(app), &tracked_pids);
 
-        // Dead-instance reaping: find agents belonging to Buzz instances
+        // Dead-instance reaping: find agents belonging to Nimino instances
         // whose desktop process is no longer running and reap them.
         super::reap_dead_instance_agents(&super::current_instance_id(app), &tracked_pids);
 
-        // Exact-path sweep: kill any buzz-acp process whose executable path
+        // Exact-path sweep: kill any nimino-acp process whose executable path
         // matches this bundle's harness binary but is not in the tracked set.
         // Complements the env-var sweep above — catches orphans that predate
         // NIMINO_MANAGED_AGENT injection or lost their PID-file receipt.

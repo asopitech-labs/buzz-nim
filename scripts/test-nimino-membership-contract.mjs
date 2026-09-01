@@ -78,10 +78,19 @@ for (const entry of contract.rustPolicySitesToShrink) {
     );
   }
 }
-for (const entry of contract.rustCompatibilityPathsToDelete) {
+for (const entry of contract.productionPolicyCallers) {
+  const source = readFileSync(entry.path, "utf8");
+  for (const marker of entry.markers) {
+    check(
+      source.includes(marker),
+      `${entry.path}: production membership policy call is missing ${marker}`,
+    );
+  }
+}
+for (const entry of contract.deletedCompatibilityMarkers) {
   check(
-    readFileSync(entry.path, "utf8").includes(entry.marker),
-    `${entry.path}: missing compatibility marker ${entry.marker}`,
+    !readFileSync(entry.path, "utf8").includes(entry.marker),
+    `${entry.path}: deleted compatibility marker remains ${entry.marker}`,
   );
 }
 

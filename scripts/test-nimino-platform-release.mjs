@@ -103,7 +103,7 @@ for (const forbidden of [
   "windows-latest",
   "windows-x86_64",
   "block/apple-codesign-action",
-  "github.com/block/buzz",
+  "github.com/block/nimino",
   "desktop-v",
 ])
   assert.ok(

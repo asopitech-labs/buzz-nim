@@ -155,6 +155,13 @@ proc intField(value: JsonNode; name: string): Option[int64] =
   else:
     none(int64)
 
+proc eventValue(value: JsonNode): JsonNode =
+  if not value.isNil and value.kind == JObject and value.hasKey("event") and
+      value["event"].kind == JObject:
+    value["event"]
+  else:
+    newJObject()
+
 proc rowIndex(rows: seq[ProjectionStageRow]; key: string): int =
   for index, row in rows:
     if row.key == key:
@@ -229,9 +236,17 @@ proc projectRecord(
     )
     return pleNone
 
+  let sourceEvent = eventValue(record.value)
+  if sourceEvent.kind != JObject or not sourceEvent.hasKey("content") or
+      sourceEvent["content"].kind != JString:
+    return pleRecordInvalid
+  let content = stringField(sourceEvent, "content")
+  let createdAt = intField(sourceEvent, "created_at")
+  if createdAt.isNone:
+    return pleRecordInvalid
+
   case projection
   of pkSearch:
-    let content = stringField(record.value, "content")
     rows.setRow(
       ProjectionStageRow(
         recordType: recordType,
@@ -240,9 +255,6 @@ proc projectRecord(
       )
     )
   of pkFeed:
-    let createdAt = intField(record.value, "createdAt")
-    if createdAt.isNone:
-      return pleRecordInvalid
     rows.setRow(
       ProjectionStageRow(
         recordType: recordType,

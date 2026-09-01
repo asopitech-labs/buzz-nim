@@ -156,7 +156,7 @@ export function ProjectsView() {
     React.useState<ProjectsRepositoryScope>(() => {
       const storedScope = readStoredRepositoryScope();
       return filter === "projects" &&
-        (storedScope === "buzz" || storedScope === "linked")
+        (storedScope === "nimino" || storedScope === "linked")
         ? "all"
         : storedScope;
     });
@@ -166,14 +166,14 @@ export function ProjectsView() {
     () => readStoredIssueScope(),
   );
   const projectsWorkItemsQuery = useProjectsWorkItemsQuery(projects);
-  // One blobless clone per primary Buzz repository, only while the overview
+  // One blobless clone per primary Nimino repository, only while the overview
   // header is visible.
   const snapshotProjects = React.useMemo(
     () =>
       filter === "all"
         ? projects.filter(
             (project) =>
-              projectRepoHostForProject(project, relayOrigin).kind === "buzz",
+              projectRepoHostForProject(project, relayOrigin).kind === "nimino",
           )
         : [],
     [filter, projects, relayOrigin],
@@ -306,9 +306,9 @@ export function ProjectsView() {
           return isProjectMine(project, currentPubkey);
         if (repositoryScope === "local")
           return hasLocalCheckout(project, localRepoNames);
-        if (repositoryScope === "buzz")
+        if (repositoryScope === "nimino")
           return (
-            projectRepoHostForProject(project, relayOrigin).kind === "buzz"
+            projectRepoHostForProject(project, relayOrigin).kind === "nimino"
           );
         if (repositoryScope === "linked")
           return (
@@ -384,10 +384,10 @@ export function ProjectsView() {
         if (repositoryScope === "local") {
           return hasLocalRepositoryCheckout(repository, localRepoNames);
         }
-        if (repositoryScope === "buzz") {
+        if (repositoryScope === "nimino") {
           return (
             projectRepoHostForRepository(repository, relayOrigin).kind ===
-            "buzz"
+            "nimino"
           );
         }
         if (repositoryScope === "linked") {
@@ -493,7 +493,7 @@ export function ProjectsView() {
       React.startTransition(() => {
         if (
           nextFilter === "projects" &&
-          (repositoryScope === "buzz" || repositoryScope === "linked")
+          (repositoryScope === "nimino" || repositoryScope === "linked")
         ) {
           setRepositoryScope("all");
           writeStoredRepositoryScope("all");
@@ -808,7 +808,7 @@ export function ProjectsView() {
                 ref={scrollIndicatorRef}
               />
               <div
-                className="buzz-content-scrollbar h-full min-h-0 min-w-0 overflow-x-hidden overflow-y-scroll"
+                className="nimino-content-scrollbar h-full min-h-0 min-w-0 overflow-x-hidden overflow-y-scroll"
                 onScroll={handleContentScroll}
               >
                 <div className="px-4 pb-4">

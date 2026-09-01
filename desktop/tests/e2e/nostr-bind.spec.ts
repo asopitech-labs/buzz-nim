@@ -17,12 +17,12 @@ type NostrBindPayload = {
 
 const VALID_REQUEST: NostrBindPayload = {
   action: "bind_nostr_identity",
-  audience: "buzz:nostr-identity",
+  audience: "nimino:nostr-identity",
   challengeId: "550e8400-e29b-41d4-a716-446655440000",
   expiresAt: "2099-01-01T00:00:00Z",
   nonce: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567",
   origin: "https://admin.example.com",
-  protocol: "buzz-nostr-identity",
+  protocol: "nimino-nostr-identity",
   returnMode: "clipboard",
   verificationCode: "123456",
   version: "1",
@@ -338,7 +338,7 @@ test("returns a signed response in the callback fragment after consent", async (
   await installClipboardStub(page, false);
   await openNostrBind(page, {
     ...VALID_REQUEST,
-    callbackUrl: "https://admin.example.com/buzz?source=bind#stale",
+    callbackUrl: "https://admin.example.com/nimino?source=bind#stale",
     returnMode: "browser_fragment_v1",
   });
 
@@ -408,10 +408,10 @@ test("returns a signed response in the callback fragment after consent", async (
   });
   const callbackUrl = new URL(callback ?? "");
   expect(callbackUrl.origin).toBe("https://admin.example.com");
-  expect(callbackUrl.pathname).toBe("/buzz");
+  expect(callbackUrl.pathname).toBe("/nimino");
   expect(callbackUrl.search).toBe("?source=bind");
-  expect(callbackUrl.searchParams.has("buzz_bind")).toBe(false);
-  expect(callbackUrl.hash).toMatch(/^#buzz_bind=v1\.[A-Za-z0-9_-]+$/);
+  expect(callbackUrl.searchParams.has("nimino_bind")).toBe(false);
+  expect(callbackUrl.hash).toMatch(/^#nimino_bind=v1\.[A-Za-z0-9_-]+$/);
 });
 
 test("opens the manual fallback when returning to the browser fails", async ({
@@ -421,7 +421,7 @@ test("opens the manual fallback when returning to the browser fails", async ({
     page,
     {
       ...VALID_REQUEST,
-      callbackUrl: "https://admin.example.com/buzz",
+      callbackUrl: "https://admin.example.com/nimino",
       returnMode: "browser_fragment_v1",
     },
     { openerError: "browser unavailable" },
@@ -459,7 +459,7 @@ test("keeps the signed response available when clipboard access fails", async ({
   await expect(
     page
       .getByTestId("nostr-bind-manual-fallback-content")
-      .getByText("Buzz couldn't access the clipboard. Try again."),
+      .getByText("Nimino couldn't access the clipboard. Try again."),
   ).toBeVisible();
   await expect(page.getByTestId("nostr-bind-signed-response")).toContainText(
     "e2e-signed-nostr-binding",

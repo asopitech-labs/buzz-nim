@@ -33,6 +33,18 @@ Generate stable secrets first; these values must not rotate on restart.
 MSG
     exit 1
   fi
+  for material in chirps/tls.crt chirps/tls.key chirps/ca.crt; do
+    if [[ ! -s "${material}" ]]; then
+      echo "Missing non-empty Chirps mTLS material: deploy/compose/${material}" >&2
+      exit 1
+    fi
+  done
+  local key_mode
+  key_mode="$(stat -c '%a' chirps/tls.key)"
+  if (( (8#${key_mode}) & 8#077 )); then
+    echo "chirps/tls.key must deny group and other permissions (use chmod 600)" >&2
+    exit 1
+  fi
 
   local image_digest="${NIMINO_IMAGE_DIGEST:-}"
   if [[ -z "${image_digest}" ]]; then
@@ -53,11 +65,13 @@ backup_hint() {
   cat <<'MSG'
 Back up these before upgrades and on a regular schedule:
 
-- deploy/compose/.env, especially NIMINO_RELAY_PRIVATE_KEY, DB/Redis/S3 secrets, and NIMINO_GIT_HOOK_HMAC_SECRET
+- deploy/compose/.env, especially NIMINO_RELAY_PRIVATE_KEY, DB/S3 secrets, and NIMINO_GIT_HOOK_HMAC_SECRET
 - The owner private key if bootstrap generated one for RELAY_OWNER_PUBKEY
 - Postgres data (prefer pg_dump or a quiesced volume snapshot)
 - MinIO/S3 bucket contents for media and git objects
 - nimino-git-data volume (NIMINO_GIT_REPO_PATH=/data/git)
+- nimino-cluster-data volume (stable Chirps identity and canonical node store)
+- deploy/compose/chirps mTLS certificate, key, and trust anchor
 - Caddy data/config volumes if using compose.caddy.yml
 
 Keep Postgres + object/git state snapshots from the same maintenance window.
@@ -101,13 +115,13 @@ case "${1:-help}" in
     backup_hint
     ;;
   add-member)
-    docker compose exec relay /usr/local/bin/buzz-admin add-member --pubkey "${2:?Usage: ./run.sh add-member <npub-or-hex> [--role member|admin]}" "${@:3}"
+    docker compose exec relay /usr/local/bin/nimino-admin add-member --pubkey "${2:?Usage: ./run.sh add-member <npub-or-hex> [--role member|admin]}" "${@:3}"
     ;;
   remove-member)
-    docker compose exec relay /usr/local/bin/buzz-admin remove-member --pubkey "${2:?Usage: ./run.sh remove-member <npub-or-hex> [--role member|admin]}" "${@:3}"
+    docker compose exec relay /usr/local/bin/nimino-admin remove-member --pubkey "${2:?Usage: ./run.sh remove-member <npub-or-hex> [--role member|admin]}" "${@:3}"
     ;;
   list-members)
-    docker compose exec relay /usr/local/bin/buzz-admin list-members
+    docker compose exec relay /usr/local/bin/nimino-admin list-members
     ;;
   help|-h|--help)
     cat <<'MSG'

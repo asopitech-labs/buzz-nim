@@ -3,14 +3,14 @@
   "contractVersion": "mobile-removal-v1",
   "issue": 18,
   "phase": "removed",
-  "expectedCounts": { "mobileFiles": 0, "externalReferences": 61 },
+  "expectedCounts": { "mobileFiles": 0, "externalReferences": 62 },
   "phaseTransitionOwner": 33,
   "physicalDeletionOwner": 33,
   "retiredPushAllowlist": [
     { "path": "CHANGELOG.md", "occurrences": 1, "reason": "immutable release history" },
-    { "path": "crates/buzz-db/src/migration.rs", "occurrences": 26, "reason": "migration ledger assertions and retirement upgrade test" },
-    { "path": "crates/buzz-relay/CHANGELOG.md", "occurrences": 1, "reason": "immutable relay release history" },
-    { "path": "crates/buzz-relay/src/handlers/ingest.rs", "occurrences": 1, "reason": "negative regression test rejects retired kind 30350" },
+    { "path": "crates/nimino-db/src/migration.rs", "occurrences": 26, "reason": "migration ledger assertions and retirement upgrade test" },
+    { "path": "crates/nimino-relay/CHANGELOG.md", "occurrences": 1, "reason": "immutable relay release history" },
+    { "path": "crates/nimino-relay/src/handlers/ingest.rs", "occurrences": 1, "reason": "negative regression test rejects retired kind 30350" },
     { "path": "migrations/0012_push_leases.sql", "occurrences": 8, "reason": "immutable SQLx migration history" },
     { "path": "migrations/0013_push_endpoint_state.sql", "occurrences": 1, "reason": "immutable SQLx migration history" },
     { "path": "migrations/0014_push_lease_fts.sql", "occurrences": 4, "reason": "immutable SQLx migration history" },
@@ -59,7 +59,7 @@
       ],
       "deleteWhen": "Issue #33 removes the Mobile tree atomically; no archive or stub remains",
       "proof": "test ! -d mobile and legacy-reference gate",
-      "evidence": { "path": "mobile/pubspec.yaml", "symbol": "name: buzz", "signal": "Flutter package root" }
+      "evidence": { "path": "mobile/pubspec.yaml", "symbol": "name: nimino", "signal": "Flutter package root" }
     },
     {
       "id": "mobile.dart-product",
@@ -159,9 +159,11 @@
         { "type": "exact", "value": ".dockerignore" },
         { "type": "exact", "value": ".github/workflows/auto-tag-on-release-pr-merge.yml" },
         { "type": "exact", "value": "AGENTS.md" },
+        { "type": "exact", "value": "ARCHITECTURE.md" },
         { "type": "exact", "value": "CLAUDE.md" },
         { "type": "exact", "value": "CHANGELOG.md" },
         { "type": "exact", "value": "CONTRIBUTING.md" },
+        { "type": "exact", "value": "contracts/nimino-cutover-readiness/v1/manifest.json" },
         { "type": "exact", "value": "Justfile" },
         { "type": "exact", "value": "README.md" },
         { "type": "exact", "value": "RELEASING.md" },
@@ -181,21 +183,21 @@
       "action": "delete",
       "owner": "Issue #33",
       "selectors": [
-        { "type": "prefix", "value": "crates/buzz-push-gateway/" },
+        { "type": "prefix", "value": "crates/nimino-push-gateway/" },
         { "type": "prefix", "value": "deploy/charts/nimino-push-gateway/" },
         { "type": "prefix", "value": "docs/formal/nip-pl/" },
         { "type": "exact", "value": ".github/workflows/push-gateway-helm-chart.yml" },
         { "type": "exact", "value": "Dockerfile.push-gateway" },
-        { "type": "exact", "value": "crates/buzz-db/src/push.rs" },
-        { "type": "exact", "value": "crates/buzz-relay/src/handlers/push_lease.rs" },
-        { "type": "exact", "value": "crates/buzz-relay/src/push_runtime.rs" },
+        { "type": "exact", "value": "crates/nimino-db/src/push.rs" },
+        { "type": "exact", "value": "crates/nimino-relay/src/handlers/push_lease.rs" },
+        { "type": "exact", "value": "crates/nimino-relay/src/push_runtime.rs" },
         { "type": "exact", "value": "docs/formal/STATEFUL_GATEWAY.md" },
         { "type": "exact", "value": "docs/nips/NIP-PL.md" },
         { "type": "exact", "value": "docs/push-gateway-deployment.md" }
       ],
       "deleteWhen": "Issue #33 removes the APNs-only runtime, image, chart, and formal/deployment documents",
       "proof": "no APNs credential, NIP-PL runtime, gateway image, or chart remains",
-      "evidence": { "path": "crates/buzz-push-gateway/Cargo.toml", "symbol": "for the Buzz mobile app", "signal": "Gateway declares the deleted Mobile app as its only product" }
+      "evidence": { "path": "crates/nimino-push-gateway/Cargo.toml", "symbol": "for the Nimino mobile app", "signal": "Gateway declares the deleted Mobile app as its only product" }
     },
     {
       "id": "external.mobile-push-migration-ledger",
@@ -229,14 +231,14 @@
         { "type": "exact", "value": "Cargo.lock" },
         { "type": "exact", "value": "Cargo.toml" },
         { "type": "exact", "value": "contracts/nimino-naming-v1.json" },
-        { "type": "exact", "value": "crates/buzz-acp/src/base_prompt.md" },
-        { "type": "exact", "value": "crates/buzz-db/src/migration.rs" },
-        { "type": "exact", "value": "crates/buzz-relay/CHANGELOG.md" },
-        { "type": "exact", "value": "crates/buzz-relay/src/config.rs" },
-        { "type": "exact", "value": "crates/buzz-relay/src/handlers/ingest.rs" },
-        { "type": "exact", "value": "crates/buzz-relay/src/lib.rs" },
-        { "type": "exact", "value": "crates/buzz-relay/src/main.rs" },
-        { "type": "exact", "value": "crates/buzz-relay/src/nip11.rs" },
+        { "type": "exact", "value": "crates/nimino-acp/src/base_prompt.md" },
+        { "type": "exact", "value": "crates/nimino-db/src/migration.rs" },
+        { "type": "exact", "value": "crates/nimino-relay/CHANGELOG.md" },
+        { "type": "exact", "value": "crates/nimino-relay/src/config.rs" },
+        { "type": "exact", "value": "crates/nimino-relay/src/handlers/ingest.rs" },
+        { "type": "exact", "value": "crates/nimino-relay/src/lib.rs" },
+        { "type": "exact", "value": "crates/nimino-relay/src/main.rs" },
+        { "type": "exact", "value": "crates/nimino-relay/src/nip11.rs" },
         { "type": "exact", "value": "schema/schema.sql" },
         { "type": "exact", "value": "scripts/check-chirps-api-contract.mjs" },
         { "type": "exact", "value": "scripts/check-nimino-naming-contract.mjs" },
@@ -244,7 +246,7 @@
       ],
       "deleteWhen": "Issue #33 removes only Mobile push imports/config/jobs from shared owners",
       "proof": "non-Mobile workspace and Relay tests pass without push gateway dependencies",
-      "evidence": { "path": "Cargo.toml", "symbol": "crates/buzz-push-gateway", "signal": "Shared workspace still registers the Mobile-only gateway" },
+      "evidence": { "path": "Cargo.toml", "symbol": "crates/nimino-push-gateway", "signal": "Shared workspace still registers the Mobile-only gateway" },
       "postRemovalEvidence": { "path": "Cargo.toml", "symbol": "[workspace]", "signal": "Non-Mobile Rust workspace remains after the push member is removed" }
     },
     {
@@ -281,18 +283,18 @@
     {
       "id": "external.nip-ab-interop",
       "action": "keep",
-      "owner": "crates/buzz-core Rust NIP-AB protocol adapter",
-      "dependencies": ["Issue #28 Desktop product surface", "buzz-pair-relay", "buzz-pairing-cli"],
+      "owner": "crates/nimino-core Rust NIP-AB protocol adapter",
+      "dependencies": ["Issue #28 Desktop product surface", "nimino-pair-relay", "nimino-pairing-cli"],
       "selectors": [
-        { "type": "prefix", "value": "crates/buzz-core/src/pairing/" },
-        { "type": "prefix", "value": "crates/buzz-pair-relay/" },
-        { "type": "prefix", "value": "crates/buzz-pairing-cli/" },
-        { "type": "exact", "value": "crates/buzz-core/src/kind.rs" },
-        { "type": "exact", "value": "crates/buzz-core/src/lib.rs" }
+        { "type": "prefix", "value": "crates/nimino-core/src/pairing/" },
+        { "type": "prefix", "value": "crates/nimino-pair-relay/" },
+        { "type": "prefix", "value": "crates/nimino-pairing-cli/" },
+        { "type": "exact", "value": "crates/nimino-core/src/kind.rs" },
+        { "type": "exact", "value": "crates/nimino-core/src/lib.rs" }
       ],
       "deleteWhen": "Only an explicit replacement of the Desktop identity recovery protocol is accepted; Mobile deletion alone does not delete NIP-AB",
       "proof": "NIP-AB vectors, state-machine tests, CLI interop, and pairing relay limits",
-      "evidence": { "path": "crates/buzz-core/src/pairing/NIP-AB.md", "symbol": "one-time transfer", "signal": "Protocol is device-generic and not a Mobile application contract" }
+      "evidence": { "path": "crates/nimino-core/src/pairing/NIP-AB.md", "symbol": "one-time transfer", "signal": "Protocol is device-generic and not a Mobile application contract" }
     },
     {
       "id": "external.pairing-relay-runtime",
@@ -300,7 +302,7 @@
       "owner": "Issue #61 Nimino Relay packaging",
       "dependencies": ["Issue #28 Desktop identity use case"],
       "selectors": [
-        { "type": "exact", "value": "crates/buzz-relay/src/handlers/event.rs" },
+        { "type": "exact", "value": "crates/nimino-relay/src/handlers/event.rs" },
         { "type": "exact", "value": "deploy/charts/nimino/README.md" },
         { "type": "exact", "value": "deploy/charts/nimino/templates/_helpers.tpl" },
         { "type": "exact", "value": "deploy/charts/nimino/templates/_validate.tpl" },
@@ -317,17 +319,17 @@
     {
       "id": "external.platform-media-interop",
       "action": "keep",
-      "owner": "crates/buzz-media",
+      "owner": "crates/nimino-media",
       "dependencies": ["Desktop media adapter"],
       "selectors": [
-        { "type": "prefix", "value": "crates/buzz-media/tests/fixtures/android/" },
-        { "type": "prefix", "value": "crates/buzz-media/tests/fixtures/ios/" },
-        { "type": "exact", "value": "crates/buzz-media/src/validation.rs" },
+        { "type": "prefix", "value": "crates/nimino-media/tests/fixtures/android/" },
+        { "type": "prefix", "value": "crates/nimino-media/tests/fixtures/ios/" },
+        { "type": "exact", "value": "crates/nimino-media/src/validation.rs" },
         { "type": "exact", "value": "desktop/src-tauri/src/commands/media_transcode.rs" }
       ],
       "deleteWhen": "Only when the media sanitizer no longer accepts files produced by those platforms",
       "proof": "media sanitizer fixture tests",
-      "evidence": { "path": "crates/buzz-media/tests/fixtures/ios/README.md", "symbol": "fixtures", "signal": "Origin-format interoperability evidence, not Mobile product code" }
+      "evidence": { "path": "crates/nimino-media/tests/fixtures/ios/README.md", "symbol": "fixtures", "signal": "Origin-format interoperability evidence, not Mobile product code" }
     },
     {
       "id": "external.protocol-mobile-examples",

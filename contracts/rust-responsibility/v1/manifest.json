@@ -17,13 +17,14 @@
     "keep": {
       "target": "bounded adapter, verification tool, or typed boundary",
       "packages": [
-        "buzz-backend-kubernetes",
-        "buzz-conformance",
-        "buzz-datastore-tracing",
-        "buzz-pair-relay",
-        "buzz-terminal",
-        "buzz-voice",
-        "buzz-ws-client",
+        "nimino-backend-kubernetes",
+        "nimino-conformance",
+        "nimino-control",
+        "nimino-datastore-tracing",
+        "nimino-pair-relay",
+        "nimino-terminal",
+        "nimino-voice",
+        "nimino-ws-client",
         "git-credential-nostr",
         "git-sign-nostr",
         "nimino-boundary",
@@ -31,34 +32,34 @@
         "nimino-data-ops",
         "nimino-object-store",
         "nimino-store",
+        "nimino-sync",
         "nimino-wsl-launcher"
       ]
     },
     "shrink": {
       "target": "retain only composition, transport, storage, crypto, codec, or execution effects",
       "packages": [
-        "buzz-acp",
-        "buzz-admin",
-        "buzz-agent",
-        "buzz-audit",
-        "buzz-auth",
-        "buzz-cli",
-        "buzz-core",
-        "buzz-db",
-        "buzz-deletion",
-        "buzz-desktop",
-        "buzz-dev-mcp",
-        "buzz-media",
-        "buzz-pairing-cli",
-        "buzz-persona",
-        "buzz-pubsub",
-        "buzz-relay",
-        "buzz-sdk",
-        "buzz-search",
-        "buzz-test-client",
-        "buzz-workflow",
-        "countdown-bot",
-        "sprig"
+        "nimino-acp",
+        "nimino-admin",
+        "nimino-agent",
+        "nimino-audit",
+        "nimino-auth",
+        "nimino-cli",
+        "nimino-core",
+        "nimino-db",
+        "nimino-deletion",
+        "nimino-desktop",
+        "nimino-dev-mcp",
+        "nimino-media",
+        "nimino-pairing-cli",
+        "nimino-persona",
+        "nimino-local-delivery",
+        "nimino-relay",
+        "nimino-sdk",
+        "nimino-search",
+        "nimino-test-client",
+        "nimino-workflow",
+        "countdown-bot"
       ]
     },
     "move": {
@@ -67,20 +68,14 @@
     },
     "replace": {
       "target": "nimino-chirps plus Nim-owned cluster and sync domains",
-      "packages": ["buzz-relay-mesh"]
+      "packages": []
     },
     "delete": {
       "target": "no surviving runtime responsibility",
       "packages": []
     }
   },
-  "standaloneSources": [
-    {
-      "path": "benchmarks/harbor-buzz-orchestra/forwarder/relay_forwarder.rs",
-      "action": "delete",
-      "removalIssue": 66
-    }
-  ],
+  "standaloneSources": [],
   "policyOwnership": {
     "nimDomainRoot": "nim/nimino_core/src/nimino_core/domain",
     "nimDomainModules": [
@@ -106,24 +101,29 @@
     "operations": [
       "domain.agent.policy",
       "domain.cli.policy",
+      "domain.cluster.lifecycle",
       "domain.community.policy",
+      "domain.control.policy",
+      "domain.lease.policy",
+      "domain.effect.policy",
+      "domain.object.policy",
+      "domain.projection.policy",
       "domain.dm.policy",
       "domain.event.policy",
       "domain.membership.policy",
       "domain.moderation.policy",
+      "domain.sync.policy",
       "domain.workflow.policy"
     ],
     "rustOperationLiteralOwner": "nimino-boundary",
     "targetRustPolicyPackages": []
   },
-  "cutoverDependencyEdges": [
-    {"from": "buzz-relay", "to": "buzz-relay-mesh", "removalIssue": 66}
-  ],
+  "cutoverDependencyEdges": [],
   "developerExperience": {
     "baselinePolicyLanguages": ["nim", "rust"],
     "targetPolicyLanguages": ["nim"],
     "pureNimRustJobs": 0,
-    "boundaryRustPackages": ["nimino-boundary"],
+    "boundaryRustPackages": ["nimino-boundary", "nimino-control", "nimino-sync"],
     "fullRustWorkspaceForPolicyOnlyChange": false
   },
   "physicalRemovalOwner": 66

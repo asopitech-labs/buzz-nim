@@ -402,7 +402,7 @@ fn persist_last_error(app: &AppHandle, pubkey: &str, error: &str) -> Result<(), 
 /// - `Ready + env changed`: running with stale env; env is baked at spawn time.
 ///   Also covers `Ready → NotReady` when the env changed (key removed).
 ///
-/// **Readiness invariant (T,F,F):** For `buzz-agent` and `goose`, readiness is
+/// **Readiness invariant (T,F,F):** For `nimino-agent` and `goose`, readiness is
 /// derived purely from `EffectiveAgentEnv` — it cannot flip without an env delta.
 /// For `claude`/`codex`, `cli_login_requirements` queries runtime auth state
 /// (e.g. `claude auth status`), so readiness CAN flip Ready→NotReady without

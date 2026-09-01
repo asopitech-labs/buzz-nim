@@ -3,15 +3,25 @@
 #![deny(missing_docs)]
 
 use std::{
+    collections::HashSet,
     fs::{self, File},
     io::{Read, Write},
     path::{Path, PathBuf},
 };
 
 use anyhow::{bail, Context, Result};
+use nimino_boundary::{
+    BoundaryConfig, BoundaryRequest, BoundaryResult, BoundaryRuntime, CallContext,
+    EffectLedgerError, EffectLedgerState, EffectPolicyRequest, EffectPolicyResult,
+    EffectReconcileRequest, ProjectionBatchRequest, ProjectionBuildState, ProjectionBuildStatus,
+    ProjectionCanonicalRecord, ProjectionEffect, ProjectionKind, ProjectionLifecycleError,
+    ProjectionPolicyRequest, ProjectionPolicyResult, ProjectionRow, ProjectionStartRequest,
+};
 use nimino_object_store::{LocalObjectStore, ObjectStoreError, MAX_OBJECT_BYTES};
 use nimino_store::{
-    canonical_prefix_digest, canonical_record_digest, NodeStorePort, RecordClass, RedbNodeStore,
+    canonical_prefix_digest, canonical_record_digest, canonical_state_digest, CacheReplacement,
+    CanonicalCommit, NodeStorePort, ProjectionStageBatch, ProjectionStageMetadata,
+    ProjectionStageSpec, RecordClass, RecordWrite, RedbNodeStore, StoreError, StoredRecord,
     MAX_PAGE_SIZE,
 };
 use serde::{Deserialize, Serialize};
@@ -22,6 +32,538 @@ const BACKUP_CONTRACT: &str = "nimino.cutover-backup/v1";
 const BACKUP_MANIFEST: &str = "manifest.json";
 const BACKUP_OBJECTS: &str = "objects";
 const BACKUP_STORE: &str = "store.redb";
+const EFFECT_RECORD_TYPE: &str = "workflow_effect";
+// ponytail: one event per call keeps the 1 MiB boundary safe; raise only with measured framing.
+const PROJECTION_BATCH_SIZE: usize = 1;
+
+/// Result of rebuilding all replaceable projections from canonical event state.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectionRebuildReport {
+    /// Rebuilt tenant scope.
+    pub community_id: String,
+    /// Fixed canonical checkpoint used by every projection.
+    pub source_checkpoint: u64,
+    /// Fixed canonical state digest used by every projection.
+    pub source_digest: String,
+    /// Per-projection publication results.
+    pub projections: Vec<ProjectionRebuildOutcome>,
+}
+
+/// Publication result for one search, thread, or feed projection.
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectionRebuildOutcome {
+    /// Projection rebuilt by Nim.
+    pub projection: ProjectionKind,
+    /// Exact rebuild epoch.
+    pub epoch: String,
+    /// Whether a durable partial stage was resumed.
+    pub resumed: bool,
+    /// Number of rows atomically published.
+    pub row_count: usize,
+    /// False only when the identical publish intent was already durable.
+    pub applied: bool,
+}
+
+/// Rebuild search, thread, and feed caches through the supervised Nim policy.
+pub async fn rebuild_projections(
+    store_path: &Path,
+    community_id: &str,
+    worker_path: &Path,
+    owner_node_id: &str,
+    epoch_prefix: &str,
+) -> Result<ProjectionRebuildReport> {
+    if owner_node_id.is_empty() || epoch_prefix.is_empty() {
+        bail!("projection owner and epoch prefix are required");
+    }
+    let runtime = BoundaryRuntime::start(BoundaryConfig::new(worker_path))
+        .await
+        .context("start Nim projection policy worker")?;
+    let result = rebuild_projections_with_runtime(
+        store_path,
+        community_id,
+        owner_node_id,
+        epoch_prefix,
+        runtime.client(),
+    )
+    .await;
+    let shutdown = runtime
+        .shutdown()
+        .await
+        .context("stop Nim projection policy worker");
+    let report = result?;
+    shutdown?;
+    Ok(report)
+}
+
+async fn rebuild_projections_with_runtime(
+    store_path: &Path,
+    community_id: &str,
+    owner_node_id: &str,
+    epoch_prefix: &str,
+    boundary: nimino_boundary::BoundaryClient,
+) -> Result<ProjectionRebuildReport> {
+    let store = RedbNodeStore::open(store_path)?;
+    let source = canonical_state_digest(&store, community_id, MAX_PAGE_SIZE, || false)?;
+    let source_digest = hex::encode(source.digest);
+    let mut projections = Vec::with_capacity(3);
+    for (projection, name, record_type) in [
+        (ProjectionKind::Search, "search", "search_index"),
+        (ProjectionKind::Thread, "thread", "thread_index"),
+        (ProjectionKind::Feed, "feed", "feed_index"),
+    ] {
+        projections.push(
+            rebuild_projection(
+                &store,
+                community_id,
+                owner_node_id,
+                &format!("{epoch_prefix}-{name}"),
+                projection,
+                name,
+                record_type,
+                source.checkpoint,
+                &source_digest,
+                &boundary,
+            )
+            .await?,
+        );
+    }
+    Ok(ProjectionRebuildReport {
+        community_id: community_id.to_owned(),
+        source_checkpoint: source.checkpoint,
+        source_digest,
+        projections,
+    })
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn rebuild_projection(
+    store: &RedbNodeStore,
+    community_id: &str,
+    owner_node_id: &str,
+    epoch: &str,
+    projection: ProjectionKind,
+    projection_name: &str,
+    record_type: &str,
+    source_checkpoint: u64,
+    source_digest: &str,
+    boundary: &nimino_boundary::BoundaryClient,
+) -> Result<ProjectionRebuildOutcome> {
+    let spec = ProjectionStageSpec {
+        community_id: community_id.to_owned(),
+        projection: projection_name.to_owned(),
+        epoch: epoch.to_owned(),
+        owner_node_id: owner_node_id.to_owned(),
+        source_checkpoint,
+        source_digest: source_digest.to_owned(),
+        target_record_type: record_type.to_owned(),
+    };
+    let (mut recovery, resumed) =
+        match store.recover_projection_stage(community_id, projection_name) {
+            Ok(recovery) => (recovery, true),
+            Err(StoreError::ProjectionStageMissing) => {
+                let start = call_projection_policy(
+                    boundary,
+                    ProjectionPolicyRequest::Start {
+                        request: ProjectionStartRequest {
+                            projection,
+                            community_id: community_id.to_owned(),
+                            source_checkpoint,
+                            source_digest: source_digest.to_owned(),
+                            epoch: epoch.to_owned(),
+                            owner_node_id: owner_node_id.to_owned(),
+                        },
+                    },
+                )
+                .await?;
+                let ProjectionPolicyResult::Start { result } = start else {
+                    bail!("Nim returned an unexpected projection start result");
+                };
+                if result.error != ProjectionLifecycleError::None
+                    || result.effect != ProjectionEffect::Start
+                {
+                    bail!("Nim rejected projection start: {:?}", result.error);
+                }
+                store.begin_projection_stage(spec.clone())?;
+                (
+                    store.recover_projection_stage(community_id, projection_name)?,
+                    false,
+                )
+            }
+            Err(error) => return Err(error.into()),
+        };
+    if recovery.metadata.spec != spec {
+        bail!("projection stage identity differs from the requested rebuild");
+    }
+    let mut state = projection_state(projection, &recovery.metadata);
+    while state.status == ProjectionBuildStatus::Building {
+        let current = canonical_state_digest(store, community_id, MAX_PAGE_SIZE, || false)?;
+        let source_matches = current.checkpoint == source_checkpoint
+            && current.digest.as_slice() == hex::decode(source_digest)?.as_slice();
+        let records = store.page(
+            RecordClass::Canonical,
+            community_id,
+            "event",
+            (!state.cursor.is_empty()).then_some(state.cursor.as_str()),
+            PROJECTION_BATCH_SIZE,
+        )?;
+        let complete = records.len() < PROJECTION_BATCH_SIZE;
+        let records: Vec<ProjectionCanonicalRecord> = records
+            .into_iter()
+            .map(projection_record)
+            .collect::<Result<_>>()?;
+        let current_rows = relevant_projection_rows(projection, &records, &recovery.rows);
+        let batch = call_projection_policy(
+            boundary,
+            ProjectionPolicyRequest::Batch {
+                state: state.clone(),
+                request: ProjectionBatchRequest {
+                    community_id: community_id.to_owned(),
+                    epoch: epoch.to_owned(),
+                    owner_node_id: owner_node_id.to_owned(),
+                    expected_revision: state.revision,
+                    expected_cursor: state.cursor.clone(),
+                    source_checkpoint_matches: source_matches,
+                    complete,
+                    records,
+                    current_rows,
+                },
+            },
+        )
+        .await?;
+        let ProjectionPolicyResult::Batch { result: plan } = batch else {
+            bail!("Nim returned an unexpected projection batch result");
+        };
+        if plan.error != ProjectionLifecycleError::None
+            || !matches!(
+                plan.effect,
+                ProjectionEffect::Stage | ProjectionEffect::Ready
+            )
+        {
+            bail!("Nim rejected projection batch: {:?}", plan.error);
+        }
+        let rows = plan
+            .rows
+            .iter()
+            .map(|row| RecordWrite {
+                record_type: row.record_type.clone(),
+                key: row.key.clone(),
+                deleted: row.deleted,
+                value: row.value.clone(),
+            })
+            .collect();
+        let metadata = store.stage_projection_batch(ProjectionStageBatch {
+            community_id: community_id.to_owned(),
+            projection: projection_name.to_owned(),
+            epoch: epoch.to_owned(),
+            expected_revision: state.revision,
+            expected_cursor: state.cursor.clone(),
+            next_cursor: plan.next_state.cursor.clone(),
+            complete: plan.next_state.status == ProjectionBuildStatus::Ready,
+            rows,
+        })?;
+        let settled = call_projection_policy(
+            boundary,
+            ProjectionPolicyRequest::SettleBatch {
+                plan,
+                stage_succeeded: true,
+            },
+        )
+        .await?;
+        let ProjectionPolicyResult::SettleBatch { result } = settled else {
+            bail!("Nim returned an unexpected projection settlement");
+        };
+        if result.error != ProjectionLifecycleError::None {
+            bail!("Nim rejected projection settlement: {:?}", result.error);
+        }
+        state = result.state;
+        if state.revision != metadata.revision
+            || state.cursor != metadata.cursor
+            || (state.status == ProjectionBuildStatus::Ready) != metadata.complete
+        {
+            bail!("projection policy and durable stage diverged");
+        }
+        recovery = store.recover_projection_stage(community_id, projection_name)?;
+    }
+
+    let current = canonical_state_digest(store, community_id, MAX_PAGE_SIZE, || false)?;
+    if current.checkpoint != source_checkpoint || hex::encode(current.digest) != source_digest {
+        bail!("canonical source changed before projection publication");
+    }
+    let publish = call_projection_policy(
+        boundary,
+        ProjectionPolicyRequest::Publish {
+            state,
+            owner_node_id: owner_node_id.to_owned(),
+        },
+    )
+    .await?;
+    let ProjectionPolicyResult::Publish { result: plan } = publish else {
+        bail!("Nim returned an unexpected projection publish result");
+    };
+    if plan.error != ProjectionLifecycleError::None || plan.effect != ProjectionEffect::Publish {
+        bail!("Nim rejected projection publication: {:?}", plan.error);
+    }
+    let row_count = recovery.rows.len();
+    let result = store.replace_cache(CacheReplacement {
+        intent_id: plan.intent_id.clone(),
+        community_id: community_id.to_owned(),
+        source_checkpoint: plan.source_checkpoint,
+        record_type: plan.record_type.clone(),
+        rows: recovery.rows,
+    })?;
+    let settled = call_projection_policy(
+        boundary,
+        ProjectionPolicyRequest::SettlePublish {
+            plan,
+            publish_succeeded: true,
+        },
+    )
+    .await?;
+    let ProjectionPolicyResult::SettlePublish { result: decision } = settled else {
+        bail!("Nim returned an unexpected projection publish settlement");
+    };
+    if decision.error != ProjectionLifecycleError::None
+        || decision.state.status != ProjectionBuildStatus::Published
+    {
+        bail!(
+            "Nim rejected projection publish settlement: {:?}",
+            decision.error
+        );
+    }
+    store.discard_projection_stage(community_id, projection_name, epoch)?;
+    Ok(ProjectionRebuildOutcome {
+        projection,
+        epoch: epoch.to_owned(),
+        resumed,
+        row_count,
+        applied: result.applied,
+    })
+}
+
+fn projection_record(record: StoredRecord) -> Result<ProjectionCanonicalRecord> {
+    if record.deleted {
+        return Ok(ProjectionCanonicalRecord {
+            sequence: record.sequence,
+            record_type: record.record_type,
+            key: record.key,
+            deleted: true,
+            value: serde_json::Value::Null,
+        });
+    }
+    let event = record
+        .value
+        .get("event")
+        .context("canonical event payload is missing")?;
+    let value = serde_json::json!({
+        "event": {
+            "content": event.get("content").context("canonical event content is missing")?,
+            "created_at": event.get("created_at").context("canonical event timestamp is missing")?,
+        },
+        "parentId": record.value.get("parentId").context("canonical parent id is missing")?,
+        "rootId": record.value.get("rootId").context("canonical root id is missing")?,
+    });
+    Ok(ProjectionCanonicalRecord {
+        sequence: record.sequence,
+        record_type: record.record_type,
+        key: record.key,
+        deleted: false,
+        value,
+    })
+}
+
+fn projection_state(
+    projection: ProjectionKind,
+    metadata: &ProjectionStageMetadata,
+) -> ProjectionBuildState {
+    ProjectionBuildState {
+        valid: true,
+        projection,
+        community_id: metadata.spec.community_id.clone(),
+        source_checkpoint: metadata.spec.source_checkpoint,
+        source_digest: metadata.spec.source_digest.clone(),
+        epoch: metadata.spec.epoch.clone(),
+        owner_node_id: metadata.spec.owner_node_id.clone(),
+        revision: metadata.revision,
+        cursor: metadata.cursor.clone(),
+        status: if metadata.complete {
+            ProjectionBuildStatus::Ready
+        } else {
+            ProjectionBuildStatus::Building
+        },
+    }
+}
+
+fn relevant_projection_rows(
+    projection: ProjectionKind,
+    records: &[ProjectionCanonicalRecord],
+    staged: &[RecordWrite],
+) -> Vec<ProjectionRow> {
+    if projection != ProjectionKind::Thread {
+        return Vec::new();
+    }
+    let mut keys = HashSet::new();
+    for record in records {
+        keys.insert(record.key.as_str());
+        for name in ["parentId", "rootId"] {
+            if let Some(key) = record.value.get(name).and_then(serde_json::Value::as_str) {
+                if !key.is_empty() {
+                    keys.insert(key);
+                }
+            }
+        }
+    }
+    staged
+        .iter()
+        .filter(|row| keys.contains(row.key.as_str()))
+        .map(|row| ProjectionRow {
+            record_type: row.record_type.clone(),
+            key: row.key.clone(),
+            value: row.value.clone(),
+        })
+        .collect()
+}
+
+async fn call_projection_policy(
+    boundary: &nimino_boundary::BoundaryClient,
+    request: ProjectionPolicyRequest,
+) -> Result<ProjectionPolicyResult> {
+    let result = boundary
+        .call(
+            BoundaryRequest::projection_policy(request),
+            CallContext::with_timeout(std::time::Duration::from_secs(2)),
+        )
+        .await
+        .context("call Nim projection policy")?;
+    let BoundaryResult::ProjectionPolicy(result) = result else {
+        bail!("Nim returned an unexpected projection policy result");
+    };
+    Ok(result)
+}
+
+/// Reconcile one unknown workflow effect through the supervised Nim policy.
+pub async fn reconcile_effect(
+    store_path: &Path,
+    community_id: &str,
+    effect_key: &str,
+    worker_path: &Path,
+    request: EffectReconcileRequest,
+) -> Result<EffectLedgerState> {
+    let runtime = BoundaryRuntime::start(BoundaryConfig::new(worker_path))
+        .await
+        .context("start Nim effect policy worker")?;
+    let result = reconcile_effect_with_runtime(
+        store_path,
+        community_id,
+        effect_key,
+        runtime.client(),
+        request,
+    )
+    .await;
+    let shutdown = runtime
+        .shutdown()
+        .await
+        .context("stop Nim effect policy worker");
+    let state = result?;
+    shutdown?;
+    Ok(state)
+}
+
+async fn reconcile_effect_with_runtime(
+    store_path: &Path,
+    community_id: &str,
+    effect_key: &str,
+    boundary: nimino_boundary::BoundaryClient,
+    request: EffectReconcileRequest,
+) -> Result<EffectLedgerState> {
+    let store = RedbNodeStore::open(store_path)?;
+    let record = store
+        .get(
+            RecordClass::Canonical,
+            community_id,
+            EFFECT_RECORD_TYPE,
+            effect_key,
+        )?
+        .context("workflow effect does not exist")?;
+    let state: EffectLedgerState =
+        serde_json::from_value(record.value).context("decode workflow effect state")?;
+    let result = boundary
+        .call(
+            BoundaryRequest::effect_policy(EffectPolicyRequest::Reconcile { state, request }),
+            CallContext::with_timeout(std::time::Duration::from_secs(2)),
+        )
+        .await
+        .context("plan effect reconciliation")?;
+    let BoundaryResult::EffectPolicy(EffectPolicyResult::Reconcile { result: plan }) = result
+    else {
+        bail!("Nim returned an unexpected effect reconciliation plan");
+    };
+    if plan.error != EffectLedgerError::None {
+        bail!(
+            "Nim rejected effect reconciliation: {:?} (lease {:?})",
+            plan.error,
+            plan.lease_error
+        );
+    }
+    let mut persisted = false;
+    for _ in 0..8 {
+        let current = store
+            .get(
+                RecordClass::Canonical,
+                community_id,
+                EFFECT_RECORD_TYPE,
+                effect_key,
+            )?
+            .context("workflow effect disappeared during reconciliation")?;
+        let current_state: EffectLedgerState = serde_json::from_value(current.value)?;
+        if current_state != plan.before_state {
+            bail!("workflow effect changed during reconciliation");
+        }
+        let checkpoint = store.canonical_checkpoint(community_id)?;
+        match store.commit_canonical(CanonicalCommit {
+            intent_id: format!("effect-reconcile:{effect_key}:{}", plan.next_state.revision),
+            community_id: community_id.to_owned(),
+            expected_checkpoint: checkpoint,
+            writes: vec![RecordWrite {
+                record_type: EFFECT_RECORD_TYPE.to_owned(),
+                key: effect_key.to_owned(),
+                deleted: false,
+                value: serde_json::to_value(&plan.next_state)?,
+            }],
+        }) {
+            Ok(_) => {
+                persisted = true;
+                break;
+            }
+            Err(StoreError::CheckpointConflict { .. }) => continue,
+            Err(error) => return Err(error.into()),
+        }
+    }
+    if !persisted {
+        bail!("effect reconciliation checkpoint retry limit exceeded");
+    }
+    let settled = boundary
+        .call(
+            BoundaryRequest::effect_policy(EffectPolicyRequest::Settle {
+                plan,
+                persistence_succeeded: true,
+            }),
+            CallContext::with_timeout(std::time::Duration::from_secs(2)),
+        )
+        .await
+        .context("settle effect reconciliation")?;
+    let BoundaryResult::EffectPolicy(EffectPolicyResult::Settle { result }) = settled else {
+        bail!("Nim returned an unexpected effect reconciliation settlement");
+    };
+    if result.error != EffectLedgerError::None {
+        bail!(
+            "Nim failed effect reconciliation settlement: {:?}",
+            result.error
+        );
+    }
+    Ok(result.state)
+}
 
 /// Explicit content-addressed object expected by an operator repair command.
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]

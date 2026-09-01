@@ -6,9 +6,15 @@ use crate::agent::{AgentPolicyRequest, AgentPolicyResult};
 use crate::cli::{CliPolicyRequest, CliPolicyResult};
 use crate::cluster::{ClusterLifecyclePolicyRequest, ClusterLifecyclePolicyResult};
 use crate::community::{CommunityPolicyRequest, CommunityPolicyResult};
+use crate::control::{ControlPolicyRequest, ControlPolicyResult};
 use crate::dm::{DmPolicyRequest, DmPolicyResult};
+use crate::effect::{EffectPolicyRequest, EffectPolicyResult};
+use crate::lease::{LeasePolicyRequest, LeasePolicyResult};
 use crate::membership::{MembershipPolicyRequest, MembershipPolicyResult};
 use crate::moderation::{ModerationPolicyRequest, ModerationPolicyResult};
+use crate::object::{ObjectPolicyRequest, ObjectPolicyResult};
+use crate::projection::{ProjectionPolicyRequest, ProjectionPolicyResult};
+use crate::sync::{SyncPolicyRequest, SyncPolicyResult};
 use crate::workflow::{WorkflowPolicyRequest, WorkflowPolicyResult};
 
 /// Stable protocol name carried by every v1 frame.
@@ -16,7 +22,7 @@ pub const PROTOCOL_NAME: &str = "nimino.core.boundary";
 /// The only accepted boundary version. No downgrade path exists.
 pub const PROTOCOL_VERSION: u16 = 1;
 /// SHA-256 of the checked-in v1 contract bundle.
-pub const SCHEMA_HASH: &str = "3e213513617b662669cc859a15d4ea3de7c958338f37b5de0d8731e5d6e899a2";
+pub const SCHEMA_HASH: &str = "d06742253d18549b47a1be30a4a796a38d893d1a33f866027a4083776e88b448";
 /// Role required during the exact-match startup handshake.
 pub const WORKER_ROLE: &str = "nimino-core";
 /// Maximum JSON payload length accepted by the frame codec.
@@ -480,6 +486,7 @@ pub struct ReadyPayload {
 }
 
 /// Typed success union discriminated by the response operation tag.
+#[allow(clippy::large_enum_variant)] // Wire-schema mirror; serialized immediately.
 #[derive(Debug, Clone, PartialEq)]
 pub enum BoundaryResult {
     /// Exact startup handshake result.
@@ -504,6 +511,18 @@ pub enum BoundaryResult {
     AgentPolicy(AgentPolicyResult),
     /// Cluster admission, lifecycle, and lane decision owned by Nimino.
     ClusterLifecycle(ClusterLifecyclePolicyResult),
+    /// Replicated control-log and authority decision owned by Nimino.
+    ControlPolicy(ControlPolicyResult),
+    /// Lease, fencing, and singleton-routing decision owned by Nimino.
+    LeasePolicy(LeasePolicyResult),
+    /// Workflow effect claim, execution marker, receipt, and recovery decision owned by Nimino.
+    EffectPolicy(EffectPolicyResult),
+    /// Content-addressed object materialization, pin, and GC decision owned by Nimino.
+    ObjectPolicy(ObjectPolicyResult),
+    /// Search, thread, and feed projection lifecycle decision owned by Nimino.
+    ProjectionPolicy(ProjectionPolicyResult),
+    /// Bounded anti-entropy session and range decision owned by Nimino.
+    SyncPolicy(SyncPolicyResult),
     /// Test-only operation result; never present in a production build.
     #[cfg(feature = "test-hooks")]
     Test(Value),
@@ -522,6 +541,7 @@ pub(crate) struct SleepPayload {
 pub(crate) struct EmptyPayload {}
 
 /// Typed operation union for the v1 request envelope.
+#[allow(clippy::large_enum_variant)] // Wire-schema mirror; boxing only burdens callers.
 #[derive(Debug, Clone, PartialEq)]
 pub(crate) enum BoundaryOperation {
     /// Exact-match process startup handshake.
@@ -546,6 +566,18 @@ pub(crate) enum BoundaryOperation {
     AgentPolicy(AgentPolicyRequest),
     /// Cluster admission, lifecycle, and lane policy.
     ClusterLifecycle(ClusterLifecyclePolicyRequest),
+    /// Replicated control-log and authority policy.
+    ControlPolicy(ControlPolicyRequest),
+    /// Lease, fencing, and singleton-routing policy.
+    LeasePolicy(LeasePolicyRequest),
+    /// Workflow effect-ledger lifecycle policy.
+    EffectPolicy(EffectPolicyRequest),
+    /// Content-addressed object materialization, pin, and GC policy.
+    ObjectPolicy(ObjectPolicyRequest),
+    /// Search, thread, and feed projection lifecycle policy.
+    ProjectionPolicy(ProjectionPolicyRequest),
+    /// Bounded anti-entropy session and range policy.
+    SyncPolicy(SyncPolicyRequest),
     /// Deterministic blocking operation available only to boundary tests.
     #[cfg(feature = "test-hooks")]
     TestSleep(SleepPayload),
@@ -583,6 +615,12 @@ impl BoundaryOperation {
             Self::CliPolicy(_) => "domain.cli.policy",
             Self::AgentPolicy(_) => "domain.agent.policy",
             Self::ClusterLifecycle(_) => "domain.cluster.lifecycle",
+            Self::ControlPolicy(_) => "domain.control.policy",
+            Self::LeasePolicy(_) => "domain.lease.policy",
+            Self::EffectPolicy(_) => "domain.effect.policy",
+            Self::ObjectPolicy(_) => "domain.object.policy",
+            Self::ProjectionPolicy(_) => "domain.projection.policy",
+            Self::SyncPolicy(_) => "domain.sync.policy",
             #[cfg(feature = "test-hooks")]
             Self::TestSleep(_) => "boundary.test.sleep",
             #[cfg(feature = "test-hooks")]
@@ -613,6 +651,12 @@ impl BoundaryOperation {
             Self::CliPolicy(payload) => serde_json::to_value(payload),
             Self::AgentPolicy(payload) => serde_json::to_value(payload),
             Self::ClusterLifecycle(payload) => serde_json::to_value(payload),
+            Self::ControlPolicy(payload) => serde_json::to_value(payload),
+            Self::LeasePolicy(payload) => serde_json::to_value(payload),
+            Self::EffectPolicy(payload) => serde_json::to_value(payload),
+            Self::ObjectPolicy(payload) => serde_json::to_value(payload),
+            Self::ProjectionPolicy(payload) => serde_json::to_value(payload),
+            Self::SyncPolicy(payload) => serde_json::to_value(payload),
             #[cfg(feature = "test-hooks")]
             Self::TestSleep(payload) => serde_json::to_value(payload),
             #[cfg(feature = "test-hooks")]
@@ -644,6 +688,14 @@ impl BoundaryOperation {
             "domain.cluster.lifecycle" => {
                 serde_json::from_value(payload).map(Self::ClusterLifecycle)
             }
+            "domain.control.policy" => serde_json::from_value(payload).map(Self::ControlPolicy),
+            "domain.lease.policy" => serde_json::from_value(payload).map(Self::LeasePolicy),
+            "domain.effect.policy" => serde_json::from_value(payload).map(Self::EffectPolicy),
+            "domain.object.policy" => serde_json::from_value(payload).map(Self::ObjectPolicy),
+            "domain.projection.policy" => {
+                serde_json::from_value(payload).map(Self::ProjectionPolicy)
+            }
+            "domain.sync.policy" => serde_json::from_value(payload).map(Self::SyncPolicy),
             #[cfg(feature = "test-hooks")]
             "boundary.test.sleep" => serde_json::from_value(payload).map(Self::TestSleep),
             #[cfg(feature = "test-hooks")]
@@ -802,6 +854,36 @@ impl BoundaryRequest {
         Self::from_operation(BoundaryOperation::ClusterLifecycle(request))
     }
 
+    /// Constructs a typed replicated-control policy decision.
+    pub fn control_policy(request: ControlPolicyRequest) -> Self {
+        Self::from_operation(BoundaryOperation::ControlPolicy(request))
+    }
+
+    /// Constructs a typed lease, fencing, or singleton-routing decision.
+    pub fn lease_policy(request: LeasePolicyRequest) -> Self {
+        Self::from_operation(BoundaryOperation::LeasePolicy(request))
+    }
+
+    /// Constructs a typed workflow effect-ledger decision.
+    pub fn effect_policy(request: EffectPolicyRequest) -> Self {
+        Self::from_operation(BoundaryOperation::EffectPolicy(request))
+    }
+
+    /// Constructs a typed content-addressed object policy decision.
+    pub fn object_policy(request: ObjectPolicyRequest) -> Self {
+        Self::from_operation(BoundaryOperation::ObjectPolicy(request))
+    }
+
+    /// Constructs a typed projection lifecycle decision.
+    pub fn projection_policy(request: ProjectionPolicyRequest) -> Self {
+        Self::from_operation(BoundaryOperation::ProjectionPolicy(request))
+    }
+
+    /// Constructs a typed bounded anti-entropy policy decision.
+    pub fn sync_policy(request: SyncPolicyRequest) -> Self {
+        Self::from_operation(BoundaryOperation::SyncPolicy(request))
+    }
+
     /// Returns the exact protocol identifier carried by this request.
     pub fn protocol(&self) -> &str {
         &self.protocol
@@ -896,6 +978,7 @@ struct BoundaryResponseWire {
     error: Option<BoundaryFault>,
 }
 
+#[allow(clippy::large_enum_variant)] // Short-lived decoded response, never stored in bulk.
 #[derive(Debug, Clone, PartialEq)]
 enum BoundaryResponseBody {
     Success(BoundaryResult),
@@ -965,6 +1048,24 @@ impl<'de> Deserialize<'de> for BoundaryResponse {
                         .map_err(D::Error::custom)?,
                     "domain.cluster.lifecycle" => serde_json::from_value(result)
                         .map(BoundaryResult::ClusterLifecycle)
+                        .map_err(D::Error::custom)?,
+                    "domain.control.policy" => serde_json::from_value(result)
+                        .map(BoundaryResult::ControlPolicy)
+                        .map_err(D::Error::custom)?,
+                    "domain.lease.policy" => serde_json::from_value(result)
+                        .map(BoundaryResult::LeasePolicy)
+                        .map_err(D::Error::custom)?,
+                    "domain.effect.policy" => serde_json::from_value(result)
+                        .map(BoundaryResult::EffectPolicy)
+                        .map_err(D::Error::custom)?,
+                    "domain.object.policy" => serde_json::from_value(result)
+                        .map(BoundaryResult::ObjectPolicy)
+                        .map_err(D::Error::custom)?,
+                    "domain.projection.policy" => serde_json::from_value(result)
+                        .map(BoundaryResult::ProjectionPolicy)
+                        .map_err(D::Error::custom)?,
+                    "domain.sync.policy" => serde_json::from_value(result)
+                        .map(BoundaryResult::SyncPolicy)
                         .map_err(D::Error::custom)?,
                     #[cfg(feature = "test-hooks")]
                     name if name.starts_with("boundary.test.") => BoundaryResult::Test(result),

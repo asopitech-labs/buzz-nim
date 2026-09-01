@@ -11,7 +11,7 @@ packages, unowned Rust sources, upward dependency edges, policy wire operations
 outside `nimino-boundary`, and untracked dependencies on the legacy mesh.
 
 `keep` packages are already bounded. `shrink` packages retain only their
-adapter or entry-point responsibility at cutover. `buzz-relay-mesh` is the one
+adapter or entry-point responsibility at cutover. `nimino-relay-mesh` is the one
 tracked replacement and is removed atomically by #66; there is no compatibility
 mode.
 

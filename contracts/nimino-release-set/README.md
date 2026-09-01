@@ -17,7 +17,7 @@ Create and verify a candidate:
 ```bash
 node scripts/nimino-release-set.mjs create \
   --version 1.0.0 --tag nimino-v1.0.0 --commit <40-hex-commit> \
-  --artifact cli:0.1.0:dist/buzz \
+  --artifact cli:0.1.0:dist/nimino \
   --output dist/nimino-release-set.json
 
 node scripts/nimino-release-set.mjs verify \

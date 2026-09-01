@@ -295,7 +295,7 @@ pub(super) async fn fetch_channels(
             let events = query_relay(
                 state,
                 &[serde_json::json!({
-                    "kinds": [buzz_core_pkg::kind::KIND_DM_VISIBILITY],
+                    "kinds": [nimino_core_pkg::kind::KIND_DM_VISIBILITY],
                     "#p": [&my_pubkey],
                     "limit": 1,
                 })],

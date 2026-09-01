@@ -24,7 +24,7 @@ function ev(tags, createdAt = 1) {
 test("parses emoji tags into shortcode/url pairs", () => {
   const out = customEmojiFromEvent(
     ev([
-      ["d", "buzz:custom-emoji"],
+      ["d", "nimino:custom-emoji"],
       ["emoji", "party_parrot", "https://relay/p.gif"],
       ["emoji", "shipit", "https://relay/s.png"],
     ]),
@@ -65,7 +65,7 @@ test("ignores non-emoji tags", () => {
   const out = customEmojiFromEvent(
     ev([
       ["d", "x"],
-      ["client", "buzz"],
+      ["client", "nimino"],
       ["emoji", "yes", "https://relay/y.png"],
     ]),
   );

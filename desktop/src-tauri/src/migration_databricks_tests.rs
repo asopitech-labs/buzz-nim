@@ -135,7 +135,7 @@ fn reconcile_databricks_v1_to_v2_preserves_v2_provider() {
 }
 
 #[test]
-fn reconcile_databricks_v1_to_v2_strips_stale_buzz_agent_provider_from_env_vars() {
+fn reconcile_databricks_v1_to_v2_strips_stale_nimino_agent_provider_from_env_vars() {
     let dir = tempfile::tempdir().unwrap();
     write_agents_json(
         dir.path(),

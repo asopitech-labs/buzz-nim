@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# start-relay-for-tests.sh — Start the Buzz relay and its backing services
+# start-relay-for-tests.sh — Start the Nimino relay and its backing services
 # =============================================================================
 # Shared script for CI jobs that need a running relay. Starts docker compose
 # services, waits for health, applies the schema, builds the relay, starts it,
@@ -61,7 +61,7 @@ err()   { echo -e "${RED}[relay-test]${NC} $*" >&2; }
 cd "${REPO_ROOT}"
 
 log "Starting docker compose services..."
-docker compose up -d postgres redis minio minio-init
+docker compose up -d postgres minio minio-init
 
 # ── Wait for services to be healthy ──────────────────────────────────────────
 
@@ -82,9 +82,8 @@ wait_healthy() {
   return 1
 }
 
-wait_healthy "Postgres" "buzz-postgres"
-wait_healthy "Redis" "buzz-redis"
-wait_healthy "MinIO" "buzz-minio"
+wait_healthy "Postgres" "nimino-postgres"
+wait_healthy "MinIO" "nimino-minio"
 
 # ── Apply database schema ────────────────────────────────────────────────────
 
@@ -104,7 +103,7 @@ export PGSCHEMA_PLAN_USER=nimino
 export PGSCHEMA_PLAN_PASSWORD=nimino_dev
 
 ./bin/pgschema apply --file schema/schema.sql --auto-approve
-docker exec -i -e PGPASSWORD="${PGPASSWORD}" buzz-postgres \
+docker exec -i -e PGPASSWORD="${PGPASSWORD}" nimino-postgres \
   psql -U "${PGUSER}" -d "${PGDATABASE}" -v ON_ERROR_STOP=1 < scripts/attach-schema-partitions.sql
 ok "Schema applied"
 
@@ -116,13 +115,13 @@ ok "Schema applied"
 # (ensure_configured_community has no callers) and fails closed on an unmapped
 # host, so without this row every e2e connection would 404 at host-binding.
 # The unique index is on lower(host), so ON CONFLICT must target that expression.
-# psql is not on PATH in the hermit env; postgres runs as the buzz-postgres
+# psql is not on PATH in the hermit env; postgres runs as the nimino-postgres
 # docker container, so exec into it (same fallback as setup-desktop-test-data.sh).
 log "Seeding deployment community (host=localhost:3000)..."
 if command -v psql >/dev/null 2>&1; then
   seed_psql() { PGPASSWORD="${PGPASSWORD}" psql -h "${PGHOST}" -p "${PGPORT}" -U "${PGUSER}" -d "${PGDATABASE}" -qtA "$@"; }
 else
-  seed_psql() { docker exec -e PGPASSWORD="${PGPASSWORD}" buzz-postgres psql -U "${PGUSER}" -d "${PGDATABASE}" -qtA "$@"; }
+  seed_psql() { docker exec -e PGPASSWORD="${PGPASSWORD}" nimino-postgres psql -U "${PGUSER}" -d "${PGDATABASE}" -qtA "$@"; }
 fi
 seed_psql -c "
 INSERT INTO communities (id, host)
@@ -144,7 +143,7 @@ if [[ "${SKIP_BUILD}" == "true" ]]; then
   log "Skipping relay build (--no-build); using existing target/${CARGO_PROFILE}/ binaries"
 else
   log "Building relay (profile: ${CARGO_PROFILE})..."
-  cargo build --profile "${CARGO_PROFILE}" -p buzz-relay -p git-credential-nostr
+  cargo build --profile "${CARGO_PROFILE}" -p nimino-relay -p git-credential-nostr
   ok "Relay built"
 fi
 
@@ -167,7 +166,6 @@ fi
 
 nohup env \
   DATABASE_URL=postgres://nimino:nimino_dev@localhost:5432/nimino \
-  REDIS_URL=redis://localhost:6379 \
   RELAY_URL=ws://localhost:3000 \
   NIMINO_BIND_ADDR=0.0.0.0:3000 \
   NIMINO_REQUIRE_AUTH_TOKEN=false \

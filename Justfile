@@ -1,4 +1,4 @@
-# Buzz — development task runner
+# Nimino — development task runner
 
 set dotenv-load := true
 
@@ -77,8 +77,8 @@ hooks:
     git config --local core.hooksPath "$HOOKS_DIR"
     lefthook install --force
 
-# Wipe development state and recreate a clean environment. Installed Buzz is preserved.
-[confirm("This will DELETE all development data and preserve installed Buzz. Continue? (y/N)")]
+# Wipe development state and recreate a clean environment. Installed Nimino is preserved.
+[confirm("This will DELETE all development data and preserve installed Nimino. Continue? (y/N)")]
 reset:
     ./scripts/dev-reset.sh --yes
 
@@ -159,7 +159,15 @@ nim-boundary-benchmark output="target/nim/nimino-boundary-benchmark.json": nim-b
     cargo run --release -p nimino-boundary --features test-hooks --bin boundary-bench -- "{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker" "{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker-test" "{{output}}"
 
 # Complete cross-language gate; the separate nim-ci lane remains Rust-free
-nim-boundary-ci: nim-boundary-test nim-boundary-benchmark nimino-cluster-scenarios
+nim-boundary-ci: nim-boundary-test nim-boundary-benchmark nimino-cluster-scenarios nimino-sync-scenarios nimino-control-scenarios nimino-effect-scenarios nimino-object-scenarios nimino-projection-scenarios
+
+# Exercise Nim-planned content-addressed transfer, resume, pin, and GC over real Chirps
+nimino-object-scenarios: nim-boundary-build
+    NIMINO_BOUNDARY_WORKER="{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker" cargo test -p nimino-object-store --test chirps_replication -- --ignored --test-threads=1
+
+# Exercise partial resume, atomic publish, drop, and query-equivalent rebuild
+nimino-projection-scenarios: nim-boundary-build
+    NIMINO_BOUNDARY_PRODUCTION_WORKER="{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker" cargo test -p nimino-data-ops --test projection_rebuild -- --ignored --exact --test-threads=1
 
 # Verify the pinned Chirps dependency and its narrow Rust API boundary
 chirps-contract:
@@ -219,8 +227,8 @@ nimino-mcp-execution-contract:
 
 # Exercise real MCP stdio framing and a capability denial
 nimino-mcp-framing:
-    cargo build -p buzz-dev-mcp
-    node scripts/test-nimino-mcp-framing.mjs target/debug/buzz-dev-mcp
+    cargo build -p nimino-dev-mcp
+    node scripts/test-nimino-mcp-framing.mjs target/debug/nimino-dev-mcp
 
 # Verify complete legacy mesh/Redis ownership and hard-cut dispositions
 legacy-control-manifest-contract:
@@ -259,6 +267,10 @@ legacy-release-deletion-contract:
 cutover-readiness-contract:
     node scripts/test-nimino-cutover-readiness.mjs
 
+# Bind clean source, compatibility-negative, cluster, platform, and supply-chain gates
+cutover-certification-contract:
+    node scripts/test-nimino-cutover-certification.mjs
+
 # Verify exact Agent/CLI bundle inventory, execution, and missing-component rejection
 agent-bundle-contract:
     node scripts/test-nimino-agent-bundle.mjs
@@ -270,6 +282,21 @@ nimino-cluster-scenario-contract:
 # Run the deterministic Chirps UDP/QUIC + Nim lifecycle scenario suite
 nimino-cluster-scenarios output="target/nim/nimino-cluster-scenarios.json": nimino-cluster-scenario-contract nim-boundary-build
     NIMINO_BOUNDARY_WORKER="{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker" NIMINO_CLUSTER_EVIDENCE="{{justfile_directory()}}/{{output}}" cargo test -p nimino-chirps --test lifecycle_scenarios -- --ignored --test-threads=1
+
+# Verify the fixed real-Chirps 3-node data synchronization definition
+nimino-sync-scenario-contract:
+    node scripts/test-nimino-sync-scenario-contract.mjs
+
+# Run bounded bootstrap, durable resume, duplicate and isolation over real Chirps
+nimino-sync-scenarios output="target/nim/nimino-sync-scenarios.json": nimino-sync-scenario-contract nim-boundary-build
+    NIMINO_BOUNDARY_WORKER="{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker" NIMINO_SYNC_EVIDENCE="{{justfile_directory()}}/{{output}}" cargo test -p nimino-sync --test three_node -- --ignored --test-threads=1
+
+# Run election, quorum commit, minority rejection, and durable catch-up over real Chirps
+nimino-control-scenarios: nimino-control-state-contract nim-boundary-build
+	NIMINO_BOUNDARY_WORKER="{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker" cargo test -p nimino-control --test three_node -- --ignored --test-threads=1
+
+nimino-effect-scenarios: nimino-effect-ledger-contract nim-boundary-build
+	NIMINO_BOUNDARY_WORKER="{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker" cargo test -p nimino-data-ops --test effect_reconcile -- --ignored --test-threads=1
 
 # Exhaustively check the bounded 3-node control-log state graph with TLC
 control-model-check: control-model-contract
@@ -335,7 +362,7 @@ ci-lanes-contract:
     node scripts/test-ci-lanes.mjs
 
 # Run repo lint, formatting, and repository policy checks
-check: fmt-check clippy chirps-contract control-model-contract naming-contract protocol-contract runtime-namespace-contract gui-surface-contract release-set-contract relay-release-contract platform-release-contract promotion-contract wsl-support-contract wsl-chirps-contract wsl-bundle-contract removed-client-contract ci-lanes-contract desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check file-size-check
+check: fmt-check clippy chirps-contract control-model-contract naming-contract protocol-contract runtime-namespace-contract gui-surface-contract release-set-contract relay-release-contract platform-release-contract promotion-contract cutover-certification-contract wsl-support-contract wsl-chirps-contract wsl-bundle-contract removed-client-contract ci-lanes-contract desktop-check desktop-tauri-fmt-check desktop-tauri-clippy web-check file-size-check
 
 # Run the active-product differential file-size ratchet and its policy tests.
 # The ratchet inspects only files changed from the merge base, so this stays
@@ -406,21 +433,20 @@ _ensure-sidecar-stubs:
     set -euo pipefail
     TARGET=$(rustc -vV | sed -n 's|host: ||p')
     mkdir -p desktop/src-tauri/binaries
-    SIDECARS=(buzz-acp buzz-agent buzz-dev-mcp git-credential-nostr nimino)
+    SIDECARS=(nimino-acp nimino-agent nimino-dev-mcp git-credential-nostr nimino)
     if [[ "$TARGET" != *windows* ]]; then
-        SIDECARS+=(buzz-backend-kubernetes)
+        SIDECARS+=(nimino-backend-kubernetes)
     fi
     for bin in "${SIDECARS[@]}"; do
         touch "desktop/src-tauri/binaries/${bin}-${TARGET}"
     done
 
-# Ensure Docker dev services (Postgres, Redis, etc.) are running and healthy
+# Ensure the Docker dev database is running and healthy.
 _ensure-services:
     #!/usr/bin/env bash
     set -euo pipefail
-    pg=$(docker inspect --format '{{"{{"}}.State.Health.Status{{"}}"}}' buzz-postgres 2>/dev/null || echo "not_found")
-    redis=$(docker inspect --format '{{"{{"}}.State.Health.Status{{"}}"}}' buzz-redis 2>/dev/null || echo "not_found")
-    if [[ "$pg" == "healthy" && "$redis" == "healthy" ]]; then
+    pg=$(docker inspect --format '{{"{{"}}.State.Health.Status{{"}}"}}' nimino-postgres 2>/dev/null || echo "not_found")
+    if [[ "$pg" == "healthy" ]]; then
         echo "Services already healthy"
         exit 0
     fi
@@ -428,9 +454,8 @@ _ensure-services:
     docker compose up -d || true
     echo -n "Waiting for services"
     for i in $(seq 1 40); do
-        pg=$(docker inspect --format '{{"{{"}}.State.Health.Status{{"}}"}}' buzz-postgres 2>/dev/null || echo "not_found")
-        redis=$(docker inspect --format '{{"{{"}}.State.Health.Status{{"}}"}}' buzz-redis 2>/dev/null || echo "not_found")
-        if [[ "$pg" == "healthy" && "$redis" == "healthy" ]]; then
+        pg=$(docker inspect --format '{{"{{"}}.State.Health.Status{{"}}"}}' nimino-postgres 2>/dev/null || echo "not_found")
+        if [[ "$pg" == "healthy" ]]; then
             echo " ready"
             exit 0
         fi
@@ -442,7 +467,7 @@ _ensure-services:
 
 # Apply database migrations and seed the local dev community if the dev database is running
 _ensure-migrations: _ensure-services
-    cargo run -p buzz-admin -- migrate
+    cargo run -p nimino-admin -- migrate
     ./scripts/seed-local-community.sh
 
 # Run clippy on the desktop Tauri Rust crate
@@ -467,7 +492,7 @@ nimino-tauri-native-test: _ensure-sidecar-stubs
 # This is intentionally excluded from shared CI: scheduler contention makes a
 # wall-clock assertion flaky, and the release profile is the shipped shape.
 desktop-terminal-performance-test:
-    cargo test --manifest-path desktop/src-tauri/crates/buzz-terminal/Cargo.toml --release --test latency g3_renderer_acquire_stays_within_frame_budget -- --ignored --exact --nocapture
+    cargo test --manifest-path desktop/src-tauri/crates/nimino-terminal/Cargo.toml --release --test latency g3_renderer_acquire_stays_within_frame_budget -- --ignored --exact --nocapture
 
 # Verify compiled-flag behavior under both compile states (clean + capability set).
 # Runs the auto-connect and owner-only access focused tests twice with
@@ -507,12 +532,12 @@ desktop-release-build target="aarch64-apple-darwin":
     set -euo pipefail
     TARGET={{target}}
     mkdir -p desktop/src-tauri/binaries
-    touch "desktop/src-tauri/binaries/buzz-acp-$TARGET"
-    touch "desktop/src-tauri/binaries/buzz-agent-$TARGET"
+    touch "desktop/src-tauri/binaries/nimino-acp-$TARGET"
+    touch "desktop/src-tauri/binaries/nimino-agent-$TARGET"
     if [[ "$TARGET" != *windows* ]]; then
-        touch "desktop/src-tauri/binaries/buzz-backend-kubernetes-$TARGET"
+        touch "desktop/src-tauri/binaries/nimino-backend-kubernetes-$TARGET"
     fi
-    touch "desktop/src-tauri/binaries/buzz-dev-mcp-$TARGET"
+    touch "desktop/src-tauri/binaries/nimino-dev-mcp-$TARGET"
     touch "desktop/src-tauri/binaries/git-credential-nostr-$TARGET"
     touch "desktop/src-tauri/binaries/nimino-$TARGET"
     pnpm install
@@ -556,42 +581,42 @@ test-unit:
     #!/usr/bin/env bash
     set -euo pipefail
     if command -v cargo-nextest &>/dev/null; then
-        cargo nextest run -p buzz-core -p buzz-auth --lib
-        cargo nextest run -p buzz-voice --lib
-        cargo nextest run -p buzz-cli
-        # buzz-db migrator/lint tests: pure SQL-parsing unit tests (no infra).
+        cargo nextest run -p nimino-core -p nimino-auth --lib
+        cargo nextest run -p nimino-voice --lib
+        cargo nextest run -p nimino-cli
+        # nimino-db migrator/lint tests: pure SQL-parsing unit tests (no infra).
         # They guard the embedded-migrator invariant (exactly the consolidated
         # 0001; cutover/backfill stays an operator script, not startup state)
-        # and the tenant-scoping lints. The Postgres-backed buzz-db tests are
+        # and the tenant-scoping lints. The Postgres-backed nimino-db tests are
         # #[ignore]d, so --lib runs only the infra-free set. Without this gate a
         # stray file in migrations/ or a broken lint ships green.
-        cargo nextest run -p buzz-db --lib
-        # Multi-tenant conformance gate (buzz-conformance): the independent
+        cargo nextest run -p nimino-db --lib
+        # Multi-tenant conformance gate (nimino-conformance): the independent
         # replay checker + golden fixtures. No infra — pure in-process trace
         # replay — so it belongs in the unit job. Run all targets (lib + the
         # tests/replay_fixtures.rs integration test), not just --lib.
-        cargo nextest run -p buzz-conformance
+        cargo nextest run -p nimino-conformance
         # Kubernetes backend provider: the decision layers (state machine, GC
         # planner, env precedence, naming, wire) are pure functions with a fake
         # substrate, so they belong in the unit job. Enumerated explicitly
         # because nothing in CI runs `cargo test --workspace` — workspace
         # membership alone buys clippy/check, not a single executed test.
-        cargo nextest run -p buzz-backend-kubernetes
+        cargo nextest run -p nimino-backend-kubernetes
         cargo nextest run -p nimino-store
         cargo nextest run -p nimino-object-store
         cargo nextest run -p nimino-data-ops
         cargo nextest run -p nimino-wsl-launcher
-        cargo nextest run -p buzz-dev-mcp
-        # buzz-agent model-capabilities corpus: the Rust half of the
+        cargo nextest run -p nimino-dev-mcp
+        # nimino-agent model-capabilities corpus: the Rust half of the
         # cross-language drift guard. `model_capabilities.rs` embeds
         # scripts/model-capabilities.json + scripts/normative-corpus.json via
         # include_str! and replays the full locked corpus as pure in-process tests (no
         # infra). Enumerated explicitly because nothing in CI runs
         # `cargo test --workspace`; without this step a manifest edit that
         # diverges Rust from the corpus ships green.
-        cargo nextest run -p buzz-agent --lib
-        cargo build -p buzz-dev-mcp
-        node scripts/test-nimino-mcp-framing.mjs target/debug/buzz-dev-mcp
+        cargo nextest run -p nimino-agent --lib
+        cargo build -p nimino-dev-mcp
+        node scripts/test-nimino-mcp-framing.mjs target/debug/nimino-dev-mcp
     else
         ./scripts/run-tests.sh unit
     fi
@@ -602,14 +627,14 @@ test-integration:
 
 # Regenerate the model-capability normative corpus from the production Rust
 # resolver. The corpus is a golden snapshot, never hand-edited: this runs the
-# `#[ignore]`d writer test in buzz-agent, which serializes `resolve()` over the
+# `#[ignore]`d writer test in nimino-agent, which serializes `resolve()` over the
 # inputs-only question table to scripts/normative-corpus.json. Run this after
 # any model-capabilities.json edit, then commit the regenerated file. The
 # `corpus_matches_generated_snapshot` gate fails CI if the committed file drifts.
 regen-model-corpus:
-    cargo test -p buzz-agent --lib model_capabilities::tests::regen_corpus_file -- --ignored --exact
+    cargo test -p nimino-agent --lib model_capabilities::tests::regen_corpus_file -- --ignored --exact
 
-# Buzz shared compute e2e: current desktop discovery/admission logic and
+# Nimino shared compute e2e: current desktop discovery/admission logic and
 # Playwright UI coverage.
 mesh-e2e:
     cargo test --manifest-path {{desktop_dir}}/src-tauri/Cargo.toml --features mesh-llm mesh_llm --lib
@@ -618,7 +643,7 @@ mesh-e2e:
 # Reset only development state, seed deterministic local channels, and launch
 # the mesh-enabled desktop with the repository's public Tyler test identity.
 # This is for local verification only; never point this identity at staging/prod.
-[confirm("This will reset development data, preserve installed Buzz, then launch a seeded mesh dev app. Continue? (y/N)")]
+[confirm("This will reset development data, preserve installed Nimino, then launch a seeded mesh dev app. Continue? (y/N)")]
 mesh-dev-fresh:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -632,28 +657,6 @@ mesh-dev-fresh:
     export NIMINO_RECONCILE_CHANNELS=true
     export NIMINO_RESET_WEBVIEW_STATE=1
     exec just mesh=1 dev
-
-# Real serve->client->inference on this machine (not CI).
-mesh-e2e-hardware:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    cargo run -p buzz-relay --example mesh_serve_client_smoke
-
-# Three isolated node processes: trusted member joins and infers; stranger is rejected.
-# Uses temp homes and explicit mesh owner keystores. Never reads the Buzz Keychain.
-mesh-e2e-admission:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    cargo run -p buzz-relay --example mesh_admission_smoke
-
-# Full hardware confidence suite: routing, owner admission, and real agent inference.
-mesh-e2e-confidence:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    cargo build --release -p buzz-agent -p buzz-dev-mcp
-    cargo run -p buzz-relay --example mesh_serve_client_smoke
-    cargo run -p buzz-relay --example mesh_admission_smoke
-    cargo run -p buzz-relay --example mesh_agent_e2e
 
 # Take desktop screenshots using the mock bridge
 desktop-screenshot *ARGS:
@@ -671,20 +674,47 @@ desktop-screenshot *ARGS:
 # ─── Run ──────────────────────────────────────────────────────────────────────
 
 # Start the relay server (auto-starts Docker services if needed)
-relay: bootstrap _ensure-migrations
+_dev-cluster-material:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    root="{{justfile_directory()}}/target/nim/dev-cluster"
+    mkdir -p "$root"
+    if [[ ! -s "$root/tls.crt" || ! -s "$root/tls.key" ]]; then
+        openssl req -x509 -newkey rsa:2048 -nodes -days 7 -subj '/CN=nimino-dev-chirps' \
+            -keyout "$root/key.pem" -out "$root/cert.pem" >/dev/null 2>&1
+        openssl x509 -in "$root/cert.pem" -outform DER -out "$root/tls.crt"
+        openssl pkcs8 -topk8 -nocrypt -in "$root/key.pem" -outform DER -out "$root/tls.key"
+        cp "$root/tls.crt" "$root/ca.crt"
+        chmod 600 "$root/tls.key"
+    fi
+
+relay: bootstrap _ensure-migrations nim-boundary-build _dev-cluster-material
     #!/usr/bin/env bash
     set -euo pipefail
     export PATH="{{justfile_directory()}}/bin:$PATH"
-    cargo run -p buzz-relay
+    root="{{justfile_directory()}}/target/nim/dev-cluster"
+    NIMINO_BOUNDARY_WORKER="{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker" \
+    NIMINO_CHIRPS_IDENTITY_PATH="$root/node.identity" \
+    NIMINO_CHIRPS_CERTIFICATE_PATH="$root/tls.crt" \
+    NIMINO_CHIRPS_PRIVATE_KEY_PATH="$root/tls.key" \
+    NIMINO_CHIRPS_TRUST_ANCHOR_PATHS="$root/ca.crt" \
+    NIMINO_NODE_STORE_PATH="$root/data.redb" cargo run -p nimino-relay
 
 # Start the relay with the built web UI served from it
-relay-web: bootstrap _ensure-migrations
+relay-web: bootstrap _ensure-migrations nim-boundary-build _dev-cluster-material
     #!/usr/bin/env bash
     set -euo pipefail
     export PATH="{{justfile_directory()}}/bin:$PATH"
     [[ -d node_modules ]] || pnpm install
     pnpm -C web build
-    NIMINO_WEB_DIR=./web/dist cargo run -p buzz-relay
+    root="{{justfile_directory()}}/target/nim/dev-cluster"
+    NIMINO_WEB_DIR=./web/dist \
+    NIMINO_BOUNDARY_WORKER="{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker" \
+    NIMINO_CHIRPS_IDENTITY_PATH="$root/node.identity" \
+    NIMINO_CHIRPS_CERTIFICATE_PATH="$root/tls.crt" \
+    NIMINO_CHIRPS_PRIVATE_KEY_PATH="$root/tls.key" \
+    NIMINO_CHIRPS_TRUST_ANCHOR_PATHS="$root/ca.crt" \
+    NIMINO_NODE_STORE_PATH="$root/data.redb" cargo run -p nimino-relay
 
 # Build and run the private read-only admin dashboard
 admin: bootstrap _ensure-migrations
@@ -696,7 +726,7 @@ admin: bootstrap _ensure-migrations
     export NIMINO_ADMIN_HOST="${NIMINO_ADMIN_HOST:-admin.localhost:3000}"
     export NIMINO_ADMIN_WEB_DIR="${NIMINO_ADMIN_WEB_DIR:-{{justfile_directory()}}/admin-web/dist}"
     echo "Admin dashboard: http://${NIMINO_ADMIN_HOST}/reports"
-    cargo run -p buzz-relay
+    cargo run -p nimino-relay
 
 # Seed deterministic reports and product feedback for local admin dashboard review
 admin-seed: _ensure-migrations
@@ -704,15 +734,15 @@ admin-seed: _ensure-migrations
 
 # Run focused relay and browser checks for the read-only admin dashboard
 admin-check: fmt-check
-    cargo check -p buzz-relay --all-targets
-    cargo test -p buzz-relay api::admin
-    cargo test -p buzz-relay router::tests
+    cargo check -p nimino-relay --all-targets
+    cargo test -p nimino-relay api::admin
+    cargo test -p nimino-relay router::tests
     pnpm -C admin-web check
     pnpm -C admin-web exec playwright test
 
 # Start the relay server in release mode
 relay-release: _ensure-migrations
-    cargo run -p buzz-relay --release
+    cargo run -p nimino-relay --release
 
 
 # Run the desktop Tauri app in dev mode with a local relay (ports and identity derived from worktree)
@@ -730,12 +760,12 @@ dev *ARGS: bootstrap _ensure-sidecar-stubs _ensure-migrations
             if lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1; then
                 echo "Error: $name port $port is already in use; refusing to launch desktop against a stale relay." >&2
                 lsof -nP -iTCP:"$port" -sTCP:LISTEN >&2 || true
-                echo "Stop the process above (often a stale buzz-relay) and rerun: just dev" >&2
+                echo "Stop the process above (often a stale nimino-relay) and rerun: just dev" >&2
                 exit 1
             fi
         done
     fi
-    cargo build -p buzz-acp -p buzz-agent -p buzz-backend-kubernetes -p buzz-dev-mcp -p buzz-cli -p git-credential-nostr -p buzz-relay
+    cargo build -p nimino-acp -p nimino-agent -p nimino-backend-kubernetes -p nimino-dev-mcp -p nimino-cli -p git-credential-nostr -p nimino-relay
     # Docker Desktop's forwarded MinIO port can stall under the deployment
     # probe's 32 concurrent writers. Keep the gate enabled in local dev, using
     # the bounded profile already used by the relay test launcher.
@@ -751,7 +781,7 @@ dev *ARGS: bootstrap _ensure-sidecar-stubs _ensure-migrations
     relay_ready=false
     for _ in $(seq 1 120); do
         if ! kill -0 "$RELAY_PID" 2>/dev/null; then
-            echo "Error: buzz-relay exited during startup; refusing to launch desktop." >&2
+            echo "Error: nimino-relay exited during startup; refusing to launch desktop." >&2
             wait "$RELAY_PID" || true
             exit 1
         fi
@@ -762,7 +792,7 @@ dev *ARGS: bootstrap _ensure-sidecar-stubs _ensure-migrations
         sleep 0.5
     done
     if [[ "$relay_ready" != true ]]; then
-        echo "Error: buzz-relay did not become healthy within 60 seconds; refusing to launch desktop." >&2
+        echo "Error: nimino-relay did not become healthy within 60 seconds; refusing to launch desktop." >&2
         exit 1
     fi
     cd {{desktop_dir}}
@@ -779,10 +809,10 @@ desktop-standalone *ARGS: _ensure-sidecar-stubs
     #!/usr/bin/env bash
     set -euo pipefail
     export PATH="{{justfile_directory()}}/bin:$PATH"
-    cargo build -p buzz-acp -p buzz-agent -p buzz-backend-kubernetes -p buzz-dev-mcp -p buzz-cli -p git-credential-nostr
+    cargo build -p nimino-acp -p nimino-agent -p nimino-backend-kubernetes -p nimino-dev-mcp -p nimino-cli -p git-credential-nostr
     TARGET=$(rustc -vV | sed -n 's|host: ||p')
     TARGET_DIR=$(cargo metadata --format-version 1 --no-deps | node -p "JSON.parse(require('fs').readFileSync(0, 'utf8')).target_directory")
-    for bin in buzz-acp buzz-agent buzz-backend-kubernetes buzz-dev-mcp git-credential-nostr nimino; do
+    for bin in nimino-acp nimino-agent nimino-backend-kubernetes nimino-dev-mcp git-credential-nostr nimino; do
         cp "${TARGET_DIR}/debug/${bin}" "desktop/src-tauri/binaries/${bin}-${TARGET}"
         chmod +x "desktop/src-tauri/binaries/${bin}-${TARGET}"
     done
@@ -808,20 +838,20 @@ staging *ARGS: bootstrap _ensure-sidecar-stubs
     set -euo pipefail
     export PATH="{{justfile_directory()}}/bin:$PATH"
     pnpm install  # unconditional: staging must always start with a clean dep tree
-    cargo build --release -p buzz-acp -p buzz-agent -p buzz-backend-kubernetes -p buzz-dev-mcp -p buzz-cli -p git-credential-nostr
+    cargo build --release -p nimino-acp -p nimino-agent -p nimino-backend-kubernetes -p nimino-dev-mcp -p nimino-cli -p git-credential-nostr
     FEATURES=()
     if [[ -n "{{mesh}}" ]]; then
         FEATURES=(--features mesh-llm)
     fi
     # Replace 0-byte sidecar stubs with real binaries so tauri dev picks them up.
-    # buzz: the CLI sidecar. buzz-backend-kubernetes: provider discovery scans the
-    # exe dir for executable buzz-backend-* files, so the non-executable stub that
+    # nimino: the CLI sidecar. nimino-backend-kubernetes: provider discovery scans the
+    # exe dir for executable nimino-backend-* files, so the non-executable stub that
     # tauri dev copies next to the exe would hide the provider from "Run on".
     TARGET=$(rustc -vV | sed -n 's|host: ||p')
     TARGET_DIR=$(cargo metadata --format-version 1 --no-deps | node -p "JSON.parse(require('fs').readFileSync(0, 'utf8')).target_directory")
     STAGING_SIDECARS=(nimino)
     if [[ "$TARGET" != *windows* ]]; then
-        STAGING_SIDECARS+=(buzz-backend-kubernetes)
+        STAGING_SIDECARS+=(nimino-backend-kubernetes)
     fi
     for bin in "${STAGING_SIDECARS[@]}"; do
         cp "${TARGET_DIR}/release/${bin}" "desktop/src-tauri/binaries/${bin}-${TARGET}"
@@ -843,27 +873,27 @@ production *ARGS: bootstrap _ensure-sidecar-stubs
     set -euo pipefail
     export PATH="{{justfile_directory()}}/bin:$PATH"
     pnpm install  # unconditional: production must always start with a clean dep tree
-    cargo build --release -p buzz-acp -p buzz-agent -p buzz-backend-kubernetes -p buzz-dev-mcp -p buzz-cli -p git-credential-nostr
+    cargo build --release -p nimino-acp -p nimino-agent -p nimino-backend-kubernetes -p nimino-dev-mcp -p nimino-cli -p git-credential-nostr
     FEATURES=()
     if [[ -n "{{mesh}}" ]]; then
         FEATURES=(--features mesh-llm)
     fi
     # Replace 0-byte sidecar stubs with real binaries so tauri dev picks them up.
-    # buzz: the CLI sidecar. buzz-backend-kubernetes: provider discovery scans the
-    # exe dir for executable buzz-backend-* files, so the non-executable stub that
+    # nimino: the CLI sidecar. nimino-backend-kubernetes: provider discovery scans the
+    # exe dir for executable nimino-backend-* files, so the non-executable stub that
     # tauri dev copies next to the exe would hide the provider from "Run on".
     TARGET=$(rustc -vV | sed -n 's|host: ||p')
     TARGET_DIR=$(cargo metadata --format-version 1 --no-deps | node -p "JSON.parse(require('fs').readFileSync(0, 'utf8')).target_directory")
     PRODUCTION_SIDECARS=(nimino)
     if [[ "$TARGET" != *windows* ]]; then
-        PRODUCTION_SIDECARS+=(buzz-backend-kubernetes)
+        PRODUCTION_SIDECARS+=(nimino-backend-kubernetes)
     fi
     for bin in "${PRODUCTION_SIDECARS[@]}"; do
         cp "${TARGET_DIR}/release/${bin}" "desktop/src-tauri/binaries/${bin}-${TARGET}"
         chmod +x "desktop/src-tauri/binaries/${bin}-${TARGET}"
     done
     cd {{desktop_dir}}
-    export NIMINO_RELAY_URL="wss://buzz.block.builderlab.xyz"
+    export NIMINO_RELAY_URL="wss://nimino.block.builderlab.xyz"
     source ../scripts/instance-env.sh
     # Ctrl+C kills the Tauri app before its in-process sweep finishes, leaking
     # agent workers. Reap this instance's agents on exit as a backstop.
@@ -934,248 +964,17 @@ check-compile:
 
 # ─── Release ─────────────────────────────────────────────────────────────────
 
-# Read the current desktop version from package.json
-get-current-version:
-    @node -p "require('./desktop/package.json').version"
-
-# Read the current relay version from its crate manifest
-get-current-relay-version:
-    @grep -m1 '^version = ' crates/buzz-relay/Cargo.toml | sed -E 's/version = "(.*)"/\1/'
-
-# Compute next minor version (e.g., 0.3.0 → 0.4.0)
-get-next-minor-version:
-    @python3 -c "v='$(just get-current-version)'.split('.'); print(f'{v[0]}.{int(v[1])+1}.0')"
-
-# Compute next patch version (e.g., 0.3.0 → 0.3.1)
-get-next-patch-version:
-    @python3 -c "v='$(just get-current-version)'.split('.'); print(f'{v[0]}.{v[1]}.{int(v[2])+1}')"
-
-# Compute next relay patch version (e.g., 0.3.0 → 0.3.1)
-get-next-relay-patch-version:
-    @python3 -c "v='$(just get-current-relay-version)'.split('.'); print(f'{v[0]}.{v[1]}.{int(v[2])+1}')"
-
-# Update version in desktop package manifests and regenerate lockfiles
-bump-desktop-version version:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    # desktop/package.json
-    cd desktop && npm pkg set "version={{ version }}" && cd ..
-    # desktop/src-tauri/tauri.conf.json
-    node -e "
-        const fs = require('fs');
-        const p = 'desktop/src-tauri/tauri.conf.json';
-        const c = JSON.parse(fs.readFileSync(p, 'utf8'));
-        c.version = '{{ version }}';
-        fs.writeFileSync(p, JSON.stringify(c, null, 2) + '\n');
-    "
-    # JSON.stringify expands arrays/objects in a way biome rejects; reformat to match.
-    (cd desktop && pnpm exec biome format --write src-tauri/tauri.conf.json)
-    # desktop/src-tauri/Cargo.toml — only first version line (under [package])
-    node -e "
-        const fs = require('fs');
-        const p = 'desktop/src-tauri/Cargo.toml';
-        let t = fs.readFileSync(p, 'utf8');
-        t = t.replace(/^version = \".*\"/m, 'version = \"{{ version }}\"');
-        fs.writeFileSync(p, t);
-    "
-    # Regenerate lockfiles
-    pnpm install --lockfile-only
-    cargo update -p nimino-desktop --manifest-path desktop/src-tauri/Cargo.toml
-    echo "Bumped desktop manifests to {{ version }} and regenerated lockfiles"
-
-# Bump the relay crate version and regenerate the lockfile
-bump-relay-version version:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    # buzz-relay carries its own `version =` (not version.workspace), so the
-    # replace targets the package version line only.
-    perl -i -pe 's/^version = ".*"/version = "{{ version }}"/' crates/buzz-relay/Cargo.toml
-    cargo update -p buzz-relay
-    echo "Bumped buzz-relay to {{ version }} and regenerated Cargo.lock"
-
-# Open or update the desktop release PR from an immutable origin/main snapshot
-release-desktop *ARGS:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    ARG="{{ ARGS }}"
-    if [[ -z "$ARG" || "$ARG" == "patch" ]]; then
-        VERSION=$(just get-next-patch-version)
-    else
-        VERSION="$ARG"
-    fi
-    scripts/prepare-desktop-release.sh "$VERSION"
-
-# Open or update the relay release PR (ghcr.io/block/buzz image)
-release-relay *ARGS:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    ARG="{{ ARGS }}"
-    if [[ -z "$ARG" || "$ARG" == "patch" ]]; then
-        VERSION=$(just get-next-relay-patch-version)
-    else
-        VERSION="$ARG"
-    fi
-    just _release-pr relay "$VERSION"
-
-# Shared release-PR engine for desktop and relay.
-_release-pr lane version:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    VERSION="{{ version }}"
-    if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
-        echo "Error: '$VERSION' is not valid semver (expected X.Y.Z)"
-        exit 1
-    fi
-    # Lane-specific identifiers. The bump command runs after the branch switch.
-    case "{{ lane }}" in
-        desktop)
-            BRANCH_PREFIX="version-bump"
-            TAG_FETCH='v*'
-            TAG_MATCH='v[0-9]*'
-            TAG_EXCLUDE='*-*'
-            TAG_PREFIX="v"
-            CHANGELOG="CHANGELOG.md"
-            ADD_FILES=(desktop/package.json desktop/src-tauri/tauri.conf.json desktop/src-tauri/Cargo.toml desktop/src-tauri/Cargo.lock pnpm-lock.yaml CHANGELOG.md)
-            LOG_PATHS=(desktop/ crates/buzz-core/ crates/buzz-persona/ crates/buzz-sdk/ crates/buzz-agent/)
-            ARTIFACT="Buzz Desktop" ;;
-        relay)
-            BRANCH_PREFIX="relay-release"
-            TAG_FETCH='relay-v*'
-            TAG_MATCH='relay-v[0-9]*'
-            TAG_EXCLUDE='relay-v*-*'
-            TAG_PREFIX="relay-v"
-            CHANGELOG="crates/buzz-relay/CHANGELOG.md"
-            ADD_FILES=(crates/buzz-relay/Cargo.toml Cargo.lock crates/buzz-relay/CHANGELOG.md)
-            LOG_PATHS=(crates/buzz-relay/ crates/buzz-core/ crates/buzz-db/ crates/buzz-auth/ crates/buzz-pubsub/ crates/buzz-search/ crates/buzz-audit/ crates/buzz-media/ crates/buzz-sdk/ crates/buzz-workflow/ crates/buzz-conformance/ migrations/)
-            ARTIFACT="Buzz Relay" ;;
-        *)
-            echo "Error: unknown release lane '{{ lane }}'"
-            exit 1 ;;
-    esac
-    echo "Preparing ${ARTIFACT} release v${VERSION}..."
-    # Must run on main with a clean, up-to-date tree.
-    CURRENT_BRANCH=$(git symbolic-ref --short HEAD)
-    if [[ "$CURRENT_BRANCH" != "main" ]]; then
-        echo "Error: must be on main branch (currently on '$CURRENT_BRANCH')"
-        exit 1
-    fi
-    git fetch origin refs/heads/main:refs/remotes/origin/main --no-tags
-    # Release tags are remote-owned state; sync only this lane's tags so stale
-    # local tags from older histories do not make release preflight fail.
-    git fetch origin "+refs/tags/${TAG_FETCH}:refs/tags/${TAG_FETCH}"
-    if [[ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]]; then
-        echo "Error: local main is not up-to-date with origin/main. Run 'git pull' first."
-        exit 1
-    fi
-    if ! git diff --quiet || ! git diff --cached --quiet; then
-        echo "Error: working tree is dirty. Commit or stash changes first."
-        exit 1
-    fi
-    # Switch to the release branch (create, or reset to main if it exists).
-    BRANCH="${BRANCH_PREFIX}/${VERSION}"
-    if git rev-parse --verify "refs/heads/$BRANCH" >/dev/null 2>&1; then
-        echo "Branch '$BRANCH' already exists — resetting to origin/main..."
-        git switch "$BRANCH"
-        git reset --hard origin/main
-    elif git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
-        echo "Branch '$BRANCH' exists on remote — checking out and resetting to origin/main..."
-        git switch -c "$BRANCH" --track "origin/$BRANCH"
-        git reset --hard origin/main
-    else
-        git switch -c "$BRANCH"
-    fi
-    # Lane-specific bump (the one diverging step).
-    case "{{ lane }}" in
-        desktop) just bump-desktop-version "$VERSION" ;;
-        relay)   just bump-relay-version "$VERSION" ;;
-    esac
-    # Generate the changelog from commits since this lane's last release tag.
-    LAST_TAG=$(git describe --tags --abbrev=0 --match "$TAG_MATCH" --exclude "$TAG_EXCLUDE" 2>/dev/null || echo "")
-    REPO=$(git remote get-url origin | sed -E 's|.*github\.com[:/]||; s|\.git$||')
-    format_log() {
-        local range="$1"
-        git log "$range" --format="%h %H %s" --no-merges -- "${LOG_PATHS[@]}" | while IFS=' ' read -r short full rest; do
-            local pr subject
-            pr=$(printf '%s' "$rest" | grep -oE '\(#[0-9]+\)$' | grep -oE '[0-9]+' || true)
-            if [[ -n "$pr" ]]; then
-                subject=$(printf '%s' "$rest" | sed -E 's/ \(#[0-9]+\)$//')
-                printf -- '- %s ([#%s](https://github.com/%s/pull/%s)) ([`%s`](https://github.com/%s/commit/%s))\n' \
-                    "$subject" "$pr" "$REPO" "$pr" "$short" "$REPO" "$full"
-            else
-                printf -- '- %s ([`%s`](https://github.com/%s/commit/%s))\n' \
-                    "$rest" "$short" "$REPO" "$full"
-            fi
-        done
-    }
-    TMPFILE=$(mktemp)
-    {
-        echo "# Changelog"
-        echo ""
-        echo "## ${TAG_PREFIX}${VERSION}"
-        echo ""
-        if [[ -n "$LAST_TAG" ]]; then
-            format_log "${LAST_TAG}..HEAD"
-        else
-            echo "- Initial release"
-        fi
-        echo ""
-        if [[ -f "$CHANGELOG" ]]; then
-            tail -n +2 "$CHANGELOG"
-        fi
-    } > "$TMPFILE"
-    mkdir -p "$(dirname "$CHANGELOG")"
-    mv "$TMPFILE" "$CHANGELOG"
-    # Commit.
-    git add "${ADD_FILES[@]}"
-    RELEASE_MSG="chore(release): release ${ARTIFACT} version ${VERSION}"
-    if [[ "$(git log -1 --format='%s' 2>/dev/null)" == "$RELEASE_MSG" ]]; then
-        git commit --amend --no-edit
-    else
-        git commit -m "$RELEASE_MSG"
-    fi
-    # Push and open/update the PR.
-    git push --force-with-lease -u origin "$BRANCH"
-    PR_BODY="## ${ARTIFACT} release v${VERSION}"$'\n\n'
-    if [[ -n "$LAST_TAG" ]]; then
-        PR_BODY+="### Changes since ${LAST_TAG}:"$'\n\n'
-        CHANGELOG_BODY=$(format_log "${LAST_TAG}..HEAD~1")
-        MAX_LOG=62000
-        if (( ${#CHANGELOG_BODY} > MAX_LOG )); then
-            TRUNCATED=$(printf '%s' "$CHANGELOG_BODY" | awk -v max="$MAX_LOG" \
-                'BEGIN{n=0} {line_len=length($0)+1; if(n+line_len>max) exit; n+=line_len; print}')
-            SHOWN=$(printf '%s\n' "$TRUNCATED" | grep -c '^-' || true)
-            TOTAL=$(printf '%s\n' "$CHANGELOG_BODY" | grep -c '^-' || true)
-            SKIPPED=$(( TOTAL - SHOWN ))
-            CHANGELOG_BODY="${TRUNCATED}"$'\n'"_… and ${SKIPPED} more commits — [compare ${LAST_TAG}…${TAG_PREFIX}${VERSION}](https://github.com/${REPO}/compare/${LAST_TAG}...${TAG_PREFIX}${VERSION})_"
-        fi
-        PR_BODY+="${CHANGELOG_BODY}"$'\n\n'
-    else
-        PR_BODY+="Initial release."$'\n\n'
-    fi
-    PR_BODY+="**To release:** merge this PR. The tag and build will happen automatically."
-    PR_TITLE="chore(release): release ${ARTIFACT} version ${VERSION}"
-    EXISTING_PR=$(gh pr list --head "$BRANCH" --json url --jq '.[0].url' 2>/dev/null || true)
-    if [[ -n "$EXISTING_PR" ]]; then
-        gh pr edit "$BRANCH" --title "$PR_TITLE" --body "$PR_BODY"
-        PR_URL="$EXISTING_PR"
-        echo ""
-        echo "Updated existing release PR: ${PR_URL}"
-    else
-        PR_URL=$(gh pr create --title "$PR_TITLE" --body "$PR_BODY")
-        echo ""
-        echo "Release PR opened: ${PR_URL}"
-    fi
-    echo "Merge it to trigger the release build."
+# Release candidates are created only by the immutable Nimino workflows.
 
 # ─── Agent Harness ────────────────────────────────────────────────────────────
 
-# Run a goose agent connected to a Buzz relay (foreground)
+# Run a goose agent connected to a Nimino relay (foreground)
 goose relay="ws://localhost:3000" agents="1" heartbeat="0" prompt="" key="$NIMINO_PRIVATE_KEY":
     #!/usr/bin/env bash
     set -euo pipefail
     export PATH="{{justfile_directory()}}/bin:$PATH"
     source ./scripts/_goose-env.sh "{{relay}}" "{{key}}" "{{agents}}" "{{heartbeat}}" "{{prompt}}"
-    exec env "${env_args[@]}" ./target/release/buzz-acp
+    exec env "${env_args[@]}" ./target/release/nimino-acp
 
 # Run a goose agent in the background (screen session named 'goose-agent-N')
 goose-bg relay="ws://localhost:3000" agents="1" heartbeat="0" prompt="" key="$NIMINO_PRIVATE_KEY":
@@ -1183,24 +982,24 @@ goose-bg relay="ws://localhost:3000" agents="1" heartbeat="0" prompt="" key="$NI
     set -euo pipefail
     export PATH="{{justfile_directory()}}/bin:$PATH"
     source ./scripts/_goose-env.sh "{{relay}}" "{{key}}" "{{agents}}" "{{heartbeat}}" "{{prompt}}"
-    screen -dmS goose-agent-{{agents}} bash -c "$(printf '%q ' env "${env_args[@]}") ./target/release/buzz-acp"
+    screen -dmS goose-agent-{{agents}} bash -c "$(printf '%q ' env "${env_args[@]}") ./target/release/nimino-acp"
     echo "Agent running in screen session 'goose-agent-{{agents}}'. Attach with: screen -r goose-agent-{{agents}}"
 
 # ─── Benchmarking ─────────────────────────────────────────────────────────────
 
-# Run the Buzz orchestra benchmark — leaderboard-eligible by default (TB 2.1, k=5, Sonnet+Haiku). Stands up its own Docker stack; --gui opens a live spectator desktop app; other flags pass to benchmark.py (--dataset/--path, --include-task, --attempts, --manifest, --dry-run, ...)
+# Run the Nimino orchestra benchmark — leaderboard-eligible by default (TB 2.1, k=5, Sonnet+Haiku). Stands up its own Docker stack; --gui opens a live spectator desktop app; other flags pass to benchmark.py (--dataset/--path, --include-task, --attempts, --manifest, --dry-run, ...)
 benchmark *ARGS:
     #!/usr/bin/env bash
     set -euo pipefail
     export PATH="{{justfile_directory()}}/bin:$PATH"
-    uv run --project benchmarks/harbor-buzz-orchestra/testbed \
-        benchmarks/harbor-buzz-orchestra/scripts/benchmark.py {{ARGS}}
+    uv run --project benchmarks/nimino-orchestra/testbed \
+        benchmarks/nimino-orchestra/scripts/benchmark.py {{ARGS}}
 
 # Run the benchmark adapter + testbed gate exactly as CI does (pytest + ruff, pinned ruff from pyproject)
 benchmark-check:
     #!/usr/bin/env bash
     set -euo pipefail
-    cd "{{justfile_directory()}}/benchmarks/harbor-buzz-orchestra"
+    cd "{{justfile_directory()}}/benchmarks/nimino-orchestra"
     # CI installs the dev extra with pip, so pyproject — not uv.lock — decides
     # which ruff lints. Read the pin from there so this recipe cannot drift
     # from the workflow (a floating specifier once meant CI failed on RUF100
@@ -1209,18 +1008,18 @@ benchmark-check:
     for project in . testbed; do
         (
             cd "$project"
-            echo "── harbor-buzz-orchestra/$project (ruff $ruff_pin)"
+            echo "── nimino-orchestra/$project (ruff $ruff_pin)"
             uv run --frozen pytest -q
             uvx "ruff@$ruff_pin" check .
             uvx "ruff@$ruff_pin" format --check .
         )
     done
-    # The task verifiers live in the sibling benchmarks/buzz-dataset, so they
+    # The task verifiers live in the sibling benchmarks/nimino-dataset, so they
     # need the harness config passed explicitly to stay linted.
-    echo "── buzz-dataset (ruff $ruff_pin)"
-    uvx "ruff@$ruff_pin" check --config pyproject.toml ../buzz-dataset
-    uvx "ruff@$ruff_pin" format --check --config pyproject.toml ../buzz-dataset
+    echo "── nimino-dataset (ruff $ruff_pin)"
+    uvx "ruff@$ruff_pin" check --config pyproject.toml ../nimino-dataset
+    uvx "ruff@$ruff_pin" format --check --config pyproject.toml ../nimino-dataset
 
 # Stop the benchmark Docker stack (state and channels are kept)
 benchmark-down:
-    docker compose --project-name buzz-benchmark down
+    docker compose --project-name nimino-benchmark down

@@ -1,4 +1,4 @@
-<h1 align="center">Buzz 🐝</h1>
+<h1 align="center">Nimino 🐝</h1>
 
 <p align="center">
   <strong>A workspace where humans and agents build together, on a relay you own.</strong>
@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/assets/screenshots/channel-thread.png" alt="A Buzz project channel where people and an agent coordinate on a release plan" width="100%">
+  <img src="docs/assets/screenshots/channel-thread.png" alt="A Nimino project channel where people and an agent coordinate on a release plan" width="100%">
 </p>
 
 <p align="center">
@@ -26,9 +26,9 @@
 
 ## What is this, really?
 
-Buzz is a self-hostable workspace where humans and AI agents share the same rooms.
+Nimino is a self-hostable workspace where humans and AI agents share the same rooms.
 
-A Buzz **community** is the workspace a user reaches by URL. In the single-relay
+A Nimino **community** is the workspace a user reaches by URL. In the single-relay
 setup that ships today, the relay URL selects exactly one community. A hosted
 operator can serve many communities behind many domains or subdomains, but the
 client-facing rule stays the same: the URL is authoritative for the workspace,
@@ -42,7 +42,7 @@ Yes, it's another AI-adjacent developer tool. We're sorry. The difference is wha
 
 ---
 
-## Stuff you do in Buzz
+## Stuff you do in Nimino
 
 - **Ask the project a question and get an answer with receipts.** Agents search six months of history and post the threads, not vibes.
 - **Let an agent triage a bug without giving it the keys to the kingdom.** Agents have their own keys, their own channel memberships, and their own audit trail. Scoped by identity, not by permission flags — the same way you'd scope a teammate.
@@ -57,7 +57,7 @@ Yes, it's another AI-adjacent developer tool. We're sorry. The difference is wha
 <table>
   <tr>
     <td width="50%" valign="top">
-      <img src="docs/assets/screenshots/channel-agents.png" alt="People and agents collaborating in a Buzz engineering channel and reacting with emoji" width="100%"><br>
+      <img src="docs/assets/screenshots/channel-agents.png" alt="People and agents collaborating in a Nimino engineering channel and reacting with emoji" width="100%"><br>
       <sub><strong>Agents are members, not bots.</strong> Add an agent to a channel the same way you add a person.</sub>
     </td>
     <td width="50%" valign="top">
@@ -67,7 +67,7 @@ Yes, it's another AI-adjacent developer tool. We're sorry. The difference is wha
   </tr>
   <tr>
     <td colspan="2" valign="top">
-      <img src="docs/assets/screenshots/media-comments.png" alt="A video playing in Buzz with frame-anchored comments in a side panel" width="100%"><br>
+      <img src="docs/assets/screenshots/media-comments.png" alt="A video playing in Nimino with frame-anchored comments in a side panel" width="100%"><br>
       <sub><strong>Media you can talk about.</strong> Leave comments pinned to specific frames.</sub>
     </td>
   </tr>
@@ -75,9 +75,9 @@ Yes, it's another AI-adjacent developer tool. We're sorry. The difference is wha
 
 ---
 
-## Why Buzz is better
+## Why Nimino is better
 
-One community. One identity model. One event log. Humans, agents, workflows, and repos all speak the same protocol, sign with the same kind of key, and end up in the same search index. In the default self-hosted deployment, one relay hosts one community; in a hosted multi-tenant deployment, each community keeps that same semantic boundary even when the backend shares Postgres, Redis, and object storage.
+One community. One identity model. One event log. Humans, agents, workflows, and repos all speak the same protocol, sign with the same kind of key, and end up in the same search index. Each node owns its local state; Nimino's domain layer owns convergence while Chirps supplies only cluster negotiation and transport.
 
 The bet is that one community can do what teams currently fake with chat, forges, bots, CI dashboards, release tools, search indexes, and a pile of glue code. Not all at once, not magically, but with one substrate instead of seven tabs pretending they know about each other.
 
@@ -99,10 +99,10 @@ Agents are part of the room, not haunted cron jobs.
 
 | ✅ Works today | 🚧 Being wired up | 💭 Strong opinions, pending code |
 |---|---|---|
-| Relay, channels, threads, DMs, canvases, media, search, audit log | Workflow approval gates (infra exists, glue still drying) | Web-of-trust reputation across relays |
+| Relay, channels, threads, DMs, canvases, media, search, audit log | Huddle lifecycle events | Web-of-trust reputation across relays |
 | Desktop app (Tauri + React) | Huddle lifecycle events | Culture features |
-| `buzz-cli` (agent-first, JSON in / JSON out) + ACP harness (Goose, Codex, Claude Code) | | |
-| YAML workflows: message / reaction / schedule / webhook triggers | | |
+| `nimino-cli` (agent-first, JSON in / JSON out) + ACP harness (Goose, Codex, Claude Code) | | |
+| YAML workflows: message / reaction / schedule / webhook triggers and approval gates | | |
 | Git events (NIP-34: patches, repo announcements, status) | | |
 | Git hosting backend | | |
 
@@ -112,39 +112,21 @@ Agents are part of the room, not haunted cron jobs.
 
 ## Getting started
 
-New to Buzz? Pick the path that matches you.
+New to Nimino? Pick the path that matches you.
 
 ### I just want to try the app
 
-Grab a packaged build from the [latest release](https://github.com/block/buzz/releases/latest):
+Grab a packaged build from the [latest release](https://github.com/asopitech-labs/nimino/releases/latest):
 
 | Platform | File |
 |---|---|
-| macOS (Apple Silicon) | `Buzz_<version>_aarch64.dmg` |
-| macOS (Intel) | `Buzz_<version>_x64.dmg` |
-| Linux (x86_64) | `Buzz_<version>_amd64.AppImage` or `Buzz_<version>_amd64.deb` |
-| Windows (x64) | `Buzz_<version>_x64-setup_alpha-unsigned.exe` |
+| macOS (Apple Silicon) | `Nimino_<version>_aarch64.dmg` |
+| macOS (Intel) | `Nimino_<version>_x64.dmg` |
+| Linux (x86_64) | `Nimino_<version>_amd64.AppImage` or `Nimino_<version>_amd64.deb` |
 
 On a Mac, check the Apple menu > About This Mac: "Chip: Apple …" means Apple Silicon; "Processor: Intel …" means Intel.
 
-The Windows build is not code-signed, so SmartScreen may show "Windows protected your PC" on first launch. If available, click **More info**, then **Run anyway**.
-
-
 By default the app connects to `ws://localhost:3000`. To point it at a relay you're running or one someone shared with you, set `NIMINO_RELAY_URL` before launching, or switch the relay from inside the app. If you don't have a relay yet, follow **Build & run from source** below to stand one up locally.
-
-### I want my own hosted relay
-
-To run a relay for your team without managing servers, you can deploy one to Railway in a click:
-
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/buzz-relay-block)
-
-See [here](https://engineering.block.xyz/blog/run-your-own-buzz-relay) for details.
-
-### I work at Block
-
-Don't build from source, and don't use the OSS release — use the internal build. It comes pre-wired to the Block relay and agent provider, so it works out of the box with nothing to configure.
-
-Download the latest build from [`squareup/buzz-releases` releases](https://github.com/squareup/buzz-releases/releases/latest) and install it.
 
 ### I want to build & run from source
 
@@ -158,7 +140,7 @@ You'll need [Docker](https://docs.docker.com/get-docker/) and [Hermit](https://c
 
 **Once:**
 ```bash
-git clone https://github.com/block/buzz.git && cd buzz
+git clone https://github.com/asopitech-labs/nimino.git && cd nimino
 . ./bin/activate-hermit   # pinned toolchain (tools auto-download on first use)
 just setup && just build
 ```
@@ -175,19 +157,15 @@ Relay on `ws://localhost:3000`. Desktop app pops up. You're in.
 
 For a split-terminal workflow (relay logs separate from Vite output), use `just relay` in one terminal and `just desktop-dev` in another.
 
-Want a single-node / VPS relay instead of the local-dev stack? Use the production Compose bundle in [`deploy/compose/`](deploy/compose/README.md) (`docker compose` + Postgres, Redis, MinIO, optional Caddy/TLS). The root [`docker-compose.yml`](docker-compose.yml) is for day-to-day development only.
+Want a single-node / VPS relay instead of the local-dev stack? Use the production Compose bundle in [`deploy/compose/`](deploy/compose/README.md) (`docker compose` + Postgres, MinIO, optional Caddy/TLS). The root [`docker-compose.yml`](docker-compose.yml) is for day-to-day development only.
 
-For agents, set `NIMINO_PRIVATE_KEY` and use [`buzz-cli`](crates/buzz-cli) — JSON in, JSON out, designed for LLM tool calls.
+For agents, set `NIMINO_PRIVATE_KEY` and use [`nimino-cli`](crates/nimino-cli) — JSON in, JSON out, designed for LLM tool calls.
 
 ---
 
-## Windows prerequisites
+## Windows support
 
-The agent shell tool runs commands under bash. On macOS and Linux that's already there; on Windows you need to bring it.
-
-Install [Git for Windows](https://git-scm.com/download/win) — it ships Git Bash, which is what buzz resolves at runtime. Once it's installed, everything works the same as on other platforms.
-
-If you'd rather point buzz at a different bash-compatible shell, set `NIMINO_SHELL` to its path (e.g. `NIMINO_SHELL=C:\path\to\bash.exe`). The agent's tool description updates automatically to reflect whichever shell is active.
+Windows is supported through the qualified Ubuntu 24.04 WSL2 bundle. Native Windows binaries and Git Bash execution are not release surfaces. See [RELEASING.md](RELEASING.md) for the certified bundle contents and runner requirements.
 
 ---
 
@@ -197,9 +175,9 @@ If you'd rather point buzz at a different bash-compatible shell, set `NIMINO_SHE
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                             Clients                                     │
 │  Human client         AI agent              CLI / scripts               │
-│  (Buzz desktop)       (Goose, Codex, ...)   (buzz-cli, agents)          │
+│  (Nimino desktop)       (Goose, Codex, ...)   (nimino-cli, agents)          │
 │       │               ┌──────────────┐               │                  │
-│       │               │  buzz-acp  │                 │                  │
+│       │               │  nimino-acp  │                 │                  │
 │       │               │  (ACP ↔ MCP) │               │                  │
 │       │               └──────┬───────┘               │                  │
 │       │                      │                       │                  │
@@ -207,33 +185,33 @@ If you'd rather point buzz at a different bash-compatible shell, set `NIMINO_SHE
         │ WebSocket            │ WS + REST             │ WS + REST
         ▼                      ▼                       ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
-│                          buzz-relay                                     │
+│                          nimino-relay                                     │
 │  NIP-01 · NIP-42 auth · channel/DM/media/workflow/git REST · audit log  │
 └───┬──────────────────────────┬──────────────────────────┬───────────────┘
     │                          │                          │
  ┌──▼───────────┐       ┌──────▼──────┐           ┌───────▼─────┐
- │   Postgres   │       │    Redis    │           │   S3/MinIO  │
- │ (events +    │       │  (pub/sub)  │           │  (Blossom)  │
- │  FTS search) │       └─────────────┘           └─────────────┘
+ │   Postgres   │       │ LocalDelivery│           │   S3/MinIO  │
+ │ (node-local  │       │ (process-only│           │  (Blossom)  │
+ │  persistence)│       │  fan-out)    │           └─────────────┘
  └──────────────┘
 ```
 
-A Rust workspace of focused crates. Single source of truth: the relay. See [ARCHITECTURE.md](ARCHITECTURE.md) for the full breakdown.
+A Nim domain core owns product policy, clustering, replication, and synchronization. Rust is retained for typed boundaries, crypto/codecs, storage and transport adapters, and native I/O. See [ARCHITECTURE.md](ARCHITECTURE.md) for the full breakdown.
 
 <details>
 <summary><strong>Crate map</strong></summary>
 
-**Core protocol** — `buzz-core` (zero-I/O types, NIP-01 filters, Schnorr verify) · `buzz-relay` (Axum WS + REST)
+**Core protocol** — `nimino-core` (zero-I/O types, NIP-01 filters, Schnorr verify) · `nimino-relay` (Axum WS + REST)
 
-**Services** — `buzz-db` (Postgres) · `buzz-auth` (NIP-42/98 Schnorr auth, rate limiting) · `buzz-pubsub` (Redis, presence, typing) · `buzz-search` (Postgres FTS) · `buzz-audit` (hash-chain log). Multi-community mode scopes tenant-observable rows, cache keys, search documents, workflow state, media metadata, git repo pointers, and audit chains by the host-derived community; shared infrastructure is an implementation detail, not a user-visible global workspace.
+**Services and adapters** — `nimino-db` (node-local Postgres I/O) · `nimino-auth` (NIP-42/98 Schnorr auth) · `nimino-local-delivery` (process-local fan-out, presence, and bounded admission caches) · `nimino-chirps` (thin Chirps transport adapter) · `nimino-control` (executor for Nim-owned quorum decisions) · `nimino-store` (local canonical/control store port) · `nimino-search` (Postgres FTS) · `nimino-audit` (hash-chain log).
 
-**Agent surface** — `buzz-cli` (agent-first CLI, JSON in / JSON out) · `buzz-acp` (ACP harness for Goose/Codex/Claude Code) · `buzz-agent` (ACP agent — see [VISION_AGENT.md](VISION_AGENT.md)) · `buzz-dev-mcp` (shell + file-edit tools) · `buzz-workflow` (YAML automation) · `buzz-persona` (agent persona packs)
+**Agent surface** — `nimino-cli` (agent-first CLI, JSON in / JSON out) · `nimino-acp` (ACP harness for Goose/Codex/Claude Code) · `nimino-agent` (ACP agent — see [VISION_AGENT.md](VISION_AGENT.md)) · `nimino-dev-mcp` (shell + file-edit tools) · `nimino-workflow` (YAML automation) · `nimino-persona` (agent persona packs)
 
-**Git & pairing** — `git-sign-nostr` / `git-credential-nostr` (nostr-signed git) · `buzz-pair-relay` / `buzz-pairing-cli` (relay pairing)
+**Git & pairing** — `git-sign-nostr` / `git-credential-nostr` (nostr-signed git) · `nimino-pair-relay` / `nimino-pairing-cli` (relay pairing)
 
-**Shared** — `buzz-sdk` (typed event builders) · `buzz-media` (Blossom/S3)
+**Shared** — `nimino-sdk` (typed event builders) · `nimino-media` (Blossom/S3)
 
-**Tooling** — `buzz-admin` (admin CLI) · `buzz-test-client` (E2E)
+**Tooling** — `nimino-admin` (admin CLI) · `nimino-test-client` (E2E)
 
 </details>
 
@@ -275,7 +253,7 @@ just reset          # ⚠️  Wipe data + recreate
 ## What it is not
 
 - Not blockchain. Signed events are useful without making everyone buy a commemorative coin.
-- Not an AI replacement plan. Buzz works best when humans stay in the loop and agents stay in the room.
+- Not an AI replacement plan. Nimino works best when humans stay in the loop and agents stay in the room.
 - Not finished. We will tell you what works and what doesn't.
 
 **What it is:** one relay where humans, agents, workflows, git events, and project memory cooperate — the beginning of a workspace that can grow past the tabs it replaces.
@@ -283,6 +261,6 @@ just reset          # ⚠️  Wipe data + recreate
 ---
 
 <p align="center">
-  <sub>Buzz 🐝</sub><br>
-  <sub>Apache 2.0 · Built by <a href="https://block.xyz">Block, Inc.</a></sub>
+  <sub>Nimino 🐝</sub><br>
+  <sub>Apache 2.0 · Maintained by <a href="https://github.com/asopitech-labs">AsoPi Tech</a></sub>
 </p>

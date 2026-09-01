@@ -631,7 +631,7 @@
           "surface": "admin-web.feedback-inbox",
           "replacement": {
             "targetSurface": "admin-web.moderation-inbox",
-            "dataContract": "Feedback remains a typed item with its existing API payload; acted-on booleans migrate by feedback ID before buzz-admin-feedback-status is deleted."
+            "dataContract": "Feedback remains a typed item with its existing API payload; acted-on booleans migrate by feedback ID before nimino-admin-feedback-status is deleted."
           },
           "evidence": {
             "path": "admin-web/src/App.tsx",
@@ -691,7 +691,7 @@
           "dataContract": "Feedback list/detail API payloads remain typed separately from moderation reports.",
           "replacement": {
             "targetSurface": "admin-web.moderation-inbox",
-            "dataContract": "Render feedback as a typed operator-inbox category without merging its API storage model. Migrate acted-on booleans from buzz-admin-feedback-status to the unified inbox owner by feedback ID, then delete the legacy key after parity and stale-key tests pass."
+            "dataContract": "Render feedback as a typed operator-inbox category without merging its API storage model. Migrate acted-on booleans from nimino-admin-feedback-status to the unified inbox owner by feedback ID, then delete the legacy key after parity and stale-key tests pass."
           },
           "usageEvidence": [
             {

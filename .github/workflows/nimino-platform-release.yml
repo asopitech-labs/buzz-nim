@@ -11,12 +11,14 @@ on:
       - "contracts/nimino-promotion/**"
       - "contracts/nimino-release-set/**"
       - "contracts/nimino-wsl-bundle/**"
+      - "contracts/nimino-cutover-certification/**"
       - "desktop/**"
       - "scripts/nimino-platform-artifacts.mjs"
       - "scripts/nimino-release-set.mjs"
       - "scripts/nimino-release-supply-chain.mjs"
       - "scripts/nimino-wsl-bundle.mjs"
       - "scripts/nimino-wsl-service.sh"
+      - "scripts/test-nimino-cutover-certification.mjs"
 
 concurrency:
   group: nimino-platform-${{ github.ref }}
@@ -44,6 +46,7 @@ jobs:
         if: github.ref_type == 'tag'
         run: test "$GITHUB_REPOSITORY" = "$CANONICAL_REPOSITORY"
       - run: just platform-release-contract
+      - run: just cutover-certification-contract
       - name: Verify immutable tag source
         if: github.ref_type == 'tag'
         run: scripts/verify-release-ref.sh nimino-v "${GITHUB_REF_NAME#nimino-v}"
@@ -123,8 +126,8 @@ jobs:
       - name: Build desktop sidecars
         run: |
           cargo build --release --target "${{ matrix.target }}" \
-            -p buzz-acp -p buzz-agent -p buzz-backend-kubernetes \
-            -p buzz-dev-mcp -p git-credential-nostr -p buzz-cli
+            -p nimino-acp -p nimino-agent -p nimino-backend-kubernetes \
+            -p nimino-dev-mcp -p git-credential-nostr -p nimino-cli
           scripts/bundle-sidecars.sh "${{ matrix.target }}"
       - name: Prepare Apple signing identity
         if: runner.os == 'macOS'
@@ -198,15 +201,15 @@ jobs:
       - name: Build WSL binaries
         run: |
           cargo build --release \
-            -p buzz-cli -p buzz-acp -p buzz-agent -p nimino-data-ops \
-            -p buzz-dev-mcp -p buzz-relay
+            -p nimino-cli -p nimino-acp -p nimino-agent -p nimino-data-ops \
+            -p nimino-dev-mcp -p nimino-relay
           mkdir -p dist-wsl
           cp target/release/nimino dist-wsl/nimino
-          cp target/release/buzz-acp dist-wsl/nimino-acp
-          cp target/release/buzz-agent dist-wsl/nimino-agent
+          cp target/release/nimino-acp dist-wsl/nimino-acp
+          cp target/release/nimino-agent dist-wsl/nimino-agent
           cp target/nim/nimino_boundary/bin/nimino-core-worker dist-wsl/nimino-core-worker
           cp target/release/nimino-data-ops dist-wsl/nimino-data-ops
-          cp target/release/buzz-dev-mcp dist-wsl/nimino-dev-mcp
+          cp target/release/nimino-dev-mcp dist-wsl/nimino-dev-mcp
           cp target/release/nimino-relay dist-wsl/nimino-relay
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -248,6 +251,7 @@ jobs:
             --artifact "chart-signature:${VERSION}:dist/all/nimino-chart.sigstore.json"
             --artifact "cli:${VERSION}:dist/all/nimino"
             --artifact "cluster-evidence:${VERSION}:dist/all/nimino-cluster-scenarios.json"
+            --artifact "sync-evidence:${VERSION}:dist/all/nimino-sync-scenarios.json"
             --artifact "compose:${VERSION}:dist/all/nimino-compose-${VERSION}.tar.gz"
             --artifact "compose-signature:${VERSION}:dist/all/nimino-compose.sigstore.json"
             --artifact "core-worker:${VERSION}:dist/all/nimino-core-worker"

@@ -8,7 +8,7 @@ fn login_shell_lookup_treats_command_as_data() {
 
     let _guard = crate::managed_agents::lock_path_mutex();
     let marker =
-        std::env::temp_dir().join(format!("buzz-discovery-marker-{}", uuid::Uuid::new_v4()));
+        std::env::temp_dir().join(format!("nimino-discovery-marker-{}", uuid::Uuid::new_v4()));
     let payload = format!("doesnotexist; touch {} #", marker.display());
 
     let resolved = find_via_login_shell(&payload);
@@ -51,7 +51,7 @@ fn common_binary_paths_probes_legacy_goose_install_dir() {
 
 #[cfg(unix)]
 #[test]
-fn resolve_command_prefers_buzz_managed_npm_shim_over_path() {
+fn resolve_command_prefers_nimino_managed_npm_shim_over_path() {
     use std::os::unix::fs::PermissionsExt;
 
     let _guard = crate::managed_agents::lock_path_mutex();
@@ -71,7 +71,7 @@ fn resolve_command_prefers_buzz_managed_npm_shim_over_path() {
     std::env::set_var("XDG_DATA_HOME", &xdg_data);
     let managed_bin = dirs::data_dir()
         .expect("data dir")
-        .join("Buzz")
+        .join("Nimino")
         .join("node-tools")
         .join("bin");
     std::fs::create_dir_all(&managed_bin).expect("create managed bin");
@@ -108,7 +108,7 @@ fn resolve_command_prefers_buzz_managed_npm_shim_over_path() {
     assert_eq!(
         resolved.as_deref(),
         Some(managed_shim.as_path()),
-        "Buzz-managed npm shim must win over PATH/global shims"
+        "Nimino-managed npm shim must win over PATH/global shims"
     );
 }
 
@@ -146,7 +146,7 @@ fn cheap_discovery_never_spawns_login_shell_even_when_cold() {
         r#"{
             "id": "absent-harness",
             "label": "Absent Harness",
-            "command": "buzz-absent-command-xyzzy",
+            "command": "nimino-absent-command-xyzzy",
             "args": []
         }"#,
     )

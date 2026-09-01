@@ -13,7 +13,7 @@
 
 use rusqlite::{params, Connection, OptionalExtension};
 
-use buzz_core_pkg::agent_turn_metric::AgentTurnMetricPayload;
+use nimino_core_pkg::agent_turn_metric::AgentTurnMetricPayload;
 
 // ── u64-safe sortable encoding ───────────────────────────────────────────────
 

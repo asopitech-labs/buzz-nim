@@ -1067,7 +1067,7 @@ function ImageBlock({ alt, dim, resolvedSrc, src, thumbSrc }: ImageBlockProps) {
 
     updateHiddenState();
 
-    const spoiler = trigger.closest(".buzz-spoiler[data-spoiler]");
+    const spoiler = trigger.closest(".nimino-spoiler[data-spoiler]");
     if (!spoiler) return;
 
     const observer = new MutationObserver(updateHiddenState);
@@ -1302,7 +1302,7 @@ export function createMarkdownComponents(
       );
     }
 
-    // Keep Buzz channel/message navigation in-app.
+    // Keep Nimino channel/message navigation in-app.
     if (href) {
       if (parseChannelLink(href).ok) {
         return (

@@ -541,7 +541,7 @@ export function MessageThreadPanel({
   const threadScrollRegion = (
     <AuxiliaryPanelBody
       className="overflow-y-auto overflow-x-hidden overscroll-contain pb-24"
-      data-buzz-conversation-scroll
+      data-nimino-conversation-scroll
       data-testid="message-thread-body"
       mode={isHuddleTranscript ? "panel" : undefined}
       onScroll={onScroll}

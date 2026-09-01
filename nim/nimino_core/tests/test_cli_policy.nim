@@ -12,7 +12,7 @@ suite "Nimino CLI policy":
     check seen.len == 115
 
   test "unknown and old command paths fail closed":
-    for path in ["", "buzz", "buzz.channels.list", "workflows.retry"]:
+    for path in ["", "nimino", "nimino.channels.list", "workflows.retry"]:
       let decision = decideCliCommand(path)
       check not decision.accepted
       check decision.error == cceUnknownCommand

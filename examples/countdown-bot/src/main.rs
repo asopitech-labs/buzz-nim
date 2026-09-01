@@ -1,4 +1,4 @@
-//! A tiny non-AI Buzz bot.
+//! A tiny non-AI Nimino bot.
 //!
 //! The bot listens to one channel and replies to messages that contain commands:
 //! - `!countdown 5` → `5 4 3 2 1 🚀`
@@ -28,7 +28,7 @@ const SUBSCRIPTION_ID: &str = "countdown-bot";
 const BOT_NAME: &str = "countdown-bot";
 const BOT_DISPLAY_NAME: &str = "Countdown Bot";
 const BOT_ABOUT: &str =
-    "A tiny non-AI Buzz reference bot that replies to !countdown and countdown-style !fib.";
+    "A tiny non-AI Nimino reference bot that replies to !countdown and countdown-style !fib.";
 const BOT_ICON_DATA_URL: &str = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'%3E%3Crect width='128' height='128' rx='28' fill='%23131622'/%3E%3Ccircle cx='64' cy='64' r='42' fill='none' stroke='%237dd3fc' stroke-width='10'/%3E%3Cpath d='M64 32v32l22 14' fill='none' stroke='%23facc15' stroke-width='10' stroke-linecap='round' stroke-linejoin='round'/%3E%3Cpath d='M42 96h44' stroke='%23a78bfa' stroke-width='8' stroke-linecap='round'/%3E%3C/svg%3E";
 
 #[tokio::main]
@@ -99,14 +99,18 @@ impl Config {
                             .context(
                                 "NIMINO_OWNER_PRIVATE_KEY must be an nsec or hex private key",
                             )?;
-                        buzz_sdk::nip_oa::compute_auth_tag(&owner_keys, &bot_keys.public_key(), "")?
+                        nimino_sdk::nip_oa::compute_auth_tag(
+                            &owner_keys,
+                            &bot_keys.public_key(),
+                            "",
+                        )?
                     }
                 };
 
-                let owner = buzz_sdk::nip_oa::verify_auth_tag(&tag_json, &bot_keys.public_key())
+                let owner = nimino_sdk::nip_oa::verify_auth_tag(&tag_json, &bot_keys.public_key())
                     .context("NIMINO_AUTH_TAG is not valid for NIMINO_BOT_PRIVATE_KEY")?;
                 eprintln!("owner-attested auth tag verified; owner={}", owner.to_hex());
-                Some(buzz_sdk::nip_oa::parse_auth_tag(&tag_json)?)
+                Some(nimino_sdk::nip_oa::parse_auth_tag(&tag_json)?)
             }
             other => {
                 bail!(
@@ -157,7 +161,7 @@ fn build_auth_event(config: &Config, challenge: &str) -> Result<Event> {
 }
 
 async fn publish_profile(ws: &mut Ws, config: &Config) -> Result<()> {
-    let builder = buzz_sdk::builders::build_profile(
+    let builder = nimino_sdk::builders::build_profile(
         Some(BOT_DISPLAY_NAME),
         Some(BOT_NAME),
         Some(BOT_ICON_DATA_URL),
@@ -237,7 +241,7 @@ async fn maybe_reply(
         return Ok(());
     };
 
-    let builder = buzz_sdk::builders::build_message(
+    let builder = nimino_sdk::builders::build_message(
         config.channel_id.parse()?,
         &reply,
         None,

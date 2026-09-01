@@ -3,7 +3,7 @@
 import { readFileSync } from "node:fs";
 
 const contract = JSON.parse(
-  readFileSync("contracts/nimino-sync/v1/contract.json", "utf8"),
+  readFileSync("contracts/nimino-sync/v2/contract.json", "utf8"),
 );
 const data = JSON.parse(
   readFileSync("contracts/nimino-data/v1/contract.json", "utf8"),
@@ -25,7 +25,7 @@ function check(condition, message) {
 }
 
 check(contract.schemaVersion === 1, "wrong sync contract schema");
-check(contract.version === 1, "wrong sync protocol version");
+check(contract.version === 2, "wrong sync protocol version");
 check(contract.contract === "nimino.sync", "wrong sync contract id");
 check(contract.compatibilityMode === false, "sync compatibility mode is forbidden");
 check(contract.owner === "nimino-core", "Nim must own sync decisions");
@@ -50,11 +50,19 @@ check(
     chirps.includes("const MAX_MESSAGE_BYTES: usize = 1024 * 1024"),
   "store, transport, and sync bounds drifted",
 );
-for (const method of ["canonical_checkpoint", "changes", "commit_canonical"]) {
+for (const method of [
+  "canonical_checkpoint",
+  "canonical_page",
+  "changes",
+  "commit_canonical",
+  "append_log",
+]) {
   check(store.includes(`fn ${method}(`), `missing store capability: ${method}`);
 }
 for (const helper of [
   "canonical_prefix_digest",
+  "canonical_state_digest",
+  "canonical_logical_record_digest",
   "canonical_record_digest",
   "extend_prefix_digest",
   "verify_range_digest",
@@ -66,6 +74,11 @@ check(
     contract.digest.adapterVerifiesCanonicalRange === true &&
     digestAdapter.includes("Sha256"),
   "SHA-256 adapter contract drifted",
+);
+check(
+  contract.divergence.mergePolicy === "nimino-core.convergence_policy" &&
+    contract.divergence.sameIdentityDifferentContent === "quarantine",
+  "divergence policy escaped the Nim core",
 );
 for (const symbol of [
   "acceptRemoteDigest*",

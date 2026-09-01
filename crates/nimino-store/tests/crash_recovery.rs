@@ -12,8 +12,8 @@ use uuid::Uuid;
 const META: TableDefinition<&str, u64> = TableDefinition::new("nimino_meta_v1");
 const CANONICAL: TableDefinition<&[u8], &[u8]> = TableDefinition::new("nimino_canonical_v1");
 const CONTROL_METADATA: TableDefinition<&str, &[u8]> =
-    TableDefinition::new("nimino_control_metadata_v1");
-const CONTROL_LOG: TableDefinition<u64, &[u8]> = TableDefinition::new("nimino_control_log_v1");
+    TableDefinition::new("nimino_control_metadata_v2");
+const CONTROL_LOG: TableDefinition<u64, &[u8]> = TableDefinition::new("nimino_control_log_v2");
 
 struct TestPath(PathBuf);
 
@@ -117,7 +117,9 @@ fn torn_control_writer_helper() {
         term: 2,
         voter_epoch: 1,
         kind: "command".into(),
+        command_id: "uncommitted".into(),
         payload: b"uncommitted".to_vec(),
+        target_voters: Vec::new(),
     })
     .unwrap();
     transaction
@@ -156,7 +158,9 @@ fn rejects_a_torn_control_log_and_metadata_transaction() {
                     term: 1,
                     voter_epoch: 1,
                     kind: "command".into(),
+                    command_id: "committed".into(),
                     payload: b"committed".to_vec(),
+                    target_voters: Vec::new(),
                 }],
             )
             .unwrap();
@@ -206,9 +210,9 @@ fn rejects_unknown_schema_and_bootstraps_separate_tables() {
         assert!(names.contains(&"nimino_canonical_v1".into()));
         assert!(names.contains(&"nimino_cache_v1".into()));
         assert!(names.contains(&"nimino_log_v1".into()));
-        assert!(names.contains(&"nimino_control_metadata_v1".into()));
-        assert!(names.contains(&"nimino_control_log_v1".into()));
-        assert!(names.contains(&"nimino_control_snapshot_v1".into()));
+        assert!(names.contains(&"nimino_control_metadata_v2".into()));
+        assert!(names.contains(&"nimino_control_log_v2".into()));
+        assert!(names.contains(&"nimino_control_snapshot_v2".into()));
         transaction
             .open_table(META)
             .unwrap()
@@ -220,8 +224,8 @@ fn rejects_unknown_schema_and_bootstraps_separate_tables() {
     assert!(matches!(
         RedbNodeStore::open(&path.0),
         Err(StoreError::UnsupportedSchema {
-            found: 2,
-            supported: 1
+            found: 3,
+            supported: 2
         })
     ));
 }

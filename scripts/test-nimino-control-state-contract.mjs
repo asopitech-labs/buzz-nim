@@ -6,6 +6,8 @@ const contract = JSON.parse(
   readFileSync("contracts/nimino-control-state/v1/contract.json", "utf8"),
 );
 const stateMachine = readFileSync(contract.module, "utf8");
+const adapter = readFileSync(contract.runtimeAdapter, "utf8");
+const realMeshScenario = readFileSync(contract.realMeshScenario, "utf8");
 const stateMachineImports = stateMachine
   .split("\n")
   .filter((line) => /^(?:import|from)\s/.test(line))
@@ -27,6 +29,25 @@ check(
 );
 check(contract.compatibilityMode === false, "compatibility mode is forbidden");
 check(contract.owner === "nimino-core", "Nim must own control decisions");
+for (const evidence of [
+  "ControlPolicyRequest::Vote",
+  "ControlPolicyRequest::Election",
+  "ControlPolicyRequest::Replicate",
+  "ControlPolicyRequest::Commit",
+  "ControlPolicyRequest::Apply",
+  "ControlPolicyRequest::Recover",
+  "ControlLogStorePort",
+  "WIRE_PREFIX",
+]) {
+  check(adapter.includes(evidence), `missing production control evidence: ${evidence}`);
+}
+for (const evidence of [
+  "three_nodes_elect_commit_fail_closed_and_catch_up_over_real_chirps",
+  "ControlRuntimeError::QuorumRequired",
+  "wait_for_commit(&stores, 2)",
+]) {
+  check(realMeshScenario.includes(evidence), `missing real control scenario: ${evidence}`);
+}
 check(
   contract.formalModel === `${model.contract}/v${model.version}`,
   "formal model link drifted",
@@ -51,9 +72,12 @@ check(
   "persistence-first fail-closed contract drifted",
 );
 for (const symbol of [
+  "planVote*",
   "planElection*",
   "planAppend*",
+  "planReplication*",
   "planCommit*",
+  "checkControlQuorum*",
   "planApply*",
   "planSnapshot*",
   "recoverControlState*",

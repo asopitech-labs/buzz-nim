@@ -1,11 +1,15 @@
 use nimino_boundary::{
     BoundaryFault, BoundaryRequest, BoundaryResponse, BoundaryResult, CliCommandError, CliIoMode,
     CliPolicyOperation, CliPolicyResult, ClusterLifecycleError, ClusterLifecyclePolicyResult,
-    ClusterNodeState, CommunityAction, CommunityPolicyError, CommunityPolicyResult, DmPolicyError,
-    DmPolicyResult, EchoPayload, EventDisposition, EventPolicyError, EventPolicyResult,
+    ClusterNodeState, CommunityAction, CommunityPolicyError, CommunityPolicyResult,
+    ControlPolicyResult, ControlStateError, ControlVoterPhase, DmPolicyError, DmPolicyResult,
+    EchoPayload, EffectLedgerEffect, EffectLedgerError, EffectPolicyResult, EventDisposition,
+    EventPolicyError, EventPolicyResult, LeaseEffect, LeaseFenceError, LeasePolicyResult,
     LifecycleEffect, MembershipAction, MembershipPolicyError, MembershipPolicyResult,
     MembershipRole, ModerationAuditAction, ModerationAuthority, ModerationEffect,
-    ModerationPolicyError, ModerationPolicyResult, RemoteErrorCode, RetryDisposition,
+    ModerationPolicyError, ModerationPolicyResult, ObjectEffect, ObjectPolicyError,
+    ObjectPolicyResult, ProjectionEffect, ProjectionLifecycleError, ProjectionPolicyResult,
+    RemoteErrorCode, RetryDisposition, SyncEffect, SyncPhase, SyncPolicyError, SyncPolicyResult,
     WorkflowPolicyError, WorkflowPolicyResult, WorkflowPortEffect, WorkflowRunState,
     WorkflowRunStatus, HOST_ERROR_CODES, PROTOCOL_NAME, PROTOCOL_VERSION,
 };
@@ -204,6 +208,140 @@ fn cluster_lifecycle_fixtures_use_the_typed_operation_variant() {
             error: ClusterLifecycleError::None,
         })
     );
+}
+
+#[test]
+fn control_policy_fixtures_use_the_typed_operation_variant() {
+    let request: BoundaryRequest = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/control-policy.request.json"
+    ))
+    .expect("valid control policy request");
+    assert_eq!(request.operation_name(), "domain.control.policy");
+
+    let response: BoundaryResponse = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/control-policy.response.json"
+    ))
+    .expect("valid control policy response");
+    let BoundaryResult::ControlPolicy(ControlPolicyResult::Recover { result }) =
+        response.into_result().expect("control policy success")
+    else {
+        panic!("unexpected control policy result");
+    };
+    assert_eq!(result.error, ControlStateError::None);
+    assert!(result.state.valid);
+    assert_eq!(result.state.phase, ControlVoterPhase::StableOld);
+    assert_eq!(result.state.old_voters, ["node-a"]);
+}
+
+#[test]
+fn lease_policy_fixtures_use_the_typed_operation_variant() {
+    let request: BoundaryRequest = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/lease-policy.request.json"
+    ))
+    .expect("valid lease policy request");
+    assert_eq!(request.operation_name(), "domain.lease.policy");
+
+    let response: BoundaryResponse = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/lease-policy.response.json"
+    ))
+    .expect("valid lease policy response");
+    let BoundaryResult::LeasePolicy(LeasePolicyResult::PlanGrant { result }) =
+        response.into_result().expect("lease policy success")
+    else {
+        panic!("unexpected lease policy result");
+    };
+    assert_eq!(result.effect, LeaseEffect::Propose);
+    assert_eq!(result.error, LeaseFenceError::None);
+    assert_eq!(result.command.expect("grant command").owner_id, "node-a");
+}
+
+#[test]
+fn effect_policy_fixtures_use_the_typed_operation_variant() {
+    let request: BoundaryRequest = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/effect-policy.request.json"
+    ))
+    .expect("valid effect policy request");
+    assert_eq!(request.operation_name(), "domain.effect.policy");
+
+    let response: BoundaryResponse = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/effect-policy.response.json"
+    ))
+    .expect("valid effect policy response");
+    let BoundaryResult::EffectPolicy(EffectPolicyResult::Claim { result }) =
+        response.into_result().expect("effect policy success")
+    else {
+        panic!("unexpected effect policy result");
+    };
+    assert_eq!(result.effect, EffectLedgerEffect::Claimed);
+    assert_eq!(result.error, EffectLedgerError::None);
+    assert_eq!(result.next_state.fence_token, 1);
+}
+
+#[test]
+fn object_policy_fixtures_use_the_typed_operation_variant() {
+    let request: BoundaryRequest = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/object-policy.request.json"
+    ))
+    .expect("valid object policy request");
+    assert_eq!(request.operation_name(), "domain.object.policy");
+
+    let response: BoundaryResponse = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/object-policy.response.json"
+    ))
+    .expect("valid object policy response");
+    let BoundaryResult::ObjectPolicy(ObjectPolicyResult::Sync { result }) =
+        response.into_result().expect("object policy success")
+    else {
+        panic!("unexpected object policy result");
+    };
+    assert_eq!(result.effect, ObjectEffect::Fetch);
+    assert_eq!(result.error, ObjectPolicyError::None);
+    assert_eq!(result.actions[0].source_node_id, "node-a");
+}
+
+#[test]
+fn projection_policy_fixtures_use_the_typed_operation_variant() {
+    let request: BoundaryRequest = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/projection-policy.request.json"
+    ))
+    .expect("valid projection policy request");
+    assert_eq!(request.operation_name(), "domain.projection.policy");
+
+    let response: BoundaryResponse = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/projection-policy.response.json"
+    ))
+    .expect("valid projection policy response");
+    let BoundaryResult::ProjectionPolicy(ProjectionPolicyResult::Batch { result }) =
+        response.into_result().expect("projection policy success")
+    else {
+        panic!("unexpected projection policy result");
+    };
+    assert_eq!(result.effect, ProjectionEffect::Ready);
+    assert_eq!(result.error, ProjectionLifecycleError::None);
+    assert_eq!(result.rows[0].key, "event-a");
+}
+
+#[test]
+fn sync_policy_fixtures_use_the_typed_operation_variant() {
+    let request: BoundaryRequest = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/sync-policy.request.json"
+    ))
+    .expect("valid sync policy request");
+    assert_eq!(request.operation_name(), "domain.sync.policy");
+
+    let response: BoundaryResponse = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/sync-policy.response.json"
+    ))
+    .expect("valid sync policy response");
+    let BoundaryResult::SyncPolicy(SyncPolicyResult::AcceptDigest { result }) =
+        response.into_result().expect("sync policy success")
+    else {
+        panic!("unexpected sync policy result");
+    };
+    assert_eq!(result.effect, SyncEffect::RequestSnapshot);
+    assert_eq!(result.error, SyncPolicyError::None);
+    assert_eq!(result.state.phase, SyncPhase::WaitingBatch);
+    assert_eq!(result.state.deadline_tick, 15);
 }
 
 #[test]

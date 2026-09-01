@@ -18,7 +18,7 @@ fn main() {
     println!("cargo:rerun-if-env-changed=NIMINO_BUILD_RELAY_RECONNECT_CMD");
     println!("cargo:rerun-if-env-changed=NIMINO_BUILD_AGENT_ACCESS_OWNER_ONLY");
     println!("cargo:rerun-if-env-changed=NIMINO_BUILD_AUTO_CONNECT_DEFAULT_RELAY");
-    println!("cargo:rustc-check-cfg=cfg(buzz_updater_enabled)");
+    println!("cargo:rustc-check-cfg=cfg(nimino_updater_enabled)");
 
     // Explicit owner-only agent-access capability. Release packaging sets this
     // presence-only marker; OSS/custom builds leave agent access configurable.
@@ -70,15 +70,15 @@ fn main() {
                 );
             }
             // The baked env is written into every spawned agent's environment
-            // LAST (see `managed_agents/runtime.rs`), after Buzz sets the
+            // LAST (see `managed_agents/runtime.rs`), after Nimino sets the
             // access gates and identity vars. A baked reserved key would
             // therefore silently override the gate the UI promises, so reject
             // it at build time instead of shipping a binary that bypasses its
             // own enforcement.
             if is_reserved_env_key(key) {
                 panic!(
-                    "NIMINO_BUILD_AGENT_ENV line {}: `{}` is reserved by Buzz and cannot be baked \
-                     into a build (it would override Buzz's own identity/access env)",
+                    "NIMINO_BUILD_AGENT_ENV line {}: `{}` is reserved by Nimino and cannot be baked \
+                     into a build (it would override Nimino's own identity/access env)",
                     line_no + 1,
                     key
                 );
@@ -114,7 +114,7 @@ fn main() {
         .filter(|value| !value.is_empty());
 
     if updater_public_key.is_some() && updater_endpoint.is_some() {
-        println!("cargo:rustc-cfg=buzz_updater_enabled");
+        println!("cargo:rustc-cfg=nimino_updater_enabled");
     }
 
     // Cargo test executables get no embedded Windows manifest (tauri_build

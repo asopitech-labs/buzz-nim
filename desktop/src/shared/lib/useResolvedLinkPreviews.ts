@@ -18,7 +18,7 @@ import {
 
 import { isEntityLink, parseEntityLink } from "./entityLink";
 import {
-  buzzEntityFallbackTitle,
+  niminoEntityFallbackTitle,
   type SupportedLinkPreview,
 } from "./linkPreview";
 
@@ -252,7 +252,7 @@ function compactMetadata(
 }
 
 /** Resolve builder-focused metadata only from the active relay. */
-export async function fetchBuzzEntityMetadata(
+export async function fetchNiminoEntityMetadata(
   href: string,
   fetchEvents: EntityEventFetcher = (filter) => relayClient.fetchEvents(filter),
 ): Promise<LinkPreviewMetadata | null> {
@@ -348,11 +348,11 @@ export async function fetchBuzzEntityMetadata(
 }
 
 const entityMetadataLoader = createMetadataLoader({
-  fetcher: fetchBuzzEntityMetadata,
+  fetcher: fetchNiminoEntityMetadata,
 });
 
 /** Share deduplicated relay-native entity metadata across cards and inline tooltips. */
-export async function loadBuzzEntityMetadata(
+export async function loadNiminoEntityMetadata(
   href: string,
 ): Promise<LinkPreviewMetadata | null> {
   return (await entityMetadataLoader.load(href)).metadata;
@@ -383,7 +383,7 @@ type ResolvedMetadataByHref = Record<
 export function shouldResolveTitle(preview: SupportedLinkPreview): boolean {
   if (!isEntityLink(preview.href)) return true;
   const parsed = parseEntityLink(preview.href);
-  return parsed.ok && preview.title === buzzEntityFallbackTitle(parsed.value);
+  return parsed.ok && preview.title === niminoEntityFallbackTitle(parsed.value);
 }
 
 export function resolveLinkPreview(
@@ -393,7 +393,7 @@ export function resolveLinkPreview(
   if (metadata === undefined) {
     return {
       ...preview,
-      imageState: isBuzzEntityPreview(preview) ? "none" : "pending",
+      imageState: isNiminoEntityPreview(preview) ? "none" : "pending",
     };
   }
   if (metadata === null) {
@@ -415,7 +415,7 @@ export function resolveLinkPreview(
     description: metadata.description,
     faviconDataUrl: metadata.faviconDataUrl,
     provider:
-      (preview.kind === "generic-link" || isBuzzEntityPreview(preview)) &&
+      (preview.kind === "generic-link" || isNiminoEntityPreview(preview)) &&
       metadata.siteName
         ? metadata.siteName
         : preview.provider,
@@ -425,12 +425,12 @@ export function resolveLinkPreview(
   };
 }
 
-export function isBuzzEntityPreview(preview: SupportedLinkPreview): boolean {
+export function isNiminoEntityPreview(preview: SupportedLinkPreview): boolean {
   return (
-    preview.kind === "buzz-pull-request" ||
-    preview.kind === "buzz-issue" ||
-    preview.kind === "buzz-repository" ||
-    preview.kind === "buzz-project"
+    preview.kind === "nimino-pull-request" ||
+    preview.kind === "nimino-issue" ||
+    preview.kind === "nimino-repository" ||
+    preview.kind === "nimino-project"
   );
 }
 
@@ -439,7 +439,7 @@ export function isBuzzEntityPreview(preview: SupportedLinkPreview): boolean {
  * lookup yields no metadata: `useResolvedLinkPreviews` drops null-metadata
  * previews (correct for external links — no metadata means no card), but
  * entity links always carry a usable fallback title (the repo d-tag, or
- * `<dtag> #<id8>` for PRs/issues — see `buzzEntityFallbackTitle`). Re-adds
+ * `<dtag> #<id8>` for PRs/issues — see `niminoEntityFallbackTitle`). Re-adds
  * recognized entity previews on their fallback title; non-entity previews
  * keep the hook's drop behavior.
  */
@@ -451,7 +451,7 @@ export function withEntityFallbacks(
   return previews.flatMap((preview) => {
     const match = byHref.get(preview.href);
     if (match) return [match];
-    return isBuzzEntityPreview(preview)
+    return isNiminoEntityPreview(preview)
       ? [{ ...preview, imageState: "none" as const }]
       : [];
   });

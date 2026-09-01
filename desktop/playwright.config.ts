@@ -121,7 +121,7 @@ export default defineConfig({
         "**/drafts-screenshots.spec.ts",
         "**/drafts-all-fix-screenshots.spec.ts",
         "**/inbox-refactor-screenshots.spec.ts",
-        "**/buzz-theme-screenshots.spec.ts",
+        "**/nimino-theme-screenshots.spec.ts",
         "**/appearance-previews.spec.ts",
         "**/channel-sort.spec.ts",
         "**/identity-lost.spec.ts",

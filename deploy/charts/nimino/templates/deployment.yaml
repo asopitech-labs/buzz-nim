@@ -1,19 +1,18 @@
 {{- include "nimino.validate" . -}}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: {{ include "nimino.fullname" . }}
   labels:
     {{- include "nimino.labels" . | nindent 4 }}
 spec:
+  serviceName: {{ include "nimino.fullname" . }}-chirps
+  podManagementPolicy: Parallel
   {{- if not .Values.autoscaling.enabled }}
   replicas: {{ .Values.replicaCount }}
   {{- end }}
-  strategy:
+  updateStrategy:
     type: RollingUpdate
-    rollingUpdate:
-      maxSurge: 1
-      maxUnavailable: 0
   selector:
     matchLabels:
       {{- include "nimino.relaySelectorLabels" . | nindent 6 }}
@@ -27,6 +26,7 @@ spec:
       annotations:
         # Roll pods when the chart-managed Secret changes.
         checksum/secret: {{ include (print $.Template.BasePath "/secret-chart.yaml") . | sha256sum }}
+        checksum/cluster-identities: {{ include (print $.Template.BasePath "/cluster-identities.yaml") . | sha256sum }}
         {{- with .Values.relay.podAnnotations }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
@@ -55,8 +55,60 @@ spec:
       topologySpreadConstraints:
         {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- if or .Values.minio.enabled .Values.extraInitContainers }}
       initContainers:
+        - name: prepare-cluster-identity
+          image: {{ include "nimino.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              ordinal="${HOSTNAME##*-}"
+              source="/cluster-identities/node-${ordinal}.identity"
+              target="/var/lib/nimino/cluster/node.identity"
+              if [ -e "$target" ]; then
+                source_hash="$(sha256sum "$source")"
+                source_hash="${source_hash%% *}"
+                target_hash="$(sha256sum "$target")"
+                target_hash="${target_hash%% *}"
+                [ "$source_hash" = "$target_hash" ] || {
+                  echo "persisted Chirps identity does not match the fixed voter set" >&2
+                  exit 1
+                }
+              else
+                cp "$source" "$target"
+                chmod 600 "$target"
+              fi
+          securityContext:
+            {{- toYaml .Values.relay.containerSecurityContext | nindent 12 }}
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+          volumeMounts:
+            - { name: cluster-identities, mountPath: /cluster-identities, readOnly: true }
+            - { name: node-data, mountPath: /var/lib/nimino/cluster }
+        - name: prepare-chirps-mtls
+          image: {{ include "nimino.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              cp /chirps-source/tls.crt /chirps/tls.crt
+              cp /chirps-source/tls.key /chirps/tls.key
+              cp /chirps-source/ca.crt /chirps/ca.crt
+              chmod 400 /chirps/tls.crt /chirps/ca.crt
+              chmod 600 /chirps/tls.key
+          securityContext:
+            {{- toYaml .Values.relay.containerSecurityContext | nindent 12 }}
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+          volumeMounts:
+            - { name: chirps-source, mountPath: /chirps-source, readOnly: true }
+            - { name: chirps-tls, mountPath: /chirps }
       {{- if .Values.minio.enabled }}
       # Quickstart only: the bundled MinIO bucket is created by a concurrent
       # init Job (templates/quickstart-minio-init.yaml). The relay's A3 S3
@@ -94,7 +146,6 @@ spec:
       {{- with .Values.extraInitContainers }}
       {{- toYaml . | nindent 8 }}
       {{- end }}
-      {{- end }}
       containers:
         - name: relay
           image: {{ include "nimino.image" . }}
@@ -113,6 +164,7 @@ spec:
             - { name: app,     containerPort: 3000, protocol: TCP }
             - { name: health,  containerPort: {{ .Values.service.healthPort }}, protocol: TCP }
             - { name: metrics, containerPort: {{ .Values.service.metricsPort }}, protocol: TCP }
+            - { name: chirps, containerPort: {{ .Values.cluster.port }}, protocol: UDP }
           env:
             # ── Networking ───────────────────────────────────────────
             - { name: NIMINO_BIND_ADDR,     value: {{ .Values.relay.bindAddr | quote }} }
@@ -123,6 +175,14 @@ spec:
             - { name: NIMINO_PAIRING_RELAY_URL, value: {{ .Values.pairingRelay.url | quote }} }
             {{- end }}
             - { name: NIMINO_MEDIA_BASE_URL, value: {{ include "nimino.mediaBaseUrl" . | quote }} }
+            - { name: NIMINO_CHIRPS_BIND_ADDR, value: {{ printf "0.0.0.0:%v" .Values.cluster.port | quote }} }
+            - { name: NIMINO_CHIRPS_SEEDS, value: {{ printf "%s-chirps:%v" (include "nimino.fullname" .) .Values.cluster.port | quote }} }
+            - { name: NIMINO_CLUSTER_REFRESH_SECS, value: {{ .Values.cluster.refreshSeconds | quote }} }
+            - { name: NIMINO_CLUSTER_MIN_PEERS, value: {{ max (sub (ternary .Values.autoscaling.minReplicas .Values.replicaCount .Values.autoscaling.enabled) 1) 0 | quote }} }
+            - { name: NIMINO_CLUSTER_VOTERS, value: {{ include "nimino.clusterVoters" . | quote }} }
+            - { name: NIMINO_CHIRPS_IDENTITY_PATH, value: "/var/lib/nimino/cluster/node.identity" }
+            - { name: NIMINO_NODE_STORE_PATH, value: "/var/lib/nimino/cluster/data.redb" }
+            - { name: NIMINO_OBJECT_STORE_PATH, value: "/var/lib/nimino/cluster/objects" }
 
             # ── Behavior ─────────────────────────────────────────────
             - { name: NIMINO_MAX_CONNECTIONS,        value: {{ .Values.relay.maxConnections | quote }} }
@@ -197,12 +257,6 @@ spec:
                   name: {{ include "nimino.envSecretName" . }}
                   key: READ_DATABASE_URL
                   optional: true
-            - name: REDIS_URL
-              valueFrom:
-                secretKeyRef:
-                  name: {{ include "nimino.envSecretName" . }}
-                  key: REDIS_URL
-                  optional: {{ and (eq (include "nimino.minimumReplicas" . | int) 1) (not .Values.redis.enabled) (not .Values.externalRedis.url) }}
             - name: NIMINO_S3_ACCESS_KEY
               valueFrom:
                 secretKeyRef:
@@ -240,22 +294,46 @@ spec:
           volumeMounts:
             - { name: git-repos, mountPath: {{ .Values.persistence.git.mountPath | quote }} }
             - { name: git-pack-cache, mountPath: {{ .Values.git.packCachePath | quote }} }
+            - { name: node-data, mountPath: /var/lib/nimino/cluster }
+            - { name: chirps-tls, mountPath: /etc/nimino/chirps, readOnly: true }
             {{- with .Values.relay.extraVolumeMounts }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
 
       volumes:
+        - name: cluster-identities
+          configMap:
+            name: {{ include "nimino.fullname" . }}-cluster-identities
+            defaultMode: 0444
         - name: git-repos
-        {{- if .Values.persistence.git.enabled }}
-          persistentVolumeClaim:
-            claimName: {{ default (printf "%s-git" (include "nimino.fullname" .)) .Values.persistence.git.existingClaim }}
-        {{- else }}
           emptyDir:
             sizeLimit: {{ .Values.persistence.git.size | quote }}
-        {{- end }}
         - name: git-pack-cache
           emptyDir:
             sizeLimit: {{ .Values.git.packCacheVolumeSize | quote }}
+        - name: chirps-source
+          secret:
+            secretName: {{ .Values.cluster.tlsSecret | quote }}
+            defaultMode: 0440
+            items:
+              - { key: tls.crt, path: tls.crt }
+              - { key: tls.key, path: tls.key }
+              - { key: ca.crt, path: ca.crt }
+        - name: chirps-tls
+          emptyDir: {}
         {{- with .Values.extraVolumes }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: node-data
+        labels:
+          {{- include "nimino.labels" . | nindent 10 }}
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.cluster.persistence.size | quote }}
+        {{- if .Values.cluster.persistence.storageClass }}
+        storageClassName: {{ .Values.cluster.persistence.storageClass | quote }}
         {{- end }}

@@ -9,7 +9,7 @@ import { installMockBridge } from "../helpers/bridge";
 //
 // NIP-CW §Top-level Classification: a depth-1 reply carrying `["broadcast","1"]`
 // is a channel-window row — it belongs on the timeline as well as in its thread.
-// The relay serves it as a row (`buzz-db/src/thread.rs`: "top-level rows =
+// The relay serves it as a row (`nimino-db/src/thread.rs`: "top-level rows =
 // depth 0, missing metadata, or broadcast depth-1 replies").
 //
 // The client's live-append path drops it from the WINDOW STORE. `appendMessage`

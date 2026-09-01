@@ -1,0 +1,2 @@
+-- Reserved migration slot. The fork removed event-based mesh status entirely;
+-- cluster negotiation now belongs exclusively to the Chirps transport boundary.

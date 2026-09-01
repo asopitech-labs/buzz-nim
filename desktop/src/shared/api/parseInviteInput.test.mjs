@@ -60,7 +60,7 @@ test("parseInviteInput_https_url_encoded_code_decoded", () => {
 // nimino://join deep link URLs
 // ---------------------------------------------------------------------------
 
-test("parseInviteInput_buzz_join_with_wss_relay_returns_relay_and_code", () => {
+test("parseInviteInput_nimino_join_with_wss_relay_returns_relay_and_code", () => {
   const result = parseInviteInput(
     "nimino://join?relay=wss://relay.example.com&code=abc123",
   );
@@ -70,7 +70,7 @@ test("parseInviteInput_buzz_join_with_wss_relay_returns_relay_and_code", () => {
   });
 });
 
-test("parseInviteInput_buzz_join_with_ws_relay_returns_relay_and_code", () => {
+test("parseInviteInput_nimino_join_with_ws_relay_returns_relay_and_code", () => {
   const result = parseInviteInput(
     "nimino://join?relay=ws://localhost:3000&code=testcode",
   );
@@ -80,7 +80,7 @@ test("parseInviteInput_buzz_join_with_ws_relay_returns_relay_and_code", () => {
   });
 });
 
-test("parseInviteInput_buzz_join_with_encoded_relay_param", () => {
+test("parseInviteInput_nimino_join_with_encoded_relay_param", () => {
   const result = parseInviteInput(
     "nimino://join?relay=wss%3A%2F%2Frelay.example.com&code=abc123",
   );
@@ -90,21 +90,21 @@ test("parseInviteInput_buzz_join_with_encoded_relay_param", () => {
   });
 });
 
-test("parseInviteInput_buzz_join_rejects_non_ws_relay", () => {
+test("parseInviteInput_nimino_join_rejects_non_ws_relay", () => {
   const result = parseInviteInput(
     "nimino://join?relay=https://relay.example.com&code=abc123",
   );
   assert.equal(result, null);
 });
 
-test("parseInviteInput_buzz_join_rejects_missing_code", () => {
+test("parseInviteInput_nimino_join_rejects_missing_code", () => {
   assert.equal(
     parseInviteInput("nimino://join?relay=wss://relay.example.com"),
     null,
   );
 });
 
-test("parseInviteInput_buzz_join_rejects_missing_relay", () => {
+test("parseInviteInput_nimino_join_rejects_missing_relay", () => {
   assert.equal(parseInviteInput("nimino://join?code=abc123"), null);
 });
 
@@ -157,7 +157,7 @@ test("parseInviteInput_rejects_non_invite_https_pathname", () => {
   assert.equal(parseInviteInput("https://relay.example.com/invite/"), null);
 });
 
-test("parseInviteInput_rejects_buzz_join_with_credentials", () => {
+test("parseInviteInput_rejects_nimino_join_with_credentials", () => {
   assert.equal(
     parseInviteInput(
       "nimino://user:pass@join?relay=wss://relay.example.com&code=abc123",
@@ -166,7 +166,7 @@ test("parseInviteInput_rejects_buzz_join_with_credentials", () => {
   );
 });
 
-test("parseInviteInput_rejects_buzz_join_with_hash", () => {
+test("parseInviteInput_rejects_nimino_join_with_hash", () => {
   assert.equal(
     parseInviteInput(
       "nimino://join?relay=wss://relay.example.com&code=abc123#frag",
@@ -194,7 +194,7 @@ test("parseInviteInput_rejects_input_with_scheme_as_bare_code", () => {
 // Nested relay param credential/fragment rejection (MINOR 6 regression)
 // ---------------------------------------------------------------------------
 
-test("parseInviteInput_buzz_join_rejects_credentials_in_nested_relay", () => {
+test("parseInviteInput_nimino_join_rejects_credentials_in_nested_relay", () => {
   assert.equal(
     parseInviteInput(
       "nimino://join?relay=wss%3A%2F%2Fuser%3Apass%40relay.example.com&code=abc",
@@ -203,7 +203,7 @@ test("parseInviteInput_buzz_join_rejects_credentials_in_nested_relay", () => {
   );
 });
 
-test("parseInviteInput_buzz_join_rejects_fragment_in_nested_relay", () => {
+test("parseInviteInput_nimino_join_rejects_fragment_in_nested_relay", () => {
   assert.equal(
     parseInviteInput(
       "nimino://join?relay=wss%3A%2F%2Frelay.example.com%23frag&code=abc",

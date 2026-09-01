@@ -1,5 +1,5 @@
 import { cn } from "@/shared/lib/cn";
-import { BuzzMark } from "@/shared/ui/buzz-logo/BuzzMark";
+import { NiminoMark } from "@/shared/ui/nimino-logo/NiminoMark";
 
 export function TurnLivenessIndicator({ className }: { className?: string }) {
   return (
@@ -9,7 +9,7 @@ export function TurnLivenessIndicator({ className }: { className?: string }) {
       data-testid="turn-liveness-indicator"
       role="status"
     >
-      <BuzzMark className="w-full text-foreground" />
+      <NiminoMark className="w-full text-foreground" />
     </div>
   );
 }

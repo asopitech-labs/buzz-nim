@@ -10,13 +10,13 @@ const ISSUE_COMMENTS = [
 ];
 const DEFAULT_MOCK_PUBKEY = "deadbeef".repeat(8);
 
-async function openBuzzProject(page: import("@playwright/test").Page) {
+async function openNiminoProject(page: import("@playwright/test").Page) {
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await page.getByTestId("open-projects-view").click();
   await page.getByTestId("projects-section-projects").click();
   const projectEntry = page
     .locator(
-      '[data-testid="project-card-buzz"], [data-testid="project-row-buzz"]',
+      '[data-testid="project-card-nimino"], [data-testid="project-row-nimino"]',
     )
     .first();
   await expect(projectEntry).toBeVisible({ timeout: 10_000 });
@@ -27,7 +27,7 @@ test("issue detail can open agent chat or seed a channel question", async ({
   page,
 }) => {
   await installMockBridge(page);
-  await openBuzzProject(page);
+  await openNiminoProject(page);
 
   await page.getByRole("tab", { name: "Tasks", exact: true }).click();
   const issueRow = page.getByTestId("project-issue-row").first();
@@ -89,7 +89,7 @@ test("issue discussion ignores an author-claimed origin channel", async ({
           created_at: Math.floor(Date.now() / 1000) + 10,
           content: "This task claims an unrelated visible channel.",
           tags: [
-            ["a", `30617:${owner}:buzz`],
+            ["a", `30617:${owner}:nimino`],
             ["subject", "Forged origin task"],
             ["h", "9dae0116-799b-5071-a0a8-fdd30a91a35d"],
           ],
@@ -99,7 +99,7 @@ test("issue discussion ignores an author-claimed origin channel", async ({
     { issueId: forgedIssueId, owner: DEFAULT_MOCK_PUBKEY },
   );
   await installMockBridge(page);
-  await openBuzzProject(page);
+  await openNiminoProject(page);
   await page.getByRole("tab", { name: "Tasks", exact: true }).click();
 
   const issueRow = page
@@ -121,8 +121,8 @@ test("issue discussion ignores an author-claimed origin channel", async ({
   await expect(page.getByTestId("chat-title")).toHaveText("general");
   const issueDraftChip = page
     .getByTestId("message-input")
-    .locator('[data-composer-buzz-link=""]', {
-      hasText: "buzz",
+    .locator('[data-composer-nimino-link=""]', {
+      hasText: "nimino",
     });
   await expect(issueDraftChip).toHaveAttribute(
     "data-href",
@@ -130,13 +130,13 @@ test("issue discussion ignores an author-claimed origin channel", async ({
   );
   await page.getByTestId("channel-random").click();
   await expect(
-    page.getByTestId("message-input").locator('[data-composer-buzz-link=""]'),
+    page.getByTestId("message-input").locator('[data-composer-nimino-link=""]'),
   ).toHaveCount(0);
 });
 
 test("issue comments use the project activity timeline", async ({ page }) => {
   await installMockBridge(page);
-  await openBuzzProject(page);
+  await openNiminoProject(page);
 
   await page.getByRole("tab", { name: "Tasks", exact: true }).click();
   const issueRow = page.getByTestId("project-issue-row").first();
@@ -185,7 +185,7 @@ test("issue comments use the project activity timeline", async ({ page }) => {
 
 test("issue assignees can be assigned and unassigned", async ({ page }) => {
   await installMockBridge(page);
-  await openBuzzProject(page);
+  await openNiminoProject(page);
 
   await page.getByRole("tab", { name: "Tasks", exact: true }).click();
   const issueRow = page.getByTestId("project-issue-row").first();

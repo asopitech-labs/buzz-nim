@@ -12,44 +12,44 @@ import {
 } from "./terminal-palette";
 
 /**
- * Buzz theme name. Buzz is a first-party light theme that reuses GitHub
+ * Nimino theme name. Nimino is a first-party light theme that reuses GitHub
  * Light for every base color (backgrounds, text, borders, code) — the
  * message area and containers are indistinguishable from GitHub Light. Its
  * one distinguishing feature is a branded gradient painted across the
  * sidebar/nav canvas, replacing GitHub Light's flat grey. The gradient is
- * applied by {@link ThemeProvider} toggling a `data-buzz-sidebar` attribute
+ * applied by {@link ThemeProvider} toggling a `data-nimino-sidebar` attribute
  * on the document root; the CSS lives in `shared/styles/globals/theme.css`.
  */
-export const NIMINO_THEME_NAME = "buzz";
+export const NIMINO_THEME_NAME = "nimino";
 
 /**
- * Buzz Dark theme name. The dark-mode counterpart to {@link NIMINO_THEME_NAME}:
+ * Nimino Dark theme name. The dark-mode counterpart to {@link NIMINO_THEME_NAME}:
  * reuses the GitHub Dark palette for every base color, with the same branded
  * sidebar gradient (dark-tuned colors, see `shared/styles/globals/theme.css`).
- * {@link ThemeProvider} toggles the shared `data-buzz-sidebar` attribute for
+ * {@link ThemeProvider} toggles the shared `data-nimino-sidebar` attribute for
  * this theme too; the `.dark` root class selects the dark gradient values.
  *
- * Buzz and Buzz Dark are paired in {@link THEME_PAIRS}, so the picker shows a
- * combined "Buzz" tile under System mode (follow-OS) plus a single "Buzz" tile
- * under Light and a "Buzz Dark" tile under Dark.
+ * Nimino and Nimino Dark are paired in {@link THEME_PAIRS}, so the picker shows a
+ * combined "Nimino" tile under System mode (follow-OS) plus a single "Nimino" tile
+ * under Light and a "Nimino Dark" tile under Dark.
  */
-export const NIMINO_DARK_THEME_NAME = "buzz-dark";
+export const NIMINO_DARK_THEME_NAME = "nimino-dark";
 
-/** The Shiki bundle Buzz borrows its base palette from. */
+/** The Shiki bundle Nimino borrows its base palette from. */
 export const NIMINO_BASE_THEME: SyntaxThemeName = "github-light";
 
-/** The Shiki bundle Buzz Dark borrows its base palette from. */
+/** The Shiki bundle Nimino Dark borrows its base palette from. */
 export const NIMINO_DARK_BASE_THEME: SyntaxThemeName = "github-dark";
 
 /**
  * Resolve a theme name to the real Shiki bundled theme it maps to.
  *
- * Most themes map to themselves, but the Buzz aliases (`buzz` / `buzz-dark`)
+ * Most themes map to themselves, but the Nimino aliases (`nimino` / `nimino-dark`)
  * are not bundled Shiki themes — they reuse the GitHub Light / GitHub Dark
  * palettes. The Shiki highlighter engine (used for fenced code blocks in
  * `CodeBlock.tsx`) only understands bundled names, so callers that hand a
  * theme name to `loadTheme` / `codeToTokens` must resolve it through here
- * first; passing a raw Buzz alias makes Shiki throw and code blocks fall
+ * first; passing a raw Nimino alias makes Shiki throw and code blocks fall
  * back to unhighlighted plain text.
  */
 export function resolveShikiThemeName(name: string): SyntaxThemeName {
@@ -58,12 +58,12 @@ export function resolveShikiThemeName(name: string): SyntaxThemeName {
   return name as SyntaxThemeName;
 }
 
-// Available themes. "buzz" is a Buzz-branded theme that reuses the
+// Available themes. "nimino" is a Nimino-branded theme that reuses the
 // github-light palette plus a sidebar gradient; the rest are the Shiki
 // bundled syntax themes, alphabetically sorted.
 export const SYNTAX_THEMES = [
-  "buzz",
-  "buzz-dark",
+  "nimino",
+  "nimino-dark",
   "andromeeda",
   "aurora-x",
   "ayu-dark",
@@ -131,7 +131,7 @@ export type SyntaxThemeName = (typeof SYNTAX_THEMES)[number];
 // Known light themes — used by the theme picker to show sun/moon icons
 // for themes that haven't been loaded yet.
 export const LIGHT_THEMES: ReadonlySet<SyntaxThemeName> = new Set([
-  "buzz",
+  "nimino",
   "catppuccin-latte",
   "everforest-light",
   "github-light",
@@ -157,10 +157,10 @@ const themeImports: Record<
   SyntaxThemeName,
   () => Promise<{ default: ThemeRegistrationRaw }>
 > = {
-  // Buzz reuses the github-light palette; its gradient is applied separately.
-  buzz: () => import("shiki/themes/github-light.mjs"),
-  // Buzz Dark reuses the github-dark palette; dark gradient applied separately.
-  "buzz-dark": () => import("shiki/themes/github-dark.mjs"),
+  // Nimino reuses the github-light palette; its gradient is applied separately.
+  nimino: () => import("shiki/themes/github-light.mjs"),
+  // Nimino Dark reuses the github-dark palette; dark gradient applied separately.
+  "nimino-dark": () => import("shiki/themes/github-dark.mjs"),
   andromeeda: () => import("shiki/themes/andromeeda.mjs"),
   "aurora-x": () => import("shiki/themes/aurora-x.mjs"),
   "ayu-dark": () => import("shiki/themes/ayu-dark.mjs"),
@@ -239,8 +239,8 @@ export function isLightTheme(name: string): boolean {
 export const THEME_PAIRS: ReadonlyMap<SyntaxThemeName, SyntaxThemeName> =
   new Map([
     // Light → Dark
-    // Buzz is the first-party pair; keep it first so it leads every category.
-    ["buzz", "buzz-dark"],
+    // Nimino is the first-party pair; keep it first so it leads every category.
+    ["nimino", "nimino-dark"],
     ["catppuccin-latte", "catppuccin-mocha"],
     ["everforest-light", "everforest-dark"],
     ["github-light", "github-dark"],
@@ -259,7 +259,7 @@ export const THEME_PAIRS: ReadonlyMap<SyntaxThemeName, SyntaxThemeName> =
     ["solarized-light", "solarized-dark"],
     ["vitesse-light", "vitesse-dark"],
     // Dark → Light (reverse mappings)
-    ["buzz-dark", "buzz"],
+    ["nimino-dark", "nimino"],
     ["catppuccin-mocha", "catppuccin-latte"],
     ["everforest-dark", "everforest-light"],
     ["github-dark", "github-light"],

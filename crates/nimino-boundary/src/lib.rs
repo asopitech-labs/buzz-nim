@@ -12,11 +12,17 @@ mod cluster;
 mod codec;
 mod community;
 mod contract;
+mod control;
 mod dm;
+mod effect;
 mod error;
+mod lease;
 mod membership;
 mod moderation;
+mod object;
+mod projection;
 mod runtime;
+mod sync;
 mod workflow;
 
 pub use agent::{
@@ -46,11 +52,30 @@ pub use contract::{
     ThreadParentFacts, ThreadPlan, ThreadRequest, MAX_FRAME_BYTES, MAX_INFLIGHT, PROTOCOL_NAME,
     PROTOCOL_VERSION, SCHEMA_HASH, WORKER_ROLE,
 };
+pub use control::{
+    ControlAppendRequest, ControlCommitRequest, ControlDecision, ControlEffect,
+    ControlElectionRequest, ControlEntry, ControlEntryKind, ControlPlan, ControlPolicyRequest,
+    ControlPolicyResult, ControlQuorumDecision, ControlQuorumRequest, ControlRecovery,
+    ControlRecoveryInput, ControlReplicationRequest, ControlSnapshotState, ControlState,
+    ControlStateError, ControlStoreAction, ControlStoreActionKind, ControlVoteRequest,
+    ControlVoterPhase,
+};
 pub use dm::{
     DmAccessOperation, DmAccessRequest, DmAction, DmCommand, DmMutationRequest, DmPolicyError,
     DmPolicyRequest, DmPolicyResult,
 };
+pub use effect::{
+    EffectLedgerDecision, EffectLedgerEffect, EffectLedgerError, EffectLedgerPlan,
+    EffectLedgerPortEffect, EffectLedgerState, EffectLedgerStatus, EffectPolicyRequest,
+    EffectPolicyResult, EffectReceipt, EffectReceiptOutcome, EffectReconcileCommand,
+    EffectReconcileRequest,
+};
 pub use error::{BoundaryError, HOST_ERROR_CODES};
+pub use lease::{
+    ActiveLease, CommittedLeaseFact, LeaseApplyMode, LeaseAuthority, LeaseCommand, LeaseDecision,
+    LeaseEffect, LeaseFenceError, LeasePlan, LeasePolicyRequest, LeasePolicyResult, LeaseRoute,
+    LeaseState, ServingLeaseFact, SingletonEffectAttempt, SingletonEffectDecision,
+};
 pub use membership::{
     AgentAddPolicy, ChannelMembershipRequest, ChannelVisibility, InviteCommand,
     InvitePolicyRequest, InviteState, MembershipAction, MembershipCommand, MembershipPolicyError,
@@ -64,7 +89,25 @@ pub use moderation::{
     ModerationResolutionAction, ModerationResolutionRequest, ModerationResolutionStatus,
     ModerationRestrictionCommand, ModerationRestrictionRequest,
 };
+pub use object::{
+    ObjectDescriptor, ObjectEffect, ObjectFetchAction, ObjectFetchMode, ObjectGcPlan,
+    ObjectGcRequest, ObjectKind, ObjectLocalFact, ObjectManifest, ObjectOriginFact,
+    ObjectPinDecision, ObjectPinRequest, ObjectPinState, ObjectPolicyError, ObjectPolicyRequest,
+    ObjectPolicyResult, ObjectSyncPlan, ObjectSyncRequest,
+};
+pub use projection::{
+    ProjectionBatchPlan, ProjectionBatchRequest, ProjectionBuildState, ProjectionBuildStatus,
+    ProjectionCanonicalRecord, ProjectionDecision, ProjectionEffect, ProjectionKind,
+    ProjectionLifecycleError, ProjectionPolicyRequest, ProjectionPolicyResult,
+    ProjectionPublishPlan, ProjectionRow, ProjectionStageRow, ProjectionStartRequest,
+};
 pub use runtime::{BoundaryClient, BoundaryConfig, BoundaryRuntime, CallContext};
+pub use sync::{
+    DigestFrame, InventoryFact, InventoryMergeDecision, InventoryMergeEffect, InventoryMergeError,
+    InventoryMergePair, RangeBatchFrame, RangeBatchPlan, RangeReadPlan, RangeRequestFrame,
+    SyncCancelFrame, SyncDecision, SyncEffect, SyncEnvelope, SyncPhase, SyncPolicyError,
+    SyncPolicyRequest, SyncPolicyResult, SyncRecord, SyncState,
+};
 pub use workflow::{
     WorkflowAction, WorkflowActionKind, WorkflowDefinition, WorkflowDirective, WorkflowPlanRequest,
     WorkflowPolicyError, WorkflowPolicyRequest, WorkflowPolicyResult, WorkflowPortEffect,

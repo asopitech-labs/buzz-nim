@@ -58,6 +58,12 @@ fn resumes_large_partial_and_installs_atomically() {
         .unwrap();
     assert!(installed.installed);
     reopened.verify(&expected, bytes.len() as u64).unwrap();
+    assert_eq!(
+        reopened
+            .read_chunk(&expected, bytes.len() as u64, 11, 37)
+            .unwrap(),
+        bytes[11..48]
+    );
     assert_eq!(reopened.read(&expected, bytes.len() as u64).unwrap(), bytes);
 }
 

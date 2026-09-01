@@ -11,7 +11,7 @@ pub fn kill_stale_tracked_processes(
     kill_stale_tracked_processes_with(
         records,
         runtimes,
-        |pid| process_has_buzz_marker(pid, instance_id),
+        |pid| process_has_nimino_marker(pid, instance_id),
         terminate_process,
     )
 }

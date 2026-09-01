@@ -7,7 +7,7 @@ mod cli_tests;
 
 #[test]
 fn appimage_binary_matches_truncated_linux_comm_name() {
-    assert!(super::is_desktop_binary("buzz-desktop.bi"));
+    assert!(super::is_desktop_binary("nimino-desktop.bi"));
 }
 
 // ── buffer_contains_identifier tests ────────────────────────────────────
@@ -74,36 +74,36 @@ fn identifier_empty_returns_false() {
 
 #[test]
 fn marker_entry_is_namespaced_by_instance_id() {
-    // The spawn stamp and sweep matcher both go through buzz_marker_entry, pinning the on-the-wire
+    // The spawn stamp and sweep matcher both go through nimino_marker_entry, pinning the on-the-wire
     // format and guards against a dev build (`...app.dev`) matching a
     // release build's (`...app`) agents.
     assert_eq!(
-        super::buzz_marker_entry("com.asopitech.nimino"),
+        super::nimino_marker_entry("com.asopitech.nimino"),
         b"NIMINO_MANAGED_AGENT=com.asopitech.nimino".to_vec()
     );
     assert_ne!(
-        super::buzz_marker_entry("com.asopitech.nimino"),
-        super::buzz_marker_entry("com.asopitech.nimino.dev")
+        super::nimino_marker_entry("com.asopitech.nimino"),
+        super::nimino_marker_entry("com.asopitech.nimino.dev")
     );
 }
 
 #[test]
-fn buzz_agent_has_mcp_hooks() {
-    let p = known_acp_runtime("buzz-agent").expect("should resolve");
+fn nimino_agent_has_mcp_hooks() {
+    let p = known_acp_runtime("nimino-agent").expect("should resolve");
     assert!(p.mcp_hooks);
-    assert_eq!(p.mcp_command, Some("buzz-dev-mcp"));
+    assert_eq!(p.mcp_command, Some("nimino-dev-mcp"));
 }
 
 #[test]
-fn buzz_agent_resolved_via_path() {
-    assert!(known_acp_runtime("/usr/local/bin/buzz-agent").is_some_and(|p| p.mcp_hooks));
+fn nimino_agent_resolved_via_path() {
+    assert!(known_acp_runtime("/usr/local/bin/nimino-agent").is_some_and(|p| p.mcp_hooks));
 }
 
 #[test]
 fn codex_has_mcp_command() {
     let p = known_acp_runtime("codex-acp").expect("should resolve");
     assert!(!p.mcp_hooks, "codex-acp does not handle MCP_HOOK_SERVERS");
-    assert_eq!(p.mcp_command, Some("buzz-dev-mcp"));
+    assert_eq!(p.mcp_command, Some("nimino-dev-mcp"));
 }
 
 #[test]
@@ -535,7 +535,7 @@ fn runtime_metadata_env_vars_skips_provider_when_locked() {
 
 #[test]
 fn runtime_metadata_env_vars_injects_model_even_with_acp_model_switching() {
-    // buzz-agent has supports_acp_model_switching=true but we still inject
+    // nimino-agent has supports_acp_model_switching=true but we still inject
     // the model env var because ACP model switching is post-bootstrap
     let vars = runtime_metadata_env_vars(
         Some("NIMINO_AGENT_MODEL"),
@@ -587,7 +587,7 @@ fn name_matches_interpreter_rejects_node_prefix() {
 
 #[test]
 fn codex_spawn_does_not_set_a_claude_executable() {
-    let mut command = std::process::Command::new("buzz-acp");
+    let mut command = std::process::Command::new("nimino-acp");
     super::configure_runtime_cli(&mut command, super::known_acp_runtime("codex-acp"));
     assert!(!command
         .get_envs()
@@ -667,7 +667,7 @@ fn grandchild_inherits_pgid_of_process_group_leader() {
     // Spawn a "harness" process in its own process group (mirrors
     // `command.process_group(0)` in the real spawn path). The harness
     // spawns an intermediate child which in turn spawns a grandchild.
-    // This mirrors the real tree: buzz-acp → goose → buzz-dev-mcp.
+    // This mirrors the real tree: nimino-acp → goose → nimino-dev-mcp.
     //
     // The intermediate `sh` backgrounds the grandchild and echoes its PID,
     // so the grandchild's ppid is the intermediate (not the harness).
@@ -1011,7 +1011,7 @@ fn invalid_pubkey_resolves_no_pair_key() {
 //
 // Previously: macOS used a two-check OR+AND pattern (equivalent to just marker),
 //             Linux used an AND-gate (name + marker) — wrong for custom harnesses.
-// Fix: all platforms gate on `process_has_buzz_marker` alone; the receipt path
+// Fix: all platforms gate on `process_has_nimino_marker` alone; the receipt path
 //      is verified below via `valid_agent_runtime_receipt_with` (injectable),
 //      which no longer takes a name-check predicate at all — reinstating an
 //      AND-gate would be a signature change these tests would catch.
@@ -1025,7 +1025,7 @@ fn invalid_pubkey_resolves_no_pair_key() {
 
 #[test]
 fn kill_stale_custom_harness_with_marker_is_terminated() {
-    // A record with a PID not in the live runtime map and with the Buzz marker
+    // A record with a PID not in the live runtime map and with the Nimino marker
     // should be terminated even though the binary name is not in KNOWN_AGENT_BINARIES.
     let mut record = minimal_record("pubkey-custom");
     record.runtime_pid = Some(9001);
@@ -1188,8 +1188,8 @@ fn minimal_record(pubkey: &str) -> crate::managed_agents::ManagedAgentRecord {
             "name": "test",
             "private_key_nsec": "nsec1fake",
             "relay_url": "",
-            "acp_command": "buzz-acp",
-            "agent_command": "buzz-agent",
+            "acp_command": "nimino-acp",
+            "agent_command": "nimino-agent",
             "agent_args": [],
             "mcp_command": "",
             "turn_timeout_seconds": 320,

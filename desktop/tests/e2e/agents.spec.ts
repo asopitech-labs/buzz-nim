@@ -1168,7 +1168,7 @@ test("custom personas share with people and keep export separate", async ({
   ).toBeVisible();
   await expect(exportDialog.getByText("portable snapshot")).toHaveCount(0);
   await expect(
-    exportDialog.getByRole("button", { name: "Send in Buzz" }),
+    exportDialog.getByRole("button", { name: "Send in Nimino" }),
   ).toHaveCount(0);
   await expect(exportDialog.getByLabel("Memories")).toHaveCount(0);
   await expect(
@@ -1224,7 +1224,7 @@ test("custom personas share with people and keep export separate", async ({
     )?.payload;
   });
   expect(copiedAgent?.text).toBe(sharedAgentUrl);
-  expect(copiedAgent?.html).toContain("data-buzz-agent-snapshot");
+  expect(copiedAgent?.html).toContain("data-nimino-agent-snapshot");
 
   await page.keyboard.press("Escape");
   await expect(shareDialog).toHaveCount(0);
@@ -1374,7 +1374,7 @@ test("custom personas share with people and keep export separate", async ({
     `persona-share-recipient-chip-${TEST_IDENTITIES.bob.pubkey}`,
   );
   await expect(bobChip).toBeVisible();
-  await expect(bobChip).not.toHaveClass(/buzz-poof-trigger/);
+  await expect(bobChip).not.toHaveClass(/nimino-poof-trigger/);
   await waitForAnimations(page);
   const bobChipBox = await bobChip.boundingBox();
   expect(bobChipBox).not.toBeNull();
@@ -1385,7 +1385,7 @@ test("custom personas share with people and keep export separate", async ({
   };
   await page.mouse.move(removePointer.x, removePointer.y);
   await page.mouse.down();
-  await expect(page.locator(".buzz-poof-burst")).toHaveCount(0);
+  await expect(page.locator(".nimino-poof-burst")).toHaveCount(0);
   await page.mouse.up();
   await expect(bobChip).toHaveCount(0);
 

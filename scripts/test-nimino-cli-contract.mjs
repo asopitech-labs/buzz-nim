@@ -10,8 +10,8 @@ const naming = JSON.parse(read("contracts/nimino-naming-v1.json"));
 const nimPolicy = read("nim/nimino_core/src/nimino_core/domain/cli_policy.nim");
 const nimWorker = read("nim/nimino_core/src/nimino_core_worker.nim");
 const rustBoundary = read("crates/nimino-boundary/src/contract.rs");
-const cargo = read("crates/buzz-cli/Cargo.toml");
-const cliSource = read("crates/buzz-cli/src/lib.rs");
+const cargo = read("crates/nimino-cli/Cargo.toml");
+const cliSource = read("crates/nimino-cli/src/lib.rs");
 
 function check(condition, message) {
   if (!condition) throw new Error(message);

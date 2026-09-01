@@ -26,8 +26,8 @@ test("parsePromptText returns the empty/Prompt fallback for whitespace-only inpu
 
 test("parsePromptText wraps header-less free text in a single Prompt section", () => {
   // Free text with no `[header]` becomes one "Prompt" section. Since no
-  // section is a "Buzz event", there is no event content to surface, so
-  // userText is empty and the title falls through to "Buzz event".
+  // section is a "Nimino event", there is no event content to surface, so
+  // userText is empty and the title falls through to "Nimino event".
   const result = parsePromptText("just some free text");
   assert.deepEqual(
     result.sections.map((s) => s.title),
@@ -35,7 +35,7 @@ test("parsePromptText wraps header-less free text in a single Prompt section", (
   );
   assert.equal(result.sections[0].body, "just some free text");
   assert.equal(result.userText, "");
-  assert.equal(result.userTitle, "Buzz event");
+  assert.equal(result.userTitle, "Nimino event");
   assert.equal(result.userPubkey, null);
   assert.equal(result.userEventId, null);
 });
@@ -45,7 +45,7 @@ test("parsePromptText extracts event id, content, hex pubkey, and a title-cased 
     "[System]",
     "system preamble here",
     "",
-    "[Buzz event: @mention]",
+    "[Nimino event: @mention]",
     `Event ID: ${HEX_UPPER}`,
     "Channel: demo",
     `From: Wes (hex: ${HEX})`,
@@ -63,13 +63,13 @@ test("parsePromptText extracts event id, content, hex pubkey, and a title-cased 
   // Both headers become sections.
   assert.deepEqual(
     result.sections.map((s) => s.title),
-    ["System", "Buzz event: @mention"],
+    ["System", "Nimino event: @mention"],
   );
 });
 
 test("parsePromptText preserves multiline event content in the user bubble text", () => {
   const text = [
-    "[Buzz event: @mention]",
+    "[Nimino event: @mention]",
     "Event ID: event-1",
     "Channel: agents",
     `From: tho (hex: ${HEX})`,
@@ -101,7 +101,7 @@ test("parsePromptText preserves multiline event content in the user bubble text"
 
 test("parsePromptText lowercases the extracted hex pubkey", () => {
   const text = [
-    "[Buzz event: dm]",
+    "[Nimino event: dm]",
     `From: Someone (hex: ${HEX_UPPER})`,
     "Content: hi",
   ].join("\n");
@@ -111,7 +111,7 @@ test("parsePromptText lowercases the extracted hex pubkey", () => {
 });
 
 test("parsePromptText yields a null pubkey when From has no hex", () => {
-  const text = ["[Buzz event: note]", "From: Someone", "Content: hi"].join(
+  const text = ["[Nimino event: note]", "From: Someone", "Content: hi"].join(
     "\n",
   );
 
@@ -121,10 +121,10 @@ test("parsePromptText yields a null pubkey when From has no hex", () => {
   assert.equal(result.userTitle, "Note");
 });
 
-test("parsePromptText defaults the title to 'Buzz event' when no kind is present", () => {
-  const text = ["[Buzz event]", "Content: x"].join("\n");
+test("parsePromptText defaults the title to 'Nimino event' when no kind is present", () => {
+  const text = ["[Nimino event]", "Content: x"].join("\n");
   const result = parsePromptText(text);
-  assert.equal(result.userTitle, "Buzz event");
+  assert.equal(result.userTitle, "Nimino event");
 });
 
 test("parsePromptText leading text before a header becomes a Prompt section", () => {
@@ -155,7 +155,7 @@ test("extractPromptText returns empty string when prompt is missing or not an ar
   assert.equal(extractPromptText({ params: { prompt: "nope" } }), "");
 });
 
-test("extractToolIdentity ignores Buzz tool names that only appear in file contents", () => {
+test("extractToolIdentity ignores Nimino tool names that only appear in file contents", () => {
   const identity = extractToolIdentity({
     sessionUpdate: "tool_call_update",
     toolCallId: "read-file-1",
@@ -173,11 +173,11 @@ test("extractToolIdentity ignores Buzz tool names that only appear in file conte
   assert.deepEqual(identity, {
     title: "read_file",
     toolName: "read_file",
-    buzzToolName: null,
+    niminoToolName: null,
   });
 });
 
-test("extractToolIdentity still recognizes explicit Buzz tool fields", () => {
+test("extractToolIdentity still recognizes explicit Nimino tool fields", () => {
   const identity = extractToolIdentity({
     sessionUpdate: "tool_call",
     title: "Tool call",
@@ -188,7 +188,7 @@ test("extractToolIdentity still recognizes explicit Buzz tool fields", () => {
   assert.deepEqual(identity, {
     title: "Tool call",
     toolName: "get_feed",
-    buzzToolName: "get_feed",
+    niminoToolName: "get_feed",
   });
 });
 
@@ -214,13 +214,13 @@ test("parseSystemPromptSections splits current Base and Agent Instructions frami
 
 test("parseSystemPromptSections preserves a Windows workspace path", () => {
   const framed =
-    "[Base]\nbase text\n\n[Workspace]\nCurrent working directory: C:\\Users\\me\\buzz\n\n[Agent Instructions]\npersona text";
+    "[Base]\nbase text\n\n[Workspace]\nCurrent working directory: C:\\Users\\me\\nimino\n\n[Agent Instructions]\npersona text";
   const sections = parseSystemPromptSections(framed);
   assert.deepEqual(sections, [
     { title: "Base", body: "base text" },
     {
       title: "Workspace",
-      body: "Current working directory: C:\\Users\\me\\buzz",
+      body: "Current working directory: C:\\Users\\me\\nimino",
     },
     { title: "Agent Instructions", body: "persona text" },
   ]);
@@ -418,7 +418,7 @@ test("parseSystemPromptSections pins the full Base+System+Core+Canvas harness sh
     "[Channel Canvas]",
     "Canvas revision (event ID): a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
     "Last modified: 2026-07-11T10:00:00Z",
-    "Fetch current content with: buzz canvas get --channel 94a444a4-c0a3-5966-ab05-530c6ddc2301",
+    "Fetch current content with: nimino canvas get --channel 94a444a4-c0a3-5966-ab05-530c6ddc2301",
   ].join("\n");
   const sections = parseSystemPromptSections(framed);
   assert.deepEqual(sections, [
@@ -427,7 +427,7 @@ test("parseSystemPromptSections pins the full Base+System+Core+Canvas harness sh
     { title: "Core Memory", body: "I am Duncan." },
     {
       title: "Channel Canvas",
-      body: "Canvas revision (event ID): a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2\nLast modified: 2026-07-11T10:00:00Z\nFetch current content with: buzz canvas get --channel 94a444a4-c0a3-5966-ab05-530c6ddc2301",
+      body: "Canvas revision (event ID): a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2\nLast modified: 2026-07-11T10:00:00Z\nFetch current content with: nimino canvas get --channel 94a444a4-c0a3-5966-ab05-530c6ddc2301",
     },
   ]);
 });
@@ -579,7 +579,7 @@ test("parseSystemPromptSections extracts Team Instructions with Core Memory and 
   // compose_prompt() produces the canonical delimiter; with_core() and with_canvas() append their frames.
   const framed = [
     "[Base]",
-    "You are a helpful AI assistant running in Buzz.",
+    "You are a helpful AI assistant running in Nimino.",
     "",
     "[System]",
     "You are Observer Agent. You coordinate multi-agent workflows.",
@@ -597,11 +597,14 @@ test("parseSystemPromptSections extracts Team Instructions with Core Memory and 
     "[Channel Canvas]",
     "Canvas revision (event ID): a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
     "Last modified: 2026-07-11T10:00:00Z",
-    "Fetch current content with: buzz canvas get --channel 94a444a4-c0a3-5966-ab05-530c6ddc2301",
+    "Fetch current content with: nimino canvas get --channel 94a444a4-c0a3-5966-ab05-530c6ddc2301",
   ].join("\n");
   const sections = parseSystemPromptSections(framed);
   assert.deepEqual(sections, [
-    { title: "Base", body: "You are a helpful AI assistant running in Buzz." },
+    {
+      title: "Base",
+      body: "You are a helpful AI assistant running in Nimino.",
+    },
     {
       title: "System",
       body: "You are Observer Agent. You coordinate multi-agent workflows.",
@@ -616,7 +619,7 @@ test("parseSystemPromptSections extracts Team Instructions with Core Memory and 
     },
     {
       title: "Channel Canvas",
-      body: "Canvas revision (event ID): a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2\nLast modified: 2026-07-11T10:00:00Z\nFetch current content with: buzz canvas get --channel 94a444a4-c0a3-5966-ab05-530c6ddc2301",
+      body: "Canvas revision (event ID): a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2\nLast modified: 2026-07-11T10:00:00Z\nFetch current content with: nimino canvas get --channel 94a444a4-c0a3-5966-ab05-530c6ddc2301",
     },
   ]);
 });
@@ -777,7 +780,7 @@ test("parseSystemPromptSections (modern) pins full 5-section shape: Base+System+
   // Production shape from with_team() + with_core() + with_canvas(): all five sections present.
   const framed = [
     "[Base]",
-    "You are a helpful AI assistant running in Buzz.",
+    "You are a helpful AI assistant running in Nimino.",
     "",
     "[System]",
     "You are Observer Agent. You coordinate multi-agent workflows.",
@@ -794,11 +797,14 @@ test("parseSystemPromptSections (modern) pins full 5-section shape: Base+System+
     "[Channel Canvas]",
     "Canvas revision (event ID): a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
     "Last modified: 2026-07-11T10:00:00Z",
-    "Fetch current content with: buzz canvas get --channel 94a444a4-c0a3-5966-ab05-530c6ddc2301",
+    "Fetch current content with: nimino canvas get --channel 94a444a4-c0a3-5966-ab05-530c6ddc2301",
   ].join("\n");
   const sections = parseSystemPromptSections(framed);
   assert.deepEqual(sections, [
-    { title: "Base", body: "You are a helpful AI assistant running in Buzz." },
+    {
+      title: "Base",
+      body: "You are a helpful AI assistant running in Nimino.",
+    },
     {
       title: "System",
       body: "You are Observer Agent. You coordinate multi-agent workflows.",
@@ -813,7 +819,7 @@ test("parseSystemPromptSections (modern) pins full 5-section shape: Base+System+
     },
     {
       title: "Channel Canvas",
-      body: "Canvas revision (event ID): a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2\nLast modified: 2026-07-11T10:00:00Z\nFetch current content with: buzz canvas get --channel 94a444a4-c0a3-5966-ab05-530c6ddc2301",
+      body: "Canvas revision (event ID): a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2\nLast modified: 2026-07-11T10:00:00Z\nFetch current content with: nimino canvas get --channel 94a444a4-c0a3-5966-ab05-530c6ddc2301",
     },
   ]);
 });

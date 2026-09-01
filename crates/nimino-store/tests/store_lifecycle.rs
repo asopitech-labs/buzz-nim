@@ -199,3 +199,34 @@ fn reopens_queries_changes_and_restores_a_verified_backup() {
         2
     );
 }
+
+#[test]
+fn projection_checkpoint_is_durable_and_compare_and_set() {
+    let path = TestPath::new("projection-checkpoint");
+    {
+        let store = RedbNodeStore::open(&path.0).unwrap();
+        assert_eq!(
+            store
+                .projection_checkpoint("community-a", "postgres-events")
+                .unwrap(),
+            0
+        );
+        store
+            .advance_projection_checkpoint("community-a", "postgres-events", 0, 7)
+            .unwrap();
+        assert!(matches!(
+            store.advance_projection_checkpoint("community-a", "postgres-events", 0, 8),
+            Err(StoreError::ProjectionCheckpointConflict {
+                expected: 0,
+                actual: 7
+            })
+        ));
+    }
+    let reopened = RedbNodeStore::open(&path.0).unwrap();
+    assert_eq!(
+        reopened
+            .projection_checkpoint("community-a", "postgres-events")
+            .unwrap(),
+        7
+    );
+}

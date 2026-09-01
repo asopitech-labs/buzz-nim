@@ -46,7 +46,7 @@ fn record(
         auth_tag: None,
         relay_url: "ws://localhost:3000".to_string(),
         avatar_url: None,
-        acp_command: "buzz-acp".to_string(),
+        acp_command: "nimino-acp".to_string(),
         agent_command: "goose".to_string(),
         agent_command_override: None,
         agent_args: vec![],
@@ -628,7 +628,7 @@ fn legacy_env_sniff_ignores_user_openai_on_same_local_port() {
     assert_eq!(
         resolve_effective_relay_mesh_model_id(&rec, &[], &global(None, None)),
         None,
-        "a real user key on the mesh port must not be mistaken for Buzz's preset"
+        "a real user key on the mesh port must not be mistaken for Nimino's preset"
     );
 }
 

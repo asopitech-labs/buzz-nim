@@ -77,7 +77,10 @@ impl NodeStorePort for RedbNodeStore {
             true,
             None,
         )?;
-        let intent_digest = digest(&intent)?;
+        // The checkpoint is a concurrency precondition, not intent content.
+        // Excluding it lets the same durable intent replay after its first
+        // commit advanced the checkpoint, while changed writes still conflict.
+        let intent_digest = digest(&(&intent.community_id, &intent.writes))?;
         let database = self.database()?;
         let mut transaction = database.begin_write().map_err(engine)?;
         transaction.set_quick_repair(true);
@@ -310,6 +313,80 @@ impl NodeStorePort for RedbNodeStore {
         Ok(records)
     }
 
+    fn canonical_page(
+        &self,
+        community_id: &str,
+        after: Option<(&str, &str)>,
+        limit: usize,
+    ) -> Result<Vec<StoredRecord>, StoreError> {
+        validate_component(community_id, "community id is required")?;
+        validate_limit(limit)?;
+        if let Some((record_type, key)) = after {
+            validate_component(record_type, "record type is required")?;
+            validate_component(key, "record key is required")?;
+        }
+        let database = self.database()?;
+        let transaction = database.begin_read().map_err(engine)?;
+        let table = transaction.open_table(CANONICAL).map_err(engine)?;
+        let prefix = component_prefix(community_id);
+        let end = prefix_end(&prefix);
+        let start = after
+            .map(|(record_type, key)| Bound::Excluded(record_key(community_id, record_type, key)))
+            .unwrap_or_else(|| Bound::Included(prefix));
+        let mut records = Vec::with_capacity(limit);
+        for entry in table
+            .range::<&[u8]>((bound_ref(&start), Bound::Excluded(end.as_slice())))
+            .map_err(engine)?
+            .take(limit)
+        {
+            let (_, value) = entry.map_err(engine)?;
+            records.push(serde_json::from_slice(value.value())?);
+        }
+        Ok(records)
+    }
+
+    fn projection_checkpoint(
+        &self,
+        community_id: &str,
+        projection: &str,
+    ) -> Result<u64, StoreError> {
+        validate_component(community_id, "community id is required")?;
+        validate_component(projection, "projection name is required")?;
+        let database = self.database()?;
+        read_meta(
+            &database,
+            &projection_checkpoint_key(community_id, projection),
+        )
+    }
+
+    fn advance_projection_checkpoint(
+        &self,
+        community_id: &str,
+        projection: &str,
+        expected_checkpoint: u64,
+        next_checkpoint: u64,
+    ) -> Result<(), StoreError> {
+        validate_component(community_id, "community id is required")?;
+        validate_component(projection, "projection name is required")?;
+        if next_checkpoint < expected_checkpoint {
+            return Err(StoreError::InvalidInput(
+                "projection checkpoint cannot regress",
+            ));
+        }
+        let database = self.database()?;
+        let transaction = database.begin_write().map_err(engine)?;
+        let key = projection_checkpoint_key(community_id, projection);
+        let actual = read_meta_tx(&transaction, &key)?;
+        if actual != expected_checkpoint {
+            return Err(StoreError::ProjectionCheckpointConflict {
+                expected: expected_checkpoint,
+                actual,
+            });
+        }
+        write_meta_tx(&transaction, &key, next_checkpoint)?;
+        transaction.commit().map_err(engine)
+    }
+
     fn backup_to(&self, destination: &Path) -> Result<(), StoreError> {
         let _database = self.database()?;
         copy_verified(&self.path, destination)
@@ -522,6 +599,10 @@ fn checkpoint_key(community_id: &str) -> String {
 
 fn log_sequence_key(community_id: &str) -> String {
     format!("log\0{community_id}")
+}
+
+fn projection_checkpoint_key(community_id: &str, projection: &str) -> String {
+    format!("projection\0{community_id}\0{projection}")
 }
 
 fn receipt_key(class: u8, community_id: &str, intent_id: &str) -> Vec<u8> {

@@ -1,7 +1,7 @@
 const PROJECT_SIDEBAR_MEMBERSHIP_PREFIX =
   "nimino.sidebar.projects.membership.v1";
 export const PROJECT_SIDEBAR_MEMBERSHIP_EVENT =
-  "buzz:project-sidebar-membership-change";
+  "nimino:project-sidebar-membership-change";
 
 /** Detail carried by {@link PROJECT_SIDEBAR_MEMBERSHIP_EVENT}: the computed
  * membership for one relay/pubkey scope. Listeners may consume this instead of

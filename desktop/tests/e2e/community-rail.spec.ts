@@ -29,8 +29,8 @@ async function expectContentSurfaceHorizontalGutters(
   expectedLeftGutter = 1,
 ) {
   const [mainInsetBox, contentBox] = await Promise.all([
-    page.locator("[data-buzz-glass-inset]").boundingBox(),
-    page.locator("[data-buzz-content-surface]").first().boundingBox(),
+    page.locator("[data-nimino-glass-inset]").boundingBox(),
+    page.locator("[data-nimino-content-surface]").first().boundingBox(),
   ]);
   expect(mainInsetBox).not.toBeNull();
   expect(contentBox).not.toBeNull();
@@ -493,9 +493,9 @@ test.describe("community rail", () => {
     });
     await expect(page.getByTestId("composer-timeout-banner")).toBeVisible();
     const chatHeader = page.getByTestId("chat-header");
-    await chatHeader.getByRole("button", { name: "Open Buzz Term" }).click();
+    await chatHeader.getByRole("button", { name: "Open Nimino Term" }).click();
     await expect(
-      chatHeader.getByRole("button", { name: "Hide Buzz Term" }),
+      chatHeader.getByRole("button", { name: "Hide Nimino Term" }),
     ).toBeVisible();
 
     await page.getByTestId(`community-rail-button-${COMMUNITY_B.id}`).click();
@@ -512,7 +512,7 @@ test.describe("community rail", () => {
     await expect(
       page
         .getByTestId("chat-header")
-        .getByRole("button", { name: "Open Buzz Term" }),
+        .getByRole("button", { name: "Open Nimino Term" }),
     ).toBeVisible();
   });
 
@@ -548,7 +548,7 @@ test.describe("community rail", () => {
 
     const input = page.getByTestId("message-input");
     const previewUrl =
-      "https://github.com/block/buzz/pull/5697?community=reset";
+      "https://github.com/asopitech-labs/nimino/pull/5697?community=reset";
     await input.fill("@SlowBot");
     await expect(page.getByTestId("mention-autocomplete")).toBeVisible();
     await input.press("Enter");
@@ -607,7 +607,9 @@ test.describe("community rail", () => {
     await page.getByTestId("channel-general").click();
 
     const input = page.getByTestId("message-input");
-    await input.fill("https://github.com/block/buzz/pull/5697?media=reset");
+    await input.fill(
+      "https://github.com/asopitech-labs/nimino/pull/5697?media=reset",
+    );
     await page.getByTestId("send-message").click();
     await expect
       .poll(() =>
@@ -666,7 +668,9 @@ test.describe("community rail", () => {
     await page.getByTestId("channel-general").click();
 
     const input = page.getByTestId("message-input");
-    await input.fill("https://github.com/block/buzz/pull/5697?native=reset");
+    await input.fill(
+      "https://github.com/asopitech-labs/nimino/pull/5697?native=reset",
+    );
     await page.getByTestId("send-message").click();
     await expect
       .poll(() =>
@@ -1299,7 +1303,7 @@ test.describe("community rail", () => {
 
   test("hides the rail with a single community", async ({ page }) => {
     await page.addInitScript((themeStorageKey) => {
-      window.localStorage.setItem(themeStorageKey, "buzz-dark");
+      window.localStorage.setItem(themeStorageKey, "nimino-dark");
     }, THEME_STORAGE_KEY);
     await installMockBridge(page, undefined, { skipCommunitySeed: true });
     await seedCommunities(page, [COMMUNITY_A], COMMUNITY_A.id);
@@ -1321,7 +1325,7 @@ test.describe("community rail", () => {
       "8px",
     );
     const sidebarBackground = await page
-      .locator("[data-buzz-glass-inset]")
+      .locator("[data-nimino-glass-inset]")
       .evaluate((element) => getComputedStyle(element).backgroundColor);
     await expect(page.locator("[data-collapsed-content-gutter]")).toHaveCSS(
       "background-color",
@@ -1385,10 +1389,10 @@ test.describe("community rail", () => {
     const railBox = await page.getByTestId("community-rail").boundingBox();
     const searchBox = await page.getByTestId("open-search").boundingBox();
     const appSurfaceBox = await page
-      .locator(".buzz-huddle-app-surface")
+      .locator(".nimino-huddle-app-surface")
       .boundingBox();
     const contentBox = await page
-      .locator("[data-buzz-content-surface]")
+      .locator("[data-nimino-content-surface]")
       .first()
       .boundingBox();
     expect(buttonBox).not.toBeNull();

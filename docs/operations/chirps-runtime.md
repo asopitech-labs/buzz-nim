@@ -24,7 +24,8 @@ confirmed clean stop must await `stop`.
 
 - Command queues default to 64 entries; inbound subscription queues default to
   256. Both accept `1..=4096`.
-- Messages are capped at 1 MiB before they enter Chirps.
+- Messages are capped at 63 KiB before they enter Chirps, leaving encoding
+  headroom under the transport's 64 KiB frame ceiling.
 - `Backpressure` means the command queue was full; retry with bounded jitter or
   reject work upstream.
 - `SubscriberLagged` means a consumer lost overwritten messages; resynchronize

@@ -54,9 +54,9 @@ fn build_audio_auth_event(
     if let Some(auth_tag_json) = auth_tag_json {
         let compat_pubkey = nostr::PublicKey::from_hex(&keys.public_key().to_hex())
             .map_err(|e| format!("agent pubkey conversion failed: {e}"))?;
-        buzz_sdk_pkg::nip_oa::verify_auth_tag(auth_tag_json, &compat_pubkey)
+        nimino_sdk_pkg::nip_oa::verify_auth_tag(auth_tag_json, &compat_pubkey)
             .map_err(|e| format!("agent auth tag verification failed: {e}"))?;
-        let compat_tag = buzz_sdk_pkg::nip_oa::parse_auth_tag(auth_tag_json)
+        let compat_tag = nimino_sdk_pkg::nip_oa::parse_auth_tag(auth_tag_json)
             .map_err(|e| format!("agent auth tag parse failed: {e}"))?;
         tags.push(
             nostr::Tag::parse(compat_tag.as_slice())

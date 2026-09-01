@@ -7,7 +7,8 @@
   "owner": "nimino-core",
   "module": "nim/nimino_core/src/nimino_core/domain/object_sync_policy.nim",
   "byteAdapter": "crates/nimino-object-store",
-  "syncContract": "nimino.sync/v1",
+  "runtime": "crates/nimino-object-store/src/replication.rs",
+  "syncContract": "nimino.sync/v2",
   "convergenceContract": "nimino.convergence/v1",
   "objectKinds": ["media", "git-pack", "git-manifest"],
   "manifest": {
@@ -29,6 +30,13 @@
     "install": "fsync-then-atomic-no-clobber",
     "overwrite": false
   },
+  "transport": {
+    "provider": "alopex-chirps",
+    "wireVersion": 1,
+    "maxFrameBytes": 64512,
+    "chunkBytes": 61440,
+    "authenticatedOrigin": true
+  },
   "gc": {
     "maxDeletesPerPlan": 1000,
     "requiresCrossCommunityReferenceSnapshot": true,
@@ -36,6 +44,14 @@
   },
   "canonicalRecordTypes": ["object_manifest", "object_pin", "object_gc_watermark"],
   "repairOwner": 59,
+  "verification": [
+    "large-object",
+    "partial-rejoin",
+    "checksum-rejection",
+    "missing-origin",
+    "lazy-pin",
+    "gc-pin-retention"
+  ],
   "repairContract": "nimino.data-ops/v1",
   "legacyRemovalOwner": 12
 }

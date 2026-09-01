@@ -54,7 +54,7 @@
   "runtimeMessaging": {
     "transportOnly": true,
     "peerViewIsAuthority": false,
-    "maxMessageBytes": 1048576,
+    "maxMessageBytes": 64512,
     "maxQueueCapacity": 4096,
     "shutdownIsolation": "dedicated-tokio-runtime-thread",
     "identityFacts": ["node_id", "incarnation"],

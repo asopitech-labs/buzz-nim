@@ -6,9 +6,11 @@
   "publicationState": "cutover-ready",
   "owner": "nimino-core",
   "module": "nim/nimino_core/src/nimino_core/domain/control_state_machine.nim",
+  "runtimeAdapter": "crates/nimino-control/src/lib.rs",
+  "realMeshScenario": "crates/nimino-control/tests/three_node.rs",
   "formalModel": "nimino.control-log/v1",
   "phases": ["stable-old", "joint", "stable-new"],
-  "operations": ["elect", "append", "commit", "apply", "snapshot", "recover"],
+  "operations": ["vote", "elect", "append", "replicate", "commit", "quorum", "apply", "snapshot", "recover"],
   "authority": {
     "stable": "majority-of-active-voters",
     "joint": "majority-of-old-and-majority-of-new",

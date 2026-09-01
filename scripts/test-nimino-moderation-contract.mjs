@@ -20,6 +20,22 @@ const nimWorker = readFileSync(
   "nim/nimino_core/src/nimino_core_worker.nim",
   "utf8",
 );
+const ingest = readFileSync(
+  "crates/nimino-relay/src/handlers/ingest.rs",
+  "utf8",
+);
+const auth = readFileSync(
+  "crates/nimino-relay/src/handlers/auth.rs",
+  "utf8",
+);
+const commands = readFileSync(
+  "crates/nimino-relay/src/handlers/moderation_commands.rs",
+  "utf8",
+);
+const report = readFileSync(
+  "crates/nimino-relay/src/handlers/report.rs",
+  "utf8",
+);
 
 function check(condition, message) {
   if (!condition) throw new Error(message);
@@ -29,6 +45,15 @@ check(contract.schemaVersion === 1, "wrong moderation contract version");
 check(
   contract.contract === "nimino.moderation-policy",
   "wrong moderation contract",
+);
+check(
+  ingest.includes("BoundaryRequest::moderation_policy") &&
+    ingest.includes("ModerationEnforcementOperation::Write") &&
+    auth.includes("ModerationEnforcementOperation::Authenticate") &&
+    commands.includes("ModerationPolicyRequest::Restriction") &&
+    commands.includes("ModerationPolicyRequest::Resolution") &&
+    report.includes("ModerationPolicyRequest::Report"),
+  "production moderation report/restriction/resolution/enforcement paths do not all call Nim",
 );
 check(
   contract.compatibilityMode === false,
@@ -103,6 +128,15 @@ for (const entry of contract.rustPolicySitesToShrink) {
       `${entry.path}: missing ${symbol}`,
     );
   }
+}
+for (const symbol of contract.deletedRustSymbols) {
+  check(
+    !ingest.includes(symbol) &&
+      !auth.includes(symbol) &&
+      !commands.includes(symbol) &&
+      !report.includes(symbol),
+    `deleted Rust moderation policy returned: ${symbol}`,
+  );
 }
 
 console.log(

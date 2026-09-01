@@ -16,10 +16,10 @@ const mandatoryReferences = new Set([
   "bin/.flutter-3.41.7.pkg",
   "bin/dart",
   "bin/flutter",
-  "crates/buzz-media/src/validation.rs",
+  "crates/nimino-media/src/validation.rs",
 ]);
-const mobileReference = /mobile\/|mobile-v|mobilepairing|mobile-pairing|mobile app|mobile device|flutter|nip-ab|kind_pairing|pairing_relay|pairingrelay|start_pairing|start_identity_recovery_pairing|identityrecoverypairing|nostrpair|buzz-push-gateway|buzz_push_|\bapns\b|nip-pl|push_gateway|kind_push_lease|push_leases|push_wake_outbox|push_match_queue|events_enqueue_push_match|enqueue_push_match_job|\b30350\b/iu;
-const retiredPushToken = /\bKIND_PUSH_LEASE\b|\bpush_leases\b|\bpush_wake_outbox\b|\bpush_match_queue\b|\bevents_enqueue_push_match\b|\benqueue_push_match_job\b|\b30350\b|\b(?:BUZZ|NIMINO)_PUSH_[A-Z0-9_]+\b|\bbuzz-push-gateway\b|\bNIP-PL\b|\bAPNs\b/giu;
+const mobileReference = /mobile\/|mobile-v|mobilepairing|mobile-pairing|mobile app|mobile device|flutter|nip-ab|kind_pairing|pairing_relay|pairingrelay|start_pairing|start_identity_recovery_pairing|identityrecoverypairing|nostrpair|(?:buzz|nimino)-push-gateway|(?:buzz|nimino)_push_|\bapns\b|nip-pl|push_gateway|kind_push_lease|push_leases|push_wake_outbox|push_match_queue|events_enqueue_push_match|enqueue_push_match_job|\b30350\b/iu;
+const retiredPushToken = /\bKIND_PUSH_LEASE\b|\bpush_leases\b|\bpush_wake_outbox\b|\bpush_match_queue\b|\bevents_enqueue_push_match\b|\benqueue_push_match_job\b|\b30350\b|\b(?:BUZZ|NIMINO)_PUSH_[A-Z0-9_]+\b|\b(?:buzz|nimino)-push-gateway\b|\bNIP-PL\b|\bAPNs\b/giu;
 const requiredSurfaceIds = new Set([
   "mobile.root-metadata",
   "mobile.dart-product",
@@ -108,7 +108,7 @@ function validateEvidenceAbsent(evidence, context) {
 
 check(existsSync(contractPath), "missing contracts/mobile-removal-v1.json");
 const contract = JSON.parse(readFileSync(contractPath, "utf8"));
-const files = trackedFiles();
+const files = trackedFiles().filter((path) => existsSync(join(root, path)));
 
 check(contract.schemaVersion === 1, "schemaVersion must be 1");
 check(contract.contractVersion === "mobile-removal-v1", "wrong contractVersion");

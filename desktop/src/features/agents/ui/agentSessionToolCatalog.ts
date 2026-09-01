@@ -11,7 +11,7 @@ import {
   XCircle,
 } from "lucide-react";
 
-import type { BuzzToolInfo, ToolStatus } from "./agentSessionTypes";
+import type { NiminoToolInfo, ToolStatus } from "./agentSessionTypes";
 
 export function normalizeToolStatus(status: string): ToolStatus {
   const normalized = status.toLowerCase();
@@ -139,7 +139,7 @@ const NIMINO_TOOL_TITLE_ALIASES: Array<[RegExp, string]> = [
   [/\bremoving reaction\b/, "remove_reaction"],
 ];
 
-export function getBuzzToolInfo(title: string): BuzzToolInfo | null {
+export function getNiminoToolInfo(title: string): NiminoToolInfo | null {
   const name = normalizeToolName(title);
   const isRead = NIMINO_READ_TOOLS.has(name);
   const isWrite = NIMINO_WRITE_TOOLS.has(name);
@@ -151,8 +151,8 @@ export function getBuzzToolInfo(title: string): BuzzToolInfo | null {
     return {
       icon: Workflow,
       label: isRead
-        ? "Reads workflow state from Buzz."
-        : "Updates workflow state in Buzz.",
+        ? "Reads workflow state from Nimino."
+        : "Updates workflow state in Nimino.",
       tone: isWrite ? "write" : "read",
     };
   }
@@ -164,8 +164,8 @@ export function getBuzzToolInfo(title: string): BuzzToolInfo | null {
     return {
       icon: Hash,
       label: isRead
-        ? "Reads channel context from the Buzz relay."
-        : "Changes channel state in the Buzz relay.",
+        ? "Reads channel context from the Nimino relay."
+        : "Changes channel state in the Nimino relay.",
       tone: isWrite ? "write" : "read",
     };
   }
@@ -177,15 +177,15 @@ export function getBuzzToolInfo(title: string): BuzzToolInfo | null {
     return {
       icon: Users,
       label: isRead
-        ? "Reads Buzz identity or presence data."
-        : "Updates Buzz identity or membership data.",
+        ? "Reads Nimino identity or presence data."
+        : "Updates Nimino identity or membership data.",
       tone: isWrite ? "write" : "admin",
     };
   }
   if (name.includes("search") || name === "get_feed") {
     return {
       icon: Search,
-      label: "Searches relay-visible Buzz history.",
+      label: "Searches relay-visible Nimino history.",
       tone: "read",
     };
   }
@@ -196,23 +196,23 @@ export function getBuzzToolInfo(title: string): BuzzToolInfo | null {
   ) {
     return {
       icon: Send,
-      label: "Publishes relay-visible Buzz activity.",
+      label: "Publishes relay-visible Nimino activity.",
       tone: "write",
     };
   }
 
   return {
     icon: MessageSquare,
-    label: isRead ? "Reads from Buzz." : "Writes to Buzz.",
+    label: isRead ? "Reads from Nimino." : "Writes to Nimino.",
     tone: isWrite ? "write" : "read",
   };
 }
 
 export function normalizeToolName(title: string): string {
-  const knownName = findBuzzToolName(title, true);
+  const knownName = findNiminoToolName(title, true);
   if (knownName) return knownName;
 
-  const normalized = normalizeToolNameText(title).replace(/^buzz_/, "");
+  const normalized = normalizeToolNameText(title).replace(/^nimino_/, "");
   return normalized.match(/[a-z][a-z0-9_]+/)?.[0] ?? normalized;
 }
 
@@ -225,8 +225,8 @@ export function normalizeToolNameText(value: string): string {
     .replace(/^_+|_+$/g, "");
 }
 
-export function findBuzzToolName(value: string, includeShortNames: boolean) {
-  const alias = findBuzzToolAlias(value);
+export function findNiminoToolName(value: string, includeShortNames: boolean) {
+  const alias = findNiminoToolAlias(value);
   if (alias) return alias;
 
   const normalized = normalizeToolNameText(value);
@@ -238,7 +238,7 @@ export function findBuzzToolName(value: string, includeShortNames: boolean) {
   );
 }
 
-function findBuzzToolAlias(value: string) {
+function findNiminoToolAlias(value: string) {
   const normalizedPhrase = value
     .trim()
     .toLowerCase()

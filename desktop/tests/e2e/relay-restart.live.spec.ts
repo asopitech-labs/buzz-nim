@@ -8,7 +8,7 @@ import { TwoRelayHarness, type RelaySpec } from "./helpers/twoRelayHarness";
 
 const exec = promisify(execFile);
 
-// Live gate: boots a REAL buzz-relay process, points the app at it, SIGTERMs
+// Live gate: boots a REAL nimino-relay process, points the app at it, SIGTERMs
 // the relay mid-session, restarts it on the same port, and asserts the client
 // converges back to "connected". This proves the full restart story end to
 // end: the relay's graceful-drain 1012 close broadcast (server side) and the
@@ -16,7 +16,7 @@ const exec = promisify(execFile);
 // halves that synthetic mock-websocket specs cannot compose.
 //
 // Requires: NIMINO_E2E_RELAY_RESTART=1, NIMINO_E2E_RELAY_BIN, and
-// NIMINO_E2E_DATABASE_URL (plus reachable Redis and media object store, same
+// NIMINO_E2E_DATABASE_URL (plus reachable media object store, same
 // infra as the agents-everywhere live gate).
 const enabled = process.env.NIMINO_E2E_RELAY_RESTART === "1";
 
@@ -150,8 +150,6 @@ test.describe("relay restart live gate", () => {
         "NIMINO_E2E_DATABASE_URL",
         process.env.NIMINO_E2E_DATABASE_URL,
       ),
-      redisUrl:
-        process.env.NIMINO_E2E_REDIS_RESTART ?? "redis://127.0.0.1:6379/13",
     };
     const harness = await TwoRelayHarness.create([spec]);
     try {

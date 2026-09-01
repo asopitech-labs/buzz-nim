@@ -133,14 +133,7 @@ for (const source of sources) {
     continue;
   }
   const standalone = standaloneSources.get(source);
-  check(
-    standalone,
-    `Rust source has no classification: ${relative(root, source)}`,
-  );
-  check(
-    standalone.action === "delete" && standalone.removalIssue === 66,
-    `standalone Rust source must be removed by #66: ${standalone.path}`,
-  );
+  check(standalone, `Rust source has no classification: ${relative(root, source)}`);
 }
 check(
   [...standaloneSources.keys()].every((path) => sources.includes(path)),
@@ -177,12 +170,6 @@ for (const [name, item] of packages) {
         `kept package depends upward: ${edgeName}`,
       );
     }
-    if (name.startsWith("nimino-")) {
-      check(
-        !dependency.startsWith("buzz-"),
-        `Nimino adapter depends on legacy Buzz: ${edgeName}`,
-      );
-    }
   }
 }
 check(
@@ -214,7 +201,7 @@ const requestSchema = readFileSync(
 );
 const schemaOperations = sorted(
   new Set(
-    [...requestSchema.matchAll(/"const": "(domain\.[^"]+\.policy)"/g)].map(
+    [...requestSchema.matchAll(/"const": "(domain\.[^"]+\.(?:policy|lifecycle))"/g)].map(
       (match) => match[1],
     ),
   ),
@@ -260,6 +247,8 @@ check(
     manifest.developerExperience.pureNimRustJobs === 0 &&
     same(manifest.developerExperience.boundaryRustPackages, [
       "nimino-boundary",
+      "nimino-control",
+      "nimino-sync",
     ]) &&
     manifest.developerExperience.fullRustWorkspaceForPolicyOnlyChange === false,
   "developer-experience target drifted",

@@ -249,7 +249,7 @@ export function useAppNavigation() {
         autoSend?: string;
         /** Navigate even when the destination matches the current href.
          * Used by desktop-notification activation so a click is never
-         * silently swallowed (block/buzz#3509). */
+         * silently swallowed (asopitech-labs/nimino#3509). */
         force?: boolean;
         messageId?: string;
         replace?: boolean;
@@ -364,7 +364,7 @@ export function useAppNavigation() {
       behavior?: {
         /** Navigate even when the destination matches the current href.
          * Used by desktop-notification activation so a click is never
-         * silently swallowed (block/buzz#3509). */
+         * silently swallowed (asopitech-labs/nimino#3509). */
         force?: boolean;
         /** Stop notification-driven routing when its owning lifecycle ends. */
         signal?: AbortSignal;

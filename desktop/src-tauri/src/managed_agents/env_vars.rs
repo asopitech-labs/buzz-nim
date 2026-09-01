@@ -5,7 +5,7 @@
 //! Precedence: desktop parent env < persona env < agent env (last wins on
 //! key collision). See `runtime::spawn_agent_child`.
 //!
-//! A small set of *reserved* keys includes Buzz's identity, secrets, security
+//! A small set of *reserved* keys includes Nimino's identity, secrets, security
 //! gates, and control-plane values. Save-time validation rejects those keys.
 //! Runtime filtering strips old persisted overrides. Behavior knobs
 //! (GOOSE_MODE, NIMINO_ACP_MODEL, NIMINO_ACP_SYSTEM_PROMPT, …) remain freely

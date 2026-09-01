@@ -251,7 +251,7 @@ test("automatically shows community join requirements near the community URL", a
 
   const ageConfirmation = page.getByLabel("I am 18 years of age or older.");
   const agreementConfirmation = page.getByLabel(
-    "I agree to the Buzz Terms of Service and Privacy Policy.",
+    "I agree to the Nimino Terms of Service and Privacy Policy.",
   );
   await expect(ageConfirmation).toBeVisible();
   await expect(agreementConfirmation).toBeVisible();
@@ -426,7 +426,7 @@ test("channel owner can delete from the context menu", async ({ page }) => {
   await expect(page.getByTestId("stream-list")).not.toContainText("general");
 });
 
-for (const theme of ["buzz", "github-light", "catppuccin-mocha"]) {
+for (const theme of ["nimino", "github-light", "catppuccin-mocha"]) {
   test(`uses the continuous sidebar surface in ${theme}`, async ({ page }) => {
     await loadTheme(page, theme);
 
@@ -504,7 +504,7 @@ for (const theme of ["buzz", "github-light", "catppuccin-mocha"]) {
   });
 }
 
-test("aligns the sidebar search with the channel title outside the Buzz theme", async ({
+test("aligns the sidebar search with the channel title outside the Nimino theme", async ({
   page,
 }) => {
   await loadTheme(page, "github-light");
@@ -513,7 +513,7 @@ test("aligns the sidebar search with the channel title outside the Buzz theme", 
   const root = page.locator("html");
   const search = page.getByTestId("open-search");
   const channelTitle = page.getByTestId("chat-title");
-  await expect(root).not.toHaveAttribute("data-buzz-sidebar", "");
+  await expect(root).not.toHaveAttribute("data-nimino-sidebar", "");
   await expect(search).toBeVisible();
   await expect(channelTitle).toHaveText("general");
 
@@ -538,7 +538,7 @@ test("keeps only search pinned while primary navigation scrolls", async ({
 
   const search = page.getByTestId("open-search");
   const primaryMenu = page.getByTestId("sidebar-primary-menu");
-  const sidebarScroller = page.locator(".buzz-sidebar-scrollbar");
+  const sidebarScroller = page.locator(".nimino-sidebar-scrollbar");
   const [initialSearchBox, initialMenuBox] = await Promise.all([
     search.boundingBox(),
     primaryMenu.boundingBox(),

@@ -40,6 +40,13 @@
     "atomic": true,
     "idempotent": true
   },
+  "runtime": {
+    "boundaryOperation": "domain.projection.policy",
+    "adapter": "nimino-data-ops.rebuild_projections",
+    "command": "nimino-data-ops projection-rebuild",
+    "scenario": "nimino-projection-scenarios",
+    "verification": "partial-resume-drop-rebuild-query-equivalence"
+  },
   "repairOwner": 59,
   "repairContract": "nimino.data-ops/v1",
   "legacyRemovalOwner": 12

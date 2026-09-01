@@ -11,7 +11,7 @@ import { TEST_IDENTITIES } from "./bridge";
 // Publishes REAL signed Nostr events through the relay ingest path
 // (`POST /events`), never raw SQL. This is the load-bearing fidelity choice:
 // `thread_metadata` (depth, root, reply counts) is computed AT INGEST
-// (buzz-relay/src/handlers/ingest.rs). Eva's channel-window surface reads that
+// (nimino-relay/src/handlers/ingest.rs). Eva's channel-window surface reads that
 // metadata; a raw-SQL bulk load would bypass computation and hand the window
 // surface empty/wrong summaries — a false green. See
 // PLANS/GUI_OVERHAUL_TEST_HARNESS_DAWN.md.
@@ -25,7 +25,7 @@ import { TEST_IDENTITIES } from "./bridge";
 // (setup-desktop-test-data.sh seeds tyler/alice/bob/charlie into `general`),
 // which `enforce_relay_membership` requires.
 //
-// Canonical tag shapes (crates/buzz-sdk/src/builders.rs thread_tags + ingest):
+// Canonical tag shapes (crates/nimino-sdk/src/builders.rs thread_tags + ingest):
 //   top-level : ["h", channelId]                       — no e-tag → depth NULL
 //   direct    : ["e", parentId, "", "reply"]           — reply alone; root=parent
 //   nested    : ["e", rootId, "", "root"],

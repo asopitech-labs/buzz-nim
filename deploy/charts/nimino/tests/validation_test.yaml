@@ -29,16 +29,6 @@ tests:
       - failedTemplate:
           errorPattern: "ownerPubkey: Does not match pattern"
 
-  - it: fails when replicaCount>1 without Redis
-    set:
-      relayUrl: wss://nimino.example.com
-      ownerPubkey: "0000000000000000000000000000000000000000000000000000000000000000"
-      externalPostgresql.url: postgres://u:p@h:5432/d
-      replicaCount: 3
-    asserts:
-      - failedTemplate:
-          errorPattern: "minimum replica count 3 requires Redis"
-
   - it: fails when ingress and httproute both enabled
     set:
       relayUrl: wss://nimino.example.com

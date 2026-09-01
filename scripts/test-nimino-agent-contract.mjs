@@ -8,7 +8,7 @@ const corpus = JSON.parse(read("contracts/nimino-agent/v1/golden.json"));
 const nimPolicy = read("nim/nimino_core/src/nimino_core/domain/agent_policy.nim");
 const nimWorker = read("nim/nimino_core/src/nimino_core_worker.nim");
 const rustBoundary = read("crates/nimino-boundary/src/contract.rs");
-const acpAdapter = read("crates/buzz-acp/src/acp.rs");
+const acpAdapter = read("crates/nimino-acp/src/acp.rs");
 
 function check(condition, message) {
   if (!condition) throw new Error(message);

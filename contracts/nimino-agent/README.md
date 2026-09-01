@@ -16,4 +16,4 @@ and stale attempt or turn identifiers are rejected. #66 removes the registered
 Rust policy sites and #12 performs the incompatible public cutover.
 
 Run `just nimino-agent-contract`, `just nim-ci`, `just nim-boundary-test`, and
-`cargo test -p buzz-acp -p buzz-agent -p buzz-persona`.
+`cargo test -p nimino-acp -p nimino-agent -p nimino-persona`.

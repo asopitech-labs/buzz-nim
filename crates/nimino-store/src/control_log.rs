@@ -8,10 +8,10 @@ use crate::{
 };
 
 const CONTROL_METADATA: TableDefinition<&str, &[u8]> =
-    TableDefinition::new("nimino_control_metadata_v1");
-const CONTROL_LOG: TableDefinition<u64, &[u8]> = TableDefinition::new("nimino_control_log_v1");
+    TableDefinition::new("nimino_control_metadata_v2");
+const CONTROL_LOG: TableDefinition<u64, &[u8]> = TableDefinition::new("nimino_control_log_v2");
 const CONTROL_SNAPSHOT: TableDefinition<&str, &[u8]> =
-    TableDefinition::new("nimino_control_snapshot_v1");
+    TableDefinition::new("nimino_control_snapshot_v2");
 const STATE_KEY: &str = "state";
 const SNAPSHOT_KEY: &str = "latest";
 
@@ -29,8 +29,12 @@ pub struct ControlLogEntry {
     pub voter_epoch: u64,
     /// Versioned entry kind interpreted by the Nim state machine.
     pub kind: String,
+    /// Stable idempotency identity interpreted by Nim.
+    pub command_id: String,
     /// Opaque encoded state-machine command.
     pub payload: Vec<u8>,
+    /// Replacement voter set for a membership transition.
+    pub target_voters: Vec<String>,
 }
 
 /// Atomically persisted election and replay watermarks.
@@ -66,6 +70,10 @@ pub struct ControlSnapshot {
     pub voter_epoch: u64,
     /// Voter phase after applying the included prefix.
     pub voter_phase: String,
+    /// Old/stable voters at the included index.
+    pub old_voters: Vec<String>,
+    /// Joint/new voters at the included index.
+    pub new_voters: Vec<String>,
     /// Opaque snapshot bytes interpreted only by the Nim state machine.
     pub state: Vec<u8>,
 }
@@ -101,7 +109,11 @@ pub trait ControlLogStorePort: Send + Sync {
     ) -> Result<u64, StoreError>;
 
     /// Atomically installs a snapshot and compacts its covered prefix.
-    fn install_control_snapshot(&self, snapshot: ControlSnapshot) -> Result<bool, StoreError>;
+    fn install_control_snapshot(
+        &self,
+        expected_metadata_revision: u64,
+        snapshot: ControlSnapshot,
+    ) -> Result<bool, StoreError>;
 }
 
 impl ControlLogStorePort for RedbNodeStore {
@@ -221,11 +233,22 @@ impl ControlLogStorePort for RedbNodeStore {
         Ok(last)
     }
 
-    fn install_control_snapshot(&self, snapshot: ControlSnapshot) -> Result<bool, StoreError> {
+    fn install_control_snapshot(
+        &self,
+        expected_metadata_revision: u64,
+        snapshot: ControlSnapshot,
+    ) -> Result<bool, StoreError> {
         validate_snapshot(&snapshot)?;
         let database = self.database()?;
         let mut transaction = database.begin_write().map_err(engine)?;
         transaction.set_quick_repair(true);
+        let persisted_metadata = read_metadata_write(&transaction)?;
+        if persisted_metadata.revision != expected_metadata_revision {
+            return Err(StoreError::ControlMetadataConflict {
+                expected: expected_metadata_revision,
+                actual: persisted_metadata.revision,
+            });
+        }
         let current = read_snapshot_write(&transaction)?;
         if let Some(current) = current.as_ref() {
             if snapshot.last_included_index < current.last_included_index {
@@ -269,7 +292,7 @@ impl ControlLogStorePort for RedbNodeStore {
             .insert(SNAPSHOT_KEY, serde_json::to_vec(&snapshot)?.as_slice())
             .map_err(engine)?;
 
-        let mut metadata = read_metadata_write(&transaction)?;
+        let mut metadata = persisted_metadata;
         metadata.revision = metadata
             .revision
             .checked_add(1)
@@ -384,6 +407,10 @@ fn validate_entries(previous_index: u64, entries: &[ControlLogEntry]) -> Result<
             });
         }
         validate_identifier(&entry.kind, "control entry kind is required")?;
+        validate_identifier(&entry.command_id, "control command id is required")?;
+        for voter in &entry.target_voters {
+            validate_identifier(voter, "control target voter is required")?;
+        }
         if entry.payload.len() > MAX_RECORD_BYTES {
             return Err(StoreError::InvalidInput(
                 "control entry size limit exceeded",
@@ -436,6 +463,14 @@ fn validate_snapshot(snapshot: &ControlSnapshot) -> Result<(), StoreError> {
         &snapshot.voter_phase,
         "control snapshot voter phase is required",
     )?;
+    if snapshot.old_voters.is_empty() {
+        return Err(StoreError::InvalidInput(
+            "control snapshot old voters are required",
+        ));
+    }
+    for voter in snapshot.old_voters.iter().chain(&snapshot.new_voters) {
+        validate_identifier(voter, "control snapshot voter is required")?;
+    }
     if snapshot.state.len() > MAX_CONTROL_SNAPSHOT_BYTES {
         return Err(StoreError::InvalidInput(
             "control snapshot size limit exceeded",
@@ -479,6 +514,13 @@ fn validate_recovery(
         }
         validate_identifier(&entry.kind, "control entry kind is required")
             .map_err(|_| StoreError::CorruptControlState("control log entry kind is invalid"))?;
+        validate_identifier(&entry.command_id, "control command id is required")
+            .map_err(|_| StoreError::CorruptControlState("control log command id is invalid"))?;
+        for voter in &entry.target_voters {
+            validate_identifier(voter, "control target voter is required").map_err(|_| {
+                StoreError::CorruptControlState("control log target voter is invalid")
+            })?;
+        }
         if entry.payload.len() > MAX_RECORD_BYTES {
             return Err(StoreError::CorruptControlState(
                 "control log entry exceeds the size limit",

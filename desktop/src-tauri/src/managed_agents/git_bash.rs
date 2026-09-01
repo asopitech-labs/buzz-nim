@@ -1,8 +1,8 @@
-//! Git Bash discovery shared by Doctor and the buzz-agent readiness gate.
+//! Git Bash discovery shared by Doctor and the nimino-agent readiness gate.
 //!
 //! The MCP child receives a deliberately small environment. Discovery inspects
 //! exactly the shared resolver-key contract forwarded into that child, plus the
-//! Git-for-Windows registry. A Doctor green state therefore means `buzz-dev-mcp`
+//! Git-for-Windows registry. A Doctor green state therefore means `nimino-dev-mcp`
 //! can actually start its shell.
 
 #[cfg(all(not(windows), test))]
@@ -113,7 +113,7 @@ pub(crate) fn git_bash_available(overrides: &std::collections::BTreeMap<String, 
 }
 
 /// All process environment that Git Bash discovery may inspect. Its keys are
-/// deliberately sourced from `buzz_agent_pkg::WINDOWS_SHELL_RESOLUTION_ENV`,
+/// deliberately sourced from `nimino_agent_pkg::WINDOWS_SHELL_RESOLUTION_ENV`,
 /// the exact allowlist forwarded to the otherwise-cleared MCP child.
 #[cfg(windows)]
 struct GitBashEnv {
@@ -133,17 +133,18 @@ impl GitBashEnv {
     }
 
     fn from_process_with_overrides(overrides: &std::collections::BTreeMap<String, String>) -> Self {
-        let values: std::collections::HashMap<_, _> = buzz_agent_pkg::WINDOWS_SHELL_RESOLUTION_ENV
-            .iter()
-            .filter_map(|key| {
-                overrides
-                    .iter()
-                    .find(|(candidate, _)| candidate.eq_ignore_ascii_case(key))
-                    .map(|(_, value)| std::ffi::OsString::from(value))
-                    .or_else(|| std::env::var_os(key))
-                    .map(|value| (*key, value))
-            })
-            .collect();
+        let values: std::collections::HashMap<_, _> =
+            nimino_agent_pkg::WINDOWS_SHELL_RESOLUTION_ENV
+                .iter()
+                .filter_map(|key| {
+                    overrides
+                        .iter()
+                        .find(|(candidate, _)| candidate.eq_ignore_ascii_case(key))
+                        .map(|(_, value)| std::ffi::OsString::from(value))
+                        .or_else(|| std::env::var_os(key))
+                        .map(|value| (*key, value))
+                })
+                .collect();
         Self::from_lookup(|key| values.get(key).cloned())
     }
 
@@ -435,7 +436,7 @@ mod tests {
     fn test_detector_env_keys_match_agent_shell_resolution_contract() {
         assert_eq!(
             DETECTOR_ENV_KEYS,
-            buzz_agent_pkg::WINDOWS_SHELL_RESOLUTION_ENV,
+            nimino_agent_pkg::WINDOWS_SHELL_RESOLUTION_ENV,
             "Doctor and the env-cleared MCP child must inspect the same resolver inputs"
         );
 

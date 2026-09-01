@@ -1,6 +1,6 @@
 import type { ObserverEvent, PromptSection } from "./agentSessionTypes";
 import {
-  findBuzzToolName,
+  findNiminoToolName,
   isGenericToolTitle,
   normalizeToolName,
 } from "./agentSessionToolCatalog";
@@ -35,7 +35,7 @@ export function parsePromptText(text: string): {
 
   const eventSection = sections.find((section) => {
     const title = section.title.toLowerCase();
-    return title.startsWith("buzz event");
+    return title.startsWith("nimino event");
   });
   const eventContent = eventSection
     ? extractEventContent(eventSection.body)
@@ -49,7 +49,7 @@ export function parsePromptText(text: string): {
   return {
     sections,
     userText: eventContent,
-    userTitle: eventKind ? titleCase(eventKind) : "Buzz event",
+    userTitle: eventKind ? titleCase(eventKind) : "Nimino event",
     userPubkey: eventAuthorPubkey,
     userEventId: eventId,
   };
@@ -78,7 +78,7 @@ export function parsePromptText(text: string): {
  *    Same two cases, same last-occurrence guard.
  *
  * 3. **Team Instructions** (`[Team Instructions]`): appended before core by
- *    `with_team()` in `buzz-acp/src/pool.rs`. Same two cases (start-of-string
+ *    `with_team()` in `nimino-acp/src/pool.rs`. Same two cases (start-of-string
  *    or `\n\n[Team Instructions]\n` inline), same last-occurrence guard. Output
  *    position: after Agent Instructions, before Core Memory.
  *
@@ -89,7 +89,7 @@ export function parsePromptText(text: string): {
  *
  * 5. **Legacy Team Instructions** (backward compat): if the agent-instructions body
  *    contains the exact canonical delimiter `\n\n---\n# Team Instructions\n`
- *    (produced by the now-removed `compose_prompt()` in buzz-persona), the body
+ *    (produced by the now-removed `compose_prompt()` in nimino-persona), the body
  *    is split at the **last** occurrence of that boundary. The text before
  *    becomes the agent-instructions body; the text after becomes a `Team Instructions`
  *    section inserted immediately after it. Non-canonical lookalikes
@@ -137,7 +137,7 @@ export function parseSystemPromptSections(
   }
 
   // ── 3. Extract [Team Instructions] (modern runtime framing) ─────────────
-  // with_team() in buzz-acp/src/pool.rs appends "\n\n[Team Instructions]\n{instructions}"
+  // with_team() in nimino-acp/src/pool.rs appends "\n\n[Team Instructions]\n{instructions}"
   // after [Agent Instructions] and before core/canvas. Same two cases as canvas/core:
   // start-of-string (team-only input) or the inline double-newline marker
   // (last occurrence guards against embedded lookalikes preceded by a single \n).
@@ -160,7 +160,7 @@ export function parseSystemPromptSections(
 
   // ── 4. Parse Base/Workspace/Agent Instructions from the remaining prefix ─
   // The canonical team-instructions delimiter produced by compose_prompt() in
-  // buzz-persona/src/resolve.rs:
+  // nimino-persona/src/resolve.rs:
   //   format!("{persona_prompt}\n\n---\n# Team Instructions\n{instructions}")
   const TEAM_DELIMITER = "\n\n---\n# Team Instructions\n";
 
@@ -438,11 +438,11 @@ export function extractToolArgs(
 export function extractToolIdentity(update: Record<string, unknown>): {
   title: string;
   toolName: string;
-  buzzToolName: string | null;
+  niminoToolName: string | null;
 } {
   const candidates = collectToolNameCandidates(update);
   const knownName = candidates
-    .map((candidate) => findBuzzToolName(candidate, true))
+    .map((candidate) => findNiminoToolName(candidate, true))
     .find((candidate): candidate is string => Boolean(candidate));
   const firstSpecific = candidates.find(
     (candidate) => !isGenericToolTitle(candidate),
@@ -452,7 +452,7 @@ export function extractToolIdentity(update: Record<string, unknown>): {
   return {
     title,
     toolName: knownName ?? normalizeToolName(firstSpecific ?? title),
-    buzzToolName: knownName ?? null,
+    niminoToolName: knownName ?? null,
   };
 }
 

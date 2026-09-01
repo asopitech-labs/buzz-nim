@@ -19,12 +19,12 @@ pub struct AgentDefinition {
     pub avatar_url: Option<String>,
     pub system_prompt: String,
     /// Preferred ACP runtime ID (e.g., 'goose', 'claude', 'codex'). Determines which agent binary
-    /// Buzz spawns. When deploying from this persona, this runtime is pre-selected in the UI.
+    /// Nimino spawns. When deploying from this persona, this runtime is pre-selected in the UI.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub runtime: Option<String>,
     /// Opaque, harness-specific model identifier string. Format depends on the runtime and its LLM
     /// provider (e.g., 'goose-claude-4-6-opus' for Databricks, 'claude-opus-4-7' for Anthropic
-    /// direct). Buzz stores and passes through without interpretation.
+    /// direct). Nimino stores and passes through without interpretation.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub model: Option<String>,
     /// LLM inference provider (e.g., 'databricks', 'anthropic', 'openai'). Optional — when set,
@@ -72,7 +72,7 @@ pub struct AgentDefinition {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub catalog_source: Option<CatalogSource>,
     /// Harness-level configuration passed to the agent subprocess as environment variables.
-    /// Opaque to Buzz — keys and values are runtime-specific.
+    /// Opaque to Nimino — keys and values are runtime-specific.
     ///
     /// Stored as a BTreeMap for deterministic on-disk ordering.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
@@ -426,7 +426,7 @@ pub struct ManagedAgentRecord {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub definition_parallelism: Option<u32>,
     /// Typed marker for relay-mesh agents. `Some(_)` means this agent runs its
-    /// inference through Buzz's relay-mesh local endpoint; the `model_ref` is
+    /// inference through Nimino's relay-mesh local endpoint; the `model_ref` is
     /// the served model id to route to. `None` is a normal agent.
     ///
     /// Not the source of truth. `provider == "relay-mesh"` is, resolved through
@@ -596,7 +596,7 @@ pub enum AuthStatus {
         /// Trimmed excerpt of the stderr message.
         diagnostic: String,
     },
-    /// This runtime does not have a login step (e.g. goose, buzz-agent).
+    /// This runtime does not have a login step (e.g. goose, nimino-agent).
     NotApplicable,
     /// Probe was not attempted (runtime unavailable or probe timed out).
     Unknown,
@@ -671,7 +671,7 @@ pub struct InstallStepResult {
     pub stderr: String,
     pub exit_code: Option<i32>,
     /// Actionable guidance shown in the UI when this step failed due to a
-    /// recognized condition (e.g. EACCES writing Buzz's private npm prefix).
+    /// recognized condition (e.g. EACCES writing Nimino's private npm prefix).
     /// `None` when the step succeeded or no pattern matched.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub hint: Option<String>,
@@ -794,7 +794,7 @@ pub struct UpdateTeamRequest {
     pub persona_ids: Vec<String>,
 }
 
-pub const DEFAULT_ACP_COMMAND: &str = "buzz-acp";
+pub const DEFAULT_ACP_COMMAND: &str = "nimino-acp";
 /// ~5 min (320s) — matches the CLI harness default (NIMINO_ACP_IDLE_TIMEOUT).
 pub const DEFAULT_AGENT_TURN_TIMEOUT_SECONDS: u64 = 320;
 pub const DEFAULT_AGENT_PARALLELISM: u32 = 10;
@@ -817,7 +817,7 @@ fn default_record_active() -> bool {
 
 // ── Inbound author gate ──────────────────────────────────────────────────────
 //
-// Mirrors `buzz-acp`'s `--respond-to` CLI flag and the related
+// Mirrors `nimino-acp`'s `--respond-to` CLI flag and the related
 // `--respond-to-allowlist` option. Persisted per agent so the desktop can
 // translate the user's choice into `NIMINO_ACP_RESPOND_TO` /
 // `NIMINO_ACP_RESPOND_TO_ALLOWLIST` env vars at spawn time.
@@ -840,7 +840,7 @@ pub enum RespondTo {
 }
 
 impl RespondTo {
-    /// CLI/env wire string (matches `buzz-acp`'s `--respond-to`).
+    /// CLI/env wire string (matches `nimino-acp`'s `--respond-to`).
     pub fn as_str(self) -> &'static str {
         match self {
             Self::OwnerOnly => "owner-only",
@@ -868,7 +868,7 @@ impl RespondTo {
 
 /// Validate and normalize a respond-to allowlist.
 ///
-/// Rules mirror `buzz-acp/src/config.rs::validate_allowlist`:
+/// Rules mirror `nimino-acp/src/config.rs::validate_allowlist`:
 /// - Each entry is exactly 64 hex chars (any case in, lowercase out).
 /// - Duplicates removed, insertion order preserved.
 ///

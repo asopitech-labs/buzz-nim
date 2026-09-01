@@ -2,7 +2,7 @@
 # Reap the agent processes belonging to a single desktop instance.
 #
 # `tauri dev` Ctrl+C tears down the Rust app before its in-process system sweep
-# can finish, so agent workers (goose, buzz-agent, ...) it spawned in their
+# can finish, so agent workers (goose, nimino-agent, ...) it spawned in their
 # own process groups survive as orphans. This script is the shell-side backstop:
 # run it from an EXIT trap in the `just dev`/`just staging` recipes.
 #
