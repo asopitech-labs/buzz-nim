@@ -6,11 +6,6 @@ contract_dir="$repo_root/contracts/nim-rust-boundary/v1"
 rust_contract="$repo_root/crates/nimino-boundary/src/contract.rs"
 nim_contract="$repo_root/nim/nimino_core/src/nimino_core/boundary/protocol.nim"
 
-if ! command -v rg >/dev/null 2>&1; then
-  echo "rg is required for boundary source checks" >&2
-  exit 1
-fi
-
 expected_bundle="$(sed -n 's/^# bundle-sha256: //p' "$contract_dir/schema.sha256")"
 node - "$contract_dir" <<'NODE'
 const crypto = require("node:crypto");
@@ -156,24 +151,25 @@ grep -Fq "$expected_bundle" "$nim_contract"
 grep -Fq 'nimino.core.boundary' "$rust_contract"
 grep -Fq 'nimino.core.boundary' "$nim_contract"
 
-if rg -n '^\s*(use|extern crate)\s+(nimino_|sqlx|redis|nostr|iroh|chirps)' \
-  "$repo_root/crates/nimino-boundary/src" --glob '*.rs' --glob '!**/bin/**'; then
+if grep -REn --include='*.rs' --exclude-dir=bin \
+  '^[[:space:]]*(use|extern crate)[[:space:]]+(nimino_|sqlx|redis|nostr|iroh|chirps)' \
+  "$repo_root/crates/nimino-boundary/src"; then
   echo "boundary adapter imports a forbidden domain/storage/cluster owner" >&2
   exit 1
 fi
 
-if rg -ni 'fallback|legacy|dual.?runtime' \
-  "$repo_root/crates/nimino-boundary/src" --glob '*.rs'; then
+if grep -REni --include='*.rs' 'fallback|legacy|dual.?runtime' \
+  "$repo_root/crates/nimino-boundary/src"; then
   echo "boundary adapter contains a compatibility path" >&2
   exit 1
 fi
 
-if rg -n 'pub fn new\(' "$rust_contract"; then
+if grep -En 'pub fn new\(' "$rust_contract"; then
   echo "BoundaryRequest must expose typed constructors, not a generic operation/value constructor" >&2
   exit 1
 fi
 
-if rg -n 'println!|print!' \
+if grep -En 'println!|print!' \
   "$repo_root/crates/nimino-boundary/src/lib.rs" \
   "$repo_root/crates/nimino-boundary/src/agent.rs" \
   "$repo_root/crates/nimino-boundary/src/admission.rs" \

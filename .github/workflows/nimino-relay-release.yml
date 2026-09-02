@@ -78,9 +78,9 @@ jobs:
       - uses: cashapp/activate-hermit@cea9af7913204a965fd488637a8d1811bba2e616 # v1
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
       - name: Real Chirps scenario evidence
-        run: just nimino-cluster-scenarios output=target/nim/nimino-cluster-scenarios.json
+        run: just nimino-cluster-scenarios target/nim/nimino-cluster-scenarios.json
       - name: Real Chirps data synchronization evidence
-        run: just nimino-sync-scenarios output=target/nim/nimino-sync-scenarios.json
+        run: just nimino-sync-scenarios target/nim/nimino-sync-scenarios.json
       - name: Content-addressed object replication evidence
         run: |
           set -o pipefail

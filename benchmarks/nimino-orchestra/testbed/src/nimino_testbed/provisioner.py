@@ -19,8 +19,8 @@ from nimino_orchestra.provisioning import (
 )
 from nimino_orchestra.task_fixtures import DirectoryEntry, fixture_for
 
-from .nimino_cli import NiminoCli
 from .keys import compute_auth_tag, generate_keypair, keypair_from_secret
+from .nimino_cli import NiminoCli
 
 
 class ProvisioningError(RuntimeError):

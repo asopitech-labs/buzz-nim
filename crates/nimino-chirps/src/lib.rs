@@ -382,7 +382,7 @@ fn sync_parent(path: &Path) -> Result<(), NodeConfigError> {
     #[cfg(not(unix))]
     {
         let _ = path;
-        return Ok(());
+        Ok(())
     }
     #[cfg(unix)]
     {

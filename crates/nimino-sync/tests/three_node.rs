@@ -12,6 +12,7 @@ use std::os::unix::fs::PermissionsExt;
 use nimino_boundary::{BoundaryConfig, BoundaryRuntime};
 use nimino_chirps::{
     MeshClient, MeshRuntime, MeshRuntimeError, MeshRuntimeOptions, NodeConfig, NodeId,
+    MAX_MESSAGE_BYTES,
 };
 use nimino_store::{
     canonical_state_digest, CanonicalCommit, NodeStorePort, RecordClass, RecordWrite,
@@ -226,7 +227,7 @@ async fn three_nodes_bootstrap_resume_and_isolate_communities_over_real_chirps()
         Duration::from_secs(5),
         Duration::from_secs(1),
         2,
-        64 * 1024,
+        MAX_MESSAGE_BYTES as u32,
     );
     let mut observed1 = mesh1.client().subscribe();
     let mut observed2 = mesh2.client().subscribe();
