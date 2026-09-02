@@ -564,11 +564,18 @@ impl RuntimeContext {
         payload: String,
         reply: oneshot::Sender<Result<ControlEntry, ControlRuntimeError>>,
     ) -> Result<(), ControlRuntimeError> {
-        if let Some(entry) = self.state.log.iter().find(|entry| {
-            entry.index <= self.state.commit_index
-                && entry.command_id == command_id
-                && entry.payload == payload
-        }) {
+        // ponytail: command lookup scans durable history; add a command-id index only when
+        // this cheap in-memory scan becomes measurable beside boundary I/O.
+        let committed_command = self
+            .state
+            .log
+            .iter()
+            .find(|entry| entry.index <= self.state.commit_index && entry.command_id == command_id)
+            .cloned();
+        if let Some(entry) = committed_command
+            .as_ref()
+            .filter(|entry| entry.kind == ControlEntryKind::Command && entry.payload == payload)
+        {
             let _ = reply.send(Ok(entry.clone()));
             return Ok(());
         }
@@ -587,9 +594,14 @@ impl RuntimeContext {
             let _ = reply.send(Err(ControlRuntimeError::PendingEntry));
             return Ok(());
         }
+        let state = if committed_command.is_some() {
+            self.state.clone()
+        } else {
+            self.policy_state()?
+        };
         let plan = self
             .plan(ControlPolicyRequest::Append {
-                state: self.state.clone(),
+                state,
                 request: ControlAppendRequest {
                     leader_id: self.local_node_id.clone(),
                     term: self.state.term,
@@ -600,7 +612,7 @@ impl RuntimeContext {
                 },
             })
             .await?;
-        let decision = self.settle(plan).await?;
+        let decision = self.settle_policy_view(plan).await?;
         if decision.effect == ControlEffect::Replay {
             let entry = decision
                 .applied_entry
@@ -704,7 +716,7 @@ impl RuntimeContext {
         let last_term = last_log_term(&self.state);
         let plan = self
             .plan(ControlPolicyRequest::Vote {
-                state: self.state.clone(),
+                state: self.policy_state()?,
                 request: ControlVoteRequest {
                     term,
                     candidate_id: self.local_node_id.clone(),
@@ -717,7 +729,7 @@ impl RuntimeContext {
             self.reset_election_deadline();
             return Ok(());
         }
-        self.settle(plan).await?;
+        self.settle_policy_view(plan).await?;
         self.candidate_term = Some(term);
         self.election_supporters = BTreeSet::from([self.local_node_id.clone()]);
         self.live_supporters.clear();
@@ -742,7 +754,7 @@ impl RuntimeContext {
         }
         let plan = self
             .plan(ControlPolicyRequest::Election {
-                state: self.state.clone(),
+                state: self.policy_state()?,
                 request: nimino_boundary::ControlElectionRequest {
                     term,
                     candidate_id: self.local_node_id.clone(),
@@ -750,7 +762,7 @@ impl RuntimeContext {
                 },
             })
             .await?;
-        self.settle(plan).await?;
+        self.settle_policy_view(plan).await?;
         self.candidate_term = None;
         self.election_supporters = supporters.into_iter().collect();
         self.live_supporters = BTreeSet::from([self.local_node_id.clone()]);
@@ -998,7 +1010,7 @@ impl RuntimeContext {
     ) -> Result<(), ControlRuntimeError> {
         let plan = self
             .plan(ControlPolicyRequest::Vote {
-                state: self.state.clone(),
+                state: self.policy_state()?,
                 request: ControlVoteRequest {
                     term,
                     candidate_id: candidate_id.clone(),
@@ -1011,7 +1023,7 @@ impl RuntimeContext {
         if granted {
             self.fail_pending(ControlRuntimeError::LeaderRequired);
             self.fail_forwarded(|| ControlRuntimeError::LeaderRequired);
-            self.settle(plan).await?;
+            self.settle_policy_view(plan).await?;
             self.candidate_term = None;
             self.last_authority = None;
             self.reset_election_deadline();
@@ -1122,7 +1134,7 @@ impl RuntimeContext {
             .ok_or_else(|| ControlRuntimeError::InvalidFrame("control index zero".into()))?;
         let plan = self
             .plan(ControlPolicyRequest::Replicate {
-                state: self.state.clone(),
+                state: self.policy_state()?,
                 request: ControlReplicationRequest {
                     leader_id: leader_id.clone(),
                     term,
@@ -1132,7 +1144,7 @@ impl RuntimeContext {
                 },
             })
             .await?;
-        self.settle(plan).await?;
+        self.settle_policy_view(plan).await?;
         self.send_replicated(peer, term, leader_id, entry.index)
             .await
     }
@@ -1190,7 +1202,7 @@ impl RuntimeContext {
         };
         let plan = self
             .plan(ControlPolicyRequest::Commit {
-                state: self.state.clone(),
+                state: self.policy_state()?,
                 request: ControlCommitRequest {
                     index,
                     leader_id: self.local_node_id.clone(),
@@ -1202,7 +1214,7 @@ impl RuntimeContext {
         if plan.error == ControlStateError::QuorumRequired {
             return Ok(());
         }
-        let decision = self.settle(plan).await?;
+        let decision = self.settle_policy_view(plan).await?;
         if decision.effect != ControlEffect::Commit {
             return Err(ControlRuntimeError::UnexpectedPolicyResult);
         }
@@ -1248,7 +1260,7 @@ impl RuntimeContext {
         if index > self.state.commit_index {
             let plan = self
                 .plan(ControlPolicyRequest::Commit {
-                    state: self.state.clone(),
+                    state: self.policy_state()?,
                     request: ControlCommitRequest {
                         index,
                         leader_id: leader_id.clone(),
@@ -1257,7 +1269,7 @@ impl RuntimeContext {
                     },
                 })
                 .await?;
-            self.settle(plan).await?;
+            self.settle_policy_view(plan).await?;
             let recovered = self.catch_up_through.is_some_and(|target| index <= target);
             self.apply_committed(recovered).await?;
             if self
@@ -1319,7 +1331,7 @@ impl RuntimeContext {
         }
         let plan = self
             .plan(ControlPolicyRequest::Election {
-                state: self.state.clone(),
+                state: self.policy_state()?,
                 request: nimino_boundary::ControlElectionRequest {
                     term,
                     candidate_id: leader_id.to_owned(),
@@ -1329,18 +1341,22 @@ impl RuntimeContext {
             .await?;
         self.fail_pending(ControlRuntimeError::LeaderRequired);
         self.fail_forwarded(|| ControlRuntimeError::LeaderRequired);
-        self.settle(plan).await?;
+        self.settle_policy_view(plan).await?;
         Ok(())
     }
 
     async fn apply_committed(&mut self, recovered: bool) -> Result<(), ControlRuntimeError> {
         while self.state.applied_index < self.state.commit_index {
-            let plan = self
-                .plan(ControlPolicyRequest::Apply {
-                    state: self.state.clone(),
-                })
-                .await?;
-            let decision = self.settle(plan).await?;
+            let state = if self
+                .entry(self.state.applied_index.saturating_add(1))
+                .is_some_and(|entry| entry.kind == ControlEntryKind::Command)
+            {
+                self.policy_state()?
+            } else {
+                self.state.clone()
+            };
+            let plan = self.plan(ControlPolicyRequest::Apply { state }).await?;
+            let decision = self.settle_policy_view(plan).await?;
             let entry = decision
                 .applied_entry
                 .ok_or(ControlRuntimeError::UnexpectedPolicyResult)?;
@@ -1392,7 +1408,7 @@ impl RuntimeContext {
         }
         let result = self
             .policy(ControlPolicyRequest::Quorum {
-                state: self.state.clone(),
+                state: self.policy_state()?,
                 request: ControlQuorumRequest {
                     supporters: supporters.clone(),
                 },
@@ -1409,6 +1425,41 @@ impl RuntimeContext {
             decision: result.clone(),
         });
         Ok(result)
+    }
+
+    async fn settle_policy_view(
+        &mut self,
+        plan: ControlPlan,
+    ) -> Result<ControlDecision, ControlRuntimeError> {
+        let log_previous_index = plan
+            .actions
+            .iter()
+            .find(|action| action.kind == ControlStoreActionKind::Log)
+            .map(|action| action.previous_index);
+        let mut durable_log = std::mem::take(&mut self.state.log);
+        let durable_snapshot = self.state.snapshot.take();
+        match self.settle(plan).await {
+            Ok(decision) => {
+                if let Some(previous_index) = log_previous_index {
+                    durable_log.retain(|entry| entry.index <= previous_index);
+                    durable_log.extend(
+                        self.state
+                            .log
+                            .iter()
+                            .filter(|entry| entry.index > previous_index)
+                            .cloned(),
+                    );
+                }
+                self.state.log = durable_log;
+                self.state.snapshot = durable_snapshot;
+                Ok(decision)
+            }
+            Err(error) => {
+                self.state.log = durable_log;
+                self.state.snapshot = durable_snapshot;
+                Err(error)
+            }
+        }
     }
 
     async fn settle(&mut self, plan: ControlPlan) -> Result<ControlDecision, ControlRuntimeError> {
@@ -1548,6 +1599,10 @@ impl RuntimeContext {
         self.state.log.iter().find(|entry| entry.index == index)
     }
 
+    fn policy_state(&self) -> Result<ControlState, ControlRuntimeError> {
+        bounded_policy_state(&self.state)
+    }
+
     fn is_leader(&self) -> bool {
         self.state.term > 0
             && self.state.leader_term == self.state.term
@@ -1600,6 +1655,59 @@ impl RuntimeContext {
             error,
         ));
     }
+}
+
+fn bounded_policy_state(state: &ControlState) -> Result<ControlState, ControlRuntimeError> {
+    // Boundary decisions need the applied prefix's authority facts, not every command body.
+    // This logical checkpoint is never persisted; the runtime and store keep the full suffix.
+    let snapshot = if state.applied_index == 0 {
+        None
+    } else if state
+        .snapshot
+        .as_ref()
+        .is_some_and(|snapshot| snapshot.last_included_index == state.applied_index)
+    {
+        state.snapshot.clone()
+    } else {
+        let last_included_term = state
+            .log
+            .iter()
+            .find(|entry| entry.index == state.applied_index)
+            .map(|entry| entry.term)
+            .ok_or(ControlRuntimeError::UnexpectedPolicyResult)?;
+        Some(ControlSnapshotState {
+            last_included_index: state.applied_index,
+            last_included_term,
+            voter_epoch: state.voter_epoch,
+            phase: state.phase,
+            old_voters: state.old_voters.clone(),
+            new_voters: state.new_voters.clone(),
+            state_payload: "runtime-policy-view".to_owned(),
+        })
+    };
+    Ok(ControlState {
+        valid: state.valid,
+        metadata_revision: state.metadata_revision,
+        term: state.term,
+        voted_for: state.voted_for.clone(),
+        voter_epoch: state.voter_epoch,
+        phase: state.phase,
+        old_voters: state.old_voters.clone(),
+        new_voters: state.new_voters.clone(),
+        leader_id: state.leader_id.clone(),
+        leader_term: state.leader_term,
+        leader_proof: state.leader_proof.clone(),
+        last_index: state.last_index,
+        commit_index: state.commit_index,
+        applied_index: state.applied_index,
+        snapshot,
+        log: state
+            .log
+            .iter()
+            .filter(|entry| entry.index > state.applied_index)
+            .cloned()
+            .collect(),
+    })
 }
 
 async fn recover(
@@ -1922,5 +2030,66 @@ mod tests {
             received + timeout + Duration::from_millis(1),
             timeout
         ));
+    }
+
+    #[test]
+    fn policy_view_size_does_not_grow_with_applied_history() {
+        let voter = "00".repeat(16);
+        let log = (1..=1_024)
+            .map(|index| ControlEntry {
+                index,
+                term: 1,
+                voter_epoch: 1,
+                kind: ControlEntryKind::Command,
+                command_id: format!("command-{index}"),
+                payload: "x".repeat(256),
+                target_voters: Vec::new(),
+            })
+            .collect::<Vec<_>>();
+        let state = ControlState {
+            valid: true,
+            metadata_revision: 2_048,
+            term: 1,
+            voted_for: Some(voter.clone()),
+            voter_epoch: 1,
+            phase: ControlVoterPhase::StableOld,
+            old_voters: vec![voter.clone()],
+            new_voters: Vec::new(),
+            leader_id: voter.clone(),
+            leader_term: 1,
+            leader_proof: vec![voter],
+            last_index: 1_024,
+            commit_index: 1_024,
+            applied_index: 1_024,
+            snapshot: None,
+            log,
+        };
+
+        let view = bounded_policy_state(&state).expect("bounded policy view");
+        assert_eq!(state.log.len(), 1_024);
+        assert!(view.log.is_empty());
+        assert_eq!(
+            view.snapshot
+                .as_ref()
+                .expect("runtime checkpoint")
+                .last_included_index,
+            1_024
+        );
+        assert!(serde_json::to_vec(&view).expect("encode view").len() < 2_048);
+
+        let mut pending = state;
+        pending.last_index = 1_025;
+        pending.log.push(ControlEntry {
+            index: 1_025,
+            term: 1,
+            voter_epoch: 1,
+            kind: ControlEntryKind::Command,
+            command_id: "pending".to_owned(),
+            payload: "pending".to_owned(),
+            target_voters: Vec::new(),
+        });
+        let pending_view = bounded_policy_state(&pending).expect("pending policy view");
+        assert_eq!(pending_view.log.len(), 1);
+        assert_eq!(pending_view.log[0].index, 1_025);
     }
 }
