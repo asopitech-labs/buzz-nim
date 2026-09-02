@@ -11,7 +11,7 @@ use nimino_boundary::{
 use nimino_core::event::StoredEvent;
 use nimino_core::kind::{
     event_kind_u32, is_unshared_gated_event, AUTHOR_ONLY_KINDS, KIND_AGENT_OBSERVER_FRAME,
-    KIND_GIFT_WRAP, KIND_PRESENCE_UPDATE,
+    KIND_GIFT_WRAP, KIND_PRESENCE_UPDATE, KIND_TYPING_INDICATOR,
 };
 use nimino_core::observer::{
     content_looks_like_nip44, OBSERVER_AGENT_TAG, OBSERVER_FRAME_CONTROL, OBSERVER_FRAME_TAG,
@@ -31,6 +31,17 @@ use super::ingest::{reject_with_transport, IngestAuth, IngestError};
 /// Increment the rejection counter with a bounded reason label.
 fn reject(reason: &'static str) {
     reject_with_transport("ws", reason);
+}
+
+pub(crate) fn normalized_presence_status(raw: &str) -> String {
+    if raw.len() <= 128 {
+        return raw.to_owned();
+    }
+    let mut end = 128;
+    while !raw.is_char_boundary(end) {
+        end -= 1;
+    }
+    raw[..end].to_owned()
 }
 
 /// Bound the `kind` label to prevent cardinality explosion from arbitrary Nostr kinds.
@@ -786,28 +797,12 @@ async fn handle_ephemeral_event(
 
     // Special handling for presence events (kind:20001).
     if event_kind_u32(&event) == KIND_PRESENCE_UPDATE {
-        let raw = event.content.to_string();
-        let status = if raw.len() > 128 {
-            let mut end = 128;
-            while !raw.is_char_boundary(end) {
-                end -= 1;
-            }
-            raw[..end].to_string()
-        } else {
-            raw
-        };
+        let status = normalized_presence_status(&event.content);
 
-        if status == "offline" {
-            state
-                .local_delivery
-                .clear_presence(&conn.tenant, &auth_pubkey)
-                .await;
-        } else {
-            state
-                .local_delivery
-                .set_presence(&conn.tenant, &auth_pubkey, &status)
-                .await;
-        }
+        state
+            .publish_presence_transition(&conn.tenant, &auth_pubkey, &status, &event)
+            .await
+            .map_err(|error| format!("error: cluster presence unavailable: {error}"))?;
 
         // Presence is a channel-less ephemeral event. After updating local
         // presence state, let it fall through to the global local-fan-out path.
@@ -817,6 +812,13 @@ async fn handle_ephemeral_event(
     if let Some(ch_id) = super::ingest::extract_channel_id(&event) {
         super::ingest::check_channel_membership(&conn.tenant, &state, ch_id, &pubkey_bytes, None)
             .await?;
+
+        if event_kind_u32(&event) == KIND_TYPING_INDICATOR {
+            state
+                .publish_typing_transition(&conn.tenant, &auth_pubkey, ch_id, &event)
+                .await
+                .map_err(|error| format!("error: cluster typing unavailable: {error}"))?;
+        }
 
         // Direct fan-out to local WS subscribers, through the guarded send path
         // so a stale subscription on a removed/non-member connection cannot

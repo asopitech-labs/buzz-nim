@@ -105,6 +105,20 @@ impl SubscriptionRegistry {
         Self::default()
     }
 
+    /// Snapshots distinct community/channel/connection scopes for durable revalidation.
+    pub fn scoped_channel_connections(&self) -> Vec<(CommunityId, Uuid, ConnId)> {
+        let mut scoped = HashSet::new();
+        for entry in self.subs.iter() {
+            let conn_id = *entry.key();
+            for (_, community, scope) in entry.value().values() {
+                for channel_id in scope.channel_ids() {
+                    scoped.insert((*community, *channel_id, conn_id));
+                }
+            }
+        }
+        scoped.into_iter().collect()
+    }
+
     /// Replaces any existing subscription with the same sub_id (NIP-01), scoped
     /// to the server-resolved community that owns the connection.
     pub fn register_scoped(

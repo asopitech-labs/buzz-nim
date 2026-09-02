@@ -3,11 +3,16 @@
 Status: active. Nim 2.2.10 is pinned, the Rust-independent development lane is
 available, and the versioned Nim/Rust worker boundary is accepted and tested.
 
-This lane owns migrated event/message, data-contract, and community policy in
-Nim. It deliberately contains no Chirps runtime integration. A separate
-`nimino-chirps` package pins and guards the Rust dependency; the process
-boundary contains transport and lifecycle mechanics only. Focused issues own
-each typed operation.
+This lane owns migrated event/message, data-contract, community, cluster
+control, admission, authorization-invalidation, and ephemeral convergence
+policy in Nim. It deliberately contains no Chirps runtime integration. A
+separate `nimino-chirps` package pins and guards the Rust dependency; the
+process boundary contains transport and lifecycle mechanics only. Focused
+issues own each typed operation.
+
+The production relay runs separate supervised worker processes for general
+product policy, admission, and replicated control. Admission therefore remains
+fail-closed without competing with query, sync, or ephemeral policy traffic.
 
 ## Quick start
 
@@ -117,7 +122,7 @@ budget only after representative domain modules exist.
 | `contracts/nimino-community/v1/` | Community lifecycle/isolation corpus and Rust policy inventory | Canonical community decision contract | keep | Explicit new-version cutover | Nim unit and real worker golden tests |
 | `crates/nimino-boundary/` | Supervised process adapter | Spawn/frame/queue/timeout/cancel/kill/reap only | keep narrow | Explicit replacement boundary | dependency deny and cross-language tests |
 | `.github/workflows/ci.yml` (`Nim Core`) | Path-scoped Nim verification and timing | Independent Nim CI lane | keep | Superseded by the independent release pipeline | bootstrap contract test and CI artifact |
-| Rust workspace | Existing product and adapter implementation | Stable host and adapter boundary | shrink | Per later responsibility-manifest issues | Not changed by this bootstrap |
+| Rust workspace | Product host and effect adapters | Stable host and adapter boundary | keep narrow | Explicit replacement of an adapter | responsibility manifest and boundary tests |
 
 The package root may expose build and diagnostic metadata, but domain behavior
 must enter through its owning migration issue as a typed operation. Do not add

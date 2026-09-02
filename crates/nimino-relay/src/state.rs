@@ -16,18 +16,121 @@ use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 use nimino_audit::AuditService;
-use nimino_auth::{AuthService, Nip98ReplayGuard};
+use nimino_auth::{
+    AuthService, Nip98ReplayGuard, RateLimitResult, RateLimiter, DEFAULT_REPLAY_TTL_SECS,
+    MAX_REPLAY_TTL_SECS,
+};
 use nimino_core::tenant::TenantContext;
 use nimino_core::CommunityId;
 use nimino_db::Db;
+#[cfg(test)]
 use nimino_local_delivery::rate_limiter::LocalRateLimiter;
-use nimino_local_delivery::{LocalDelivery, LocalReplayGuard};
+use nimino_local_delivery::LocalDelivery;
+#[cfg(test)]
+use nimino_local_delivery::LocalReplayGuard;
 use nimino_media::MediaStorage;
 use nimino_search::SearchService;
 use nimino_workflow::WorkflowEngine;
 
 use crate::audio::AudioRoomManager;
 use crate::cluster_runtime::RelayDomainAdapters;
+
+static AUTH_INVALIDATION_SEQUENCE: std::sync::atomic::AtomicU64 =
+    std::sync::atomic::AtomicU64::new(0);
+
+struct ClusterReplayGuard {
+    admission: nimino_control::AdmissionClient,
+}
+
+impl Nip98ReplayGuard for ClusterReplayGuard {
+    fn try_mark_in_scope<'a>(
+        &'a self,
+        scope: &'a str,
+        event_id: &'a nostr::EventId,
+        ttl_secs: u64,
+    ) -> std::pin::Pin<
+        Box<dyn std::future::Future<Output = Result<bool, nimino_auth::AuthError>> + Send + 'a>,
+    > {
+        Box::pin(async move {
+            self.admission
+                .claim_replay(
+                    scope,
+                    event_id.to_hex(),
+                    ttl_secs.clamp(DEFAULT_REPLAY_TTL_SECS, MAX_REPLAY_TTL_SECS),
+                )
+                .await
+                .map_err(|error| nimino_auth::AuthError::Internal(error.to_string()))
+        })
+    }
+}
+
+pub(crate) enum AdmissionRateLimiter {
+    Cluster(nimino_control::AdmissionClient),
+    #[cfg(test)]
+    Local(LocalRateLimiter),
+}
+
+impl RateLimiter for AdmissionRateLimiter {
+    async fn check_and_increment(
+        &self,
+        context: &TenantContext,
+        pubkey: &nostr::PublicKey,
+        limit_type: nimino_auth::LimitType,
+        window_secs: u64,
+        limit: u64,
+    ) -> Result<RateLimitResult, nimino_auth::AuthError> {
+        match self {
+            Self::Cluster(admission) => admission
+                .consume_rate(
+                    "principal",
+                    nimino_auth::rate_limit::rate_limit_key(context, pubkey, &limit_type),
+                    window_secs,
+                    limit,
+                )
+                .await
+                .map(|result| RateLimitResult {
+                    allowed: result.allowed,
+                    current: result.current,
+                    limit: result.limit,
+                    reset_in_secs: result.reset_in_secs,
+                })
+                .map_err(|error| nimino_auth::AuthError::Internal(error.to_string())),
+            #[cfg(test)]
+            Self::Local(local) => {
+                local
+                    .check_and_increment(context, pubkey, limit_type, window_secs, limit)
+                    .await
+            }
+        }
+    }
+
+    async fn check_ip_connection(
+        &self,
+        ip: &std::net::IpAddr,
+        window_secs: u64,
+        limit: u64,
+    ) -> Result<RateLimitResult, nimino_auth::AuthError> {
+        match self {
+            Self::Cluster(admission) => admission
+                .consume_rate(
+                    "ip",
+                    nimino_auth::rate_limit::ip_rate_limit_key(ip),
+                    window_secs,
+                    limit,
+                )
+                .await
+                .map(|result| RateLimitResult {
+                    allowed: result.allowed,
+                    current: result.current,
+                    limit: result.limit,
+                    reset_in_secs: result.reset_in_secs,
+                })
+                .map_err(|error| nimino_auth::AuthError::Internal(error.to_string())),
+            #[cfg(test)]
+            Self::Local(local) => local.check_ip_connection(ip, window_secs, limit).await,
+        }
+    }
+}
 use crate::config::Config;
 use crate::connection::{ConnectionSubscriptions, RestartClose};
 use crate::subscription::SubscriptionRegistry;
@@ -105,6 +208,7 @@ struct ConnEntry {
     backpressure_count: Arc<AtomicU8>,
     subscriptions: ConnectionSubscriptions,
     authenticated_pubkey: Arc<std::sync::RwLock<Option<Vec<u8>>>>,
+    authenticated_owner_pubkey: Arc<std::sync::RwLock<Option<Vec<u8>>>>,
     grace_limit: u8,
 }
 
@@ -280,6 +384,7 @@ impl ConnectionManager {
                 backpressure_count,
                 subscriptions,
                 authenticated_pubkey: Arc::new(std::sync::RwLock::new(None)),
+                authenticated_owner_pubkey: Arc::new(std::sync::RwLock::new(None)),
                 grace_limit,
             },
         );
@@ -304,9 +409,22 @@ impl ConnectionManager {
 
     /// Record the authenticated pubkey for a connection after NIP-42 succeeds.
     pub fn set_authenticated_pubkey(&self, conn_id: Uuid, pubkey_bytes: Vec<u8>) {
+        self.set_authenticated_identity(conn_id, pubkey_bytes, None);
+    }
+
+    /// Records the authenticated principal and optional NIP-OA owner.
+    pub fn set_authenticated_identity(
+        &self,
+        conn_id: Uuid,
+        pubkey_bytes: Vec<u8>,
+        owner_pubkey_bytes: Option<Vec<u8>>,
+    ) {
         if let Some(entry) = self.connections.get(&conn_id) {
             if let Ok(mut slot) = entry.authenticated_pubkey.write() {
                 *slot = Some(pubkey_bytes);
+            }
+            if let Ok(mut slot) = entry.authenticated_owner_pubkey.write() {
+                *slot = owner_pubkey_bytes;
             }
         }
     }
@@ -348,9 +466,33 @@ impl ConnectionManager {
             .and_then(|entry| entry.authenticated_pubkey.read().ok()?.clone())
     }
 
-    /// Disconnect every live connection authenticated as `pubkey` **in
-    /// `community`**, delivering a final `OK false` frame carrying `reason`
-    /// before closing.
+    /// Snapshots distinct authenticated identities with their resolved community.
+    pub fn authenticated_identities(&self) -> Vec<(CommunityId, Vec<u8>, Option<Vec<u8>>)> {
+        self.connections
+            .iter()
+            .filter_map(|entry| {
+                entry
+                    .authenticated_pubkey
+                    .read()
+                    .ok()
+                    .and_then(|pubkey| pubkey.clone())
+                    .map(|pubkey| {
+                        let owner = entry
+                            .authenticated_owner_pubkey
+                            .read()
+                            .ok()
+                            .and_then(|owner| owner.clone());
+                        (entry.community_id, pubkey, owner)
+                    })
+            })
+            .collect::<HashSet<_>>()
+            .into_iter()
+            .collect()
+    }
+
+    /// Disconnect every live connection authenticated as `pubkey`, or as its
+    /// NIP-OA agent, **in `community`**. Delivers a final `OK false` frame
+    /// carrying `reason` before closing.
     ///
     /// Used for live ban enforcement (COMMUNITY_MODERATION_PLAN.md §0 decision
     /// 4): a ban must take effect immediately on existing sessions, not just at
@@ -374,7 +516,29 @@ impl ConnectionManager {
     ) -> usize {
         let frame = crate::protocol::RelayMessage::ok(event_id, false, reason);
         let mut closed = 0usize;
-        for conn_id in self.connection_ids_for_pubkey_in_community(community, pubkey) {
+        let conn_ids = self
+            .connections
+            .iter()
+            .filter_map(|entry| {
+                if entry.community_id != community {
+                    return None;
+                }
+                let principal_matches = entry
+                    .authenticated_pubkey
+                    .read()
+                    .ok()
+                    .and_then(|value| value.as_ref().map(|stored| stored.as_slice() == pubkey))
+                    .unwrap_or(false);
+                let owner_matches = entry
+                    .authenticated_owner_pubkey
+                    .read()
+                    .ok()
+                    .and_then(|value| value.as_ref().map(|stored| stored.as_slice() == pubkey))
+                    .unwrap_or(false);
+                (principal_matches || owner_matches).then_some(*entry.key())
+            })
+            .collect::<Vec<_>>();
+        for conn_id in conn_ids {
             if let Some(entry) = self.connections.get(&conn_id) {
                 if entry.community_id != community {
                     continue;
@@ -701,13 +865,10 @@ pub struct AppState {
     pub cluster_ready: Arc<AtomicBool>,
     /// Process start time — used by `/_status` endpoint.
     pub started_at: Instant,
-    /// Process-local, community-scoped NIP-98 replay prevention.
-    ///
-    /// A multi-node release must replace this composition with the Nim domain
-    /// boundary before claiming cluster-wide replay protection.
+    /// Quorum-owned, community-scoped NIP-98 replay prevention.
     pub nip98_replay: Arc<dyn Nip98ReplayGuard>,
-    /// Node-local admission limits for ordinary HTTP and WebSocket work.
-    pub admission_rate_limiter: Arc<LocalRateLimiter>,
+    /// Quorum-owned admission limits; tests may compose the local fallback.
+    pub(crate) admission_rate_limiter: Arc<AdmissionRateLimiter>,
 
     /// Per-agent sliding-window rate limiter for observer frames (kind 24200).
     /// Key: (community_id, agent pubkey bytes). Value: (count, window_start).
@@ -747,6 +908,116 @@ pub struct AppState {
 }
 
 impl AppState {
+    /// Projects and advertises one verified presence event.
+    pub async fn publish_presence_transition(
+        &self,
+        tenant: &TenantContext,
+        pubkey: &nostr::PublicKey,
+        status: &str,
+        event: &nostr::Event,
+    ) -> Result<(), nimino_control::EphemeralRuntimeError> {
+        if let Some(ephemeral) = self.domain.ephemeral() {
+            let observed_at_ms = event.created_at.as_secs().saturating_mul(1_000);
+            if status == "offline" {
+                ephemeral
+                    .clear_presence_at(
+                        tenant.community().to_string(),
+                        pubkey.to_hex(),
+                        observed_at_ms,
+                        event.id.to_hex(),
+                    )
+                    .await?;
+            } else {
+                ephemeral
+                    .publish_presence(
+                        tenant.community().to_string(),
+                        pubkey.to_hex(),
+                        status,
+                        observed_at_ms,
+                        event.id.to_hex(),
+                        serde_json::to_string(event).map_err(|error| {
+                            nimino_control::EphemeralRuntimeError::InvalidFrame(error.to_string())
+                        })?,
+                    )
+                    .await?;
+            }
+        } else if status == "offline" {
+            self.local_delivery.clear_presence(tenant, pubkey).await;
+        } else {
+            self.local_delivery
+                .set_presence(tenant, pubkey, status)
+                .await;
+        }
+        Ok(())
+    }
+
+    /// Projects and advertises one verified typing event.
+    pub async fn publish_typing_transition(
+        &self,
+        tenant: &TenantContext,
+        pubkey: &nostr::PublicKey,
+        channel_id: Uuid,
+        event: &nostr::Event,
+    ) -> Result<(), nimino_control::EphemeralRuntimeError> {
+        if let Some(ephemeral) = self.domain.ephemeral() {
+            ephemeral
+                .publish_typing(
+                    tenant.community().to_string(),
+                    pubkey.to_hex(),
+                    channel_id.to_string(),
+                    "typing",
+                    event.created_at.as_secs().saturating_mul(1_000),
+                    event.id.to_hex(),
+                    serde_json::to_string(event).map_err(|error| {
+                        nimino_control::EphemeralRuntimeError::InvalidFrame(error.to_string())
+                    })?,
+                )
+                .await?;
+        }
+        Ok(())
+    }
+
+    /// Clears this relay node's presence contribution after its last local socket closes.
+    pub async fn clear_presence(
+        &self,
+        tenant: &TenantContext,
+        pubkey: &nostr::PublicKey,
+    ) -> Result<(), nimino_control::EphemeralRuntimeError> {
+        if let Some(ephemeral) = self.domain.ephemeral() {
+            ephemeral
+                .clear_presence(tenant.community().to_string(), pubkey.to_hex())
+                .await?;
+        } else {
+            self.local_delivery.clear_presence(tenant, pubkey).await;
+        }
+        Ok(())
+    }
+
+    /// Returns converged live presence values for one resolved community.
+    pub async fn presence_bulk(
+        &self,
+        tenant: &TenantContext,
+        pubkeys: &[nostr::PublicKey],
+    ) -> HashMap<String, String> {
+        if let Some(ephemeral) = self.domain.ephemeral() {
+            match ephemeral
+                .presence(
+                    tenant.community().to_string(),
+                    pubkeys.iter().map(nostr::PublicKey::to_hex).collect(),
+                )
+                .await
+            {
+                Ok(presence) => presence,
+                Err(error) => {
+                    tracing::warn!(%error, "cluster presence query failed closed");
+                    HashMap::new()
+                }
+            }
+        } else {
+            self.local_delivery.get_presence_bulk(tenant, pubkeys).await
+        }
+    }
+
     /// Constructs `AppState` from its component services.
     ///
     /// Returns `(state, audit_shutdown)`. The caller should call
@@ -828,8 +1099,23 @@ impl AppState {
             )
             .expect("git pack cache path must be available"),
         );
-        let nip98_replay: Arc<dyn Nip98ReplayGuard> = Arc::new(LocalReplayGuard::new());
-        let admission_rate_limiter = Arc::new(LocalRateLimiter::new());
+        #[cfg(not(test))]
+        let nip98_replay: Arc<dyn Nip98ReplayGuard> = Arc::new(ClusterReplayGuard {
+            admission: domain.admission().clone(),
+        });
+        #[cfg(test)]
+        let nip98_replay: Arc<dyn Nip98ReplayGuard> = match domain.admission_for_tests().cloned() {
+            Some(admission) => Arc::new(ClusterReplayGuard { admission }),
+            None => Arc::new(LocalReplayGuard::new()),
+        };
+        #[cfg(not(test))]
+        let admission_rate_limiter =
+            Arc::new(AdmissionRateLimiter::Cluster(domain.admission().clone()));
+        #[cfg(test)]
+        let admission_rate_limiter = Arc::new(match domain.admission_for_tests().cloned() {
+            Some(admission) => AdmissionRateLimiter::Cluster(admission),
+            None => AdmissionRateLimiter::Local(LocalRateLimiter::new()),
+        });
         let audit_enabled = audit_arc.is_some();
         let state = Self {
             config: Arc::new(config),
@@ -973,6 +1259,13 @@ impl AppState {
     /// authority and is rechecked on cache misses.
     pub fn invalidate_membership(&self, tenant: &TenantContext, channel_id: Uuid, pubkey: &[u8]) {
         self.invalidate_membership_local(tenant.community(), channel_id, pubkey);
+        self.publish_authorization_invalidation(
+            tenant.community(),
+            nimino_boundary::AuthorizationInvalidationKind::Membership,
+            hex::encode(pubkey),
+            channel_id.to_string(),
+            None,
+        );
     }
 
     /// Process-local membership drop.
@@ -1013,6 +1306,13 @@ impl AppState {
     /// Invalidate the cached visibility for a single channel (e.g. after a flip).
     pub fn invalidate_channel_visibility(&self, tenant: &TenantContext, channel_id: Uuid) {
         self.invalidate_channel_visibility_local(tenant.community(), channel_id);
+        self.publish_authorization_invalidation(
+            tenant.community(),
+            nimino_boundary::AuthorizationInvalidationKind::Visibility,
+            String::new(),
+            channel_id.to_string(),
+            None,
+        );
     }
 
     /// Local-only visibility drop. See [`invalidate_membership_local`].
@@ -1034,6 +1334,13 @@ impl AppState {
     /// cross-community signal.
     pub fn invalidate_channel_deleted(&self, tenant: &TenantContext) {
         self.invalidate_channel_deleted_local(tenant.community());
+        self.publish_authorization_invalidation(
+            tenant.community(),
+            nimino_boundary::AuthorizationInvalidationKind::Community,
+            String::new(),
+            String::new(),
+            None,
+        );
     }
 
     /// Local-only channel-deleted drop. See [`invalidate_membership_local`].
@@ -1083,14 +1390,56 @@ impl AppState {
         event_id: &str,
         reason: &str,
     ) -> usize {
-        self.conn_manager
-            .disconnect_pubkey(tenant.community(), pubkey, event_id, reason)
+        let closed =
+            self.conn_manager
+                .disconnect_pubkey(tenant.community(), pubkey, event_id, reason);
+        self.publish_authorization_invalidation(
+            tenant.community(),
+            nimino_boundary::AuthorizationInvalidationKind::Ban,
+            hex::encode(pubkey),
+            String::new(),
+            Some(event_id.to_owned()),
+        );
+        closed
     }
 
     /// Closes this process's sockets for an archived community.
     pub fn disconnect_community(&self, tenant: &TenantContext) -> usize {
-        self.community_connections
-            .disconnect_community(tenant.community())
+        let closed = self
+            .community_connections
+            .disconnect_community(tenant.community());
+        self.publish_authorization_invalidation(
+            tenant.community(),
+            nimino_boundary::AuthorizationInvalidationKind::Community,
+            String::new(),
+            String::new(),
+            None,
+        );
+        closed
+    }
+
+    fn publish_authorization_invalidation(
+        &self,
+        community: CommunityId,
+        kind: nimino_boundary::AuthorizationInvalidationKind,
+        subject: String,
+        channel_id: String,
+        fact_id: Option<String>,
+    ) {
+        let Some(admission) = self.domain.admission_optional().cloned() else {
+            return;
+        };
+        let sequence = AUTH_INVALIDATION_SEQUENCE.fetch_add(1, Ordering::Relaxed) + 1;
+        let fact_id = fact_id
+            .unwrap_or_else(|| format!("{}:{sequence}", self.domain.node_id().unwrap_or("local")));
+        tokio::spawn(async move {
+            if let Err(error) = admission
+                .publish_invalidation(community.to_string(), kind, subject, channel_id, fact_id)
+                .await
+            {
+                tracing::warn!(%error, %community, ?kind, "cluster authorization invalidation publish failed; durable revalidation remains active");
+            }
+        });
     }
 
     /// Revalidate all communities with live sockets and cancel inactive ones.
@@ -1106,6 +1455,113 @@ impl AppState {
             tracing::warn!(%community_id, %error, "community lifecycle revalidation failed; retaining its sockets until next tick");
         }
         closed
+    }
+
+    /// Revalidates live bans and private-channel subscriptions from durable state.
+    ///
+    /// This is the bounded safety backstop when a Chirps invalidation is missed
+    /// during a partition or process restart.
+    pub async fn revalidate_live_authorization(&self) -> usize {
+        let mut revoked = 0;
+        for (community, pubkey, owner) in self.conn_manager.authenticated_identities() {
+            let (principal, owner_restriction) = tokio::join!(
+                self.db.moderation_restriction_state(community, &pubkey),
+                async {
+                    match owner.as_ref() {
+                        Some(owner) => self.db.moderation_restriction_state(community, owner).await,
+                        None => Ok(Default::default()),
+                    }
+                }
+            );
+            match (principal, owner_restriction) {
+                (Ok(principal), Ok(owner)) if !principal.banned && !owner.banned => {}
+                _ => {
+                    revoked += self.conn_manager.disconnect_pubkey(
+                        community,
+                        &pubkey,
+                        &"0".repeat(64),
+                        "blocked: authorization state changed",
+                    );
+                }
+            }
+        }
+        // ponytail: periodic O(active subscriptions) safety scan; add a durable
+        // revision index only when measured fleet size makes this material.
+        for (community, channel_id, conn_id) in self.sub_registry.scoped_channel_connections() {
+            let Some(pubkey) = self.conn_manager.pubkey_for_conn(conn_id) else {
+                continue;
+            };
+            let allowed = match self.db.get_channel(community, channel_id).await {
+                Ok(channel) if channel.visibility != "private" => true,
+                Ok(_) => self
+                    .db
+                    .is_member(community, channel_id, &pubkey)
+                    .await
+                    .unwrap_or(false),
+                Err(_) => false,
+            };
+            if !allowed {
+                revoked += self
+                    .evict_live_channel_subscriptions_local(community, channel_id, &pubkey)
+                    .await;
+            }
+        }
+        revoked
+    }
+
+    /// Removes one principal's local subscriptions for one revoked channel.
+    pub(crate) async fn evict_live_channel_subscriptions_local(
+        &self,
+        community: CommunityId,
+        channel_id: Uuid,
+        target_pubkey: &[u8],
+    ) -> usize {
+        let conn_ids = self
+            .conn_manager
+            .connection_ids_for_pubkey_in_community(community, target_pubkey);
+        let mut revoked = 0;
+        for conn_id in conn_ids {
+            revoked += self
+                .evict_conn_channel_subscriptions_local(community, channel_id, conn_id)
+                .await;
+        }
+        revoked
+    }
+
+    pub(crate) async fn evict_conn_channel_subscriptions_local(
+        &self,
+        community: CommunityId,
+        channel_id: Uuid,
+        conn_id: Uuid,
+    ) -> usize {
+        let removed = self
+            .sub_registry
+            .remove_channel_subscriptions_scoped(community, conn_id, channel_id);
+        if removed.is_empty() {
+            return 0;
+        }
+        if let Some(subscriptions) = self.conn_manager.subscriptions_for(conn_id) {
+            let mut conn_subscriptions = subscriptions.lock().await;
+            for update in &removed {
+                if update.removed {
+                    conn_subscriptions.remove(&update.sub_id);
+                }
+            }
+        }
+        let mut revoked = 0;
+        for update in removed {
+            if update.removed {
+                let _ = self.conn_manager.send_to(
+                    conn_id,
+                    crate::protocol::RelayMessage::closed(
+                        &update.sub_id,
+                        "restricted: channel access revoked",
+                    ),
+                );
+                revoked += 1;
+            }
+        }
+        revoked
     }
 
     /// Get accessible channel IDs with a 10-second cache. Falls back to DB on miss.
@@ -1794,6 +2250,48 @@ mod tests {
 
         assert_eq!(closed, 0, "no connection matches a different pubkey");
         assert!(!cancel.is_cancelled(), "unrelated connection stays live");
+    }
+
+    #[tokio::test]
+    async fn disconnect_pubkey_cascades_owner_ban_to_nip_oa_agent() {
+        let mgr = ConnectionManager::new();
+        let community = CommunityId::from_uuid(Uuid::nil());
+        let agent = vec![1u8; 32];
+        let owner = vec![2u8; 32];
+        let unrelated = vec![3u8; 32];
+        let mut cancels = Vec::new();
+
+        for (principal, attested_owner) in [
+            (agent, Some(owner.clone())),
+            (owner.clone(), None),
+            (unrelated, None),
+        ] {
+            let conn_id = Uuid::new_v4();
+            let (tx, _rx) = mpsc::channel(8);
+            let (ctrl_tx, _ctrl_rx) = mpsc::channel(8);
+            let cancel = CancellationToken::new();
+            mgr.register(
+                conn_id,
+                tx,
+                ctrl_tx,
+                None,
+                cancel.clone(),
+                community,
+                Arc::new(AtomicU8::new(0)),
+                Arc::new(Mutex::new(HashMap::new())),
+                3,
+            );
+            mgr.set_authenticated_identity(conn_id, principal, attested_owner);
+            cancels.push(cancel);
+        }
+
+        assert_eq!(
+            mgr.disconnect_pubkey(community, &owner, &"0".repeat(64), "blocked: owner banned",),
+            2
+        );
+        assert!(cancels[0].is_cancelled(), "the owner's agent is closed");
+        assert!(cancels[1].is_cancelled(), "the owner session is closed");
+        assert!(!cancels[2].is_cancelled(), "unrelated identity stays live");
     }
 
     #[tokio::test]

@@ -117,7 +117,7 @@ nim-check:
 
 # Run the Nimino core unit tests without building Rust
 nim-test:
-    cd "{{nim_core_dir}}" && for test_file in tests/test_*.nim; do nim c -r --hints:off "$test_file"; done
+    cd "{{nim_core_dir}}" && for test_file in tests/test_*.nim; do nim c -r --hints:off "$test_file" || exit; done
 
 # Run the complete Rust-independent Nim lane
 nim-ci: nim-check nim-build nim-test
@@ -271,6 +271,10 @@ cutover-readiness-contract:
 cutover-certification-contract:
     node scripts/test-nimino-cutover-certification.mjs
 
+# Refuse a release tag while any source-readiness blocker remains
+cutover-certify-source: cutover-readiness-contract cutover-certification-contract
+    node scripts/test-nimino-cutover-certification.mjs --require-ready
+
 # Verify exact Agent/CLI bundle inventory, execution, and missing-component rejection
 agent-bundle-contract:
     node scripts/test-nimino-agent-bundle.mjs
@@ -300,7 +304,7 @@ nimino-effect-scenarios: nimino-effect-ledger-contract nim-boundary-build
 
 # Exhaustively check the bounded 3-node control-log state graph with TLC
 control-model-check: control-model-contract
-    tlc -workers auto -config formal/scenarios/NiminoControlLog_3Node.cfg formal/tla/cluster/NiminoControlLog.tla
+    bash scripts/run-control-model-check.sh -workers auto -config formal/scenarios/NiminoControlLog_3Node.cfg formal/tla/cluster/NiminoControlLog.tla
 
 # Verify Nim-owned cluster admission, lifecycle, lane gates, and corpus coverage
 nimino-cluster-contract:
@@ -559,7 +563,7 @@ desktop-e2e-integration: _ensure-migrations
     cd {{desktop_dir}} && pnpm test:e2e:integration
 
 # Run the deterministic desktop correctness smoke against an isolated local relay
-desktop-release-smoke:
+desktop-release-smoke: nim-boundary-build _dev-cluster-material
     ./scripts/run-desktop-release-smoke.sh
 
 # Run only the e2e specs changed vs origin/main (both projects) before pushing
@@ -698,7 +702,8 @@ relay: bootstrap _ensure-migrations nim-boundary-build _dev-cluster-material
     NIMINO_CHIRPS_CERTIFICATE_PATH="$root/tls.crt" \
     NIMINO_CHIRPS_PRIVATE_KEY_PATH="$root/tls.key" \
     NIMINO_CHIRPS_TRUST_ANCHOR_PATHS="$root/ca.crt" \
-    NIMINO_NODE_STORE_PATH="$root/data.redb" cargo run -p nimino-relay
+    NIMINO_NODE_STORE_PATH="$root/data.redb" \
+    NIMINO_OBJECT_STORE_PATH="$root/objects" cargo run -p nimino-relay
 
 # Start the relay with the built web UI served from it
 relay-web: bootstrap _ensure-migrations nim-boundary-build _dev-cluster-material
@@ -714,10 +719,11 @@ relay-web: bootstrap _ensure-migrations nim-boundary-build _dev-cluster-material
     NIMINO_CHIRPS_CERTIFICATE_PATH="$root/tls.crt" \
     NIMINO_CHIRPS_PRIVATE_KEY_PATH="$root/tls.key" \
     NIMINO_CHIRPS_TRUST_ANCHOR_PATHS="$root/ca.crt" \
-    NIMINO_NODE_STORE_PATH="$root/data.redb" cargo run -p nimino-relay
+    NIMINO_NODE_STORE_PATH="$root/data.redb" \
+    NIMINO_OBJECT_STORE_PATH="$root/objects" cargo run -p nimino-relay
 
 # Build and run the private read-only admin dashboard
-admin: bootstrap _ensure-migrations
+admin: bootstrap _ensure-migrations nim-boundary-build _dev-cluster-material
     #!/usr/bin/env bash
     set -euo pipefail
     export PATH="{{justfile_directory()}}/bin:$PATH"
@@ -725,8 +731,15 @@ admin: bootstrap _ensure-migrations
     pnpm -C admin-web build
     export NIMINO_ADMIN_HOST="${NIMINO_ADMIN_HOST:-admin.localhost:3000}"
     export NIMINO_ADMIN_WEB_DIR="${NIMINO_ADMIN_WEB_DIR:-{{justfile_directory()}}/admin-web/dist}"
+    root="{{justfile_directory()}}/target/nim/dev-cluster"
     echo "Admin dashboard: http://${NIMINO_ADMIN_HOST}/reports"
-    cargo run -p nimino-relay
+    NIMINO_BOUNDARY_WORKER="{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker" \
+    NIMINO_CHIRPS_IDENTITY_PATH="$root/node.identity" \
+    NIMINO_CHIRPS_CERTIFICATE_PATH="$root/tls.crt" \
+    NIMINO_CHIRPS_PRIVATE_KEY_PATH="$root/tls.key" \
+    NIMINO_CHIRPS_TRUST_ANCHOR_PATHS="$root/ca.crt" \
+    NIMINO_NODE_STORE_PATH="$root/data.redb" \
+    NIMINO_OBJECT_STORE_PATH="$root/objects" cargo run -p nimino-relay
 
 # Seed deterministic reports and product feedback for local admin dashboard review
 admin-seed: _ensure-migrations
@@ -741,12 +754,21 @@ admin-check: fmt-check
     pnpm -C admin-web exec playwright test
 
 # Start the relay server in release mode
-relay-release: _ensure-migrations
-    cargo run -p nimino-relay --release
+relay-release: _ensure-migrations nim-boundary-build _dev-cluster-material
+    #!/usr/bin/env bash
+    set -euo pipefail
+    root="{{justfile_directory()}}/target/nim/dev-cluster"
+    NIMINO_BOUNDARY_WORKER="{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker" \
+    NIMINO_CHIRPS_IDENTITY_PATH="$root/node.identity" \
+    NIMINO_CHIRPS_CERTIFICATE_PATH="$root/tls.crt" \
+    NIMINO_CHIRPS_PRIVATE_KEY_PATH="$root/tls.key" \
+    NIMINO_CHIRPS_TRUST_ANCHOR_PATHS="$root/ca.crt" \
+    NIMINO_NODE_STORE_PATH="$root/data.redb" \
+    NIMINO_OBJECT_STORE_PATH="$root/objects" cargo run -p nimino-relay --release
 
 
 # Run the desktop Tauri app in dev mode with a local relay (ports and identity derived from worktree)
-dev *ARGS: bootstrap _ensure-sidecar-stubs _ensure-migrations
+dev *ARGS: bootstrap _ensure-sidecar-stubs _ensure-migrations nim-boundary-build _dev-cluster-material
     #!/usr/bin/env bash
     set -euo pipefail
     export PATH="{{justfile_directory()}}/bin:$PATH"
@@ -771,6 +793,14 @@ dev *ARGS: bootstrap _ensure-sidecar-stubs _ensure-migrations
     # the bounded profile already used by the relay test launcher.
     export NIMINO_GIT_PROBE_WRITERS="${NIMINO_GIT_PROBE_WRITERS:-8}"
     export NIMINO_GIT_PROBE_ROUNDS="${NIMINO_GIT_PROBE_ROUNDS:-2}"
+    cluster_root="{{justfile_directory()}}/target/nim/dev-cluster"
+    export NIMINO_BOUNDARY_WORKER="{{justfile_directory()}}/{{nim_boundary_bin_dir}}/nimino-core-worker"
+    export NIMINO_CHIRPS_IDENTITY_PATH="$cluster_root/node.identity"
+    export NIMINO_CHIRPS_CERTIFICATE_PATH="$cluster_root/tls.crt"
+    export NIMINO_CHIRPS_PRIVATE_KEY_PATH="$cluster_root/tls.key"
+    export NIMINO_CHIRPS_TRUST_ANCHOR_PATHS="$cluster_root/ca.crt"
+    export NIMINO_NODE_STORE_PATH="$cluster_root/data.redb"
+    export NIMINO_OBJECT_STORE_PATH="$cluster_root/objects"
     ./target/debug/nimino-relay &
     RELAY_PID=$!
     cleanup() {

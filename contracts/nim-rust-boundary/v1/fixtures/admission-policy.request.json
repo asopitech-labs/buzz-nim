@@ -1,0 +1,34 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "admission-batch-1",
+  "operation": "domain.admission.policy",
+  "payload": {
+    "decision": "apply_rate_limit_batch",
+    "states": [],
+    "commands": [
+      {
+        "namespace": "principal",
+        "key": "community-a:alice:api",
+        "observedAtMs": 60001,
+        "windowSecs": 60,
+        "limit": 2
+      },
+      {
+        "namespace": "principal",
+        "key": "community-a:alice:api",
+        "observedAtMs": 60001,
+        "windowSecs": 60,
+        "limit": 2
+      },
+      {
+        "namespace": "principal",
+        "key": "community-a:alice:api",
+        "observedAtMs": 60001,
+        "windowSecs": 60,
+        "limit": 2
+      }
+    ],
+    "controlIndex": 7
+  }
+}

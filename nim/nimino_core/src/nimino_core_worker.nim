@@ -5,6 +5,7 @@ when defined(niminoBoundaryTestHooks):
 
 import nimino_core
 import nimino_core/boundary/[
+  admission_policy_codec,
   agent_policy_codec,
   cluster_lifecycle_codec,
   control_policy_codec,
@@ -12,6 +13,7 @@ import nimino_core/boundary/[
   community_policy_codec,
   dm_policy_codec,
   effect_policy_codec,
+  ephemeral_policy_codec,
   event_policy_codec,
   framing,
   lease_policy_codec,
@@ -43,6 +45,8 @@ proc helloResult(): JsonNode =
     "domain.cli.policy",
     "domain.agent.policy",
     "domain.cluster.lifecycle",
+    "domain.admission.policy",
+    "domain.ephemeral.policy",
     "domain.control.policy",
     "domain.lease.policy",
     "domain.effect.policy",
@@ -172,6 +176,18 @@ proc execute(request: BoundaryRequest; negotiated: var bool): string =
       request.requestId,
       request.operationName,
       executeClusterLifecycle(request.operation.data, request.requestId),
+    )
+  of boAdmissionPolicy:
+    result = encodeSuccess(
+      request.requestId,
+      request.operationName,
+      executeAdmissionPolicy(request.operation.data, request.requestId),
+    )
+  of boEphemeralPolicy:
+    result = encodeSuccess(
+      request.requestId,
+      request.operationName,
+      executeEphemeralPolicy(request.operation.data, request.requestId),
     )
   of boControlPolicy:
     result = encodeSuccess(

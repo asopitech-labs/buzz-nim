@@ -1,0 +1,18 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "fixture-authorization-invalidation",
+  "operation": "domain.admission.policy",
+  "payload": {
+    "decision": "apply_authorization_invalidation",
+    "state": null,
+    "command": {
+      "scope": "community-a",
+      "kind": "membership",
+      "subject": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+      "channelId": "channel-a",
+      "factId": "membership-event-a"
+    },
+    "revision": 42
+  }
+}

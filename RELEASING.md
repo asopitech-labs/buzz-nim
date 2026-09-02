@@ -149,4 +149,5 @@ Issues #64–#67 must freeze backup/rollback evidence, delete predecessor
 pipelines and product paths, and pass clean-clone plus compatibility-negative
 certification. Issue #68 alone creates and promotes the first tag, then records
 post-cutover smoke evidence. Until those gates pass, the repository is
-cutover-ready but not released.
+neither cutover-ready nor released. `just cutover-certify-source` is the local
+fail-closed check for that source state.

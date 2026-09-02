@@ -32,8 +32,12 @@ use tokio::{
 };
 use tokio_util::sync::CancellationToken;
 
+mod admission;
+mod ephemeral;
 mod lease;
 
+pub use admission::*;
+pub use ephemeral::*;
 pub use lease::*;
 
 const WIRE_PREFIX: &[u8] = b"NIMINO-CONTROL/1\n";
@@ -80,7 +84,7 @@ impl ControlRuntimeOptions {
 impl Default for ControlRuntimeOptions {
     fn default() -> Self {
         Self::new(
-            Duration::from_millis(250),
+            Duration::from_millis(100),
             Duration::from_secs(2),
             Duration::from_secs(2),
             64,
@@ -162,6 +166,12 @@ pub enum ControlRuntimeError {
     /// The bounded command queue is full.
     #[error("control command queue is full")]
     Backpressure,
+    /// A forwarded proposal did not complete within the control-plane bound.
+    #[error("control proposal timed out")]
+    ProposalTimeout,
+    /// The current leader rejected a forwarded proposal.
+    #[error("current leader rejected the control proposal")]
+    RemoteProposalRejected,
     /// A durable payload is not valid UTF-8 for the versioned Nim boundary.
     #[error("control store contains non-UTF-8 policy data")]
     InvalidStoredText,
@@ -187,6 +197,7 @@ pub struct ControlClient {
     commands: mpsc::Sender<RuntimeCommand>,
     status: watch::Receiver<ControlStatus>,
     applied: broadcast::Sender<AppliedControlEntry>,
+    proposal_timeout: Duration,
 }
 
 impl ControlClient {
@@ -207,7 +218,11 @@ impl ControlClient {
                 mpsc::error::TrySendError::Full(_) => ControlRuntimeError::Backpressure,
                 mpsc::error::TrySendError::Closed(_) => ControlRuntimeError::Stopped,
             })?;
-        response.await.unwrap_or(Err(ControlRuntimeError::Stopped))
+        match tokio::time::timeout(self.proposal_timeout, response).await {
+            Ok(Ok(result)) => result,
+            Ok(Err(_)) => Err(ControlRuntimeError::Stopped),
+            Err(_) => Err(ControlRuntimeError::ProposalTimeout),
+        }
     }
 
     /// Returns the latest control authority and liveness snapshot.
@@ -239,6 +254,16 @@ impl ControlRuntime {
     ) -> Result<Self, ControlRuntimeError> {
         options.validate()?;
         let voters = validated_voters(voters)?;
+        let remote_voters = u32::try_from(voters.len().saturating_sub(1))
+            .map_err(|_| ControlRuntimeError::InvalidConfiguration)?;
+        if options
+            .heartbeat_interval
+            .saturating_mul(remote_voters)
+            .saturating_mul(3)
+            > options.election_timeout
+        {
+            return Err(ControlRuntimeError::InvalidConfiguration);
+        }
         let local_node_id = node_name(mesh.local_node_id());
         if !voters.contains_key(&local_node_id) {
             return Err(ControlRuntimeError::LocalNotVoter);
@@ -278,9 +303,13 @@ impl ControlRuntime {
             replication_acks: HashMap::new(),
             candidate_term: None,
             pending: None,
+            forwarded: HashMap::new(),
+            forward_sequence: 0,
             election_deadline: Instant::now(),
             last_authority: None,
             catch_up_through: None,
+            quorum_cache: None,
+            heartbeat_cursor: 0,
         };
         let task_shutdown = shutdown.clone();
         let task = tokio::spawn(async move { context.run(task_shutdown).await });
@@ -289,6 +318,10 @@ impl ControlRuntime {
                 commands,
                 status,
                 applied,
+                proposal_timeout: options
+                    .election_timeout
+                    .saturating_mul(3)
+                    .saturating_add(options.policy_timeout.saturating_mul(2)),
             },
             shutdown,
             task: Some(task),
@@ -320,6 +353,21 @@ struct PendingProposal {
     entry: ControlEntry,
     supporters: BTreeSet<String>,
     reply: Option<oneshot::Sender<Result<ControlEntry, ControlRuntimeError>>>,
+}
+
+struct ForwardedProposal {
+    command_id: String,
+    payload: String,
+    reply: oneshot::Sender<Result<ControlEntry, ControlRuntimeError>>,
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum ProposalFailure {
+    LeaderRequired,
+    QuorumRequired,
+    PendingEntry,
+    Rejected,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -371,6 +419,16 @@ enum WireFrame {
         leader_id: String,
         next_index: u64,
     },
+    Proposal {
+        request_id: String,
+        command_id: String,
+        payload: String,
+    },
+    ProposalResult {
+        request_id: String,
+        entry: Option<ControlEntry>,
+        error: Option<ProposalFailure>,
+    },
 }
 
 struct RuntimeContext {
@@ -390,9 +448,22 @@ struct RuntimeContext {
     replication_acks: HashMap<u64, BTreeSet<String>>,
     candidate_term: Option<u64>,
     pending: Option<PendingProposal>,
+    forwarded: HashMap<String, ForwardedProposal>,
+    forward_sequence: u64,
     election_deadline: Instant,
     last_authority: Option<Instant>,
     catch_up_through: Option<u64>,
+    quorum_cache: Option<QuorumCache>,
+    heartbeat_cursor: usize,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct QuorumCache {
+    phase: ControlVoterPhase,
+    old_voters: Vec<String>,
+    new_voters: Vec<String>,
+    supporters: Vec<String>,
+    decision: ControlQuorumDecision,
 }
 
 impl RuntimeContext {
@@ -406,6 +477,7 @@ impl RuntimeContext {
             tokio::select! {
                 _ = shutdown.cancelled() => {
                     self.fail_pending(ControlRuntimeError::Stopped);
+                    self.fail_forwarded(|| ControlRuntimeError::Stopped);
                     self.publish_status(false, false, None);
                     return Ok(());
                 }
@@ -418,13 +490,17 @@ impl RuntimeContext {
                     Some(command) => self.handle_command(command).await,
                     None => {
                         self.fail_pending(ControlRuntimeError::Stopped);
+                        self.fail_forwarded(|| ControlRuntimeError::Stopped);
                         self.publish_status(false, false, None);
                         return Ok(());
                     }
                 },
                 message = messages.recv() => match message {
                     Ok(message) => {
-                        if let Err(error) = self.handle_message(message.from(), message.payload()).await {
+                        if let Err(error) = self
+                            .handle_message(message.from(), message.payload(), message.received_at())
+                            .await
+                        {
                             self.record_error(&error);
                         }
                     }
@@ -445,7 +521,7 @@ impl RuntimeContext {
             self.live_supporters.clear();
             self.live_supporters.insert(self.local_node_id.clone());
             for (node, seen) in &self.peer_seen {
-                if now.duration_since(*seen) <= self.options.election_timeout {
+                if is_fresh(*seen, now, self.options.election_timeout) {
                     self.live_supporters.insert(node.clone());
                 }
             }
@@ -454,7 +530,7 @@ impl RuntimeContext {
                 .await?
                 .granted;
             self.publish_status(true, quorum, None);
-            self.broadcast_authority().await?;
+            self.send_authority_heartbeat().await?;
             if let Some(entry) = self.pending.as_ref().map(|pending| pending.entry.clone()) {
                 self.broadcast_replicate(entry).await?;
             }
@@ -462,10 +538,11 @@ impl RuntimeContext {
         }
         let authority_live = self
             .last_authority
-            .is_some_and(|seen| now.duration_since(seen) <= self.options.election_timeout);
+            .is_some_and(|seen| is_fresh(seen, now, self.options.election_timeout));
         if !authority_live && now >= self.election_deadline {
             self.start_election().await?;
         } else if !authority_live {
+            self.fail_forwarded(|| ControlRuntimeError::QuorumRequired);
             self.publish_status(true, false, None);
         }
         Ok(())
@@ -490,8 +567,7 @@ impl RuntimeContext {
         reply: oneshot::Sender<Result<ControlEntry, ControlRuntimeError>>,
     ) -> Result<(), ControlRuntimeError> {
         if !self.is_leader() {
-            let _ = reply.send(Err(ControlRuntimeError::LeaderRequired));
-            return Ok(());
+            return self.forward_proposal(command_id, payload, reply).await;
         }
         if !self
             .check_quorum(self.live_supporters.iter().cloned().collect())
@@ -519,6 +595,16 @@ impl RuntimeContext {
             })
             .await?;
         let decision = self.settle(plan).await?;
+        if decision.effect == ControlEffect::Replay {
+            let entry = decision
+                .applied_entry
+                .ok_or(ControlRuntimeError::UnexpectedPolicyResult)?;
+            let _ = reply.send(Ok(entry));
+            return Ok(());
+        }
+        if decision.effect != ControlEffect::Append {
+            return Err(ControlRuntimeError::UnexpectedPolicyResult);
+        }
         let entry = decision
             .state
             .log
@@ -536,8 +622,65 @@ impl RuntimeContext {
         self.try_commit_pending().await
     }
 
+    async fn forward_proposal(
+        &mut self,
+        command_id: String,
+        payload: String,
+        reply: oneshot::Sender<Result<ControlEntry, ControlRuntimeError>>,
+    ) -> Result<(), ControlRuntimeError> {
+        let authority_live = self
+            .last_authority
+            .is_some_and(|seen| is_fresh(seen, Instant::now(), self.options.election_timeout));
+        if !authority_live
+            || !self
+                .check_quorum(self.live_supporters.iter().cloned().collect())
+                .await?
+                .granted
+        {
+            let _ = reply.send(Err(ControlRuntimeError::QuorumRequired));
+            return Ok(());
+        }
+        if self.forwarded.len() >= self.options.command_capacity {
+            let _ = reply.send(Err(ControlRuntimeError::Backpressure));
+            return Ok(());
+        }
+        let Some(leader) = self.voters.get(&self.state.leader_id).copied() else {
+            let _ = reply.send(Err(ControlRuntimeError::LeaderRequired));
+            return Ok(());
+        };
+        self.forward_sequence = self
+            .forward_sequence
+            .checked_add(1)
+            .ok_or(ControlRuntimeError::InvalidConfiguration)?;
+        let request_id = format!(
+            "{}:{}:{}",
+            self.local_node_id, self.state.term, self.forward_sequence
+        );
+        self.forwarded.insert(
+            request_id.clone(),
+            ForwardedProposal {
+                command_id: command_id.clone(),
+                payload: payload.clone(),
+                reply,
+            },
+        );
+        let frame = WireFrame::Proposal {
+            request_id: request_id.clone(),
+            command_id,
+            payload,
+        };
+        if let Err(error) = self.send(leader, frame).await {
+            self.record_error(&error);
+            if let Some(forwarded) = self.forwarded.remove(&request_id) {
+                let _ = forwarded.reply.send(Err(error));
+            }
+        }
+        Ok(())
+    }
+
     async fn start_election(&mut self) -> Result<(), ControlRuntimeError> {
         self.fail_pending(ControlRuntimeError::LeaderRequired);
+        self.fail_forwarded(|| ControlRuntimeError::LeaderRequired);
         let term = self
             .state
             .term
@@ -623,6 +766,7 @@ impl RuntimeContext {
         &mut self,
         authenticated_peer: NodeId,
         payload: &[u8],
+        received_at: Instant,
     ) -> Result<(), ControlRuntimeError> {
         let Some(payload) = payload.strip_prefix(WIRE_PREFIX) else {
             return Ok(());
@@ -674,6 +818,7 @@ impl RuntimeContext {
                     election_supporters,
                     live_supporters,
                     commit_index,
+                    received_at,
                 )
                 .await
             }
@@ -681,7 +826,7 @@ impl RuntimeContext {
                 if leader_id != self.local_node_id || !self.is_leader() || term != self.state.term {
                     return Ok(());
                 }
-                self.peer_seen.insert(peer, Instant::now());
+                self.peer_seen.insert(peer, received_at);
                 Ok(())
             }
             WireFrame::Replicate {
@@ -704,7 +849,10 @@ impl RuntimeContext {
                 term,
                 leader_id,
                 index,
-            } => self.handle_replicated(peer, term, leader_id, index).await,
+            } => {
+                self.handle_replicated(peer, term, leader_id, index, received_at)
+                    .await
+            }
             WireFrame::Commit {
                 term,
                 leader_id,
@@ -730,10 +878,99 @@ impl RuntimeContext {
                 leader_id,
                 next_index,
             } => {
-                self.handle_catch_up(authenticated_peer, peer, term, leader_id, next_index)
+                self.handle_catch_up(
+                    authenticated_peer,
+                    peer,
+                    term,
+                    leader_id,
+                    next_index,
+                    received_at,
+                )
+                .await
+            }
+            WireFrame::Proposal {
+                request_id,
+                command_id,
+                payload,
+            } => {
+                self.handle_forwarded_proposal(authenticated_peer, request_id, command_id, payload)
                     .await
             }
+            WireFrame::ProposalResult {
+                request_id,
+                entry,
+                error,
+            } => self.handle_proposal_result(peer, request_id, entry, error),
         }
+    }
+
+    async fn handle_forwarded_proposal(
+        &mut self,
+        peer: NodeId,
+        request_id: String,
+        command_id: String,
+        payload: String,
+    ) -> Result<(), ControlRuntimeError> {
+        if !self.is_leader() {
+            return self
+                .send(
+                    peer,
+                    WireFrame::ProposalResult {
+                        request_id,
+                        entry: None,
+                        error: Some(ProposalFailure::LeaderRequired),
+                    },
+                )
+                .await;
+        }
+        let mesh = self.mesh.clone();
+        let (reply, response) = oneshot::channel();
+        tokio::spawn(async move {
+            let (entry, error) = match response.await {
+                Ok(Ok(entry)) => (Some(entry), None),
+                Ok(Err(error)) => (None, Some(proposal_failure(&error))),
+                Err(_) => (None, Some(ProposalFailure::Rejected)),
+            };
+            if let Ok(payload) = encode_wire(&WireFrame::ProposalResult {
+                request_id,
+                entry,
+                error,
+            }) {
+                let _ = mesh.send(peer, payload).await;
+            }
+        });
+        self.start_proposal(command_id, payload, reply).await
+    }
+
+    fn handle_proposal_result(
+        &mut self,
+        peer: String,
+        request_id: String,
+        entry: Option<ControlEntry>,
+        error: Option<ProposalFailure>,
+    ) -> Result<(), ControlRuntimeError> {
+        if peer != self.state.leader_id {
+            return Err(ControlRuntimeError::InvalidFrame(
+                "proposal result is not from the current leader".into(),
+            ));
+        }
+        let Some(forwarded) = self.forwarded.remove(&request_id) else {
+            return Ok(());
+        };
+        let result = match (entry, error) {
+            (Some(entry), None)
+                if entry.command_id == forwarded.command_id
+                    && entry.payload == forwarded.payload =>
+            {
+                Ok(entry)
+            }
+            (None, Some(error)) => Err(proposal_error(error)),
+            _ => Err(ControlRuntimeError::InvalidFrame(
+                "proposal result does not match the request".into(),
+            )),
+        };
+        let _ = forwarded.reply.send(result);
+        Ok(())
     }
 
     async fn handle_vote_request(
@@ -758,6 +995,7 @@ impl RuntimeContext {
         let granted = plan.error == ControlStateError::None;
         if granted {
             self.fail_pending(ControlRuntimeError::LeaderRequired);
+            self.fail_forwarded(|| ControlRuntimeError::LeaderRequired);
             self.settle(plan).await?;
             self.candidate_term = None;
             self.last_authority = None;
@@ -793,6 +1031,7 @@ impl RuntimeContext {
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)] // Exact authenticated frame fields plus receipt time.
     async fn handle_authority(
         &mut self,
         peer: NodeId,
@@ -801,18 +1040,23 @@ impl RuntimeContext {
         election_supporters: Vec<String>,
         live_supporters: Vec<String>,
         commit_index: u64,
+        received_at: Instant,
     ) -> Result<(), ControlRuntimeError> {
         self.ensure_leader(term, &leader_id, &election_supporters)
             .await?;
         self.candidate_term = None;
-        self.last_authority = Some(Instant::now());
+        self.last_authority = Some(received_at);
         self.reset_election_deadline();
         self.election_supporters = election_supporters.into_iter().collect();
         self.live_supporters = live_supporters.into_iter().collect();
-        let quorum = self
-            .check_quorum(self.live_supporters.iter().cloned().collect())
-            .await?
-            .granted;
+        let quorum = is_fresh(received_at, Instant::now(), self.options.election_timeout)
+            && self
+                .check_quorum(self.live_supporters.iter().cloned().collect())
+                .await?
+                .granted;
+        if !quorum {
+            self.fail_forwarded(|| ControlRuntimeError::QuorumRequired);
+        }
         self.publish_status(true, quorum, None);
         self.send(
             peer,
@@ -884,10 +1128,12 @@ impl RuntimeContext {
         term: u64,
         leader_id: String,
         index: u64,
+        received_at: Instant,
     ) -> Result<(), ControlRuntimeError> {
         if leader_id != self.local_node_id || !self.is_leader() || term != self.state.term {
             return Ok(());
         }
+        self.peer_seen.insert(peer.clone(), received_at);
         let supporters = self.replication_acks.entry(index).or_default();
         supporters.insert(self.local_node_id.clone());
         supporters.insert(peer);
@@ -1016,6 +1262,7 @@ impl RuntimeContext {
         term: u64,
         leader_id: String,
         next_index: u64,
+        received_at: Instant,
     ) -> Result<(), ControlRuntimeError> {
         if leader_id != self.local_node_id || !self.is_leader() || term != self.state.term {
             return Ok(());
@@ -1036,7 +1283,7 @@ impl RuntimeContext {
             },
         )
         .await?;
-        self.peer_seen.insert(peer, Instant::now());
+        self.peer_seen.insert(peer, received_at);
         Ok(())
     }
 
@@ -1063,6 +1310,7 @@ impl RuntimeContext {
             })
             .await?;
         self.fail_pending(ControlRuntimeError::LeaderRequired);
+        self.fail_forwarded(|| ControlRuntimeError::LeaderRequired);
         self.settle(plan).await?;
         Ok(())
     }
@@ -1095,18 +1343,36 @@ impl RuntimeContext {
     }
 
     async fn check_quorum(
-        &self,
+        &mut self,
         supporters: Vec<String>,
     ) -> Result<ControlQuorumDecision, ControlRuntimeError> {
+        if let Some(cached) = &self.quorum_cache {
+            if cached.phase == self.state.phase
+                && cached.old_voters == self.state.old_voters
+                && cached.new_voters == self.state.new_voters
+                && cached.supporters == supporters
+            {
+                return Ok(cached.decision.clone());
+            }
+        }
         let result = self
             .policy(ControlPolicyRequest::Quorum {
                 state: self.state.clone(),
-                request: ControlQuorumRequest { supporters },
+                request: ControlQuorumRequest {
+                    supporters: supporters.clone(),
+                },
             })
             .await?;
         let ControlPolicyResult::Quorum { result } = result else {
             return Err(ControlRuntimeError::UnexpectedPolicyResult);
         };
+        self.quorum_cache = Some(QuorumCache {
+            phase: self.state.phase,
+            old_voters: self.state.old_voters.clone(),
+            new_voters: self.state.new_voters.clone(),
+            supporters,
+            decision: result.clone(),
+        });
         Ok(result)
     }
 
@@ -1161,14 +1427,31 @@ impl RuntimeContext {
     }
 
     async fn broadcast_authority(&self) -> Result<(), ControlRuntimeError> {
-        self.broadcast(WireFrame::Authority {
+        self.broadcast(self.authority_frame()).await
+    }
+
+    async fn send_authority_heartbeat(&mut self) -> Result<(), ControlRuntimeError> {
+        let remote_count = self.voters.len().saturating_sub(1);
+        let Some(peer) = self
+            .voters
+            .iter()
+            .filter_map(|(voter, peer)| (voter != &self.local_node_id).then_some(*peer))
+            .nth(self.heartbeat_cursor % remote_count.max(1))
+        else {
+            return Ok(());
+        };
+        self.heartbeat_cursor = self.heartbeat_cursor.wrapping_add(1);
+        self.send(peer, self.authority_frame()).await
+    }
+
+    fn authority_frame(&self) -> WireFrame {
+        WireFrame::Authority {
             term: self.state.term,
             leader_id: self.local_node_id.clone(),
             election_supporters: self.election_supporters.iter().cloned().collect(),
             live_supporters: self.live_supporters.iter().cloned().collect(),
             commit_index: self.state.commit_index,
-        })
-        .await
+        }
     }
 
     async fn broadcast_replicate(&self, entry: ControlEntry) -> Result<(), ControlRuntimeError> {
@@ -1260,6 +1543,12 @@ impl RuntimeContext {
             if let Some(reply) = pending.reply.take() {
                 let _ = reply.send(Err(error));
             }
+        }
+    }
+
+    fn fail_forwarded(&mut self, mut error: impl FnMut() -> ControlRuntimeError) {
+        for (_, forwarded) in self.forwarded.drain() {
+            let _ = forwarded.reply.send(Err(error()));
         }
     }
 
@@ -1469,6 +1758,28 @@ fn last_log_term(state: &ControlState) -> u64 {
         .unwrap_or(0)
 }
 
+fn is_fresh(seen: Instant, now: Instant, timeout: Duration) -> bool {
+    now.saturating_duration_since(seen) <= timeout
+}
+
+fn proposal_failure(error: &ControlRuntimeError) -> ProposalFailure {
+    match error {
+        ControlRuntimeError::LeaderRequired => ProposalFailure::LeaderRequired,
+        ControlRuntimeError::QuorumRequired => ProposalFailure::QuorumRequired,
+        ControlRuntimeError::PendingEntry => ProposalFailure::PendingEntry,
+        _ => ProposalFailure::Rejected,
+    }
+}
+
+fn proposal_error(error: ProposalFailure) -> ControlRuntimeError {
+    match error {
+        ProposalFailure::LeaderRequired => ControlRuntimeError::LeaderRequired,
+        ProposalFailure::QuorumRequired => ControlRuntimeError::QuorumRequired,
+        ProposalFailure::PendingEntry => ControlRuntimeError::PendingEntry,
+        ProposalFailure::Rejected => ControlRuntimeError::RemoteProposalRejected,
+    }
+}
+
 fn entry_kind_name(kind: ControlEntryKind) -> &'static str {
     match kind {
         ControlEntryKind::Command => "command",
@@ -1536,6 +1847,14 @@ mod tests {
         assert!(validated_voters(["00".repeat(16)]).is_ok());
         assert!(validated_voters(["AA".repeat(16)]).is_err());
         assert!(validated_voters(["00".repeat(15)]).is_err());
+        let defaults = ControlRuntimeOptions::default();
+        assert!(
+            defaults
+                .heartbeat_interval
+                .saturating_mul(4)
+                .saturating_mul(3)
+                <= defaults.election_timeout
+        );
         assert!(ControlRuntimeOptions::new(
             Duration::from_secs(1),
             Duration::from_secs(2),
@@ -1555,5 +1874,18 @@ mod tests {
         .unwrap();
         assert!(encoded.starts_with(WIRE_PREFIX));
         assert!(serde_json::from_slice::<WireFrame>(&encoded[WIRE_PREFIX.len()..]).is_ok());
+    }
+
+    #[test]
+    fn liveness_uses_receive_time_not_dequeue_time() {
+        let received = Instant::now();
+        let timeout = Duration::from_secs(1);
+
+        assert!(is_fresh(received, received + timeout, timeout));
+        assert!(!is_fresh(
+            received,
+            received + timeout + Duration::from_millis(1),
+            timeout
+        ));
     }
 }

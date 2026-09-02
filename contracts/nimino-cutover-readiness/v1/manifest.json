@@ -3,7 +3,7 @@
   "contract": "nimino.cutover-readiness",
   "issue": 17,
   "milestone": "Nimino v1.0 — Independent Cutover",
-  "phase": "frozen-for-cleanup",
+  "phase": "blocked-for-release-authority",
   "compatibilityMode": false,
   "workstreams": [
     {
@@ -138,13 +138,13 @@
     {
       "epic": 9,
       "name": "cluster-control",
-      "children": [36, 43, 46, 48, 49, 51, 52, 56, 58],
+      "children": [36, 43, 46, 48, 49, 51, 52, 56, 58, 91, 92, 93, 94],
       "keep": [
         "Nim-owned control log, admission, lifecycle, lease, fencing, and routing"
       ],
       "delete": ["legacy mesh and Redis control-plane ownership"],
       "owner": {
-        "implementation": [46, 48, 49, 51, 52, 56, 58],
+        "implementation": [46, 48, 49, 51, 52, 56, 58, 91, 92, 93, 94],
         "cleanup": 66
       },
       "proof": {
@@ -190,12 +190,12 @@
     {
       "epic": 11,
       "name": "release",
-      "children": [37, 41, 61, 62, 63, 65],
+      "children": [37, 41, 61, 62, 63, 65, 95],
       "keep": ["one asopitech-labs Nimino release-set and protected promotion"],
       "delete": [
         "Block, Square, Mobile, component-specific, and predecessor release authorities"
       ],
-      "owner": { "implementation": [41, 61, 62, 63, 65], "cleanup": 66 },
+      "owner": { "implementation": [41, 61, 62, 63, 65, 95], "cleanup": 66 },
       "proof": {
         "contracts": [
           "contracts/nimino-release-set/v1/contract.json",
@@ -211,8 +211,23 @@
       }
     }
   ],
-  "sourceBlockers": [],
+  "sourceBlockers": [
+    {
+      "id": "canonical-release-authority",
+      "surfaces": [
+        "source-repository",
+        "release-workflow-identity",
+        "sigstore-identity"
+      ],
+      "ownerIssues": [95],
+      "releaseImpact": "tag publication and external certification blocked"
+    }
+  ],
   "nextGates": [
+    {
+      "issue": 95,
+      "goal": "resolve the canonical source and release repository without overwriting another product"
+    },
     {
       "issue": 66,
       "goal": "apply every physical delete/replace disposition atomically"

@@ -227,10 +227,9 @@ mod row_zero_host_binding {
     ///
     /// The B channel is created **open**, so in B itself a non-member can post to
     /// it. That is load-bearing: it means the A-connection post can fail for
-    /// **exactly one** reason — the channel does not exist in A's community
-    /// (`get_channel(A, b_ch_id)` is `None` → not open → not member). If the
-    /// channel were restricted, the rejection would be the ordinary
-    /// "not a member" gate and would *not* prove the override property. The
+    /// **exactly one** reason — the channel does not exist in A's community.
+    /// The scoped `get_channel(A, b_ch_id)` lookup therefore returns the typed
+    /// `channel not found` error before membership is considered. The
     /// positive control (the same post succeeds against B) confirms the channel
     /// is genuinely postable, so the A-side rejection is the override-rejection
     /// and nothing else — the red comes from the override assertion, not a setup
@@ -248,9 +247,8 @@ mod row_zero_host_binding {
     /// (403), NIP-98 replay, relay-membership (403), and JSON parse (400) all
     /// run *before* the channel-scope branch, so any of them could red this row
     /// while the override path was never reached. To rule that out, the
-    /// override assertion below also pins the reason string
-    /// `"restricted: not a channel member"` — the exact
-    /// `IngestError::Rejected` the override path emits. That makes the red mean
+    /// override assertion below also pins the `channel not found` reason from
+    /// the community-scoped lookup. That makes the red mean
     /// "A rejected *because* the host-derived community refused the `#h` claim,"
     /// not merely "A rejected." (Dawn + Mari converged on this independently
     /// from the sanitization and channels-membership sides, 2026-06-27.)
@@ -303,37 +301,23 @@ mod row_zero_host_binding {
         );
 
         // Bite-specificity: the rejection above must come from the
-        // channel-scope/override branch, not an incidental earlier gate
+        // community-scoped channel lookup, not an incidental earlier gate
         // (`bind_community` 404, bridge-auth 403, NIP-98 replay, relay
         // membership 403, JSON parse 400) that would red this row while the
-        // override path was never reached. The override path emits exactly
-        // `IngestError::Rejected("restricted: not a channel member")`:
-        // `get_channel(A, b_ch_id)` returns None against A's community, the
-        // open-channel bypass cannot apply, and the host-resolved community
-        // refuses the claim. Pinning the reason string converts "A rejected
+        // override path was never reached. `get_channel(A, b_ch_id)` returns
+        // NotFound against A's community before the open-channel bypass can
+        // apply. Pinning that reason converts "A rejected
         // for *some* reason" into "A rejected *because the host-derived
         // community refused the `#h` claim*" — the property this row exists to
         // prove. (Two cold reviewers, Dawn + Mari, converged on this
         // independently from the sanitization and channels-membership sides.)
         assert!(
-            body_a.contains("restricted: not a channel member"),
+            body_a.contains("channel not found"),
             "row zero violated: A rejected, but not via the channel-scope \
              override branch — body {body_a:?} does not carry the \
-             \"restricted: not a channel member\" reason, so the red could be \
+             \"channel not found\" reason, so the red could be \
              an incidental earlier gate (auth/parse/relay-membership) rather \
              than the host-binding refusing the client-supplied `#h` claim"
-        );
-
-        // And the rejection must not leak B's existence: the generic
-        // channel-scope rejection ("restricted: not a channel member") reveals
-        // nothing about whether the channel exists elsewhere. The B channel UUID
-        // appearing in A's rejection body would itself be a cross-community
-        // existence oracle.
-        assert!(
-            !body_a.contains(&channel),
-            "A's rejection echoed the B-only channel UUID {channel:?} in its \
-             body: {body_a:?} — the rejection must not confirm cross-community \
-             existence"
         );
     }
 }
@@ -1654,8 +1638,8 @@ mod workflows {
     use nostr::{EventBuilder, Keys, Kind, Tag};
 
     /// Workflow definition command (NIP-custom kind 30620). `content` is the
-    /// YAML body; `h` tags the channel. The server *generates* the workflow id
-    /// and returns it in the OK message — it is **not** the `d` tag.
+    /// YAML body, `h` tags the channel, and `d` is the caller-generated workflow
+    /// UUID returned in the OK message.
     const KIND_WORKFLOW_DEF: u16 = 30620;
     /// Workflow trigger command (kind 46020). `d` tag = the server-generated
     /// workflow id to fire.
@@ -1745,19 +1729,17 @@ mod workflows {
     }
 
     /// Define a workflow in `channel_id` on `http_base`'s community (kind:30620,
-    /// `h`=channel, content=YAML). Returns the **server-generated** workflow id,
-    /// parsed out of the OK message (`response:{"workflow_id":"…"}`). This id is
+    /// `h`=channel, `d`=workflow UUID, content=YAML). Returns the workflow id
+    /// confirmed by the OK message (`response:{"workflow_id":"…"}`). This id is
     /// the tenant-scoped handle the trigger door confines: defined under A, it
     /// only resolves under A.
     async fn define_workflow(http_base: &str, keys: &Keys, channel_id: &str, name: &str) -> String {
-        // `h` binds the channel; `name` is required by `handle_workflow_def`
-        // (it rejects "missing workflow name" before parsing YAML). We use the
-        // `name` tag, not `d`: the server *generates* the workflow id, and that
-        // generated id — not any client-supplied `d` — is the handle this row
-        // confines. A `d` tag here would falsely imply the trigger resolves by
-        // client key.
+        // `h` binds the channel; `d` is the NIP-33 workflow UUID; `name` is
+        // required by `handle_workflow_def` before parsing YAML.
+        let workflow_id = uuid::Uuid::new_v4().to_string();
         let event = EventBuilder::new(Kind::Custom(KIND_WORKFLOW_DEF), workflow_yaml(name))
             .tags(vec![
+                Tag::parse(["d", &workflow_id]).unwrap(),
                 Tag::parse(["h", channel_id]).unwrap(),
                 Tag::parse(["name", name]).unwrap(),
             ])
@@ -1776,10 +1758,14 @@ mod workflows {
         });
         let resp: serde_json::Value = serde_json::from_str(json_part)
             .unwrap_or_else(|e| panic!("parse workflow def response json: {e} ({json_part:?})"));
-        resp["workflow_id"]
+        let returned_id = resp["workflow_id"]
             .as_str()
-            .unwrap_or_else(|| panic!("workflow def response missing workflow_id: {resp}"))
-            .to_string()
+            .unwrap_or_else(|| panic!("workflow def response missing workflow_id: {resp}"));
+        assert_eq!(
+            returned_id, workflow_id,
+            "relay must preserve the NIP-33 id"
+        );
+        workflow_id
     }
 
     /// Fire a workflow by id on `http_base`'s community (kind:46020, `d`=id).

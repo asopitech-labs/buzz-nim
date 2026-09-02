@@ -7,9 +7,10 @@ cutover. It is intentionally not an upstream migration guide.
 
 Nimino has a working Nim domain worker, a typed Nim↔Rust boundary, a narrow
 Chirps adapter, a Rust relay, Desktop/Web clients, CLI tooling, and independent
-release contracts. The production relay starts its Nim worker, Chirps mesh,
-Nim-owned quorum control executor, per-node canonical store, projection follower,
-and bounded anti-entropy loop as one runtime. Multi-node release qualification
+release contracts. The production relay starts isolated Nim workers for product
+policy, admission, and control, plus the Chirps mesh, Nim-owned quorum control
+executor, per-node canonical store, projection follower, and bounded anti-entropy
+loop as one runtime. Multi-node release qualification
 still requires the released artifact to pass the complete 1/3/5-node matrix.
 
 Mobile and all inherited release/control paths are absent. There is no
@@ -25,7 +26,7 @@ compatibility mode, old product alias, Redis fan-out, or legacy relay mesh.
 | Crypto, codecs, storage and bounded I/O | Rust adapters | No product policy |
 | Presentation state | TypeScript/React | No domain authority |
 | Durable relay data | PostgreSQL/object storage | Accessed through Rust effect adapters today |
-| Process-local ephemeral state | `nimino-local-delivery` | Presence, admission windows and replay cache; never cluster authority |
+| Local socket projection | `nimino-local-delivery` | Test fallback and process-local fan-out cache only; never cluster authority |
 
 The executable ownership manifest is
 `contracts/rust-responsibility/v1/manifest.json`. New policy in Rust is a
@@ -78,10 +79,11 @@ All local live delivery routes through
 never authority to deliver. Community identity is attached to both the event
 and receiving connection and is checked again at the send seam.
 
-`nimino-local-delivery` does not forward between processes. Its replay and
-rate-limit state is process-local, so a multi-node release must replace those
-compositions with Nim-owned cluster/domain operations before claiming
-cluster-wide security guarantees.
+Production replay claims, admission budgets, presence/typing convergence, and
+authorization invalidation revisions are Nim-owned operations committed or
+distributed through the bounded Chirps composition. `nimino-local-delivery`
+does not forward between processes and remains only a local delivery cache and
+test fallback.
 
 ## Nim domain boundary
 
@@ -127,14 +129,23 @@ Chirps secure message / peer fact
 The relay composes `nimino-chirps`, `nimino-boundary`, `nimino-control`, the Nim
 worker, and `nimino-sync`. Real three-node scenarios prove election, quorum
 commit, minority rejection, restart catch-up, divergent data convergence,
-community isolation, and clean shutdown. Canonical writes precede PostgreSQL
-projection, and a durable projection follower resumes from its Redb checkpoint.
+community isolation, admission/replay ownership, ephemeral re-advertisement,
+authorization invalidation ordering, and clean shutdown. Canonical writes
+precede PostgreSQL projection, and a durable projection follower resumes from
+its Redb checkpoint.
+
+Authorization invalidation messages carry no permission. Their Nim-validated,
+monotonic revision only tells a destination relay which community-scoped fact
+to re-read from PostgreSQL; a periodic durable scan is the partition/restart
+backstop. Presence and typing are intentionally non-durable: Nim resolves
+ordering, expiry and tombstones while Chirps transports opaque transitions.
 
 ## Persistence and repair
 
 - PostgreSQL stores durable relay events and relational projections.
 - Object storage holds media and Git objects.
-- Ephemeral Nostr events and presence are process-local today.
+- Presence and typing converge across live nodes but remain intentionally
+  ephemeral; reconnect re-advertisement repairs missed transitions.
 - `nimino-data-ops` provides explicit verification and repair commands over the
   store adapters.
 - Nim owns convergence and repair policy; adapters expose facts and execute
@@ -172,9 +183,7 @@ The repository must not claim production cluster readiness until all are true:
 
 1. PostgreSQL event ingestion and projections are connected to the Nim-owned
    canonical sync path, including divergent-writer convergence and repair.
-2. NIP-98 replay protection, admission limits, presence and live invalidations
-   have explicit multi-node ownership instead of process-local state.
-3. The released image/chart passes real 1/3/5-node negotiation, convergence,
+2. The released image/chart passes real 1/3/5-node negotiation, convergence,
    partition/rejoin and repair scenarios.
-4. Clean-clone Desktop, WSL and relay artifacts are signed and verified by the
+3. Clean-clone Desktop, WSL and relay artifacts are signed and verified by the
    independent Nimino pipeline.

@@ -22,7 +22,6 @@ use nimino_core::StoredEvent;
 use nimino_db::channel::{MemberRecord, MemberRole};
 
 use super::event::dispatch_persistent_event;
-use crate::protocol::RelayMessage;
 use crate::state::AppState;
 use nimino_core::tenant::TenantContext;
 
@@ -46,13 +45,9 @@ async fn evict_live_channel_subscriptions(
     channel_id: Uuid,
     target_pubkey: &[u8],
 ) {
-    let conn_ids = state
-        .conn_manager
-        .connection_ids_for_pubkey_in_community(tenant.community(), target_pubkey);
-
-    for conn_id in conn_ids {
-        evict_conn_channel_subscriptions(tenant, state, channel_id, conn_id).await;
-    }
+    state
+        .evict_live_channel_subscriptions_local(tenant.community(), channel_id, target_pubkey)
+        .await;
 }
 
 /// Durably disable a departing member's workflows in the channel (SEC-006).
@@ -103,40 +98,6 @@ async fn disable_departed_member_workflows(
 
 /// Close every live channel-scoped subscription on `conn_id`, removing them from
 /// the connection's local map and sending `CLOSED restricted` for each.
-async fn evict_conn_channel_subscriptions(
-    tenant: &TenantContext,
-    state: &Arc<AppState>,
-    channel_id: Uuid,
-    conn_id: uuid::Uuid,
-) {
-    let removed = state.sub_registry.remove_channel_subscriptions_scoped(
-        tenant.community(),
-        conn_id,
-        channel_id,
-    );
-    if removed.is_empty() {
-        return;
-    }
-
-    if let Some(subscriptions) = state.conn_manager.subscriptions_for(conn_id) {
-        let mut conn_subscriptions = subscriptions.lock().await;
-        for update in &removed {
-            if update.removed {
-                conn_subscriptions.remove(&update.sub_id);
-            }
-        }
-    }
-
-    for update in removed {
-        if update.removed {
-            let _ = state.conn_manager.send_to(
-                conn_id,
-                RelayMessage::closed(&update.sub_id, "restricted: channel access revoked"),
-            );
-        }
-    }
-}
-
 /// Revoke live channel subscriptions held by connections whose authenticated
 /// pubkey is not a current member. Used when an open channel flips to private:
 /// non-members could have subscribed while it was open. Fan-out now re-checks
@@ -160,7 +121,9 @@ async fn evict_non_member_channel_subscriptions(
             None => false,
         };
         if !is_member {
-            evict_conn_channel_subscriptions(tenant, state, channel_id, conn_id).await;
+            state
+                .evict_conn_channel_subscriptions_local(tenant.community(), channel_id, conn_id)
+                .await;
         }
     }
     Ok(())
@@ -184,7 +147,9 @@ pub async fn evict_all_channel_subscriptions(
         .sub_registry
         .channel_subscriber_conns_scoped(tenant.community(), channel_id)
     {
-        evict_conn_channel_subscriptions(tenant, state, channel_id, conn_id).await;
+        state
+            .evict_conn_channel_subscriptions_local(tenant.community(), channel_id, conn_id)
+            .await;
     }
 }
 

@@ -819,7 +819,7 @@ fn reconcile_mcp_commands_skips_record_without_agent_command() {
 fn migrate_dev_nest_carries_knowledge_and_skips_repos() {
     let dir = tempfile::tempdir().unwrap();
     let legacy = dir.path().join(".nimino");
-    let current = dir.path().join(".nimino");
+    let current = dir.path().join(".nimino-dev");
 
     // Knowledge: a top-level file plus a nested dir.
     std::fs::create_dir_all(legacy.join("RESEARCH")).unwrap();
@@ -850,7 +850,7 @@ fn migrate_dev_nest_carries_knowledge_and_skips_repos() {
 fn migrate_dev_nest_does_not_clobber_existing_destination() {
     let dir = tempfile::tempdir().unwrap();
     let legacy = dir.path().join(".nimino");
-    let current = dir.path().join(".nimino");
+    let current = dir.path().join(".nimino-dev");
 
     std::fs::create_dir_all(legacy.join("RESEARCH")).unwrap();
     std::fs::write(legacy.join("AGENTS.md"), "legacy-agents").unwrap();
@@ -878,7 +878,7 @@ fn migrate_dev_nest_does_not_clobber_existing_destination() {
 fn migrate_dev_nest_is_idempotent_on_rerun() {
     let dir = tempfile::tempdir().unwrap();
     let legacy = dir.path().join(".nimino");
-    let current = dir.path().join(".nimino");
+    let current = dir.path().join(".nimino-dev");
 
     std::fs::create_dir_all(legacy.join("PLANS")).unwrap();
     std::fs::write(legacy.join("PLANS/PLAN.md"), "plan").unwrap();
@@ -896,7 +896,7 @@ fn migrate_dev_nest_is_idempotent_on_rerun() {
 fn migrate_dev_nest_noops_when_legacy_absent() {
     let dir = tempfile::tempdir().unwrap();
     let legacy = dir.path().join(".nimino");
-    let current = dir.path().join(".nimino");
+    let current = dir.path().join(".nimino-dev");
 
     let migrated = super::copy_nest_knowledge_at(&legacy, &current);
 
@@ -928,7 +928,7 @@ fn migrate_dev_nest_respects_deliberate_dev_reset() {
 fn migrate_dev_nest_overwrites_generated_default_agents_md() {
     let dir = tempfile::tempdir().unwrap();
     let legacy = dir.path().join(".nimino");
-    let current = dir.path().join(".nimino");
+    let current = dir.path().join(".nimino-dev");
 
     std::fs::create_dir_all(&legacy).unwrap();
     std::fs::write(legacy.join("AGENTS.md"), "legacy team instructions").unwrap();
@@ -955,7 +955,7 @@ fn migrate_dev_nest_overwrites_generated_default_agents_md() {
 fn migrate_dev_nest_preserves_user_edited_agents_md() {
     let dir = tempfile::tempdir().unwrap();
     let legacy = dir.path().join(".nimino");
-    let current = dir.path().join(".nimino");
+    let current = dir.path().join(".nimino-dev");
 
     std::fs::create_dir_all(&legacy).unwrap();
     std::fs::write(legacy.join("AGENTS.md"), "legacy team instructions").unwrap();

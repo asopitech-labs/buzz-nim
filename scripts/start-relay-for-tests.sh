@@ -134,7 +134,7 @@ ok "Community seeded"
 # ── Build relay ──────────────────────────────────────────────────────────────
 
 if [[ "${SKIP_BUILD}" == "true" ]]; then
-  for bin in nimino-relay git-credential-nostr; do
+  for bin in nimino-relay git-credential-nostr nimino-core-worker; do
     if [[ ! -x "./target/${CARGO_PROFILE}/${bin}" ]]; then
       err "--no-build: ./target/${CARGO_PROFILE}/${bin} missing or not executable"
       exit 1
@@ -143,9 +143,23 @@ if [[ "${SKIP_BUILD}" == "true" ]]; then
   log "Skipping relay build (--no-build); using existing target/${CARGO_PROFILE}/ binaries"
 else
   log "Building relay (profile: ${CARGO_PROFILE})..."
+  just nim-boundary-build
   cargo build --profile "${CARGO_PROFILE}" -p nimino-relay -p git-credential-nostr
   ok "Relay built"
 fi
+
+just _dev-cluster-material
+CHIRPS_DIR="${REPO_ROOT}/target/nim/dev-cluster"
+if [[ "${SKIP_BUILD}" == "true" ]]; then
+  NIM_WORKER="${REPO_ROOT}/target/${CARGO_PROFILE}/nimino-core-worker"
+else
+  NIM_WORKER="${REPO_ROOT}/target/nim/nimino_boundary/bin/nimino-core-worker"
+fi
+RUNTIME_DIR="${NIMINO_TEST_RUNTIME_DIR:-/tmp/nimino-relay-test-runtime-${$}}"
+mkdir -p "${RUNTIME_DIR}/objects"
+for required in "${NIM_WORKER}" "${CHIRPS_DIR}/tls.crt" "${CHIRPS_DIR}/tls.key" "${CHIRPS_DIR}/ca.crt"; do
+  [[ -s "${required}" ]] || { err "Missing cluster runtime dependency: ${required}"; exit 1; }
+done
 
 # ── Start relay ──────────────────────────────────────────────────────────────
 
@@ -168,6 +182,14 @@ nohup env \
   DATABASE_URL=postgres://nimino:nimino_dev@localhost:5432/nimino \
   RELAY_URL=ws://localhost:3000 \
   NIMINO_BIND_ADDR=0.0.0.0:3000 \
+  NIMINO_BOUNDARY_WORKER="${NIM_WORKER}" \
+  NIMINO_CHIRPS_BIND_ADDR=127.0.0.1:7443 \
+  NIMINO_CHIRPS_IDENTITY_PATH="${RUNTIME_DIR}/node.identity" \
+  NIMINO_CHIRPS_CERTIFICATE_PATH="${CHIRPS_DIR}/tls.crt" \
+  NIMINO_CHIRPS_PRIVATE_KEY_PATH="${CHIRPS_DIR}/tls.key" \
+  NIMINO_CHIRPS_TRUST_ANCHOR_PATHS="${CHIRPS_DIR}/ca.crt" \
+  NIMINO_NODE_STORE_PATH="${RUNTIME_DIR}/data.redb" \
+  NIMINO_OBJECT_STORE_PATH="${RUNTIME_DIR}/objects" \
   NIMINO_REQUIRE_AUTH_TOKEN=false \
   NIMINO_RECONCILE_CHANNELS=true \
   NIMINO_GIT_PROBE_WRITERS=8 \

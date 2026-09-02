@@ -2130,10 +2130,7 @@ async fn synthesize_presence(
     all_pubkeys.dedup();
 
     // Look up local delivery.
-    let presence_map = state
-        .local_delivery
-        .get_presence_bulk(tenant, &all_pubkeys)
-        .await;
+    let presence_map = state.presence_bulk(tenant, &all_pubkeys).await;
 
     if presence_map.is_empty() {
         return Some(Vec::new());

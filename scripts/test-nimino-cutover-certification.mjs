@@ -8,6 +8,9 @@ const contract = JSON.parse(
     "utf8",
   ),
 );
+const readiness = JSON.parse(
+  readFileSync("contracts/nimino-cutover-readiness/v1/manifest.json", "utf8"),
+);
 const ci = readFileSync(contract.source.workflow, "utf8");
 const relay = readFileSync(contract.relay.workflow, "utf8");
 const platform = readFileSync(contract.platform.workflow, "utf8");
@@ -20,6 +23,12 @@ function check(condition, message) {
 check(contract.schemaVersion === 1 && contract.version === 1, "wrong contract version");
 check(contract.issue === 67, "wrong certification owner");
 check(contract.compatibilityMode === false, "compatibility mode is forbidden");
+const sourceReady =
+  readiness.phase === "frozen-for-cleanup" && readiness.sourceBlockers.length === 0;
+check(
+  contract.publicationState === (sourceReady ? "cutover-ready" : "blocked"),
+  "certification publication state disagrees with source readiness",
+);
 check(
   contract.externalCertificationRequired === true,
   "source checks must not claim external certification",
@@ -54,9 +63,14 @@ for (const signal of [
   "cosign sign-blob",
   "actions/attest@",
   `name: ${contract.evidenceArtifact}`,
+  "just cutover-certify-source",
 ]) {
   check(platform.includes(signal), `missing platform evidence: ${signal}`);
 }
+check(
+  relay.includes("just cutover-certify-source"),
+  "relay tag publication must require source readiness",
+);
 for (const path of Object.values(contract.compatibilityNegative)) {
   JSON.parse(readFileSync(path, "utf8"));
 }
@@ -68,4 +82,14 @@ check(
   "candidate certification must not perform promotion",
 );
 
-console.log("Nimino cutover certification contract passed: clean source, cluster, platform, WSL, supply chain");
+if (process.argv.includes("--require-ready") && !sourceReady) {
+  throw new Error(
+    `source certification blocked: ${readiness.sourceBlockers.map(({ id }) => id).join(", ")}`,
+  );
+}
+
+console.log(
+  sourceReady
+    ? "Nimino cutover certification definition verified: source ready; external certification still required"
+    : `Nimino cutover certification definition verified: source blocked by ${readiness.sourceBlockers.map(({ id }) => id).join(", ")}`,
+);

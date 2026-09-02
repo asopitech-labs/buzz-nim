@@ -38,6 +38,8 @@ pub enum ControlEffect {
     ElectLeader,
     /// Append one uncommitted entry.
     Append,
+    /// Return an identical committed command without appending it again.
+    Replay,
     /// Commit one entry.
     Commit,
     /// Apply one committed entry.
@@ -84,6 +86,8 @@ pub enum ControlStateError {
     EntryKindInvalid,
     /// Command identity is missing.
     CommandRequired,
+    /// A committed command reused an id with different content.
+    CommandConflict,
     /// Control log has a gap.
     LogGap,
     /// Commit order is invalid.

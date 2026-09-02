@@ -6,6 +6,7 @@
 
 #![deny(missing_docs)]
 
+mod admission;
 mod agent;
 mod cli;
 mod cluster;
@@ -15,6 +16,7 @@ mod contract;
 mod control;
 mod dm;
 mod effect;
+mod ephemeral;
 mod error;
 mod lease;
 mod membership;
@@ -25,6 +27,13 @@ mod runtime;
 mod sync;
 mod workflow;
 
+pub use admission::{
+    AdmissionPolicyError, AdmissionPolicyRequest, AdmissionPolicyResult,
+    AuthorizationInvalidationCommand, AuthorizationInvalidationDecision,
+    AuthorizationInvalidationEffect, AuthorizationInvalidationError, AuthorizationInvalidationKind,
+    AuthorizationInvalidationState, RateLimitBatchDecision, RateLimitCommand, RateLimitDecision,
+    RateLimitState, ReplayClaimCommand, ReplayClaimDecision, ReplayClaimState, ReplayPruneDecision,
+};
 pub use agent::{
     AgentEventFacts, AgentLifecycleAction, AgentLifecycleCommand, AgentLifecycleRequest,
     AgentLifecycleState, AgentPhase, AgentPolicyError, AgentPolicyRequest, AgentPolicyResult,
@@ -69,6 +78,10 @@ pub use effect::{
     EffectLedgerPortEffect, EffectLedgerState, EffectLedgerStatus, EffectPolicyRequest,
     EffectPolicyResult, EffectReceipt, EffectReceiptOutcome, EffectReconcileCommand,
     EffectReconcileRequest,
+};
+pub use ephemeral::{
+    EphemeralCommand, EphemeralDecision, EphemeralEffect, EphemeralKind, EphemeralPolicyError,
+    EphemeralPolicyRequest, EphemeralPolicyResult, EphemeralPruneDecision, EphemeralState,
 };
 pub use error::{BoundaryError, HOST_ERROR_CODES};
 pub use lease::{

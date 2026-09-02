@@ -198,6 +198,34 @@ suite "Nimino replicated control state machine":
     check failedCommit.error == cseStoreFailure
     check failedCommit.state.commitIndex == 0
 
+  test "committed command ids replay exactly and reject conflicting content":
+    var state = initControlState(@["node-a"])
+    state = elect(state, 1, "node-a", @["node-a"])
+    state = append(state, cekCommand, "command-1")
+    state = commit(state, @["node-a"])
+
+    let replay = planAppend(
+      state,
+      AppendRequest(
+        leaderId: "node-a", term: 1, kind: cekCommand,
+        commandId: "command-1", payload: "command-1",
+      ),
+    )
+    check replay.effect == ceReplay
+    check replay.error == cseNone
+    check replay.actions.len == 0
+    check replay.appliedEntry.get().index == 1
+
+    var conflicting = replay.beforeState
+    let conflict = planAppend(
+      conflicting,
+      AppendRequest(
+        leaderId: "node-a", term: 1, kind: cekCommand,
+        commandId: "command-1", payload: "different",
+      ),
+    )
+    check conflict.error == cseCommandConflict
+
   test "snapshot recovery replays only the durable suffix":
     var state = initControlState(@["node-a"])
     state = elect(state, 1, "node-a", @["node-a"])

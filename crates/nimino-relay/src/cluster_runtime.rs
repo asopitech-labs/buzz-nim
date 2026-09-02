@@ -14,13 +14,18 @@ use std::{
 use anyhow::{Context, Result};
 use nimino_boundary::{BoundaryClient, BoundaryConfig, BoundaryRuntime};
 use nimino_chirps::{MeshRuntime, MeshRuntimeOptions, NodeConfig};
-use nimino_control::{ControlRuntime, ControlRuntimeOptions, LeaseClient, LeaseRuntime};
+use nimino_control::{
+    AdmissionClient, AdmissionRuntime, ControlRuntime, ControlRuntimeOptions, EphemeralClient,
+    EphemeralRuntime, EphemeralRuntimeOptions, LeaseClient, LeaseRuntime,
+};
 use nimino_db::Db;
 use nimino_object_store::{LocalObjectStore, ObjectSyncClient, ObjectSyncRuntime};
 use nimino_store::{ControlLogStorePort, NodeStorePort, RedbNodeStore};
 use nimino_sync::{SyncRuntime, SyncRuntimeOptions};
 use tokio::{net::lookup_host, task::JoinHandle};
 use tokio_util::sync::CancellationToken;
+
+use crate::{handlers::event::fan_out_event_to_local_subscribers, state::AppState};
 
 const DEFAULT_BIND_ADDR: &str = "0.0.0.0:7443";
 const DEFAULT_WORKER: &str = "/usr/local/bin/nimino-core-worker";
@@ -127,13 +132,31 @@ pub struct RelayClusterRuntime {
     refresh_task: JoinHandle<()>,
     sync: SyncRuntime,
     objects: ObjectSyncRuntime,
+    ephemeral: EphemeralRuntime,
+    admission: AdmissionRuntime,
     lease: LeaseRuntime,
     control: ControlRuntime,
     mesh: MeshRuntime,
+    admission_boundary: BoundaryRuntime,
+    control_boundary: BoundaryRuntime,
     boundary: BoundaryRuntime,
     store: Arc<RedbNodeStore>,
     ready: Arc<AtomicBool>,
     projection_ready: Arc<AtomicBool>,
+}
+
+/// Lifecycle owner for applying remote ephemeral and authorization transitions locally.
+pub struct RelayClusterDelivery {
+    cancel: CancellationToken,
+    task: JoinHandle<()>,
+}
+
+impl RelayClusterDelivery {
+    /// Stops remote delivery and releases its bounded subscription.
+    pub async fn stop(self) -> Result<()> {
+        self.cancel.cancel();
+        self.task.await.context("join ephemeral delivery task")
+    }
 }
 
 /// Required policy and persistence adapters shared by every relay request.
@@ -149,6 +172,8 @@ enum RelayDomainAdapterInner {
         policy: BoundaryClient,
         store: Arc<dyn NodeStorePort>,
         lease: LeaseClient,
+        admission: AdmissionClient,
+        ephemeral: EphemeralClient,
         objects: ObjectSyncClient,
         node_id: String,
     },
@@ -184,10 +209,44 @@ impl RelayDomainAdapters {
         }
     }
 
+    /// Returns the mandatory quorum-backed request admission facade.
+    #[cfg(not(test))]
+    pub fn admission(&self) -> &AdmissionClient {
+        match &self.inner {
+            RelayDomainAdapterInner::Active { admission, .. } => admission,
+        }
+    }
+
+    /// Returns the quorum-backed admission/control projector when composed.
+    pub fn admission_optional(&self) -> Option<&AdmissionClient> {
+        match &self.inner {
+            RelayDomainAdapterInner::Active { admission, .. } => Some(admission),
+            #[cfg(test)]
+            RelayDomainAdapterInner::Unavailable => None,
+        }
+    }
+
+    #[cfg(test)]
+    pub(crate) fn admission_for_tests(&self) -> Option<&AdmissionClient> {
+        match &self.inner {
+            RelayDomainAdapterInner::Active { admission, .. } => Some(admission),
+            RelayDomainAdapterInner::Unavailable => None,
+        }
+    }
+
     /// Returns the Nim-planned content-addressed object transfer facade.
     pub fn objects(&self) -> Option<&ObjectSyncClient> {
         match &self.inner {
             RelayDomainAdapterInner::Active { objects, .. } => Some(objects),
+            #[cfg(test)]
+            RelayDomainAdapterInner::Unavailable => None,
+        }
+    }
+
+    /// Returns the bounded presence and typing convergence facade.
+    pub fn ephemeral(&self) -> Option<&EphemeralClient> {
+        match &self.inner {
+            RelayDomainAdapterInner::Active { ephemeral, .. } => Some(ephemeral),
             #[cfg(test)]
             RelayDomainAdapterInner::Unavailable => None,
         }
@@ -230,9 +289,32 @@ impl RelayClusterRuntime {
         let boundary = BoundaryRuntime::start(BoundaryConfig::new(&config.worker))
             .await
             .with_context(|| format!("start Nim worker {}", config.worker.display()))?;
+        let control_boundary =
+            match BoundaryRuntime::start(BoundaryConfig::new(&config.worker)).await {
+                Ok(boundary) => boundary,
+                Err(error) => {
+                    let _ = boundary.shutdown().await;
+                    return Err(error).with_context(|| {
+                        format!("start control Nim worker {}", config.worker.display())
+                    });
+                }
+            };
+        let admission_boundary =
+            match BoundaryRuntime::start(BoundaryConfig::new(&config.worker)).await {
+                Ok(boundary) => boundary,
+                Err(error) => {
+                    let _ = control_boundary.shutdown().await;
+                    let _ = boundary.shutdown().await;
+                    return Err(error).with_context(|| {
+                        format!("start admission Nim worker {}", config.worker.display())
+                    });
+                }
+            };
         let seeds = match resolve_seeds(&config.seeds).await {
             Ok(seeds) => seeds,
             Err(error) => {
+                let _ = admission_boundary.shutdown().await;
+                let _ = control_boundary.shutdown().await;
                 let _ = boundary.shutdown().await;
                 return Err(error);
             }
@@ -248,6 +330,8 @@ impl RelayClusterRuntime {
         let mesh = match MeshRuntime::start(node_config, MeshRuntimeOptions::default()).await {
             Ok(mesh) => mesh,
             Err(error) => {
+                let _ = admission_boundary.shutdown().await;
+                let _ = control_boundary.shutdown().await;
                 let _ = boundary.shutdown().await;
                 return Err(error.into());
             }
@@ -261,7 +345,7 @@ impl RelayClusterRuntime {
         let control_store: Arc<dyn ControlLogStorePort> = store.clone();
         let control = match ControlRuntime::start(
             mesh.client(),
-            boundary.client(),
+            control_boundary.client(),
             control_store,
             voters,
             ControlRuntimeOptions::default(),
@@ -271,11 +355,32 @@ impl RelayClusterRuntime {
             Ok(control) => control,
             Err(error) => {
                 let _ = mesh.stop().await;
+                let _ = admission_boundary.shutdown().await;
+                let _ = control_boundary.shutdown().await;
                 let _ = boundary.shutdown().await;
                 return Err(error.into());
             }
         };
         let control_client = control.client();
+        let admission_store: Arc<dyn ControlLogStorePort> = store.clone();
+        let admission = match AdmissionRuntime::start(
+            control_client.clone(),
+            admission_boundary.client(),
+            admission_store,
+            Duration::from_secs(2),
+        )
+        .await
+        {
+            Ok(admission) => admission,
+            Err(error) => {
+                let _ = control.stop().await;
+                let _ = mesh.stop().await;
+                let _ = admission_boundary.shutdown().await;
+                let _ = control_boundary.shutdown().await;
+                let _ = boundary.shutdown().await;
+                return Err(error.into());
+            }
+        };
         let lease_store: Arc<dyn ControlLogStorePort> = store.clone();
         let lease = match LeaseRuntime::start(
             control_client.clone(),
@@ -287,8 +392,29 @@ impl RelayClusterRuntime {
         {
             Ok(lease) => lease,
             Err(error) => {
+                let _ = admission.stop().await;
                 let _ = control.stop().await;
                 let _ = mesh.stop().await;
+                let _ = admission_boundary.shutdown().await;
+                let _ = control_boundary.shutdown().await;
+                let _ = boundary.shutdown().await;
+                return Err(error.into());
+            }
+        };
+        let ephemeral = match EphemeralRuntime::start(
+            mesh.client(),
+            boundary.client(),
+            communities.clone(),
+            EphemeralRuntimeOptions::default(),
+        ) {
+            Ok(ephemeral) => ephemeral,
+            Err(error) => {
+                let _ = lease.stop().await;
+                let _ = admission.stop().await;
+                let _ = control.stop().await;
+                let _ = mesh.stop().await;
+                let _ = admission_boundary.shutdown().await;
+                let _ = control_boundary.shutdown().await;
                 let _ = boundary.shutdown().await;
                 return Err(error.into());
             }
@@ -303,9 +429,13 @@ impl RelayClusterRuntime {
         ) {
             Ok(sync) => sync,
             Err(error) => {
+                let _ = ephemeral.stop().await;
                 let _ = lease.stop().await;
+                let _ = admission.stop().await;
                 let _ = control.stop().await;
                 let _ = mesh.stop().await;
+                let _ = admission_boundary.shutdown().await;
+                let _ = control_boundary.shutdown().await;
                 let _ = boundary.shutdown().await;
                 return Err(error.into());
             }
@@ -320,14 +450,20 @@ impl RelayClusterRuntime {
             Ok(objects) => objects,
             Err(error) => {
                 let _ = sync.stop().await;
+                let _ = ephemeral.stop().await;
                 let _ = lease.stop().await;
+                let _ = admission.stop().await;
                 let _ = control.stop().await;
                 let _ = mesh.stop().await;
+                let _ = admission_boundary.shutdown().await;
+                let _ = control_boundary.shutdown().await;
                 let _ = boundary.shutdown().await;
                 return Err(error.into());
             }
         };
         let object_client = objects.client();
+        let ephemeral_client = ephemeral.client();
+        let admission_client = admission.client();
         let lease_client = lease.client();
         let mesh_client = mesh.client();
         let projection_ready = Arc::new(AtomicBool::new(false));
@@ -351,6 +487,8 @@ impl RelayClusterRuntime {
                                         && object_client.is_running()
                                         && control_client.status().running
                                         && control_client.status().quorum_available
+                                        && ephemeral_client.is_running()
+                                        && admission_client.status().running
                                         && lease_client.status().running
                                         && peers.len() >= config.min_peers
                                         && task_projection_ready.load(Ordering::Acquire),
@@ -364,8 +502,11 @@ impl RelayClusterRuntime {
                         }
                         match active_communities(&db).await {
                             Ok(communities) => {
-                                if let Err(error) = sync_client.replace_communities(communities) {
+                                if let Err(error) = sync_client.replace_communities(communities.clone()) {
                                     tracing::error!(%error, "cluster community scope update failed");
+                                }
+                                if let Err(error) = ephemeral_client.replace_scopes(communities) {
+                                    tracing::error!(%error, "ephemeral community scope update failed");
                                 }
                             }
                             Err(error) => tracing::warn!(%error, "cluster community scope refresh failed"),
@@ -382,9 +523,13 @@ impl RelayClusterRuntime {
             refresh_task,
             sync,
             objects,
+            ephemeral,
+            admission,
             lease,
             control,
             mesh,
+            admission_boundary,
+            control_boundary,
             boundary,
             store,
             ready,
@@ -399,6 +544,8 @@ impl RelayClusterRuntime {
                 policy: self.boundary.client(),
                 store: self.store.clone(),
                 lease: self.lease.client(),
+                admission: self.admission.client(),
+                ephemeral: self.ephemeral.client(),
                 objects: self.objects.client(),
                 node_id: hex::encode(self.mesh.client().local_node_id().as_bytes()),
             },
@@ -410,25 +557,224 @@ impl RelayClusterRuntime {
         Arc::clone(&self.projection_ready)
     }
 
-    /// Stops sync before transport and reaps the Nim worker last.
+    /// Starts relay-local projection and fan-out for authenticated remote transitions.
+    pub fn start_delivery(&self, state: Arc<AppState>) -> RelayClusterDelivery {
+        let mut updates = self.ephemeral.client().subscribe_remote();
+        let mut invalidations = self.admission.client().subscribe_invalidations();
+        let cancel = CancellationToken::new();
+        let task_cancel = cancel.clone();
+        let task = tokio::spawn(async move {
+            loop {
+                tokio::select! {
+                    _ = task_cancel.cancelled() => break,
+                    update = updates.recv() => match update {
+                        Ok(update) => {
+                            if let Err(error) = deliver_remote_ephemeral(&state, update).await {
+                                tracing::warn!(%error, "remote ephemeral transition rejected");
+                            }
+                        }
+                        Err(tokio::sync::broadcast::error::RecvError::Lagged(skipped)) => {
+                            tracing::warn!(skipped, "remote ephemeral delivery lagged; re-advertisement will repair state");
+                        }
+                        Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
+                    },
+                    invalidation = invalidations.recv() => match invalidation {
+                        Ok(invalidation) => {
+                            if let Err(error) = apply_remote_authorization_invalidation(&state, invalidation).await {
+                                tracing::warn!(%error, "remote authorization invalidation rejected");
+                            }
+                        }
+                        Err(tokio::sync::broadcast::error::RecvError::Lagged(skipped)) => {
+                            tracing::warn!(skipped, "authorization invalidation delivery lagged; running durable revalidation");
+                            state.revalidate_live_authorization().await;
+                        }
+                        Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
+                    }
+                }
+            }
+        });
+        RelayClusterDelivery { cancel, task }
+    }
+
+    /// Stops sync before transport and reaps the Nim workers last.
     pub async fn stop(self) -> Result<()> {
         self.ready.store(false, Ordering::Release);
         self.refresh_cancel.cancel();
         let refresh_result = self.refresh_task.await;
         let object_result = self.objects.shutdown().await;
         let sync_result = self.sync.stop().await;
+        let ephemeral_result = self.ephemeral.stop().await;
         let lease_result = self.lease.stop().await;
+        let admission_result = self.admission.stop().await;
         let control_result = self.control.stop().await;
         let mesh_result = self.mesh.stop().await;
+        let admission_boundary_result = self.admission_boundary.shutdown().await;
+        let control_boundary_result = self.control_boundary.shutdown().await;
         let boundary_result = self.boundary.shutdown().await;
         refresh_result.context("join cluster health task")?;
         object_result.context("stop object replication")?;
         sync_result.context("stop automatic sync")?;
+        ephemeral_result.context("stop ephemeral convergence")?;
         lease_result.context("stop lease projection")?;
+        admission_result.context("stop admission projection")?;
         control_result.context("stop replicated control")?;
         mesh_result.context("stop Chirps mesh")?;
+        admission_boundary_result.context("stop admission Nim worker")?;
+        control_boundary_result.context("stop control Nim worker")?;
         boundary_result.context("stop Nim worker")?;
         Ok(())
+    }
+}
+
+async fn deliver_remote_ephemeral(
+    state: &AppState,
+    update: nimino_control::EphemeralUpdate,
+) -> Result<()> {
+    if !update.state.active {
+        return Ok(());
+    }
+    let event_json = update
+        .event_json
+        .context("active ephemeral transition omitted its signed event")?;
+    let event: nostr::Event =
+        serde_json::from_str(&event_json).context("decode ephemeral event")?;
+    let verified = event.clone();
+    tokio::task::spawn_blocking(move || nimino_core::verification::verify_event(&verified))
+        .await
+        .context("join ephemeral signature verification")?
+        .context("verify ephemeral event")?;
+    anyhow::ensure!(
+        event.pubkey.to_hex() == update.state.subject
+            && event.id.to_hex() == update.state.transition_id
+            && event.created_at.as_secs().saturating_mul(1_000) == update.state.observed_at_ms,
+        "signed event and converged transition facts disagree"
+    );
+    let community = nimino_core::CommunityId::from_uuid(
+        uuid::Uuid::parse_str(&update.state.scope).context("parse ephemeral community scope")?,
+    );
+    let channel_id = match update.state.kind {
+        nimino_boundary::EphemeralKind::Presence => {
+            anyhow::ensure!(
+                nimino_core::kind::event_kind_u32(&event)
+                    == nimino_core::kind::KIND_PRESENCE_UPDATE
+                    && update.state.context.is_empty()
+                    && crate::handlers::event::normalized_presence_status(&event.content)
+                        == update.state.value,
+                "presence event and converged state disagree"
+            );
+            None
+        }
+        nimino_boundary::EphemeralKind::Typing => {
+            let channel = crate::handlers::ingest::extract_channel_id(&event)
+                .context("typing event omitted its channel scope")?;
+            anyhow::ensure!(
+                nimino_core::kind::event_kind_u32(&event)
+                    == nimino_core::kind::KIND_TYPING_INDICATOR
+                    && channel.to_string() == update.state.context
+                    && update.state.value == "typing",
+                "typing event and converged state disagree"
+            );
+            Some(channel)
+        }
+    };
+    let stored = nimino_core::StoredEvent::new(event, channel_id);
+    fan_out_event_to_local_subscribers(state, community, &stored).await;
+    Ok(())
+}
+
+async fn apply_remote_authorization_invalidation(
+    state: &AppState,
+    invalidation: nimino_boundary::AuthorizationInvalidationState,
+) -> Result<()> {
+    let community = nimino_core::CommunityId::from_uuid(
+        uuid::Uuid::parse_str(&invalidation.scope)
+            .context("parse authorization invalidation community")?,
+    );
+    match invalidation.kind {
+        nimino_boundary::AuthorizationInvalidationKind::Ban => {
+            let pubkey = hex::decode(&invalidation.subject)
+                .context("decode authorization invalidation subject")?;
+            anyhow::ensure!(pubkey.len() == 32, "authorization subject must be 32 bytes");
+            let restriction = state
+                .db
+                .moderation_restriction_state(community, &pubkey)
+                .await
+                .context("revalidate remote ban")?;
+            if restriction.banned {
+                let event_id = if invalidation.fact_id.len() == 64 {
+                    invalidation.fact_id
+                } else {
+                    "0".repeat(64)
+                };
+                state.conn_manager.disconnect_pubkey(
+                    community,
+                    &pubkey,
+                    &event_id,
+                    "blocked: you are banned from this community",
+                );
+            }
+        }
+        nimino_boundary::AuthorizationInvalidationKind::Membership => {
+            let channel_id = uuid::Uuid::parse_str(&invalidation.channel_id)
+                .context("parse membership invalidation channel")?;
+            let pubkey = hex::decode(&invalidation.subject)
+                .context("decode membership invalidation subject")?;
+            anyhow::ensure!(pubkey.len() == 32, "membership subject must be 32 bytes");
+            state.invalidate_membership_local(community, channel_id, &pubkey);
+            if !durable_channel_access(state, community, channel_id, &pubkey).await {
+                state
+                    .evict_live_channel_subscriptions_local(community, channel_id, &pubkey)
+                    .await;
+            }
+        }
+        nimino_boundary::AuthorizationInvalidationKind::Visibility => {
+            let channel_id = uuid::Uuid::parse_str(&invalidation.channel_id)
+                .context("parse visibility invalidation channel")?;
+            state.invalidate_all_accessible_channels_local(community);
+            state.invalidate_channel_visibility_local(community, channel_id);
+            for conn_id in state
+                .sub_registry
+                .channel_subscriber_conns_scoped(community, channel_id)
+            {
+                let Some(pubkey) = state.conn_manager.pubkey_for_conn(conn_id) else {
+                    continue;
+                };
+                if !durable_channel_access(state, community, channel_id, &pubkey).await {
+                    state
+                        .evict_live_channel_subscriptions_local(community, channel_id, &pubkey)
+                        .await;
+                }
+            }
+        }
+        nimino_boundary::AuthorizationInvalidationKind::Community => {
+            state.invalidate_channel_deleted_local(community);
+            if !state
+                .db
+                .is_community_active(community)
+                .await
+                .context("revalidate remote community lifecycle")?
+            {
+                state.community_connections.disconnect_community(community);
+            }
+        }
+    }
+    Ok(())
+}
+
+async fn durable_channel_access(
+    state: &AppState,
+    community: nimino_core::CommunityId,
+    channel_id: uuid::Uuid,
+    pubkey: &[u8],
+) -> bool {
+    match state.db.get_channel(community, channel_id).await {
+        Ok(channel) if channel.visibility != "private" => true,
+        Ok(_) => state
+            .db
+            .is_member(community, channel_id, pubkey)
+            .await
+            .unwrap_or(false),
+        Err(_) => false,
     }
 }
 

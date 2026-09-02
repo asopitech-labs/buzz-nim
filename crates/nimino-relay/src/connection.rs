@@ -293,10 +293,9 @@ async fn handle_active_connection(
             auth_ctx.pubkey.to_bytes().as_slice(),
         );
         if remaining.is_empty() {
-            state
-                .local_delivery
-                .clear_presence(&conn.tenant, &auth_ctx.pubkey)
-                .await;
+            if let Err(error) = state.clear_presence(&conn.tenant, &auth_ctx.pubkey).await {
+                warn!(%error, "failed to publish presence disconnect tombstone");
+            }
         }
     }
     metrics::gauge!("nimino_ws_connections_active").decrement(1.0);

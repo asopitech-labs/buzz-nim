@@ -98,7 +98,7 @@ for (const invariant of formal.invariants) {
   );
 }
 
-const evidence = read("formal/evidence/FM-cluster-control-log_20260831_summary.md");
+const evidence = read("formal/evidence/FM-cluster-control-log_20260901_summary.md");
 check(evidence.includes(formal.modelSha256), "evidence model hash drifted");
 check(evidence.includes(formal.scenarioSha256), "evidence scenario hash drifted");
 check(
@@ -109,6 +109,23 @@ check(
 const inventory = read("formal/inventory/FM-cluster-control-log.md");
 check(inventory.includes("Status: active"), "formal model is not active");
 check(inventory.includes("just control-model-check"), "verification command drifted");
+
+const justfile = read("Justfile");
+const runner = read("scripts/run-control-model-check.sh");
+check(
+  justfile.includes(
+    "bash scripts/run-control-model-check.sh -workers auto -config formal/scenarios/NiminoControlLog_3Node.cfg formal/tla/cluster/NiminoControlLog.tla",
+  ),
+  "control model check must use the pinned TLC runner",
+);
+check(
+  runner.includes("TLA_VERSION=1.7.4") &&
+    runner.includes(
+      "936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88",
+    ) &&
+    runner.includes("tlc2.TLC"),
+  "TLC runner version or checksum drifted",
+);
 
 const adr = read("docs/adr/nimino-control-log-v1.md");
 for (const owner of ["#48", "#49", "#51", "#52", "#12"]) {

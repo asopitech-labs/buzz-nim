@@ -591,6 +591,72 @@ async fn control_policy_fixture_crosses_the_real_worker_boundary() {
 
 #[tokio::test]
 #[ignore = "requires the Nim test worker; run `just nim-boundary-test`"]
+async fn admission_policy_fixture_crosses_the_real_worker_boundary() {
+    let request: BoundaryRequest = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/admission-policy.request.json"
+    ))
+    .expect("valid admission policy request");
+    let expected: BoundaryResponse = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/admission-policy.response.json"
+    ))
+    .expect("valid admission policy response");
+
+    let runtime = runtime(8).await;
+    let result = runtime
+        .client()
+        .call(request, CallContext::with_timeout(Duration::from_secs(2)))
+        .await
+        .expect("admission policy call succeeds");
+    assert_eq!(result, expected.into_result().expect("fixture success"));
+    runtime.shutdown().await.expect("clean shutdown");
+}
+
+#[tokio::test]
+#[ignore = "requires the Nim test worker; run `just nim-boundary-test`"]
+async fn authorization_invalidation_fixture_crosses_the_real_worker_boundary() {
+    let request: BoundaryRequest = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/authorization-invalidation-policy.request.json"
+    ))
+    .expect("valid authorization invalidation request");
+    let expected: BoundaryResponse = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/authorization-invalidation-policy.response.json"
+    ))
+    .expect("valid authorization invalidation response");
+
+    let runtime = runtime(8).await;
+    let result = runtime
+        .client()
+        .call(request, CallContext::with_timeout(Duration::from_secs(2)))
+        .await
+        .expect("authorization invalidation policy call succeeds");
+    assert_eq!(result, expected.into_result().expect("fixture success"));
+    runtime.shutdown().await.expect("clean shutdown");
+}
+
+#[tokio::test]
+#[ignore = "requires the Nim test worker; run `just nim-boundary-test`"]
+async fn ephemeral_policy_fixture_crosses_the_real_worker_boundary() {
+    let request: BoundaryRequest = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/ephemeral-policy.request.json"
+    ))
+    .expect("valid ephemeral policy request");
+    let expected: BoundaryResponse = serde_json::from_str(include_str!(
+        "../../../contracts/nim-rust-boundary/v1/fixtures/ephemeral-policy.response.json"
+    ))
+    .expect("valid ephemeral policy response");
+
+    let runtime = runtime(8).await;
+    let result = runtime
+        .client()
+        .call(request, CallContext::with_timeout(Duration::from_secs(2)))
+        .await
+        .expect("ephemeral policy call succeeds");
+    assert_eq!(result, expected.into_result().expect("fixture success"));
+    runtime.shutdown().await.expect("clean shutdown");
+}
+
+#[tokio::test]
+#[ignore = "requires the Nim test worker; run `just nim-boundary-test`"]
 async fn lease_policy_fixture_crosses_the_real_worker_boundary() {
     let request: BoundaryRequest = serde_json::from_str(include_str!(
         "../../../contracts/nim-rust-boundary/v1/fixtures/lease-policy.request.json"

@@ -2,6 +2,7 @@ use serde::{de::Error as _, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::Value;
 use uuid::Uuid;
 
+use crate::admission::{AdmissionPolicyRequest, AdmissionPolicyResult};
 use crate::agent::{AgentPolicyRequest, AgentPolicyResult};
 use crate::cli::{CliPolicyRequest, CliPolicyResult};
 use crate::cluster::{ClusterLifecyclePolicyRequest, ClusterLifecyclePolicyResult};
@@ -9,6 +10,7 @@ use crate::community::{CommunityPolicyRequest, CommunityPolicyResult};
 use crate::control::{ControlPolicyRequest, ControlPolicyResult};
 use crate::dm::{DmPolicyRequest, DmPolicyResult};
 use crate::effect::{EffectPolicyRequest, EffectPolicyResult};
+use crate::ephemeral::{EphemeralPolicyRequest, EphemeralPolicyResult};
 use crate::lease::{LeasePolicyRequest, LeasePolicyResult};
 use crate::membership::{MembershipPolicyRequest, MembershipPolicyResult};
 use crate::moderation::{ModerationPolicyRequest, ModerationPolicyResult};
@@ -22,7 +24,7 @@ pub const PROTOCOL_NAME: &str = "nimino.core.boundary";
 /// The only accepted boundary version. No downgrade path exists.
 pub const PROTOCOL_VERSION: u16 = 1;
 /// SHA-256 of the checked-in v1 contract bundle.
-pub const SCHEMA_HASH: &str = "d06742253d18549b47a1be30a4a796a38d893d1a33f866027a4083776e88b448";
+pub const SCHEMA_HASH: &str = "bed77a5197d97b36ce1a8c46e3877d5dbcbc4e493cd5fd730250aa698bafd0a8";
 /// Role required during the exact-match startup handshake.
 pub const WORKER_ROLE: &str = "nimino-core";
 /// Maximum JSON payload length accepted by the frame codec.
@@ -511,6 +513,10 @@ pub enum BoundaryResult {
     AgentPolicy(AgentPolicyResult),
     /// Cluster admission, lifecycle, and lane decision owned by Nimino.
     ClusterLifecycle(ClusterLifecyclePolicyResult),
+    /// Cluster-wide request admission decision owned by Nimino.
+    AdmissionPolicy(AdmissionPolicyResult),
+    /// Cluster presence and typing convergence decision owned by Nimino.
+    EphemeralPolicy(EphemeralPolicyResult),
     /// Replicated control-log and authority decision owned by Nimino.
     ControlPolicy(ControlPolicyResult),
     /// Lease, fencing, and singleton-routing decision owned by Nimino.
@@ -566,6 +572,10 @@ pub(crate) enum BoundaryOperation {
     AgentPolicy(AgentPolicyRequest),
     /// Cluster admission, lifecycle, and lane policy.
     ClusterLifecycle(ClusterLifecyclePolicyRequest),
+    /// Cluster-wide request admission policy.
+    AdmissionPolicy(AdmissionPolicyRequest),
+    /// Cluster presence and typing convergence policy.
+    EphemeralPolicy(EphemeralPolicyRequest),
     /// Replicated control-log and authority policy.
     ControlPolicy(ControlPolicyRequest),
     /// Lease, fencing, and singleton-routing policy.
@@ -615,6 +625,8 @@ impl BoundaryOperation {
             Self::CliPolicy(_) => "domain.cli.policy",
             Self::AgentPolicy(_) => "domain.agent.policy",
             Self::ClusterLifecycle(_) => "domain.cluster.lifecycle",
+            Self::AdmissionPolicy(_) => "domain.admission.policy",
+            Self::EphemeralPolicy(_) => "domain.ephemeral.policy",
             Self::ControlPolicy(_) => "domain.control.policy",
             Self::LeasePolicy(_) => "domain.lease.policy",
             Self::EffectPolicy(_) => "domain.effect.policy",
@@ -651,6 +663,8 @@ impl BoundaryOperation {
             Self::CliPolicy(payload) => serde_json::to_value(payload),
             Self::AgentPolicy(payload) => serde_json::to_value(payload),
             Self::ClusterLifecycle(payload) => serde_json::to_value(payload),
+            Self::AdmissionPolicy(payload) => serde_json::to_value(payload),
+            Self::EphemeralPolicy(payload) => serde_json::to_value(payload),
             Self::ControlPolicy(payload) => serde_json::to_value(payload),
             Self::LeasePolicy(payload) => serde_json::to_value(payload),
             Self::EffectPolicy(payload) => serde_json::to_value(payload),
@@ -688,6 +702,8 @@ impl BoundaryOperation {
             "domain.cluster.lifecycle" => {
                 serde_json::from_value(payload).map(Self::ClusterLifecycle)
             }
+            "domain.admission.policy" => serde_json::from_value(payload).map(Self::AdmissionPolicy),
+            "domain.ephemeral.policy" => serde_json::from_value(payload).map(Self::EphemeralPolicy),
             "domain.control.policy" => serde_json::from_value(payload).map(Self::ControlPolicy),
             "domain.lease.policy" => serde_json::from_value(payload).map(Self::LeasePolicy),
             "domain.effect.policy" => serde_json::from_value(payload).map(Self::EffectPolicy),
@@ -852,6 +868,16 @@ impl BoundaryRequest {
     /// Constructs a typed cluster admission, lifecycle, or lane decision.
     pub fn cluster_lifecycle(request: ClusterLifecyclePolicyRequest) -> Self {
         Self::from_operation(BoundaryOperation::ClusterLifecycle(request))
+    }
+
+    /// Constructs a typed cluster-wide request admission decision.
+    pub fn admission_policy(request: AdmissionPolicyRequest) -> Self {
+        Self::from_operation(BoundaryOperation::AdmissionPolicy(request))
+    }
+
+    /// Constructs a typed cluster presence or typing convergence decision.
+    pub fn ephemeral_policy(request: EphemeralPolicyRequest) -> Self {
+        Self::from_operation(BoundaryOperation::EphemeralPolicy(request))
     }
 
     /// Constructs a typed replicated-control policy decision.
@@ -1048,6 +1074,12 @@ impl<'de> Deserialize<'de> for BoundaryResponse {
                         .map_err(D::Error::custom)?,
                     "domain.cluster.lifecycle" => serde_json::from_value(result)
                         .map(BoundaryResult::ClusterLifecycle)
+                        .map_err(D::Error::custom)?,
+                    "domain.admission.policy" => serde_json::from_value(result)
+                        .map(BoundaryResult::AdmissionPolicy)
+                        .map_err(D::Error::custom)?,
+                    "domain.ephemeral.policy" => serde_json::from_value(result)
+                        .map(BoundaryResult::EphemeralPolicy)
                         .map_err(D::Error::custom)?,
                     "domain.control.policy" => serde_json::from_value(result)
                         .map(BoundaryResult::ControlPolicy)

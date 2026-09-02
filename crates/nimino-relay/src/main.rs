@@ -463,6 +463,7 @@ async fn main() -> anyhow::Result<()> {
         cluster_ready,
     );
     let state = Arc::new(app_state);
+    let cluster_delivery = cluster_runtime.start_delivery(Arc::clone(&state));
 
     // Workflow command recovery may execute during canonical projection, so
     // the side-effect port must be wired before the startup catch-up gate.
@@ -945,6 +946,11 @@ async fn main() -> anyhow::Result<()> {
         .await
         .map_err(|error| anyhow::anyhow!("Canonical projection shutdown failed: {error}"))?;
 
+    cluster_delivery
+        .stop()
+        .await
+        .map_err(|error| anyhow::anyhow!("Cluster delivery shutdown failed: {error}"))?;
+
     cluster_runtime
         .stop()
         .await
@@ -1019,11 +1025,13 @@ async fn run_community_revalidator(
     cancel: CancellationToken,
 ) {
     run_periodic_until_cancelled(period, cancel, || async {
-        let closed = state.revalidate_live_communities().await;
-        if closed > 0 {
+        let communities_closed = state.revalidate_live_communities().await;
+        let authorization_revoked = state.revalidate_live_authorization().await;
+        if communities_closed > 0 || authorization_revoked > 0 {
             tracing::info!(
-                closed,
-                "closed sockets for inactive communities during lifecycle revalidation"
+                communities_closed,
+                authorization_revoked,
+                "durable lifecycle/authorization revalidation revoked stale access"
             );
         }
     })

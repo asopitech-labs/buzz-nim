@@ -21,6 +21,7 @@ type
     ceVote
     ceElectLeader
     ceAppend
+    ceReplay
     ceCommit
     ceApply
     ceSnapshot
@@ -42,6 +43,7 @@ type
     csePendingEntry
     cseEntryKindInvalid
     cseCommandRequired
+    cseCommandConflict
     cseLogGap
     cseCommitOrder
     cseApplyOrder
@@ -357,6 +359,12 @@ proc planAppend*(state: ControlState; request: AppendRequest): ControlPlan =
         state.phase, state.oldVoters, state.newVoters, state.leaderProof
       ):
     return reject(state, cseAuthorityStale)
+  for entry in state.log:
+    if entry.index <= state.commitIndex and entry.commandId == request.commandId:
+      if entry.kind == request.kind and entry.payload == request.payload and
+          entry.targetVoters == request.targetVoters:
+        return plan(state, state, ceReplay, @[], some(entry))
+      return reject(state, cseCommandConflict)
   if state.lastIndex != state.commitIndex:
     return reject(state, csePendingEntry)
   if request.commandId.len == 0:

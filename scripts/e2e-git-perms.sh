@@ -72,6 +72,7 @@ warn()    { printf "${YELLOW}[e2e-git]${NC} %s\n" "$*"; }
 
 RELAY_PID=""
 WORK_DIR=""
+CLUSTER_RUNTIME_DIR=""
 
 cleanup() {
     if [[ -n "$RELAY_PID" ]]; then
@@ -80,6 +81,9 @@ cleanup() {
     fi
     if [[ -n "$WORK_DIR" ]]; then
         rm -rf "$WORK_DIR"
+    fi
+    if [[ -n "$CLUSTER_RUNTIME_DIR" ]]; then
+        rm -rf "$CLUSTER_RUNTIME_DIR"
     fi
 }
 trap cleanup EXIT
@@ -337,6 +341,18 @@ export NIMINO_BIND_ADDR="${RELAY_HOST}:${RELAY_PORT}"
 export RELAY_URL="${RELAY_WS}"
 export RUST_LOG="nimino_relay=warn"
 export NIMINO_REQUIRE_AUTH_TOKEN=false
+
+just nim-boundary-build _dev-cluster-material
+CLUSTER_RUNTIME_DIR="$(mktemp -d)"
+CHIRPS_DIR="${REPO_ROOT}/target/nim/dev-cluster"
+export NIMINO_BOUNDARY_WORKER="${REPO_ROOT}/target/nim/nimino_boundary/bin/nimino-core-worker"
+export NIMINO_CHIRPS_BIND_ADDR=127.0.0.1:17443
+export NIMINO_CHIRPS_IDENTITY_PATH="${CLUSTER_RUNTIME_DIR}/node.identity"
+export NIMINO_CHIRPS_CERTIFICATE_PATH="${CHIRPS_DIR}/tls.crt"
+export NIMINO_CHIRPS_PRIVATE_KEY_PATH="${CHIRPS_DIR}/tls.key"
+export NIMINO_CHIRPS_TRUST_ANCHOR_PATHS="${CHIRPS_DIR}/ca.crt"
+export NIMINO_NODE_STORE_PATH="${CLUSTER_RUNTIME_DIR}/data.redb"
+export NIMINO_OBJECT_STORE_PATH="${CLUSTER_RUNTIME_DIR}/objects"
 
 # Clean repos dir (isolated test state)
 rm -rf "${REPO_ROOT}/repos"

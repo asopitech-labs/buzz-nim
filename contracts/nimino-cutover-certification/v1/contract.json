@@ -5,7 +5,7 @@
   "issue": 67,
   "milestone": "Nimino v1.0 — Independent Cutover",
   "compatibilityMode": false,
-  "publicationState": "cutover-ready",
+  "publicationState": "blocked",
   "externalCertificationRequired": true,
   "source": {
     "workflow": ".github/workflows/ci.yml",

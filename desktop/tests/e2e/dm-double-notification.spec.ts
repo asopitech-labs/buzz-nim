@@ -12,7 +12,7 @@ const RELAY_HTTP_URL =
   process.env.NIMINO_E2E_RELAY_URL ?? "http://localhost:3000";
 
 // setup-desktop-test-data.sh: uuid5(NAMESPACE_DNS, "nimino.channel.dm.alice-tyler")
-const ALICE_TYLER_DM_CHANNEL_ID = "5a9c064e-0411-5242-ae6b-0363ba99b8e6";
+const ALICE_TYLER_DM_CHANNEL_ID = "bae08644-4b8a-5b40-8175-f3124a221155";
 
 async function getLoggedNotifications(page: import("@playwright/test").Page) {
   return page.evaluate(() => {

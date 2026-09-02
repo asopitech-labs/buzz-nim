@@ -1,5 +1,6 @@
 use std::fmt;
 use std::thread;
+use std::time::Instant;
 
 use tokio::sync::{broadcast, mpsc, oneshot, watch};
 
@@ -39,11 +40,16 @@ impl Default for MeshRuntimeOptions {
 pub struct MeshMessage {
     from: NodeId,
     payload: Vec<u8>,
+    received_at: Instant,
 }
 
 impl MeshMessage {
     pub(crate) fn new(from: NodeId, payload: Vec<u8>) -> Self {
-        Self { from, payload }
+        Self {
+            from,
+            payload,
+            received_at: Instant::now(),
+        }
     }
 
     /// Returns the authenticated transport peer identity.
@@ -54,6 +60,11 @@ impl MeshMessage {
     /// Returns the opaque payload; interpretation belongs to Nimino protocols.
     pub fn payload(&self) -> &[u8] {
         &self.payload
+    }
+
+    /// Returns when the adapter received the message from Chirps.
+    pub fn received_at(&self) -> Instant {
+        self.received_at
     }
 
     /// Consumes the message and returns its opaque payload.

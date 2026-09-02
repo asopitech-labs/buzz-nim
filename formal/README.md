@@ -10,3 +10,6 @@ replace the versioned contracts, implementation, tests, or runbooks.
   untracked.
 
 Run a model with the command recorded in its inventory file.
+
+`just control-model-check` requires Java 17+ and caches the official TLA+
+Tools v1.7.4 JAR after verifying its pinned SHA-256 digest.

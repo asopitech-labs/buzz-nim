@@ -764,6 +764,220 @@
         }
       ]
     },
+    "admissionU64": {
+      "type": "integer", "minimum": 0, "maximum": 9223372036854775807
+    },
+    "replayClaimState": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scope", "eventId", "expiresAtMs", "lastControlIndex"],
+      "properties": {
+        "scope": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "eventId": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "expiresAtMs": { "$ref": "#/$defs/admissionU64" },
+        "lastControlIndex": { "$ref": "#/$defs/admissionU64" }
+      }
+    },
+    "replayClaimCommand": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scope", "eventId", "observedAtMs", "ttlSecs"],
+      "properties": {
+        "scope": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "eventId": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "observedAtMs": { "$ref": "#/$defs/admissionU64" },
+        "ttlSecs": { "$ref": "#/$defs/admissionU64" }
+      }
+    },
+    "rateLimitState": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "namespace", "key", "windowStartedAtMs", "windowSecs", "limit",
+        "count", "lastControlIndex"
+      ],
+      "properties": {
+        "namespace": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "key": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "windowStartedAtMs": { "$ref": "#/$defs/admissionU64" },
+        "windowSecs": { "$ref": "#/$defs/admissionU64" },
+        "limit": { "$ref": "#/$defs/admissionU64" },
+        "count": { "$ref": "#/$defs/admissionU64" },
+        "lastControlIndex": { "$ref": "#/$defs/admissionU64" }
+      }
+    },
+    "rateLimitCommand": {
+      "type": "object", "additionalProperties": false,
+      "required": ["namespace", "key", "observedAtMs", "windowSecs", "limit"],
+      "properties": {
+        "namespace": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "key": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "observedAtMs": { "$ref": "#/$defs/admissionU64" },
+        "windowSecs": { "$ref": "#/$defs/admissionU64" },
+        "limit": { "$ref": "#/$defs/admissionU64" }
+      }
+    },
+    "authorizationInvalidationKind": {
+      "enum": ["ban", "membership", "visibility", "community"]
+    },
+    "authorizationInvalidationState": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scope", "kind", "subject", "channelId", "factId", "revision"],
+      "properties": {
+        "scope": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "kind": { "$ref": "#/$defs/authorizationInvalidationKind" },
+        "subject": { "type": "string", "maxLength": 64 },
+        "channelId": { "type": "string", "maxLength": 128 },
+        "factId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "revision": { "$ref": "#/$defs/admissionU64" }
+      }
+    },
+    "authorizationInvalidationCommand": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scope", "kind", "subject", "channelId", "factId"],
+      "properties": {
+        "scope": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "kind": { "$ref": "#/$defs/authorizationInvalidationKind" },
+        "subject": { "type": "string", "maxLength": 64 },
+        "channelId": { "type": "string", "maxLength": 128 },
+        "factId": { "type": "string", "minLength": 1, "maxLength": 128 }
+      }
+    },
+    "admissionPolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "command", "controlIndex"],
+          "properties": {
+            "decision": { "const": "apply_replay_claim" },
+            "state": {
+              "oneOf": [{ "$ref": "#/$defs/replayClaimState" }, { "type": "null" }]
+            },
+            "command": { "$ref": "#/$defs/replayClaimCommand" },
+            "controlIndex": { "$ref": "#/$defs/admissionU64" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "states", "beforeMs"],
+          "properties": {
+            "decision": { "const": "prune_replay" },
+            "states": {
+              "type": "array", "maxItems": 256,
+              "items": { "$ref": "#/$defs/replayClaimState" }
+            },
+            "beforeMs": { "$ref": "#/$defs/admissionU64" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "command", "controlIndex"],
+          "properties": {
+            "decision": { "const": "apply_rate_limit" },
+            "state": {
+              "oneOf": [{ "$ref": "#/$defs/rateLimitState" }, { "type": "null" }]
+            },
+            "command": { "$ref": "#/$defs/rateLimitCommand" },
+            "controlIndex": { "$ref": "#/$defs/admissionU64" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "states", "commands", "controlIndex"],
+          "properties": {
+            "decision": { "const": "apply_rate_limit_batch" },
+            "states": {
+              "type": "array", "maxItems": 64,
+              "items": { "$ref": "#/$defs/rateLimitState" }
+            },
+            "commands": {
+              "type": "array", "minItems": 1, "maxItems": 64,
+              "items": { "$ref": "#/$defs/rateLimitCommand" }
+            },
+            "controlIndex": { "$ref": "#/$defs/admissionU64" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "command", "revision"],
+          "properties": {
+            "decision": { "const": "apply_authorization_invalidation" },
+            "state": {
+              "oneOf": [
+                { "$ref": "#/$defs/authorizationInvalidationState" },
+                { "type": "null" }
+              ]
+            },
+            "command": { "$ref": "#/$defs/authorizationInvalidationCommand" },
+            "revision": { "$ref": "#/$defs/admissionU64" }
+          }
+        }
+      ]
+    },
+    "ephemeralKind": { "enum": ["presence", "typing"] },
+    "ephemeralState": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "scope", "kind", "subject", "context", "value", "active",
+        "observedAtMs", "expiresAtMs", "originNodeId", "transitionId"
+      ],
+      "properties": {
+        "scope": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "kind": { "$ref": "#/$defs/ephemeralKind" },
+        "subject": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "context": { "type": "string", "maxLength": 128 },
+        "value": { "type": "string", "maxLength": 512 },
+        "active": { "type": "boolean" },
+        "observedAtMs": { "$ref": "#/$defs/admissionU64" },
+        "expiresAtMs": { "$ref": "#/$defs/admissionU64" },
+        "originNodeId": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "transitionId": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "ephemeralCommand": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "scope", "kind", "subject", "context", "value", "active",
+        "observedAtMs", "ttlSecs", "originNodeId", "transitionId"
+      ],
+      "properties": {
+        "scope": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "kind": { "$ref": "#/$defs/ephemeralKind" },
+        "subject": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "context": { "type": "string", "maxLength": 128 },
+        "value": { "type": "string", "maxLength": 512 },
+        "active": { "type": "boolean" },
+        "observedAtMs": { "$ref": "#/$defs/admissionU64" },
+        "ttlSecs": { "$ref": "#/$defs/admissionU64" },
+        "originNodeId": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "transitionId": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "ephemeralPolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "command", "nowMs"],
+          "properties": {
+            "decision": { "const": "apply" },
+            "state": {
+              "oneOf": [{ "$ref": "#/$defs/ephemeralState" }, { "type": "null" }]
+            },
+            "command": { "$ref": "#/$defs/ephemeralCommand" },
+            "nowMs": { "$ref": "#/$defs/admissionU64" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "states", "beforeMs"],
+          "properties": {
+            "decision": { "const": "prune" },
+            "states": {
+              "type": "array", "maxItems": 256,
+              "items": { "$ref": "#/$defs/ephemeralState" }
+            },
+            "beforeMs": { "$ref": "#/$defs/admissionU64" }
+          }
+        }
+      ]
+    },
     "cliFailureKind": {
       "enum": [
         "usage", "relay", "network", "auth", "key", "conflict",
@@ -1118,13 +1332,13 @@
       }
     },
     "controlEffect": {
-      "enum": ["reject", "vote", "elect_leader", "append", "commit", "apply", "snapshot"]
+      "enum": ["reject", "vote", "elect_leader", "append", "replay", "commit", "apply", "snapshot"]
     },
     "controlError": {
       "enum": [
         "none", "invalid_voters", "stale_term", "candidate_not_voter",
         "candidate_log_stale", "quorum_required", "leader_required", "authority_stale",
-        "pending_entry", "entry_kind_invalid", "command_required", "log_gap",
+        "pending_entry", "entry_kind_invalid", "command_required", "command_conflict", "log_gap",
         "commit_order", "apply_order", "snapshot_unavailable", "fact_conflict",
         "store_failure", "corrupt_recovery"
       ]
@@ -2380,6 +2594,30 @@
         "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
         "operation": { "const": "domain.cluster.lifecycle" },
         "payload": { "$ref": "#/$defs/clusterLifecyclePayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.admission.policy" },
+        "payload": { "$ref": "#/$defs/admissionPolicyPayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.ephemeral.policy" },
+        "payload": { "$ref": "#/$defs/ephemeralPolicyPayload" }
       }
     },
     {

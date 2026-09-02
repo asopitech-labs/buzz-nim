@@ -361,9 +361,11 @@ async fn banned_admin_is_refused_but_timed_out_admin_still_administers() {
         ns, 400,
         "a plain member's 9031 must stay a 400 validation reject"
     );
-    assert!(
-        nb.contains("invalid: actor not authorized"),
-        "non-admin rejection must keep its `invalid:` prefix, got {nb}"
+    let rejection: serde_json::Value = serde_json::from_str(&nb).expect("error JSON");
+    assert_eq!(
+        rejection.get("error").and_then(serde_json::Value::as_str),
+        Some("invalid: membership policy rejected the relay command (NotAuthorized)"),
+        "non-admin rejection must keep its typed `invalid:` verdict"
     );
 
     println!("\nALL INVARIANTS HELD");

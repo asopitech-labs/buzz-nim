@@ -2,21 +2,20 @@
 
 ## Date
 
-2026-08-31 (Asia/Tokyo)
+2026-09-01 (Asia/Tokyo)
 
 ## Working tree
 
-Base commit `1f6d3b2e`; the Nimino cutover changes were uncommitted during the run.
+Base commit `b4218e37`; the pinned TLC runner change was uncommitted during the
+run.
 
 ## Command
 
 ```bash
-tlc -workers auto \
-  -config formal/scenarios/NiminoControlLog_3Node.cfg \
-  formal/tla/cluster/NiminoControlLog.tla
+just control-model-check
 ```
 
-TLC2 version: `2026.08.21.155922` (revision `9787e65`, TLA+ Tools v1.8.0).
+TLC2 version: `2.19 of 08 August 2024` (revision `5a47802`, TLA+ Tools v1.7.4).
 
 ## Result
 

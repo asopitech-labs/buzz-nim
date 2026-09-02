@@ -16,6 +16,8 @@ on:
       - "contracts/nimino-relay-release/**"
       - "contracts/nimino-object-sync/**"
       - "contracts/nimino-release-set/**"
+      - "contracts/nimino-cutover-certification/**"
+      - "contracts/nimino-cutover-readiness/**"
       - "scripts/nimino-release-set.mjs"
       - "scripts/test-nimino-relay-release-contract.mjs"
       - ".github/workflows/nimino-relay-release.yml"
@@ -47,6 +49,9 @@ jobs:
         if: github.ref_type == 'tag'
         run: test "$GITHUB_REPOSITORY" = "$CANONICAL_REPOSITORY"
       - run: just relay-release-contract
+      - name: Require source readiness before tag publication
+        if: github.ref_type == 'tag'
+        run: just cutover-certify-source
       - name: Render Compose with a digest-pinned candidate
         env:
           NIMINO_IMAGE_DIGEST: sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa

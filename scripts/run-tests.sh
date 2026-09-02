@@ -32,7 +32,7 @@ cd "${REPO_ROOT}"
 
 # ---- Load .env if present ---------------------------------------------------
 
-if [[ -f ".env" ]]; then
+if [[ -f ".env" && -z "${DATABASE_URL:-}" && -z "${PGUSER:-}" ]]; then
   log "Loading .env..."
   set -o allexport
   # shellcheck disable=SC1091

@@ -6,7 +6,7 @@ import { installRelayBridge, TEST_IDENTITIES } from "../helpers/bridge";
 import { assertRelaySeeded } from "../helpers/seed";
 
 const RELAY_HTTP = process.env.NIMINO_E2E_RELAY_URL ?? "http://localhost:3000";
-const DM_ID = "5a9c064e-0411-5242-ae6b-0363ba99b8e6";
+const DM_ID = "bae08644-4b8a-5b40-8175-f3124a221155";
 
 async function publishAliceDm(
   content: string,

@@ -67,6 +67,8 @@ jobs:
               - 'nim/nimino_core/src/nimino_core/domain/agent_policy.nim'
               - 'nim/nimino_core/src/nimino_core/domain/cluster_lifecycle.nim'
               - 'nim/nimino_core/src/nimino_core/domain/control_state_machine.nim'
+              - 'nim/nimino_core/src/nimino_core/domain/admission_policy.nim'
+              - 'nim/nimino_core/src/nimino_core/domain/ephemeral_policy.nim'
               - 'nim/nimino_core/src/nimino_core/domain/lease_fencing.nim'
               - 'nim/nimino_core/src/nimino_core/domain/effect_ledger.nim'
               - 'nim/nimino_core/src/nimino_core/domain/object_sync_policy.nim'
@@ -83,6 +85,8 @@ jobs:
               - 'nim/nimino_core/tests/test_agent_policy.nim'
               - 'nim/nimino_core/tests/test_cluster_lifecycle.nim'
               - 'nim/nimino_core/tests/test_control_state_machine.nim'
+              - 'nim/nimino_core/tests/test_admission_policy.nim'
+              - 'nim/nimino_core/tests/test_ephemeral_policy.nim'
               - 'nim/nimino_core/tests/test_lease_fencing.nim'
               - 'nim/nimino_core/tests/test_effect_ledger.nim'
               - 'nim/nimino_core/tests/test_object_sync_policy.nim'
@@ -551,7 +555,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [changes]
-    if: github.event_name == 'push' || needs.changes.outputs.desktop == 'true' || needs.changes.outputs.desktop-rust == 'true' || needs.changes.outputs.rust == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.desktop == 'true' || needs.changes.outputs.desktop-rust == 'true' || needs.changes.outputs.rust == 'true' || needs.changes.outputs.nim == 'true' || needs.changes.outputs.boundary == 'true'
     permissions:
       contents: read
     env:
@@ -570,8 +574,9 @@ jobs:
           path: |
             target/ci/nimino-relay
             target/ci/git-credential-nostr
+            target/ci/nimino-core-worker
             target/ci/backend-integration-tests.tar.zst
-          key: relay-artifacts-${{ runner.os }}-${{ hashFiles('crates/**', 'migrations/**', 'Dockerfile', 'Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', '.cargo/config.toml', '.github/workflows/ci.yml') }}
+          key: relay-artifacts-${{ runner.os }}-${{ hashFiles('crates/**', 'nim/**', 'contracts/nim-rust-boundary/**', 'migrations/**', 'Dockerfile', 'Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', '.cargo/config.toml', 'Justfile', '.github/workflows/ci.yml') }}
       - uses: rui314/setup-mold@9c9c13bf4c3f1adef0cc596abc155580bcb04444 # v1
         if: steps.relay-artifacts-cache.outputs.cache-hit != 'true'
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
@@ -598,7 +603,9 @@ jobs:
         env:
           RUSTC_WRAPPER: sccache
         run: |
+          just nim-boundary-build
           cargo build --profile ci -p nimino-relay -p git-credential-nostr
+          cp target/nim/nimino_boundary/bin/nimino-core-worker target/ci/nimino-core-worker
           cargo nextest archive \
             --cargo-profile ci \
             -p nimino-db \
@@ -616,8 +623,9 @@ jobs:
           path: |
             target/ci/nimino-relay
             target/ci/git-credential-nostr
+            target/ci/nimino-core-worker
             target/ci/backend-integration-tests.tar.zst
-          key: relay-artifacts-${{ runner.os }}-${{ hashFiles('crates/**', 'migrations/**', 'Dockerfile', 'Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', '.cargo/config.toml', '.github/workflows/ci.yml') }}
+          key: relay-artifacts-${{ runner.os }}-${{ hashFiles('crates/**', 'nim/**', 'contracts/nim-rust-boundary/**', 'migrations/**', 'Dockerfile', 'Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', '.cargo/config.toml', 'Justfile', '.github/workflows/ci.yml') }}
       - name: Upload relay artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -625,6 +633,7 @@ jobs:
           path: |
             target/ci/nimino-relay
             target/ci/git-credential-nostr
+            target/ci/nimino-core-worker
             target/ci/backend-integration-tests.tar.zst
           if-no-files-found: error
           retention-days: 1
@@ -634,7 +643,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [changes, desktop-e2e-relay]
-    if: github.event_name == 'push' || needs.changes.outputs.desktop == 'true' || needs.changes.outputs.desktop-rust == 'true' || needs.changes.outputs.rust == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.desktop == 'true' || needs.changes.outputs.desktop-rust == 'true' || needs.changes.outputs.rust == 'true' || needs.changes.outputs.nim == 'true' || needs.changes.outputs.boundary == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -749,11 +758,21 @@ jobs:
           ;"
       - name: Start relay
         run: |
-          chmod +x ./target/ci/nimino-relay
+          just _dev-cluster-material
+          mkdir -p "${RUNNER_TEMP}/nimino-cluster"
+          chmod +x ./target/ci/nimino-relay ./target/ci/nimino-core-worker
           nohup env \
             DATABASE_URL="postgres://nimino:${NIMINO_TEST_POSTGRES_PASSWORD}@localhost:5432/nimino" \
             RELAY_URL=ws://localhost:3000 \
             NIMINO_BIND_ADDR=0.0.0.0:3000 \
+            NIMINO_BOUNDARY_WORKER="${GITHUB_WORKSPACE}/target/ci/nimino-core-worker" \
+            NIMINO_CHIRPS_BIND_ADDR=127.0.0.1:7443 \
+            NIMINO_CHIRPS_IDENTITY_PATH="${RUNNER_TEMP}/nimino-cluster/node.identity" \
+            NIMINO_CHIRPS_CERTIFICATE_PATH="${GITHUB_WORKSPACE}/target/nim/dev-cluster/tls.crt" \
+            NIMINO_CHIRPS_PRIVATE_KEY_PATH="${GITHUB_WORKSPACE}/target/nim/dev-cluster/tls.key" \
+            NIMINO_CHIRPS_TRUST_ANCHOR_PATHS="${GITHUB_WORKSPACE}/target/nim/dev-cluster/ca.crt" \
+            NIMINO_NODE_STORE_PATH="${RUNNER_TEMP}/nimino-cluster/data.redb" \
+            NIMINO_OBJECT_STORE_PATH="${RUNNER_TEMP}/nimino-cluster/objects" \
             NIMINO_REQUIRE_AUTH_TOKEN=false \
             NIMINO_RECONCILE_CHANNELS=true \
             NIMINO_RATE_LIMIT_HUMAN_MESSAGES_PER_MIN=100000 \
@@ -808,7 +827,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [changes, desktop-e2e-integration-shard]
-    if: always() && (github.event_name == 'push' || needs.changes.outputs.desktop == 'true' || needs.changes.outputs.desktop-rust == 'true' || needs.changes.outputs.rust == 'true')
+    if: always() && (github.event_name == 'push' || needs.changes.outputs.desktop == 'true' || needs.changes.outputs.desktop-rust == 'true' || needs.changes.outputs.rust == 'true' || needs.changes.outputs.nim == 'true' || needs.changes.outputs.boundary == 'true')
     permissions:
       contents: read
     steps:
@@ -825,7 +844,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [changes, desktop-e2e-relay]
-    if: github.event_name == 'push' || needs.changes.outputs.rust == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.rust == 'true' || needs.changes.outputs.nim == 'true' || needs.changes.outputs.boundary == 'true'
     permissions:
       contents: read
     steps:
@@ -907,11 +926,21 @@ jobs:
           ;"
       - name: Start relay
         run: |
-          chmod +x ./target/ci/nimino-relay
+          just _dev-cluster-material
+          mkdir -p "${RUNNER_TEMP}/nimino-cluster"
+          chmod +x ./target/ci/nimino-relay ./target/ci/nimino-core-worker
           nohup env \
             DATABASE_URL="postgres://nimino:${NIMINO_TEST_POSTGRES_PASSWORD}@localhost:5432/nimino" \
             RELAY_URL=ws://localhost:3000 \
             NIMINO_BIND_ADDR=0.0.0.0:3000 \
+            NIMINO_BOUNDARY_WORKER="${GITHUB_WORKSPACE}/target/ci/nimino-core-worker" \
+            NIMINO_CHIRPS_BIND_ADDR=127.0.0.1:7443 \
+            NIMINO_CHIRPS_IDENTITY_PATH="${RUNNER_TEMP}/nimino-cluster/node.identity" \
+            NIMINO_CHIRPS_CERTIFICATE_PATH="${GITHUB_WORKSPACE}/target/nim/dev-cluster/tls.crt" \
+            NIMINO_CHIRPS_PRIVATE_KEY_PATH="${GITHUB_WORKSPACE}/target/nim/dev-cluster/tls.key" \
+            NIMINO_CHIRPS_TRUST_ANCHOR_PATHS="${GITHUB_WORKSPACE}/target/nim/dev-cluster/ca.crt" \
+            NIMINO_NODE_STORE_PATH="${RUNNER_TEMP}/nimino-cluster/data.redb" \
+            NIMINO_OBJECT_STORE_PATH="${RUNNER_TEMP}/nimino-cluster/objects" \
             NIMINO_REQUIRE_AUTH_TOKEN=false \
             NIMINO_RECONCILE_CHANNELS=true \
             NIMINO_GIT_PROBE_WRITERS=8 \
@@ -987,7 +1016,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [changes, desktop-e2e-relay]
-    if: github.event_name == 'push' || needs.changes.outputs.rust == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.rust == 'true' || needs.changes.outputs.nim == 'true' || needs.changes.outputs.boundary == 'true'
     permissions:
       contents: read
     steps:
@@ -1005,7 +1034,7 @@ jobs:
           path: target/ci
       - name: Start relay
         run: |
-          chmod +x ./target/ci/nimino-relay ./target/ci/git-credential-nostr
+          chmod +x ./target/ci/nimino-relay ./target/ci/git-credential-nostr ./target/ci/nimino-core-worker
           ./scripts/start-relay-for-tests.sh --no-build
       - name: Relay E2E tests
         run: |

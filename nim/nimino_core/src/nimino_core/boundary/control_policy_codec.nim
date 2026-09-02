@@ -64,6 +64,7 @@ proc effectAt(node: JsonNode; key, requestId: string): ControlEffect =
   of "vote": ceVote
   of "elect_leader": ceElectLeader
   of "append": ceAppend
+  of "replay": ceReplay
   of "commit": ceCommit
   of "apply": ceApply
   of "snapshot": ceSnapshot
@@ -82,6 +83,7 @@ proc errorAt(node: JsonNode; key, requestId: string): ControlStateError =
   of "pending_entry": csePendingEntry
   of "entry_kind_invalid": cseEntryKindInvalid
   of "command_required": cseCommandRequired
+  of "command_conflict": cseCommandConflict
   of "log_gap": cseLogGap
   of "commit_order": cseCommitOrder
   of "apply_order": cseApplyOrder
@@ -227,6 +229,7 @@ proc effectName(value: ControlEffect): string =
   of ceVote: "vote"
   of ceElectLeader: "elect_leader"
   of ceAppend: "append"
+  of ceReplay: "replay"
   of ceCommit: "commit"
   of ceApply: "apply"
   of ceSnapshot: "snapshot"
@@ -244,6 +247,7 @@ proc errorName(value: ControlStateError): string =
   of csePendingEntry: "pending_entry"
   of cseEntryKindInvalid: "entry_kind_invalid"
   of cseCommandRequired: "command_required"
+  of cseCommandConflict: "command_conflict"
   of cseLogGap: "log_gap"
   of cseCommitOrder: "commit_order"
   of cseApplyOrder: "apply_order"

@@ -307,10 +307,15 @@ pub async fn handle_auth(event: nostr::Event, conn: Arc<ConnectionState>, state:
             }
 
             info!(conn_id = %conn_id, pubkey = %pubkey.to_hex(), "NIP-42 auth successful");
+            let authenticated_owner = auth_ctx
+                .agent_owner_pubkey
+                .map(|owner| owner.to_bytes().to_vec());
             *conn.auth_state.write().await = AuthState::Authenticated(auth_ctx);
-            state
-                .conn_manager
-                .set_authenticated_pubkey(conn_id, pubkey.to_bytes().to_vec());
+            state.conn_manager.set_authenticated_identity(
+                conn_id,
+                pubkey.to_bytes().to_vec(),
+                authenticated_owner,
+            );
             conn.send(RelayMessage::ok(&event_id_hex, true, ""));
         }
         Err(e) => {

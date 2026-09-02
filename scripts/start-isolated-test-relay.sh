@@ -59,6 +59,7 @@ MINIO_PORT=9471
 RELAY_MAIN=3030
 RELAY_HEALTH=8088
 RELAY_METRICS=9202
+CHIRPS_PORT=7473
 COMMUNITY_HOST="localhost:${RELAY_MAIN}"
 
 BLUE='\033[0;34m'; GREEN='\033[0;32m'; RED='\033[0;31m'; NC='\033[0m'
@@ -122,6 +123,7 @@ if [[ -x "${HOME}/.cargo/bin/cargo" ]]; then
 fi
 log "Building relay (profile=${CARGO_BUILD_PROFILE}, cargo=$(command -v cargo), $(cargo --version))..."
 cargo build --profile "${CARGO_BUILD_PROFILE}" -p nimino-relay
+just nim-boundary-build _dev-cluster-material
 ok "Relay built"
 
 # ── Run relay (detached tmux session) ────────────────────────────────────────
@@ -131,6 +133,9 @@ ok "Relay built"
 # survives (same pattern the perf stack uses). Logs to ${RELAY_LOG}.
 RELAY_LOG="${RELAY_LOG:-/tmp/dawn-relay-run.log}"
 TMUX_SESSION="${TMUX_SESSION:-dawn-relay}"
+CLUSTER_DIR="${REPO_ROOT}/target/nim/isolated-relay"
+CHIRPS_DIR="${REPO_ROOT}/target/nim/dev-cluster"
+mkdir -p "${CLUSTER_DIR}"
 tmux kill-session -t "${TMUX_SESSION}" 2>/dev/null || true
 if command -v lsof >/dev/null 2>&1 && lsof -nP -iTCP:"${RELAY_MAIN}" -sTCP:LISTEN >/dev/null 2>&1; then
   err "Port ${RELAY_MAIN} is already in use; refusing to report a stale relay as this harness."
@@ -144,6 +149,14 @@ tmux new-session -d -s "${TMUX_SESSION}" "cd '${REPO_ROOT}' && env \
   NIMINO_BIND_ADDR=0.0.0.0:${RELAY_MAIN} \
   NIMINO_HEALTH_PORT=${RELAY_HEALTH} \
   NIMINO_METRICS_PORT=${RELAY_METRICS} \
+  NIMINO_BOUNDARY_WORKER='${REPO_ROOT}/target/nim/nimino_boundary/bin/nimino-core-worker' \
+  NIMINO_CHIRPS_BIND_ADDR=127.0.0.1:${CHIRPS_PORT} \
+  NIMINO_CHIRPS_IDENTITY_PATH='${CLUSTER_DIR}/node.identity' \
+  NIMINO_CHIRPS_CERTIFICATE_PATH='${CHIRPS_DIR}/tls.crt' \
+  NIMINO_CHIRPS_PRIVATE_KEY_PATH='${CHIRPS_DIR}/tls.key' \
+  NIMINO_CHIRPS_TRUST_ANCHOR_PATHS='${CHIRPS_DIR}/ca.crt' \
+  NIMINO_NODE_STORE_PATH='${CLUSTER_DIR}/data.redb' \
+  NIMINO_OBJECT_STORE_PATH='${CLUSTER_DIR}/objects' \
   NIMINO_S3_ENDPOINT=http://localhost:${MINIO_PORT} \
   NIMINO_S3_ACCESS_KEY=nimino_dev \
   NIMINO_S3_SECRET_KEY=nimino_dev_secret \

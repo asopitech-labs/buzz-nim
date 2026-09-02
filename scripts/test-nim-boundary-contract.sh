@@ -104,6 +104,9 @@ for (const [schemaName, fixtureName] of [
   ["request.schema.json", "cli-policy.request.json"],
   ["request.schema.json", "agent-policy.request.json"],
   ["request.schema.json", "cluster-lifecycle.request.json"],
+    ["request.schema.json", "admission-policy.request.json"],
+    ["request.schema.json", "authorization-invalidation-policy.request.json"],
+    ["request.schema.json", "ephemeral-policy.request.json"],
   ["request.schema.json", "control-policy.request.json"],
   ["request.schema.json", "lease-policy.request.json"],
   ["request.schema.json", "effect-policy.request.json"],
@@ -120,6 +123,9 @@ for (const [schemaName, fixtureName] of [
   ["response.schema.json", "cli-policy.response.json"],
   ["response.schema.json", "agent-policy.response.json"],
   ["response.schema.json", "cluster-lifecycle.response.json"],
+    ["response.schema.json", "admission-policy.response.json"],
+    ["response.schema.json", "authorization-invalidation-policy.response.json"],
+    ["response.schema.json", "ephemeral-policy.response.json"],
   ["response.schema.json", "control-policy.response.json"],
   ["response.schema.json", "lease-policy.response.json"],
   ["response.schema.json", "effect-policy.response.json"],
@@ -170,6 +176,8 @@ fi
 if rg -n 'println!|print!' \
   "$repo_root/crates/nimino-boundary/src/lib.rs" \
   "$repo_root/crates/nimino-boundary/src/agent.rs" \
+  "$repo_root/crates/nimino-boundary/src/admission.rs" \
+  "$repo_root/crates/nimino-boundary/src/ephemeral.rs" \
   "$repo_root/crates/nimino-boundary/src/cli.rs" \
   "$repo_root/crates/nimino-boundary/src/codec.rs" \
   "$repo_root/crates/nimino-boundary/src/community.rs" \

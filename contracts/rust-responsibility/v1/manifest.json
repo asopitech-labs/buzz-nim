@@ -79,6 +79,7 @@
   "policyOwnership": {
     "nimDomainRoot": "nim/nimino_core/src/nimino_core/domain",
     "nimDomainModules": [
+      "admission_policy.nim",
       "agent_policy.nim",
       "cli_policy.nim",
       "cluster_lifecycle.nim",
@@ -88,6 +89,7 @@
       "data_contract.nim",
       "dm_policy.nim",
       "effect_ledger.nim",
+      "ephemeral_policy.nim",
       "event_policy.nim",
       "lease_fencing.nim",
       "membership_policy.nim",
@@ -99,6 +101,7 @@
       "workflow_policy.nim"
     ],
     "operations": [
+      "domain.admission.policy",
       "domain.agent.policy",
       "domain.cli.policy",
       "domain.cluster.lifecycle",
@@ -106,6 +109,7 @@
       "domain.control.policy",
       "domain.lease.policy",
       "domain.effect.policy",
+      "domain.ephemeral.policy",
       "domain.object.policy",
       "domain.projection.policy",
       "domain.dm.policy",

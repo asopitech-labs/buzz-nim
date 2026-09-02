@@ -11,7 +11,7 @@ const justfile = readFileSync("Justfile", "utf8");
 assert.equal(manifest.schemaVersion, 1);
 assert.equal(manifest.contract, "nimino.cutover-readiness");
 assert.equal(manifest.issue, 17);
-assert.equal(manifest.phase, "frozen-for-cleanup");
+assert.equal(manifest.phase, "blocked-for-release-authority");
 assert.equal(manifest.compatibilityMode, false);
 assert.deepEqual(
   manifest.workstreams.map(({ epic }) => epic),
@@ -29,10 +29,21 @@ for (const stream of manifest.workstreams) {
       `${stream.name} proof recipe missing: ${command}`,
     );
 }
-assert.deepEqual(manifest.sourceBlockers, []);
+assert.deepEqual(manifest.sourceBlockers, [
+  {
+    id: "canonical-release-authority",
+    surfaces: [
+      "source-repository",
+      "release-workflow-identity",
+      "sigstore-identity",
+    ],
+    ownerIssues: [95],
+    releaseImpact: "tag publication and external certification blocked",
+  },
+]);
 assert.deepEqual(
   manifest.nextGates.map(({ issue }) => issue),
-  [66, 67, 68],
+  [95, 66, 67, 68],
 );
 assert.equal(
   manifest.trackerAudit.requiredEpicStates,
@@ -44,5 +55,5 @@ assert.equal(
 );
 
 console.log(
-  "Unified cutover readiness verified: Epics #2-#11, 0 source blockers",
+  "Unified cutover readiness verified: Epics #2-#11, release authority blocker tracked by #95",
 );

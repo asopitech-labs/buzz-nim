@@ -386,7 +386,7 @@ async fn test_reminder_rejected_missing_d_tag() {
     .unwrap();
     let (accepted, msg) = submit_event_http(&client, &keys, &event).await;
     assert!(!accepted, "should reject missing d tag");
-    assert!(msg.contains("missing d tag"), "unexpected message: {msg}");
+    assert_eq!(msg, "invalid: parameterized event requires a d tag");
 }
 
 #[tokio::test]
@@ -431,7 +431,10 @@ async fn test_reminder_rejected_duplicate_d_tag() {
     .unwrap();
     let (accepted, msg) = submit_event_http(&client, &keys, &event).await;
     assert!(!accepted, "should reject duplicate d tag");
-    assert!(msg.contains("duplicate d tag"), "unexpected message: {msg}");
+    assert_eq!(
+        msg,
+        "invalid: parameterized event requires exactly one d tag"
+    );
 }
 
 #[tokio::test]

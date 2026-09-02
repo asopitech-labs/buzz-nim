@@ -203,8 +203,24 @@ const relayTestLauncher = readFileSync(
   "utf8",
 );
 check(
-  relayTestLauncher.includes("for bin in nimino-relay git-credential-nostr"),
-  "relay test launcher does not require the Nimino binary",
+  relayTestLauncher.includes(
+    "for bin in nimino-relay git-credential-nostr nimino-core-worker",
+  ) &&
+    relayTestLauncher.includes("NIMINO_BOUNDARY_WORKER") &&
+    relayTestLauncher.includes("NIMINO_CHIRPS_CERTIFICATE_PATH") &&
+    relayTestLauncher.includes("NIMINO_NODE_STORE_PATH") &&
+    relayTestLauncher.includes("NIMINO_OBJECT_STORE_PATH"),
+  "relay test launcher does not compose the mandatory Nim/Chirps runtime",
+);
+
+const ciWorkflow = readFileSync(join(root, ".github", "workflows", "ci.yml"), "utf8");
+check(
+  ciWorkflow.includes("target/ci/nimino-core-worker") &&
+    ciWorkflow.includes("just nim-boundary-build") &&
+    ciWorkflow.includes("NIMINO_BOUNDARY_WORKER") &&
+    ciWorkflow.includes("NIMINO_CHIRPS_CERTIFICATE_PATH") &&
+    ciWorkflow.includes("NIMINO_OBJECT_STORE_PATH"),
+  "CI relay artifact does not compose the mandatory Nim/Chirps runtime",
 );
 
 for (const path of [

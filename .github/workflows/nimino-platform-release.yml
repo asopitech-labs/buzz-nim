@@ -12,6 +12,7 @@ on:
       - "contracts/nimino-release-set/**"
       - "contracts/nimino-wsl-bundle/**"
       - "contracts/nimino-cutover-certification/**"
+      - "contracts/nimino-cutover-readiness/**"
       - "desktop/**"
       - "scripts/nimino-platform-artifacts.mjs"
       - "scripts/nimino-release-set.mjs"
@@ -47,6 +48,9 @@ jobs:
         run: test "$GITHUB_REPOSITORY" = "$CANONICAL_REPOSITORY"
       - run: just platform-release-contract
       - run: just cutover-certification-contract
+      - name: Require source readiness before tag publication
+        if: github.ref_type == 'tag'
+        run: just cutover-certify-source
       - name: Verify immutable tag source
         if: github.ref_type == 'tag'
         run: scripts/verify-release-ref.sh nimino-v "${GITHUB_REF_NAME#nimino-v}"
