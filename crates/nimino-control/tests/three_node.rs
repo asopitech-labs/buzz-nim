@@ -2,7 +2,10 @@ use std::{
     fs,
     net::{SocketAddr, UdpSocket},
     path::PathBuf,
-    sync::Arc,
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
@@ -19,7 +22,10 @@ use nimino_control::{
     ControlRuntimeOptions, EphemeralClient, EphemeralRuntime, EphemeralRuntimeError,
     EphemeralRuntimeOptions, LeaseClient, LeaseRuntime, LeaseRuntimeError,
 };
-use nimino_store::{ControlLogStorePort, RedbNodeStore};
+use nimino_store::{
+    ControlLogEntry, ControlLogStorePort, ControlMetadata, ControlSnapshot, RecoveredControlState,
+    RedbNodeStore, StoreError, VersionedControlMetadata,
+};
 use rcgen::generate_simple_self_signed;
 use tempfile::TempDir;
 
@@ -29,6 +35,44 @@ struct ClusterMaterial {
     root: TempDir,
     certificate: PathBuf,
     private_key: PathBuf,
+}
+
+struct CountingControlStore {
+    inner: Arc<RedbNodeStore>,
+    recoveries: Arc<AtomicUsize>,
+}
+
+impl ControlLogStorePort for CountingControlStore {
+    fn recover_control_state(&self) -> Result<RecoveredControlState, StoreError> {
+        self.recoveries.fetch_add(1, Ordering::Relaxed);
+        self.inner.recover_control_state()
+    }
+
+    fn compare_and_set_control_metadata(
+        &self,
+        expected_revision: u64,
+        state: ControlMetadata,
+    ) -> Result<VersionedControlMetadata, StoreError> {
+        self.inner
+            .compare_and_set_control_metadata(expected_revision, state)
+    }
+
+    fn replace_control_suffix(
+        &self,
+        previous_index: u64,
+        entries: Vec<ControlLogEntry>,
+    ) -> Result<u64, StoreError> {
+        self.inner.replace_control_suffix(previous_index, entries)
+    }
+
+    fn install_control_snapshot(
+        &self,
+        expected_metadata_revision: u64,
+        snapshot: ControlSnapshot,
+    ) -> Result<bool, StoreError> {
+        self.inner
+            .install_control_snapshot(expected_metadata_revision, snapshot)
+    }
 }
 
 impl ClusterMaterial {
@@ -546,23 +590,30 @@ async fn one_and_five_nodes_enforce_rate_budget_and_release_ephemeral_resources(
             .collect::<Vec<_>>();
         wait_for_leader(&control_clients).await;
         let mut admissions = Vec::new();
+        let mut recovery_counts = Vec::new();
         for index in 0..count {
+            let recoveries = Arc::new(AtomicUsize::new(0));
+            let admission_store: Arc<dyn ControlLogStorePort> = Arc::new(CountingControlStore {
+                inner: stores[index].clone(),
+                recoveries: recoveries.clone(),
+            });
             admissions.push(
                 AdmissionRuntime::start(
                     control_clients[index].clone(),
                     boundaries[index].client(),
-                    stores[index].clone(),
+                    admission_store,
                     Duration::from_secs(5),
                 )
                 .await
                 .expect("start admission runtime"),
             );
+            recovery_counts.push(recoveries);
         }
         let admission_clients = admissions
             .iter()
             .map(AdmissionRuntime::client)
             .collect::<Vec<_>>();
-        let request_count = if count == 1 { 128 } else { count.max(3) };
+        let request_count = count.max(3);
         let mut allowed = 0;
         for request in 0..request_count {
             let result = admission_clients[request % count]
@@ -595,6 +646,14 @@ async fn one_and_five_nodes_enforce_rate_budget_and_release_ephemeral_resources(
             u64::try_from(request_count).expect("small request count"),
         )
         .await;
+        assert!(
+            recovery_counts
+                .iter()
+                .map(|count| count.load(Ordering::Relaxed))
+                .sum::<usize>()
+                <= count * 2,
+            "live commit projection rescanned the durable control log"
+        );
 
         let mut runtimes = Vec::new();
         for index in 0..count {

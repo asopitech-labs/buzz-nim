@@ -344,10 +344,10 @@ impl LeaseRuntime {
                     }
                     result = applied.recv() => match result {
                         Ok(event) => {
-                            if let Err(error) = replay_committed(
+                            if let Err(error) = apply_committed_entry(
                                 &task_boundary,
-                                task_store.as_ref(),
                                 &task_projection,
+                                &event.entry,
                                 &task_clock,
                                 policy_timeout,
                                 if event.recovered {
@@ -439,6 +439,35 @@ impl Drop for LeaseRuntime {
     }
 }
 
+async fn apply_committed_entry(
+    boundary: &BoundaryClient,
+    projection: &Mutex<LeaseProjection>,
+    entry: &nimino_boundary::ControlEntry,
+    clock: &ProcessClock,
+    policy_timeout: Duration,
+    mode: LeaseApplyMode,
+) -> Result<(), LeaseRuntimeError> {
+    let entry = crate::store_entry(entry);
+    let mut projection = projection.lock().await;
+    if entry.index <= projection.control_index {
+        return Ok(());
+    }
+    if entry.index != projection.control_index.saturating_add(1) {
+        return Err(LeaseRuntimeError::InvalidCommand(
+            "committed lease projection has an index gap".to_owned(),
+        ));
+    }
+    apply_stored_entry(
+        boundary,
+        &mut projection,
+        &entry,
+        clock,
+        policy_timeout,
+        mode,
+    )
+    .await
+}
+
 async fn replay_committed(
     boundary: &BoundaryClient,
     store: &dyn ControlLogStorePort,
@@ -461,50 +490,70 @@ async fn replay_committed(
         .iter()
         .filter(|entry| entry.index > after_index && entry.index <= commit_index)
     {
-        if let Some(command) = decode_command(entry)? {
-            let state = projection
-                .states
-                .get(&command.resource_id)
-                .cloned()
-                .unwrap_or_else(|| LeaseState {
-                    valid: !command.resource_id.is_empty(),
-                    resource_id: command.resource_id.clone(),
-                    last_fence_token: 0,
-                    last_control_index: 0,
-                    last_command: None,
-                    active_lease: None,
-                });
-            let result = call_policy(
-                boundary,
-                LeasePolicyRequest::ApplyCommitted {
-                    state,
-                    fact: CommittedLeaseFact {
-                        committed: true,
-                        control_index: entry.index,
-                        leader_id: command.leader_id.clone(),
-                        term: entry.term,
-                        voter_epoch: entry.voter_epoch,
-                        clock_epoch: clock.epoch.clone(),
-                        now_tick: clock.tick(),
-                    },
-                    command,
-                    mode,
-                },
-                policy_timeout,
-            )
-            .await?;
-            let LeasePolicyResult::ApplyCommitted { result } = result else {
-                return Err(LeaseRuntimeError::UnexpectedPolicyResult);
-            };
-            if result.error != LeaseFenceError::None {
-                return Err(LeaseRuntimeError::PolicyRejected(result.error));
-            }
-            projection
-                .states
-                .insert(result.state.resource_id.clone(), result.state);
-        }
-        projection.control_index = entry.index;
+        apply_stored_entry(
+            boundary,
+            &mut projection,
+            entry,
+            clock,
+            policy_timeout,
+            mode,
+        )
+        .await?;
     }
+    Ok(())
+}
+
+async fn apply_stored_entry(
+    boundary: &BoundaryClient,
+    projection: &mut LeaseProjection,
+    entry: &nimino_store::ControlLogEntry,
+    clock: &ProcessClock,
+    policy_timeout: Duration,
+    mode: LeaseApplyMode,
+) -> Result<(), LeaseRuntimeError> {
+    if let Some(command) = decode_command(entry)? {
+        let state = projection
+            .states
+            .get(&command.resource_id)
+            .cloned()
+            .unwrap_or_else(|| LeaseState {
+                valid: !command.resource_id.is_empty(),
+                resource_id: command.resource_id.clone(),
+                last_fence_token: 0,
+                last_control_index: 0,
+                last_command: None,
+                active_lease: None,
+            });
+        let result = call_policy(
+            boundary,
+            LeasePolicyRequest::ApplyCommitted {
+                state,
+                fact: CommittedLeaseFact {
+                    committed: true,
+                    control_index: entry.index,
+                    leader_id: command.leader_id.clone(),
+                    term: entry.term,
+                    voter_epoch: entry.voter_epoch,
+                    clock_epoch: clock.epoch.clone(),
+                    now_tick: clock.tick(),
+                },
+                command,
+                mode,
+            },
+            policy_timeout,
+        )
+        .await?;
+        let LeasePolicyResult::ApplyCommitted { result } = result else {
+            return Err(LeaseRuntimeError::UnexpectedPolicyResult);
+        };
+        if result.error != LeaseFenceError::None {
+            return Err(LeaseRuntimeError::PolicyRejected(result.error));
+        }
+        projection
+            .states
+            .insert(result.state.resource_id.clone(), result.state);
+    }
+    projection.control_index = entry.index;
     Ok(())
 }
 

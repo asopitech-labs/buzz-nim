@@ -451,7 +451,7 @@ impl AdmissionRuntime {
             retry.tick().await;
             let mut retry_needed = false;
             loop {
-                tokio::select! {
+                let entry = tokio::select! {
                     _ = task_shutdown.cancelled() => {
                         status_sender.send_replace(AdmissionRuntimeStatus {
                             running: false,
@@ -460,9 +460,10 @@ impl AdmissionRuntime {
                         });
                         return Ok(());
                     }
-                    _ = retry.tick(), if retry_needed => {}
+                    _ = retry.tick(), if retry_needed => None,
                     result = applied.recv() => match result {
-                        Ok(_) | Err(broadcast::error::RecvError::Lagged(_)) => {}
+                        Ok(event) => Some(event.entry),
+                        Err(broadcast::error::RecvError::Lagged(_)) => None,
                         Err(broadcast::error::RecvError::Closed) => {
                             status_sender.send_replace(AdmissionRuntimeStatus {
                                 running: false,
@@ -472,16 +473,30 @@ impl AdmissionRuntime {
                             return Err(AdmissionRuntimeError::Stopped);
                         }
                     }
-                }
-                match replay_committed(
-                    &task_boundary,
-                    task_store.as_ref(),
-                    &task_projection,
-                    policy_timeout,
-                    Some(&task_invalidations),
-                )
-                .await
-                {
+                };
+                let result = match entry {
+                    Some(entry) => {
+                        apply_committed_entry(
+                            &task_boundary,
+                            &task_projection,
+                            &entry,
+                            policy_timeout,
+                            Some(&task_invalidations),
+                        )
+                        .await
+                    }
+                    None => {
+                        replay_committed(
+                            &task_boundary,
+                            task_store.as_ref(),
+                            &task_projection,
+                            policy_timeout,
+                            Some(&task_invalidations),
+                        )
+                        .await
+                    }
+                };
+                match result {
                     Ok(()) => {
                         retry_needed = false;
                         status_sender.send_replace(AdmissionRuntimeStatus {
@@ -593,6 +608,38 @@ impl Drop for AdmissionRuntime {
     fn drop(&mut self) {
         self.shutdown.cancel();
     }
+}
+
+async fn apply_committed_entry(
+    boundary: &BoundaryClient,
+    projection: &Mutex<AdmissionProjection>,
+    entry: &ControlEntry,
+    policy_timeout: Duration,
+    invalidations: Option<&broadcast::Sender<AuthorizationInvalidationState>>,
+) -> Result<(), AdmissionRuntimeError> {
+    let entry = crate::store_entry(entry);
+    let mut projection = projection.lock().await;
+    if entry.index <= projection.control_index {
+        return Ok(());
+    }
+    if entry.index != projection.control_index.saturating_add(1) {
+        return Err(AdmissionRuntimeError::InvalidCommand(
+            "committed admission projection has an index gap".to_owned(),
+        ));
+    }
+    if let Some(command) = decode_command(&entry)? {
+        apply_command(
+            boundary,
+            &mut projection,
+            command,
+            entry.index,
+            policy_timeout,
+            invalidations,
+        )
+        .await?;
+    }
+    projection.control_index = entry.index;
+    Ok(())
 }
 
 async fn replay_committed(

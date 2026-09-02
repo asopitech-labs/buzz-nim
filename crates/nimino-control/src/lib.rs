@@ -564,6 +564,14 @@ impl RuntimeContext {
         payload: String,
         reply: oneshot::Sender<Result<ControlEntry, ControlRuntimeError>>,
     ) -> Result<(), ControlRuntimeError> {
+        if let Some(entry) = self.state.log.iter().find(|entry| {
+            entry.index <= self.state.commit_index
+                && entry.command_id == command_id
+                && entry.payload == payload
+        }) {
+            let _ = reply.send(Ok(entry.clone()));
+            return Ok(());
+        }
         if !self.is_leader() {
             return self.forward_proposal(command_id, payload, reply).await;
         }
