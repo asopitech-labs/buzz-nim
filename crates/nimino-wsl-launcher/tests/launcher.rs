@@ -1,7 +1,10 @@
+#[cfg(unix)]
 use std::fs;
 use std::path::Path;
 
-use nimino_wsl_launcher::{launch_with, LaunchSpec, SUPPORTED_DISTRIBUTION};
+#[cfg(unix)]
+use nimino_wsl_launcher::SUPPORTED_DISTRIBUTION;
+use nimino_wsl_launcher::{launch_with, LaunchSpec};
 
 #[test]
 fn user_and_linux_paths_fail_closed() {

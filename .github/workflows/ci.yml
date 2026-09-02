@@ -968,6 +968,7 @@ jobs:
             --run-ignored ignored-only
         env:
           DATABASE_URL: postgres://nimino:${{ env.NIMINO_TEST_POSTGRES_PASSWORD }}@localhost:5432/nimino
+          NIMINO_BOUNDARY_WORKER: ${{ github.workspace }}/target/ci/nimino-core-worker
       - name: Workspace profile (kind:9033) gate tests
         # Call-site integration for the 9033 authorization gate: open relay
         # rosterless/steward transitions and the closed-relay admin/owner rule,

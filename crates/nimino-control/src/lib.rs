@@ -531,9 +531,7 @@ impl RuntimeContext {
                 .granted;
             self.publish_status(true, quorum, None);
             self.send_authority_heartbeat().await?;
-            if let Some(entry) = self.pending.as_ref().map(|pending| pending.entry.clone()) {
-                self.broadcast_replicate(entry).await?;
-            }
+            self.advance_pending().await?;
             return Ok(());
         }
         let authority_live = self
@@ -618,7 +616,16 @@ impl RuntimeContext {
         });
         self.replication_acks
             .insert(entry.index, BTreeSet::from([self.local_node_id.clone()]));
-        self.broadcast_replicate(entry).await?;
+        self.advance_pending().await
+    }
+
+    async fn advance_pending(&mut self) -> Result<(), ControlRuntimeError> {
+        let Some(entry) = self.pending.as_ref().map(|pending| pending.entry.clone()) else {
+            return Ok(());
+        };
+        if self.voters.len() > 1 {
+            self.broadcast_replicate(entry).await?;
+        }
         self.try_commit_pending().await
     }
 
@@ -1199,6 +1206,9 @@ impl RuntimeContext {
         if let Some(reply) = pending.reply {
             let _ = reply.send(Ok(pending.entry));
         }
+        if self.voters.len() == 1 {
+            return Ok(());
+        }
         self.broadcast(WireFrame::Commit {
             term: self.state.term,
             leader_id: self.local_node_id.clone(),
@@ -1326,9 +1336,26 @@ impl RuntimeContext {
             let entry = decision
                 .applied_entry
                 .ok_or(ControlRuntimeError::UnexpectedPolicyResult)?;
+            self.resolve_forwarded(&entry);
             let _ = self.applied.send(AppliedControlEntry { entry, recovered });
         }
         Ok(())
+    }
+
+    fn resolve_forwarded(&mut self, entry: &ControlEntry) {
+        let matches = self
+            .forwarded
+            .iter()
+            .filter(|(_, proposal)| {
+                proposal.command_id == entry.command_id && proposal.payload == entry.payload
+            })
+            .map(|(request_id, _)| request_id.clone())
+            .collect::<Vec<_>>();
+        for request_id in matches {
+            if let Some(proposal) = self.forwarded.remove(&request_id) {
+                let _ = proposal.reply.send(Ok(entry.clone()));
+            }
+        }
     }
 
     async fn plan(

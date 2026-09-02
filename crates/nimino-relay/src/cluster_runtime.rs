@@ -178,7 +178,10 @@ enum RelayDomainAdapterInner {
         node_id: String,
     },
     #[cfg(test)]
-    Unavailable,
+    Test {
+        policy: Option<BoundaryClient>,
+        _runtime: Option<Arc<BoundaryRuntime>>,
+    },
 }
 
 impl RelayDomainAdapters {
@@ -187,7 +190,7 @@ impl RelayDomainAdapters {
         match &self.inner {
             RelayDomainAdapterInner::Active { policy, .. } => Some(policy),
             #[cfg(test)]
-            RelayDomainAdapterInner::Unavailable => None,
+            RelayDomainAdapterInner::Test { policy, .. } => policy.as_ref(),
         }
     }
 
@@ -196,7 +199,7 @@ impl RelayDomainAdapters {
         match &self.inner {
             RelayDomainAdapterInner::Active { store, .. } => Some(store),
             #[cfg(test)]
-            RelayDomainAdapterInner::Unavailable => None,
+            RelayDomainAdapterInner::Test { .. } => None,
         }
     }
 
@@ -205,7 +208,7 @@ impl RelayDomainAdapters {
         match &self.inner {
             RelayDomainAdapterInner::Active { lease, .. } => Some(lease),
             #[cfg(test)]
-            RelayDomainAdapterInner::Unavailable => None,
+            RelayDomainAdapterInner::Test { .. } => None,
         }
     }
 
@@ -222,7 +225,7 @@ impl RelayDomainAdapters {
         match &self.inner {
             RelayDomainAdapterInner::Active { admission, .. } => Some(admission),
             #[cfg(test)]
-            RelayDomainAdapterInner::Unavailable => None,
+            RelayDomainAdapterInner::Test { .. } => None,
         }
     }
 
@@ -230,7 +233,7 @@ impl RelayDomainAdapters {
     pub(crate) fn admission_for_tests(&self) -> Option<&AdmissionClient> {
         match &self.inner {
             RelayDomainAdapterInner::Active { admission, .. } => Some(admission),
-            RelayDomainAdapterInner::Unavailable => None,
+            RelayDomainAdapterInner::Test { .. } => None,
         }
     }
 
@@ -239,7 +242,7 @@ impl RelayDomainAdapters {
         match &self.inner {
             RelayDomainAdapterInner::Active { objects, .. } => Some(objects),
             #[cfg(test)]
-            RelayDomainAdapterInner::Unavailable => None,
+            RelayDomainAdapterInner::Test { .. } => None,
         }
     }
 
@@ -248,7 +251,7 @@ impl RelayDomainAdapters {
         match &self.inner {
             RelayDomainAdapterInner::Active { ephemeral, .. } => Some(ephemeral),
             #[cfg(test)]
-            RelayDomainAdapterInner::Unavailable => None,
+            RelayDomainAdapterInner::Test { .. } => None,
         }
     }
 
@@ -257,14 +260,30 @@ impl RelayDomainAdapters {
         match &self.inner {
             RelayDomainAdapterInner::Active { node_id, .. } => Some(node_id),
             #[cfg(test)]
-            RelayDomainAdapterInner::Unavailable => None,
+            RelayDomainAdapterInner::Test { .. } => None,
         }
+    }
+
+    #[cfg(test)]
+    pub(crate) async fn policy_for_tests(
+        worker: PathBuf,
+    ) -> std::result::Result<Self, nimino_boundary::BoundaryError> {
+        let runtime = Arc::new(BoundaryRuntime::start(BoundaryConfig::new(worker)).await?);
+        Ok(Self {
+            inner: RelayDomainAdapterInner::Test {
+                policy: Some(runtime.client()),
+                _runtime: Some(runtime),
+            },
+        })
     }
 
     #[cfg(test)]
     pub(crate) fn unavailable_for_tests() -> Self {
         Self {
-            inner: RelayDomainAdapterInner::Unavailable,
+            inner: RelayDomainAdapterInner::Test {
+                policy: None,
+                _runtime: None,
+            },
         }
     }
 }

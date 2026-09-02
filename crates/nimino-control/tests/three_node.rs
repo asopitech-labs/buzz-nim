@@ -562,7 +562,7 @@ async fn one_and_five_nodes_enforce_rate_budget_and_release_ephemeral_resources(
             .iter()
             .map(AdmissionRuntime::client)
             .collect::<Vec<_>>();
-        let request_count = count.max(3);
+        let request_count = if count == 1 { 128 } else { count.max(3) };
         let mut allowed = 0;
         for request in 0..request_count {
             let result = admission_clients[request % count]

@@ -680,7 +680,12 @@ mod tests {
             ),
         );
         let media_storage = nimino_media::MediaStorage::new(&config.media).ok()?;
-        let (mut state, _audit_shutdown) = AppState::new(
+        let domain = crate::cluster_runtime::RelayDomainAdapters::policy_for_tests(
+            std::env::var_os("NIMINO_BOUNDARY_WORKER")?.into(),
+        )
+        .await
+        .ok()?;
+        let (mut state, _audit_shutdown) = AppState::new_with_domain(
             config,
             db,
             audit,
@@ -690,6 +695,8 @@ mod tests {
             workflow_engine,
             Keys::generate(),
             media_storage,
+            domain,
+            Arc::new(std::sync::atomic::AtomicBool::new(false)),
         );
         state.nip98_replay = Arc::new(AlwaysFreshReplayGuard);
         Some(Arc::new(state))
