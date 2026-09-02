@@ -30,6 +30,7 @@ Thumbs.db
 
 # Scratch / working files (AI reviews, notes, drafts)
 .scratch/
+/.spec-workflow/
 
 # Playwright artifacts
 playwright-report/
