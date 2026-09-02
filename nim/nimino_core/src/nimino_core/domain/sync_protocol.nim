@@ -10,7 +10,7 @@ const
   SyncProtocolName* = "nimino.sync"
   SyncProtocolVersion* = 2'u16
   MaxSyncRecords* = 1_000'u16
-  MaxSyncEncodedBytes* = 1_048_576'u32
+  MaxSyncEncodedBytes* = 64_512'u32
 
 type
   SyncPhase* = enum

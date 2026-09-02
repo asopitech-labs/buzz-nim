@@ -9,8 +9,9 @@ use crate::{upstream, NodeConfig, NodeConfigError, NodeId};
 const DEFAULT_COMMAND_CAPACITY: usize = 64;
 const DEFAULT_EVENT_CAPACITY: usize = 256;
 const MAX_CAPACITY: usize = 4096;
-// Leave serialization headroom under Chirps QUIC's 64 KiB frame ceiling.
-const MAX_MESSAGE_BYTES: usize = 63 * 1024;
+
+/// Maximum opaque payload accepted below Chirps QUIC's 64 KiB frame ceiling.
+pub const MAX_MESSAGE_BYTES: usize = 63 * 1024;
 
 /// Bounded queues for the Chirps runtime adapter.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

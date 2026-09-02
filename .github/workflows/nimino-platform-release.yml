@@ -104,7 +104,7 @@ jobs:
         with:
           persist-credentials: false
       - uses: cashapp/activate-hermit@cea9af7913204a965fd488637a8d1811bba2e616 # v1
-      - uses: Swatinem/rust-cache@779b2ca901a859ea0906cf43be8d33c3f22f8134 # v2.8.2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
       - name: Fail closed before a signed build
         run: node scripts/nimino-platform-artifacts.mjs preflight --platform "${{ matrix.platform }}"
       - name: Install Linux bundle dependencies
@@ -200,7 +200,7 @@ jobs:
         with:
           persist-credentials: false
       - uses: cashapp/activate-hermit@cea9af7913204a965fd488637a8d1811bba2e616 # v1
-      - uses: Swatinem/rust-cache@779b2ca901a859ea0906cf43be8d33c3f22f8134 # v2.8.2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
       - run: just nim-boundary-build
       - name: Build WSL binaries
         run: |

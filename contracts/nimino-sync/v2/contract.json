@@ -27,7 +27,7 @@
   ],
   "bounds": {
     "maxRecords": 1000,
-    "maxEncodedBytes": 1048576,
+    "maxEncodedBytes": 64512,
     "inflightBatches": 1,
     "sourceReadIsBounded": true,
     "slowPeerDeadline": "adapter-monotonic-ticks"

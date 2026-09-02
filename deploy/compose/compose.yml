@@ -4,7 +4,8 @@ services:
   relay:
     image: ghcr.io/asopitech-labs/nimino@${NIMINO_IMAGE_DIGEST:?set NIMINO_IMAGE_DIGEST to sha256:<digest>}
     env_file:
-      - .env
+      - path: .env
+        required: false
     environment:
       NIMINO_BIND_ADDR: 0.0.0.0:3000
       NIMINO_HEALTH_PORT: "8080"

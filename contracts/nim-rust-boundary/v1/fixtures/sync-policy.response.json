@@ -22,7 +22,7 @@
         "remoteCheckpoint": 2,
         "remoteDigest": "1111111111111111111111111111111111111111111111111111111111111111",
         "maxRecords": 1000,
-        "maxEncodedBytes": 1048576,
+        "maxEncodedBytes": 64512,
         "timeoutTicks": 10,
         "deadlineTick": 15,
         "pendingBatchId": ""

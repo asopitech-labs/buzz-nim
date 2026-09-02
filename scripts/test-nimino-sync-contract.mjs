@@ -18,6 +18,7 @@ const digestAdapter = readFileSync(
   "crates/nimino-store/src/sync_digest.rs",
   "utf8",
 );
+const sync = readFileSync("crates/nimino-sync/src/lib.rs", "utf8");
 const chirps = readFileSync("crates/nimino-chirps/src/runtime.rs", "utf8");
 
 function check(condition, message) {
@@ -42,12 +43,13 @@ check(
 );
 check(
   contract.bounds.maxRecords === 1000 &&
-    contract.bounds.maxEncodedBytes === 1048576 &&
+    contract.bounds.maxEncodedBytes === 64512 &&
     contract.bounds.inflightBatches === 1 &&
     policy.includes("MaxSyncRecords* = 1_000'u16") &&
-    policy.includes("MaxSyncEncodedBytes* = 1_048_576'u32") &&
+    policy.includes("MaxSyncEncodedBytes* = 64_512'u32") &&
     store.includes("pub const MAX_PAGE_SIZE: usize = 1_000") &&
-    chirps.includes("const MAX_MESSAGE_BYTES: usize = 1024 * 1024"),
+    sync.includes("const MAX_SYNC_BYTES: u32 = MAX_MESSAGE_BYTES as u32") &&
+    chirps.includes("pub const MAX_MESSAGE_BYTES: usize = 63 * 1024"),
   "store, transport, and sync bounds drifted",
 );
 for (const method of [

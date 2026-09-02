@@ -21,7 +21,7 @@ use nimino_boundary::{
     RangeBatchPlan, RangeRequestFrame, SyncCancelFrame, SyncDecision, SyncEffect, SyncEnvelope,
     SyncPhase, SyncPolicyError, SyncPolicyRequest, SyncPolicyResult, SyncRecord, SyncState,
 };
-use nimino_chirps::{MeshClient, MeshRuntimeError, NodeId};
+use nimino_chirps::{MeshClient, MeshRuntimeError, NodeId, MAX_MESSAGE_BYTES};
 use nimino_store::{
     canonical_logical_record_digest, canonical_prefix_digest_at, canonical_record_digest,
     canonical_state_digest, extend_prefix_digest, CanonicalCommit, CanonicalStateDigest, LogAppend,
@@ -41,7 +41,7 @@ const SYNC_PROTOCOL: &str = "nimino.sync";
 const SYNC_VERSION: u16 = 2;
 const WIRE_PREFIX: &[u8] = b"NIMINO-SYNC/2\n";
 const MAX_SYNC_RECORDS: u16 = 1_000;
-const MAX_SYNC_BYTES: u32 = 1_048_576;
+const MAX_SYNC_BYTES: u32 = MAX_MESSAGE_BYTES as u32;
 
 /// Bounded timings and range limits for automatic synchronization.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

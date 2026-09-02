@@ -19,6 +19,7 @@ mod upstream;
 
 pub use runtime::{
     MeshClient, MeshMessage, MeshRuntime, MeshRuntimeError, MeshRuntimeOptions, MeshSubscription,
+    MAX_MESSAGE_BYTES,
 };
 
 static IDENTITY_TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
