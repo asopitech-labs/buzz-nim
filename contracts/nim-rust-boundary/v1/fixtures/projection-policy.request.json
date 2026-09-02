@@ -1,0 +1,44 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "fixture-projection-policy",
+  "operation": "domain.projection.policy",
+  "payload": {
+    "decision": "batch",
+    "state": {
+      "valid": true,
+      "projection": "search",
+      "communityId": "community-a",
+      "sourceCheckpoint": 1,
+      "sourceDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "epoch": "epoch-1",
+      "ownerNodeId": "node-a",
+      "revision": 0,
+      "cursor": "",
+      "status": "building"
+    },
+    "request": {
+      "communityId": "community-a",
+      "epoch": "epoch-1",
+      "ownerNodeId": "node-a",
+      "expectedRevision": 0,
+      "expectedCursor": "",
+      "sourceCheckpointMatches": true,
+      "complete": true,
+      "records": [
+        {
+          "sequence": 1,
+          "recordType": "event",
+          "key": "event-a",
+          "deleted": false,
+          "value": {
+            "event": {"content": "hello", "created_at": 1},
+            "parentId": "",
+            "rootId": ""
+          }
+        }
+      ],
+      "currentRows": []
+    }
+  }
+}

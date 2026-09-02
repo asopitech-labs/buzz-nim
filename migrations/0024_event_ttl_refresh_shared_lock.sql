@@ -18,7 +18,7 @@
 --     have written. No stale-NULL hole in either order.
 --   * Ephemeral channels still run the conditional UPDATE; their row updates
 --     serialize per channel, but only ephemeral channels pay that.
--- Lock key domain 'buzz_channel_ttl:' is distinct from 'buzz_push_gate:'
+-- Lock key domain 'nimino_channel_ttl:' is distinct from 'nimino_push_gate:'
 -- (migration 0023) and the audit/lease lock families. Lock order note: the
 -- deferred trigger acquires this key at COMMIT, after any push-gate shared
 -- lock taken during insert; no path acquires both domains exclusively.
@@ -31,7 +31,7 @@ BEGIN
     IF NEW.channel_id IS NOT NULL AND NEW.kind <> 9007 THEN
         BEGIN
             PERFORM pg_advisory_xact_lock_shared(hashtextextended(
-                'buzz_channel_ttl:' || NEW.community_id::text || ':' || NEW.channel_id::text, 0));
+                'nimino_channel_ttl:' || NEW.community_id::text || ':' || NEW.channel_id::text, 0));
 
             SELECT ttl_seconds INTO channel_ttl
             FROM channels

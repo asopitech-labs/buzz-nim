@@ -43,7 +43,7 @@ import { Button } from "@/shared/ui/button";
 type SaveState = "idle" | "saving" | "saved" | "error";
 
 const PROGRESSIVE_FIELDS_TRANSITION = {
-  duration: 0.22,
+  duration: 0.18,
   ease: [0.23, 1, 0.32, 1],
 } as const;
 
@@ -139,7 +139,7 @@ export function AgentDefaultsEditor({
     () => sortPersonaRuntimes(runtimesQuery.data ?? []),
     [runtimesQuery.data],
   );
-  // An unset preferred runtime uses the same Buzz Agent-first fallback as
+  // An unset preferred runtime uses the same Nimino Agent-first fallback as
   // deployment. The rendered draft below carries that fallback forward so the
   // next user edit persists the visible harness instead of saving null.
   const selectedRuntime = React.useMemo(() => {

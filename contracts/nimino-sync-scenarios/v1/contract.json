@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.sync-scenarios",
+  "compatibilityMode": false,
+  "transport": "alopex-chirps/0.6.3-udp-quic-mtls",
+  "nodeCount": 3,
+  "requiredStages": [
+    "bounded-bootstrap",
+    "durable-checkpoint-resume",
+    "slow-peer-backpressure-recovery",
+    "duplicate-idempotency",
+    "divergent-history-convergence",
+    "identity-collision-quarantine",
+    "community-isolation",
+    "clean-shutdown"
+  ],
+  "resourceProofs": [
+    "all-udp-bind-addresses-rebind-after-shutdown",
+    "nim-worker-process-reaped"
+  ],
+  "convergencePolicyOwner": 53,
+  "policyOwner": 50,
+  "releaseOwner": 61
+}

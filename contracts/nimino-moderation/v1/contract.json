@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.moderation-policy",
+  "owner": "nim/nimino_core/src/nimino_core/domain/moderation_policy.nim",
+  "boundaryOperation": "domain.moderation.policy",
+  "compatibilityMode": false,
+  "convergenceContract": "nimino.convergence/v1",
+  "cutoverOwner": 12,
+  "decisions": ["report", "restriction", "resolution", "enforcement"],
+  "rustAdapters": [
+    "crates/nimino-boundary/src/moderation.rs",
+    "crates/nimino-boundary/src/contract.rs",
+    "crates/nimino-boundary/src/runtime.rs"
+  ],
+  "rustPolicySitesToShrink": [
+    {
+      "path": "crates/nimino-relay/src/handlers/moderation_authz.rs",
+      "symbols": ["authorize_moderation_action", "decide_authority"]
+    },
+    {
+      "path": "crates/nimino-relay/src/handlers/moderation_commands.rs",
+      "symbols": [
+        "handle_moderation_command",
+        "handle_ban",
+        "handle_unban",
+        "handle_timeout",
+        "handle_untimeout",
+        "handle_resolve",
+        "extract_expiration"
+      ]
+    },
+    {
+      "path": "crates/nimino-relay/src/handlers/report.rs",
+      "symbols": ["handle_report_event", "parse_report", "parse_report_type"]
+    },
+    {
+      "path": "crates/nimino-db/src/moderation.rs",
+      "symbols": [
+        "insert_report",
+        "resolve_report",
+        "ban_member",
+        "unban_member",
+        "timeout_member",
+        "untimeout_member",
+        "restriction_state",
+        "get_ban",
+        "list_restricted"
+      ]
+    },
+    {
+      "path": "crates/nimino-relay/src/handlers/relay_admin.rs",
+      "symbols": ["admits_relay_admin_command"]
+    },
+    {
+      "path": "crates/nimino-relay/src/handlers/auth.rs",
+      "symbols": ["handle_auth"]
+    },
+    {
+      "path": "crates/nimino-relay/src/handlers/ingest.rs",
+      "symbols": ["ingest_event_inner"]
+    },
+    {
+      "path": "crates/nimino-relay/src/api/git/transport.rs",
+      "symbols": ["deny_banned_git_principal", "enforce_git_ban", "enforce_git_ban_cascade"]
+    }
+  ],
+  "deletedRustSymbols": [
+    "ensure_actor_not_banned",
+    "resolution_audit_action",
+    "BanOutcome"
+  ],
+  "cutoverRule": "Issue #12 routes report, restriction, resolution, and active-expiry decisions through Nimino while Rust retains codecs, scoped raw facts, DB compare-and-set guards, audit/effect execution, notices, disconnects, and transport enforcement of the returned decision.",
+  "outOfScope": {
+    "publicCutover": 12,
+    "clusterAdmission": 9,
+    "clientQueueUi": 15
+  }
+}

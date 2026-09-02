@@ -46,7 +46,7 @@ const AVATAR_MODE_TABS_TRANSITION = {
   ease: [0.23, 1, 0.32, 1],
 } as const;
 const AVATAR_EDITOR_LAYOUT_TRANSITION = {
-  duration: 0.3,
+  duration: 0.18,
   ease: [0.23, 1, 0.32, 1],
 } as const;
 
@@ -486,7 +486,7 @@ export function ProfileSettingsCard({
       <div>
         <SettingsSectionHeader
           title="Profile"
-          description="Update how your name, avatar, and bio appear across Buzz."
+          description="Update how your name, avatar, and bio appear across Nimino."
         />
 
         <div className="space-y-3">
@@ -616,8 +616,8 @@ export function ProfileSettingsCard({
                             >
                               <span
                                 className={cn(
-                                  "buzz-avatar-emoji-glyph flex h-full w-full items-center justify-center text-[6rem] leading-[6.25rem]",
-                                  avatarSquishKey > 0 && "buzz-avatar-squish",
+                                  "nimino-avatar-emoji-glyph flex h-full w-full items-center justify-center text-[6rem] leading-[6.25rem]",
+                                  avatarSquishKey > 0 && "nimino-avatar-squish",
                                 )}
                                 data-testid="profile-avatar-preview-emoji"
                                 key={avatarSquishKey}

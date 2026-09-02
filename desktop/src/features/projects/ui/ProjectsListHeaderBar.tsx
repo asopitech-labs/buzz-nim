@@ -25,7 +25,7 @@ const REPOSITORY_SCOPE_OPTIONS: Array<{
   { label: "Accessible", value: "accessible" },
   { label: "My Repositories", value: "mine" },
   { label: "Local", value: "local" },
-  { label: "Buzz-hosted", value: "buzz" },
+  { label: "Nimino-hosted", value: "nimino" },
   { label: "Linked", value: "linked" },
 ];
 const PULL_REQUEST_SCOPE_OPTIONS: Array<{

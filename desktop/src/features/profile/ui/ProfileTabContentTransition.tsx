@@ -102,7 +102,7 @@ export function ProfileTabContentTransition({
             reduceMotion
               ? { duration: 0 }
               : {
-                  duration: 0.22,
+                  duration: 0.18,
                   ease: [0.23, 1, 0.32, 1],
                 }
           }

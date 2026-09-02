@@ -1,4 +1,5 @@
 import * as React from "react";
+import { ChevronLeft } from "lucide-react";
 
 import { useAppNavigation } from "@/app/navigation/useAppNavigation";
 import {
@@ -12,6 +13,7 @@ import { SelectedRecipientChip } from "@/features/profile/ui/SelectedRecipientCh
 import { useIdentityQuery } from "@/shared/api/hooks";
 import { normalizePubkey } from "@/shared/lib/pubkey";
 import { Popover, PopoverAnchor, PopoverContent } from "@/shared/ui/popover";
+import { Button } from "@/shared/ui/button";
 import { Skeleton } from "@/shared/ui/skeleton";
 
 import { MessageComposer } from "./MessageComposer";
@@ -26,7 +28,7 @@ import {
  * normal chat header becomes an inline "To:" field, while recipient discovery
  * lives in an attached popover instead of taking over the message area.
  */
-export function NewMessageScreen() {
+export function NewMessageScreen({ onClose }: { onClose?: () => void }) {
   const identityQuery = useIdentityQuery();
   const currentPubkey = identityQuery.data?.pubkey;
   const openDmMutation = useOpenDmMutation();
@@ -314,6 +316,18 @@ export function NewMessageScreen() {
         data-tauri-drag-region
       >
         <div className="flex min-h-9 min-w-0 items-center">
+          {onClose ? (
+            <Button
+              aria-label="Close new message"
+              className="mr-2 shrink-0"
+              onClick={onClose}
+              size="icon"
+              type="button"
+              variant="ghost"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          ) : null}
           <Popover
             onOpenChange={(open) => {
               setIsRecipientPickerOpen(
@@ -385,6 +399,10 @@ export function NewMessageScreen() {
                       event.preventDefault();
                       if (inspectedRecipientPubkey) {
                         setInspectedRecipientPubkey(null);
+                        return;
+                      }
+                      if (!isRecipientPickerOpen) {
+                        onClose?.();
                         return;
                       }
                       setHighlightedRecipientPubkey(null);

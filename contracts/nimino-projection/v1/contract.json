@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.projection-lifecycle",
+  "version": 1,
+  "compatibilityMode": false,
+  "publicationState": "cutover-ready",
+  "owner": "nimino-core",
+  "module": "nim/nimino_core/src/nimino_core/domain/projection_lifecycle.nim",
+  "dataContract": "nimino.data/v1",
+  "convergenceContract": "nimino.convergence/v1",
+  "projections": [
+    {"name": "search", "recordType": "search_index"},
+    {"name": "thread", "recordType": "thread_index"},
+    {"name": "feed", "recordType": "feed_index"}
+  ],
+  "identity": [
+    "communityId",
+    "sourceCheckpoint",
+    "sourceDigest",
+    "epoch",
+    "ownerNodeId",
+    "revision",
+    "cursor"
+  ],
+  "source": {
+    "scan": "zero-state-current-canonical-event-key-order",
+    "fixedCheckpointRequired": true,
+    "batchLimit": 1000
+  },
+  "staging": {
+    "adapter": "nimino-store.projection_stage",
+    "batch": "atomic-revision-and-cursor-CAS",
+    "resume": "durable-metadata-plus-key-ordered-rows",
+    "productTruth": false
+  },
+  "publish": {
+    "adapter": "NodeStorePort.replace_cache",
+    "precondition": "same-source-checkpoint",
+    "intent": "projection-recordType-epoch",
+    "atomic": true,
+    "idempotent": true
+  },
+  "runtime": {
+    "boundaryOperation": "domain.projection.policy",
+    "adapter": "nimino-data-ops.rebuild_projections",
+    "command": "nimino-data-ops projection-rebuild",
+    "scenario": "nimino-projection-scenarios",
+    "verification": "partial-resume-drop-rebuild-query-equivalence"
+  },
+  "repairOwner": 59,
+  "repairContract": "nimino.data-ops/v1",
+  "legacyRemovalOwner": 12
+}

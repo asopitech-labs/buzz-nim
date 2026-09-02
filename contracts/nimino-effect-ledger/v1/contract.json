@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.effect-ledger",
+  "version": 1,
+  "compatibilityMode": false,
+  "publicationState": "cutover-ready",
+  "owner": "nimino-core",
+  "module": "nim/nimino_core/src/nimino_core/domain/effect_ledger.nim",
+  "workflowContract": "nimino.workflow-policy/v1",
+  "leaseContract": "nimino.lease-fencing/v1",
+  "dataContract": "nimino.data/v1",
+  "recordType": "workflow_effect",
+  "identity": [
+    "communityId",
+    "workflowId",
+    "runId",
+    "stepId",
+    "idempotencyKey",
+    "effectDigest"
+  ],
+  "states": [
+    "pending",
+    "claimed",
+    "executing",
+    "succeeded",
+    "failed",
+    "unknown"
+  ],
+  "execution": {
+    "authority": "authorizeSingletonEffect",
+    "liveQuorumLeaseRequired": true,
+    "executionMarkerPersistedFirst": true,
+    "idempotencyKeyPersisted": true,
+    "receiptPersisted": true
+  },
+  "recovery": {
+    "claimedWithoutAuthority": "pending",
+    "executingWithoutReceipt": "unknown",
+    "unknownAutomaticRetry": false,
+    "manualReconcileRequired": true,
+    "manualRetryKeepsIdempotencyKey": true
+  },
+  "persistence": {
+    "adapter": "NodeStorePort.commit_canonical",
+    "class": "canonical",
+    "replication": "nimino.sync/v2",
+    "operationalEvidence": "workflow_execution_entry"
+  },
+  "workflowDecisionOwner": 29,
+  "repairOwner": 59,
+  "repairContract": "nimino.data-ops/v1",
+  "legacyRemovalOwner": 12
+}

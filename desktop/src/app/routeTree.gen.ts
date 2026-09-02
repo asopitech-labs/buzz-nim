@@ -7,14 +7,11 @@
 import { Route as rootRouteImport } from "./routes/root";
 import { Route as workflowsRouteImport } from "./routes/workflows";
 import { Route as settingsRouteImport } from "./routes/settings";
-import { Route as remindersRouteImport } from "./routes/reminders";
-import { Route as pulseRouteImport } from "./routes/pulse";
 import { Route as projectsRouteImport } from "./routes/projects";
 import { Route as agentsRouteImport } from "./routes/agents";
 import { Route as indexRouteImport } from "./routes/index";
 import { Route as workflowsDotworkflowIdRouteImport } from "./routes/workflows.$workflowId";
 import { Route as projectsDotprojectIdRouteImport } from "./routes/projects.$projectId";
-import { Route as messagesDotnewRouteImport } from "./routes/messages.new";
 import { Route as channelsDotchannelIdRouteImport } from "./routes/channels.$channelId";
 import { Route as channelsDotchannelIdDotpostsDotpostIdRouteImport } from "./routes/channels.$channelId.posts.$postId";
 
@@ -26,16 +23,6 @@ const workflowsRoute = workflowsRouteImport.update({
 const settingsRoute = settingsRouteImport.update({
   id: "/settings",
   path: "/settings",
-  getParentRoute: () => rootRouteImport,
-} as any);
-const remindersRoute = remindersRouteImport.update({
-  id: "/reminders",
-  path: "/reminders",
-  getParentRoute: () => rootRouteImport,
-} as any);
-const pulseRoute = pulseRouteImport.update({
-  id: "/pulse",
-  path: "/pulse",
   getParentRoute: () => rootRouteImport,
 } as any);
 const projectsRoute = projectsRouteImport.update({
@@ -63,11 +50,6 @@ const projectsDotprojectIdRoute = projectsDotprojectIdRouteImport.update({
   path: "/projects/$projectId",
   getParentRoute: () => rootRouteImport,
 } as any);
-const messagesDotnewRoute = messagesDotnewRouteImport.update({
-  id: "/messages/new",
-  path: "/messages/new",
-  getParentRoute: () => rootRouteImport,
-} as any);
 const channelsDotchannelIdRoute = channelsDotchannelIdRouteImport.update({
   id: "/channels/$channelId",
   path: "/channels/$channelId",
@@ -84,12 +66,9 @@ export interface FileRoutesByFullPath {
   "/": typeof indexRoute;
   "/agents": typeof agentsRoute;
   "/projects": typeof projectsRoute;
-  "/pulse": typeof pulseRoute;
-  "/reminders": typeof remindersRoute;
   "/settings": typeof settingsRoute;
   "/workflows": typeof workflowsRoute;
   "/channels/$channelId": typeof channelsDotchannelIdRoute;
-  "/messages/new": typeof messagesDotnewRoute;
   "/projects/$projectId": typeof projectsDotprojectIdRoute;
   "/workflows/$workflowId": typeof workflowsDotworkflowIdRoute;
   "/channels/$channelId/posts/$postId": typeof channelsDotchannelIdDotpostsDotpostIdRoute;
@@ -98,12 +77,9 @@ export interface FileRoutesByTo {
   "/": typeof indexRoute;
   "/agents": typeof agentsRoute;
   "/projects": typeof projectsRoute;
-  "/pulse": typeof pulseRoute;
-  "/reminders": typeof remindersRoute;
   "/settings": typeof settingsRoute;
   "/workflows": typeof workflowsRoute;
   "/channels/$channelId": typeof channelsDotchannelIdRoute;
-  "/messages/new": typeof messagesDotnewRoute;
   "/projects/$projectId": typeof projectsDotprojectIdRoute;
   "/workflows/$workflowId": typeof workflowsDotworkflowIdRoute;
   "/channels/$channelId/posts/$postId": typeof channelsDotchannelIdDotpostsDotpostIdRoute;
@@ -113,12 +89,9 @@ export interface FileRoutesById {
   "/": typeof indexRoute;
   "/agents": typeof agentsRoute;
   "/projects": typeof projectsRoute;
-  "/pulse": typeof pulseRoute;
-  "/reminders": typeof remindersRoute;
   "/settings": typeof settingsRoute;
   "/workflows": typeof workflowsRoute;
   "/channels/$channelId": typeof channelsDotchannelIdRoute;
-  "/messages/new": typeof messagesDotnewRoute;
   "/projects/$projectId": typeof projectsDotprojectIdRoute;
   "/workflows/$workflowId": typeof workflowsDotworkflowIdRoute;
   "/channels/$channelId/posts/$postId": typeof channelsDotchannelIdDotpostsDotpostIdRoute;
@@ -129,12 +102,9 @@ export interface FileRouteTypes {
     | "/"
     | "/agents"
     | "/projects"
-    | "/pulse"
-    | "/reminders"
     | "/settings"
     | "/workflows"
     | "/channels/$channelId"
-    | "/messages/new"
     | "/projects/$projectId"
     | "/workflows/$workflowId"
     | "/channels/$channelId/posts/$postId";
@@ -143,12 +113,9 @@ export interface FileRouteTypes {
     | "/"
     | "/agents"
     | "/projects"
-    | "/pulse"
-    | "/reminders"
     | "/settings"
     | "/workflows"
     | "/channels/$channelId"
-    | "/messages/new"
     | "/projects/$projectId"
     | "/workflows/$workflowId"
     | "/channels/$channelId/posts/$postId";
@@ -157,12 +124,9 @@ export interface FileRouteTypes {
     | "/"
     | "/agents"
     | "/projects"
-    | "/pulse"
-    | "/reminders"
     | "/settings"
     | "/workflows"
     | "/channels/$channelId"
-    | "/messages/new"
     | "/projects/$projectId"
     | "/workflows/$workflowId"
     | "/channels/$channelId/posts/$postId";
@@ -172,12 +136,9 @@ export interface RootRouteChildren {
   indexRoute: typeof indexRoute;
   agentsRoute: typeof agentsRoute;
   projectsRoute: typeof projectsRoute;
-  pulseRoute: typeof pulseRoute;
-  remindersRoute: typeof remindersRoute;
   settingsRoute: typeof settingsRoute;
   workflowsRoute: typeof workflowsRoute;
   channelsDotchannelIdRoute: typeof channelsDotchannelIdRoute;
-  messagesDotnewRoute: typeof messagesDotnewRoute;
   projectsDotprojectIdRoute: typeof projectsDotprojectIdRoute;
   workflowsDotworkflowIdRoute: typeof workflowsDotworkflowIdRoute;
   channelsDotchannelIdDotpostsDotpostIdRoute: typeof channelsDotchannelIdDotpostsDotpostIdRoute;
@@ -197,20 +158,6 @@ declare module "@tanstack/react-router" {
       path: "/settings";
       fullPath: "/settings";
       preLoaderRoute: typeof settingsRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/reminders": {
-      id: "/reminders";
-      path: "/reminders";
-      fullPath: "/reminders";
-      preLoaderRoute: typeof remindersRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/pulse": {
-      id: "/pulse";
-      path: "/pulse";
-      fullPath: "/pulse";
-      preLoaderRoute: typeof pulseRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/projects": {
@@ -248,13 +195,6 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof projectsDotprojectIdRouteImport;
       parentRoute: typeof rootRouteImport;
     };
-    "/messages/new": {
-      id: "/messages/new";
-      path: "/messages/new";
-      fullPath: "/messages/new";
-      preLoaderRoute: typeof messagesDotnewRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
     "/channels/$channelId": {
       id: "/channels/$channelId";
       path: "/channels/$channelId";
@@ -276,12 +216,9 @@ const rootRouteChildren: RootRouteChildren = {
   indexRoute: indexRoute,
   agentsRoute: agentsRoute,
   projectsRoute: projectsRoute,
-  pulseRoute: pulseRoute,
-  remindersRoute: remindersRoute,
   settingsRoute: settingsRoute,
   workflowsRoute: workflowsRoute,
   channelsDotchannelIdRoute: channelsDotchannelIdRoute,
-  messagesDotnewRoute: messagesDotnewRoute,
   projectsDotprojectIdRoute: projectsDotprojectIdRoute,
   workflowsDotworkflowIdRoute: workflowsDotworkflowIdRoute,
   channelsDotchannelIdDotpostsDotpostIdRoute:

@@ -17,15 +17,15 @@
 --     in which case no lease existed when the event was accepted and no wake
 --     was owed. The lease-activation backfill is product recovery coverage
 --     only and is not part of this proof.
---   * Lock key domain 'buzz_push_gate:' is distinct from the audit lock
---     ('buzz_audit:') and both lease-address lock families.
+--   * Lock key domain 'nimino_push_gate:' is distinct from the audit lock
+--     ('nimino_audit:') and both lease-address lock families.
 CREATE OR REPLACE FUNCTION enqueue_push_match_job() RETURNS trigger
 LANGUAGE plpgsql AS $$
 BEGIN
     -- Keep this allowlist identical to the relay's validated NIP-PL descriptor.
     IF NEW.kind IN (7, 9, 1059, 40007, 46010) THEN
         PERFORM pg_advisory_xact_lock_shared(
-            hashtextextended('buzz_push_gate:' || NEW.community_id::text, 0));
+            hashtextextended('nimino_push_gate:' || NEW.community_id::text, 0));
         IF EXISTS (
             SELECT 1 FROM push_leases
             WHERE community_id = NEW.community_id

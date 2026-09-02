@@ -1,4 +1,4 @@
-const OPEN_CREATE_AGENT_EVENT = "buzz:open-create-agent";
+const OPEN_CREATE_AGENT_EVENT = "nimino:open-create-agent";
 
 export type OpenCreateAgentOptions = {
   channelId?: string;
@@ -6,6 +6,11 @@ export type OpenCreateAgentOptions = {
 };
 
 let pendingOpenCreateAgent: OpenCreateAgentOptions | null = null;
+
+/** Drop a request captured for the community being left. */
+export function resetPendingOpenCreateAgent(): void {
+  pendingOpenCreateAgent = null;
+}
 
 export function requestOpenCreateAgent(options: OpenCreateAgentOptions = {}) {
   pendingOpenCreateAgent = options;

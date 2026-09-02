@@ -121,7 +121,7 @@ const ERROR_BADGE = getActionBadge(
 const ACTIVE_BADGE = getActiveBadge(ACTIVE_BADGE_INSET);
 
 const MASK_TRANSITION = {
-  duration: 0.3,
+  duration: 0.18,
   ease: [0.4, 0, 0.2, 1],
 } as const;
 

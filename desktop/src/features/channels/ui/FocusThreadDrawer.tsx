@@ -37,7 +37,7 @@ const FOCUS_SCRIM_CLASS = "bg-background/75 dark:bg-background/80";
 const FOCUS_SCRIM_HOVER_CLASS =
   "hover:bg-background/65 dark:hover:bg-background/70";
 
-/** Arrive and settle. The iOS sheet curve, shared with `buzz-side-panel-enter`. */
+/** Arrive and settle. The iOS sheet curve, shared with `nimino-side-panel-enter`. */
 const ENTER_EASE = [0.32, 0.72, 0, 1] as const;
 
 /**
@@ -84,7 +84,7 @@ const SCRIM_EXIT_SECONDS = 0.12;
  */
 const ENTER_TRANSITION = {
   opacity: { duration: 0.09, ease: "linear" },
-  x: { duration: 0.28, ease: ENTER_EASE },
+  x: { duration: 0.18, ease: ENTER_EASE },
 } as const;
 
 /**

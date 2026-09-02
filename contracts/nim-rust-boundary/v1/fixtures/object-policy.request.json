@@ -1,0 +1,48 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "fixture-object-policy",
+  "operation": "domain.object.policy",
+  "payload": {
+    "decision": "sync",
+    "request": {
+      "communityId": "community-a",
+      "manifest": {
+        "communityId": "community-a",
+        "manifestId": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "generation": 1,
+        "objects": [
+          {
+            "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "size": 2097153,
+            "kind": "media"
+          }
+        ]
+      },
+      "manifestDigestVerified": true,
+      "lifecycleAllowsSync": true,
+      "cancelled": false,
+      "mode": "eager",
+      "requestedDigest": "",
+      "pinnedDigests": [],
+      "localFacts": [],
+      "origins": [
+        {
+          "nodeId": "node-b",
+          "available": true,
+          "digests": [
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          ]
+        },
+        {
+          "nodeId": "node-a",
+          "available": true,
+          "digests": [
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          ]
+        }
+      ],
+      "maxFetches": 8
+    }
+  }
+}

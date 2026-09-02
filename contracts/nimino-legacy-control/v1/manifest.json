@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.legacy-control-replacement",
+  "version": 1,
+  "compatibilityMode": false,
+  "publicationState": "removed",
+  "physicalRemovalOwner": 66,
+  "retiredPaths": [
+    "crates/buzz-pubsub",
+    "crates/buzz-relay-mesh",
+    "crates/buzz-relay/src/api/mesh_demo.rs",
+    "crates/buzz-relay/src/audio/join.rs",
+    "crates/buzz-relay/src/audio/mesh.rs",
+    "crates/buzz-relay/src/mesh_boot.rs",
+    "crates/buzz-relay/src/tunnel",
+    "deploy/local/build-and-deploy.sh",
+    "deploy/local/quickstart-ha-values.yaml"
+  ],
+  "targetPaths": [
+    "crates/nimino-local-delivery/src/lib.rs",
+    "crates/nimino-chirps/src/lib.rs",
+    "crates/nimino-boundary/src/cluster.rs",
+    "nim/nimino_core/src/nimino_core/domain/cluster_lifecycle.nim"
+  ],
+  "optionalLocalCaches": [
+    {"surface": "presence-and-typing", "authoritative": false, "scope": "single-node"},
+    {"surface": "admission-rate-window", "authoritative": false, "scope": "single-node"},
+    {"surface": "nip98-replay-window", "authoritative": false, "scope": "single-node"}
+  ],
+  "forbiddenRuntimeSymbols": [
+    "buzz_relay_mesh",
+    "buzz-relay-mesh",
+    "PubSubManager",
+    "RedisNip98ReplayGuard",
+    "RedisRateLimiter",
+    "NIMINO_MESH",
+    "REDIS_URL",
+    "deadpool_redis"
+  ],
+  "ownerReview": {
+    "decisionSource": "fork-owner hard-cut and Chirps responsibility directives",
+    "status": "implemented-by-issue-66"
+  }
+}

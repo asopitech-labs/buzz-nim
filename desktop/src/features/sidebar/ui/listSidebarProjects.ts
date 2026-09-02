@@ -1,9 +1,9 @@
 import type { Project } from "@/features/projects/projectModels";
 import { isProjectOwnedByCurrentUser } from "@/features/projects/lib/projectsViewHelpers";
 
-const SIDEBAR_PROJECTS_FILTER_KEY = "buzz.sidebar.projects.filter";
-const SIDEBAR_PROJECTS_SORT_KEY = "buzz.sidebar.projects.sort";
-const SIDEBAR_PROJECTS_EXPANDED_KEY = "buzz.sidebar.projects.expanded";
+const SIDEBAR_PROJECTS_FILTER_KEY = "nimino.sidebar.projects.filter";
+const SIDEBAR_PROJECTS_SORT_KEY = "nimino.sidebar.projects.sort";
+const SIDEBAR_PROJECTS_EXPANDED_KEY = "nimino.sidebar.projects.expanded";
 
 export type SidebarProjectsFilter = "added" | "owned";
 export type SidebarProjectsSort = "name" | "created";

@@ -84,28 +84,28 @@ test("parseSupportedLinkPreview ignores unsupported GitHub URLs", () => {
   );
 });
 
-const BUZZ_OWNER =
+const NIMINO_OWNER =
   "71d67180ba17e749ee825fc8819c9c6ee7003617e1c126504f9b658070ab9224";
 
-test("parseSupportedLinkPreview parses Buzz relay git clone URLs", () => {
+test("parseSupportedLinkPreview parses Nimino relay git clone URLs", () => {
   // Must pass the active relay origin for host validation.
   assert.deepEqual(
     parseSupportedLinkPreview(
-      `https://buzz.block.builderlab.xyz/git/${BUZZ_OWNER}/buzz-world-galaxy`,
-      "https://buzz.block.builderlab.xyz",
+      `https://nimino.block.builderlab.xyz/git/${NIMINO_OWNER}/nimino-world-galaxy`,
+      "https://nimino.block.builderlab.xyz",
     ),
     {
-      kind: "buzz-repository",
-      href: `buzz://repo?owner=${BUZZ_OWNER}&d=buzz-world-galaxy`,
-      provider: "Buzz",
-      title: "buzz-world-galaxy",
+      kind: "nimino-repository",
+      href: `nimino://repo?owner=${NIMINO_OWNER}&d=nimino-world-galaxy`,
+      provider: "Nimino",
+      title: "nimino-world-galaxy",
       typeLabel: "repo",
     },
   );
   // Same URL without a matching origin stays an ordinary external preview.
   assert.equal(
     parseSupportedLinkPreview(
-      `https://buzz.block.builderlab.xyz/git/${BUZZ_OWNER}/buzz-world-galaxy`,
+      `https://nimino.block.builderlab.xyz/git/${NIMINO_OWNER}/nimino-world-galaxy`,
     )?.kind,
     "generic-link",
   );
@@ -114,30 +114,30 @@ test("parseSupportedLinkPreview parses Buzz relay git clone URLs", () => {
 test("parseSupportedLinkPreview strips .git suffix from clone URLs", () => {
   assert.deepEqual(
     parseSupportedLinkPreview(
-      `http://localhost:3000/git/${BUZZ_OWNER}/buzz-world.git`,
+      `http://localhost:3000/git/${NIMINO_OWNER}/nimino-world.git`,
       "http://localhost:3000",
     ),
     {
-      kind: "buzz-repository",
-      href: `buzz://repo?owner=${BUZZ_OWNER}&d=buzz-world`,
-      provider: "Buzz",
-      title: "buzz-world",
+      kind: "nimino-repository",
+      href: `nimino://repo?owner=${NIMINO_OWNER}&d=nimino-world`,
+      provider: "Nimino",
+      title: "nimino-world",
       typeLabel: "repo",
     },
   );
 });
 
-test("parseSupportedLinkPreview rejects malformed Buzz git URLs", () => {
+test("parseSupportedLinkPreview rejects malformed Nimino git URLs", () => {
   for (const href of [
     // Owner segment must be a 64-char lowercase hex pubkey.
     "https://relay.example/git/not-a-pubkey/repo",
-    `https://relay.example/git/${BUZZ_OWNER.toUpperCase()}/repo`,
-    `https://relay.example/git/${BUZZ_OWNER.slice(0, 32)}/repo`,
+    `https://relay.example/git/${NIMINO_OWNER.toUpperCase()}/repo`,
+    `https://relay.example/git/${NIMINO_OWNER.slice(0, 32)}/repo`,
     // Missing or invalid repo segment.
-    `https://relay.example/git/${BUZZ_OWNER}`,
-    `https://relay.example/git/${BUZZ_OWNER}/.hidden`,
+    `https://relay.example/git/${NIMINO_OWNER}`,
+    `https://relay.example/git/${NIMINO_OWNER}/.hidden`,
     // Deeper transport paths are not repo links.
-    `https://relay.example/git/${BUZZ_OWNER}/repo/info/refs`,
+    `https://relay.example/git/${NIMINO_OWNER}/repo/info/refs`,
   ]) {
     // Structural non-matches remain ordinary external previews.
     assert.equal(
@@ -152,96 +152,98 @@ test("parseSupportedLinkPreview rejects clone URLs from non-relay hosts", () => 
   // Correct path shape but origin does not match the active relay.
   assert.equal(
     parseSupportedLinkPreview(
-      `https://evil.example/git/${BUZZ_OWNER}/my-repo`,
-      "https://buzz.block.builderlab.xyz",
+      `https://evil.example/git/${NIMINO_OWNER}/my-repo`,
+      "https://nimino.block.builderlab.xyz",
     )?.kind,
     "generic-link",
   );
-  // github.com sharing the path shape must never become a Buzz repo card.
+  // github.com sharing the path shape must never become a Nimino repo card.
   assert.equal(
     parseSupportedLinkPreview(
-      `https://github.com/git/${BUZZ_OWNER}/my-repo`,
-      "https://buzz.block.builderlab.xyz",
+      `https://github.com/git/${NIMINO_OWNER}/my-repo`,
+      "https://nimino.block.builderlab.xyz",
     ),
     null,
   );
   // No relay origin provided — stays external.
   assert.equal(
     parseSupportedLinkPreview(
-      `https://buzz.block.builderlab.xyz/git/${BUZZ_OWNER}/buzz-world`,
+      `https://nimino.block.builderlab.xyz/git/${NIMINO_OWNER}/nimino-world`,
       null,
     )?.kind,
     "generic-link",
   );
 });
 
-const BUZZ_EVENT_ID =
+const NIMINO_EVENT_ID =
   "c3b589fa5713ba25bad6dc095e2de00a4ac8f50050fdea00fc6444e603be1dd1";
 
-test("parseSupportedLinkPreview parses buzz:// PR and issue deep links", () => {
+test("parseSupportedLinkPreview parses nimino:// PR and issue deep links", () => {
   assert.deepEqual(
     parseSupportedLinkPreview(
-      `buzz://pr?id=${BUZZ_EVENT_ID}&owner=${BUZZ_OWNER}&d=buzz-world`,
+      `nimino://pr?id=${NIMINO_EVENT_ID}&owner=${NIMINO_OWNER}&d=nimino-world`,
     ),
     {
-      kind: "buzz-pull-request",
-      href: `buzz://pr?id=${BUZZ_EVENT_ID}&owner=${BUZZ_OWNER}&d=buzz-world`,
-      provider: "Buzz",
-      title: "buzz-world #c3b589fa",
+      kind: "nimino-pull-request",
+      href: `nimino://pr?id=${NIMINO_EVENT_ID}&owner=${NIMINO_OWNER}&d=nimino-world`,
+      provider: "Nimino",
+      title: "nimino-world #c3b589fa",
       typeLabel: "Review",
     },
   );
   assert.deepEqual(
     parseSupportedLinkPreview(
-      `buzz://issue?id=${BUZZ_EVENT_ID}&owner=${BUZZ_OWNER}&d=buzz-world`,
+      `nimino://issue?id=${NIMINO_EVENT_ID}&owner=${NIMINO_OWNER}&d=nimino-world`,
     )?.typeLabel,
     "Task",
   );
   assert.deepEqual(
-    parseSupportedLinkPreview(`buzz://repo?owner=${BUZZ_OWNER}&d=buzz-world`),
+    parseSupportedLinkPreview(
+      `nimino://repo?owner=${NIMINO_OWNER}&d=nimino-world`,
+    ),
     {
-      kind: "buzz-repository",
-      href: `buzz://repo?owner=${BUZZ_OWNER}&d=buzz-world`,
-      provider: "Buzz",
-      title: "buzz-world",
+      kind: "nimino-repository",
+      href: `nimino://repo?owner=${NIMINO_OWNER}&d=nimino-world`,
+      provider: "Nimino",
+      title: "nimino-world",
       typeLabel: "repo",
     },
   );
 });
 
-test("parseSupportedLinkPreview parses buzz:// project deep links", () => {
+test("parseSupportedLinkPreview parses nimino:// project deep links", () => {
   assert.deepEqual(
     parseSupportedLinkPreview(
-      `buzz://project?owner=${BUZZ_OWNER}&d=buzz-world`,
+      `nimino://project?owner=${NIMINO_OWNER}&d=nimino-world`,
     ),
     {
-      kind: "buzz-project",
-      href: `buzz://project?owner=${BUZZ_OWNER}&d=buzz-world`,
-      provider: "Buzz",
-      title: "buzz-world",
+      kind: "nimino-project",
+      href: `nimino://project?owner=${NIMINO_OWNER}&d=nimino-world`,
+      provider: "Nimino",
+      title: "nimino-world",
       typeLabel: "project",
     },
   );
 });
 
-test("parseSupportedLinkPreview rejects malformed buzz:// entity links", () => {
+test("parseSupportedLinkPreview rejects malformed nimino:// entity links", () => {
   for (const href of [
-    `buzz://pr?owner=${BUZZ_OWNER}&d=buzz-world`,
-    `buzz://pr?id=short&owner=${BUZZ_OWNER}&d=buzz-world`,
-    `buzz://issue?id=${BUZZ_EVENT_ID}&owner=nope&d=buzz-world`,
-    `buzz://repo?owner=${BUZZ_OWNER}&d=.hidden`,
-    `buzz://project?owner=${BUZZ_OWNER}&d=.hidden`,
+    `nimino://pr?owner=${NIMINO_OWNER}&d=nimino-world`,
+    `nimino://pr?id=short&owner=${NIMINO_OWNER}&d=nimino-world`,
+    `nimino://issue?id=${NIMINO_EVENT_ID}&owner=nope&d=nimino-world`,
+    `nimino://repo?owner=${NIMINO_OWNER}&d=.hidden`,
+    `nimino://project?owner=${NIMINO_OWNER}&d=.hidden`,
   ]) {
     assert.equal(parseSupportedLinkPreview(href), null, href);
   }
 });
 
-test("extractSupportedLinkPreviews excludes Buzz entity links while keeping external links", () => {
+test("extractSupportedLinkPreviews excludes Nimino entity links while keeping external links", () => {
   const entityLinks = [
-    `buzz://project?owner=${BUZZ_OWNER}&d=buzz-world`,
-    `buzz://repo?owner=${BUZZ_OWNER}&d=buzz-world`,
-    `buzz://issue?id=${BUZZ_EVENT_ID}&owner=${BUZZ_OWNER}&d=buzz-world`,
-    `buzz://pr?id=${BUZZ_EVENT_ID}&owner=${BUZZ_OWNER}&d=buzz-world`,
+    `nimino://project?owner=${NIMINO_OWNER}&d=nimino-world`,
+    `nimino://repo?owner=${NIMINO_OWNER}&d=nimino-world`,
+    `nimino://issue?id=${NIMINO_EVENT_ID}&owner=${NIMINO_OWNER}&d=nimino-world`,
+    `nimino://pr?id=${NIMINO_EVENT_ID}&owner=${NIMINO_OWNER}&d=nimino-world`,
   ];
 
   assert.deepEqual(
@@ -252,10 +254,10 @@ test("extractSupportedLinkPreviews excludes Buzz entity links while keeping exte
   );
 });
 
-test("extractSupportedLinkPreviews excludes markdown-labeled Buzz entity links", () => {
+test("extractSupportedLinkPreviews excludes markdown-labeled Nimino entity links", () => {
   assert.deepEqual(
     extractSupportedLinkPreviews(
-      `[Project](buzz://project?owner=${BUZZ_OWNER}&d=buzz-world)`,
+      `[Project](nimino://project?owner=${NIMINO_OWNER}&d=nimino-world)`,
     ),
     [],
   );
@@ -264,11 +266,11 @@ test("extractSupportedLinkPreviews excludes markdown-labeled Buzz entity links",
 test("parseSupportedLinkPreview parses Linear issue URLs", () => {
   assert.deepEqual(
     parseSupportedLinkPreview(
-      "https://linear.app/buzz/issue/BUG-321/fix-link-previews",
+      "https://linear.app/nimino/issue/BUG-321/fix-link-previews",
     ),
     {
       kind: "linear-issue",
-      href: "https://linear.app/buzz/issue/BUG-321/fix-link-previews",
+      href: "https://linear.app/nimino/issue/BUG-321/fix-link-previews",
       provider: "Linear",
       title: "BUG-321",
       typeLabel: "issue",
@@ -278,10 +280,10 @@ test("parseSupportedLinkPreview parses Linear issue URLs", () => {
 
 test("parseSupportedLinkPreview normalizes Linear issue URL variants", () => {
   assert.deepEqual(
-    parseSupportedLinkPreview("linear.app/buzz/issue/a-7/fix-link-previews"),
+    parseSupportedLinkPreview("linear.app/nimino/issue/a-7/fix-link-previews"),
     {
       kind: "linear-issue",
-      href: "https://linear.app/buzz/issue/a-7/fix-link-previews",
+      href: "https://linear.app/nimino/issue/a-7/fix-link-previews",
       provider: "Linear",
       title: "A-7",
       typeLabel: "issue",
@@ -313,7 +315,7 @@ test("extractSupportedLinkPreviews returns unique supported links in order", () 
     extractSupportedLinkPreviews(
       [
         "See github.com/block/sprout/pull/1",
-        "and https://linear.app/buzz/issue/BUG-2/fix-preview",
+        "and https://linear.app/nimino/issue/BUG-2/fix-preview",
         "then https://github.com/block/sprout/pull/1 again.",
         "plus https://docs.google.com/document/d/doc123/edit",
       ].join(" "),
@@ -322,27 +324,27 @@ test("extractSupportedLinkPreviews returns unique supported links in order", () 
   );
 });
 
-test("extractSupportedLinkPreviews excludes same-relay Buzz clone URLs", () => {
+test("extractSupportedLinkPreviews excludes same-relay Nimino clone URLs", () => {
   assert.deepEqual(
     extractSupportedLinkPreviews(
-      `master pushed; clone: https://buzz.block.builderlab.xyz/git/${BUZZ_OWNER}/buzz-world-galaxy and review please.`,
-      "https://buzz.block.builderlab.xyz",
+      `master pushed; clone: https://nimino.block.builderlab.xyz/git/${NIMINO_OWNER}/nimino-world-galaxy and review please.`,
+      "https://nimino.block.builderlab.xyz",
     ),
     [],
   );
   // Without a relay origin the URL is treated as an ordinary external link.
   assert.deepEqual(
     extractSupportedLinkPreviews(
-      `clone: https://buzz.block.builderlab.xyz/git/${BUZZ_OWNER}/buzz-world-galaxy`,
+      `clone: https://nimino.block.builderlab.xyz/git/${NIMINO_OWNER}/nimino-world-galaxy`,
     ).map((preview) => preview.kind),
     ["generic-link"],
   );
 });
 
-test("extractSupportedLinkPreviews excludes markdown-labeled Buzz clone URLs", () => {
+test("extractSupportedLinkPreviews excludes markdown-labeled Nimino clone URLs", () => {
   assert.deepEqual(
     extractSupportedLinkPreviews(
-      `[Buzz World](https://relay.example/git/${BUZZ_OWNER}/buzz-world-galaxy)`,
+      `[Nimino World](https://relay.example/git/${NIMINO_OWNER}/nimino-world-galaxy)`,
       "https://relay.example",
     ),
     [],
@@ -398,7 +400,7 @@ test("extractSupportedLinkPreviews skips URLs inside inline and fenced code", ()
       [
         "`https://github.com/block/sprout/pull/1`",
         "```",
-        "https://linear.app/buzz/issue/BUG-2/fix-preview",
+        "https://linear.app/nimino/issue/BUG-2/fix-preview",
         "```",
         "https://github.com/block/sprout/pull/3",
       ].join("\n"),
@@ -465,7 +467,7 @@ test("extractSupportedLinkPreviews skips links inside block spoilers", () => {
       [
         "||",
         "",
-        "https://linear.app/buzz/issue/BUG-99/hidden-spoiler-link",
+        "https://linear.app/nimino/issue/BUG-99/hidden-spoiler-link",
         "",
         "||",
         "https://github.com/block/sprout/pull/8",

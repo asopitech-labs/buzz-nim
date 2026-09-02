@@ -1,0 +1,58 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.cutover-certification",
+  "version": 1,
+  "issue": 67,
+  "milestone": "Nimino v1.0 — Independent Cutover",
+  "compatibilityMode": false,
+  "publicationState": "blocked",
+  "externalCertificationRequired": true,
+  "source": {
+    "workflow": ".github/workflows/ci.yml",
+    "freshCheckout": true,
+    "requiredGates": [
+      "nim-boundary-ci",
+      "protocol-contract",
+      "removed-client-contract",
+      "cargo-deny"
+    ]
+  },
+  "relay": {
+    "workflow": ".github/workflows/nimino-relay-release.yml",
+    "requiredEvidence": [
+      "nimino-cluster-scenarios",
+      "nimino-sync-scenarios",
+      "nimino-object-scenarios",
+      "nimino-projection-scenarios",
+      "nimino-data-ops-scenarios",
+      "clean-helm-install"
+    ]
+  },
+  "platform": {
+    "workflow": ".github/workflows/nimino-platform-release.yml",
+    "desktopMatrix": [
+      "macos-aarch64",
+      "macos-x86-64",
+      "linux-x86-64"
+    ],
+    "wslQualification": "nimino-wsl-ubuntu-24.04",
+    "requiredEvidence": [
+      "wsl-bundle-certify",
+      "SHA256SUMS",
+      "SPDX",
+      "Sigstore",
+      "provenance-attestation"
+    ]
+  },
+  "compatibilityNegative": {
+    "protocolContract": "contracts/nimino-protocol-v1.json",
+    "mobileContract": "contracts/mobile-removal-v1.json",
+    "legacyReleaseManifest": "contracts/nimino-legacy-release/v1/manifest.json"
+  },
+  "evidenceArtifact": "nimino-release-candidate",
+  "promotion": {
+    "issue": 68,
+    "workflow": ".github/workflows/nimino-promote.yml",
+    "automatic": false
+  }
+}

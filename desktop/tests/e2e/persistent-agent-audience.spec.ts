@@ -12,8 +12,8 @@ const THREAD_ROOT_ID = "mock-general-welcome";
 async function seedTheme(page: Page, theme: string, accent = "#c0a2f1") {
   await page.addInitScript(
     ({ selectedTheme, selectedAccent }) => {
-      window.localStorage.setItem("buzz-theme", selectedTheme);
-      window.localStorage.setItem("buzz-accent-color", selectedAccent);
+      window.localStorage.setItem("nimino-theme", selectedTheme);
+      window.localStorage.setItem("nimino-accent-color", selectedAccent);
     },
     { selectedTheme: theme, selectedAccent: accent },
   );
@@ -63,7 +63,7 @@ async function pressPrimaryShift(page: Page, key: "Enter" | "M") {
 
 async function readOutgoingMentionPubkeys(page: Page, content: string) {
   return page.evaluate((expectedContent) => {
-    const signedEvent = window.__BUZZ_E2E_SIGNED_EVENTS__?.find(
+    const signedEvent = window.__NIMINO_E2E_SIGNED_EVENTS__?.find(
       (event) => event.content === expectedContent,
     );
     if (signedEvent) {
@@ -72,7 +72,7 @@ async function readOutgoingMentionPubkeys(page: Page, content: string) {
         .map((tag) => tag[1]);
     }
 
-    for (const entry of window.__BUZZ_E2E_COMMAND_LOG__ ?? []) {
+    for (const entry of window.__NIMINO_E2E_COMMAND_LOG__ ?? []) {
       if (entry.command === "send_channel_message") {
         const payload = entry.payload as
           | { content?: string; mentionPubkeys?: string[] }
@@ -485,7 +485,7 @@ test("channel automatic mentions carry into threads and stay synchronized", asyn
   await expect(channelAutomaticMention).toHaveCount(0);
 });
 
-for (const theme of ["buzz", "buzz-dark"]) {
+for (const theme of ["nimino", "nimino-dark"]) {
   test(`captures the mention-button placement in ${theme}`, async ({
     page,
   }) => {

@@ -1,6 +1,6 @@
 import type * as React from "react";
 
-import { BuzzLoadingState } from "@/shared/ui/BuzzLoadingState";
+import { NiminoLoadingState } from "@/shared/ui/NiminoLoadingState";
 
 /** Which center pane `PullRequestsPanel` should show. A retained selected
  * review wins over an empty list so refetching does not flash "No reviews yet." */
@@ -41,7 +41,7 @@ export function PullRequestsPanelSurface({
     selectedPullRequest,
   });
   if (kind === "loading") {
-    return <BuzzLoadingState label="Loading reviews" />;
+    return <NiminoLoadingState label="Loading reviews" />;
   }
   if (kind === "detail") {
     return detail;

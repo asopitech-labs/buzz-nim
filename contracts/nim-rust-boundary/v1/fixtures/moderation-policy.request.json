@@ -1,0 +1,30 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0088",
+  "operation": "domain.moderation.policy",
+  "payload": {
+    "decision": "restriction",
+    "request": {
+      "command": "timeout",
+      "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+      "actorRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+      "targetRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+      "actorRestrictionCommunity": null,
+      "targetRestrictionCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+      "actorRole": "owner",
+      "targetRole": "member",
+      "actorRestrictionExists": false,
+      "actorBanSet": false,
+      "actorBanExpiresAt": null,
+      "targetRestrictionExists": true,
+      "targetBanSet": false,
+      "targetBanExpiresAt": null,
+      "targetMutedUntil": null,
+      "actorIsTarget": false,
+      "createdAtSeconds": 1800000000,
+      "nowSeconds": 1800000000,
+      "requestedExpiresAt": 1800000300
+    }
+  }
+}

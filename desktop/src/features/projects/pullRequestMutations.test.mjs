@@ -17,8 +17,8 @@ const MERGE_BASE = "f".repeat(40);
 
 const project = {
   owner: OWNER,
-  repoAddress: `30617:${OWNER}:buzz`,
-  cloneUrls: [`https://relay.example/git/${OWNER}/buzz`],
+  repoAddress: `30617:${OWNER}:nimino`,
+  cloneUrls: [`https://relay.example/git/${OWNER}/nimino`],
 };
 const pullRequest = {
   author: AUTHOR,
@@ -64,7 +64,7 @@ test("projectPullRequestTags builds a NIP-34 kind 1618 tag set", () => {
 });
 
 test("projectPullRequestUpdateTags uses uppercase NIP-22 root tags", () => {
-  const forkCloneUrl = `https://relay.example/git/${AUTHOR}/buzz`;
+  const forkCloneUrl = `https://relay.example/git/${AUTHOR}/nimino`;
   const tags = projectPullRequestUpdateTags(
     project,
     { id: PR_ID, author: AUTHOR, cloneUrls: [forkCloneUrl] },

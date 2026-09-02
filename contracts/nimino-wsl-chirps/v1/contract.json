@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.wsl-chirps-certification",
+  "issue": 45,
+  "supportContract": "wsl-support-v1",
+  "transport": "alopex-chirps/0.6.3-udp-quic-mtls",
+  "workspacePrefix": "/home/",
+  "compatibilityMode": false,
+  "requiredProofs": [
+    "stable-node-identity",
+    "private-key-mode-0600",
+    "trusted-and-untrusted-mtls",
+    "certificate-rotation-reload",
+    "udp-quic-bind-change-rejoin",
+    "shutdown-releases-all-sockets"
+  ],
+  "excludedDomains": ["database", "replication", "sync", "quorum", "product-policy"],
+  "evidencePath": "target/nim/nimino-wsl-chirps.json",
+  "certificationCommand": "just wsl-chirps-certify"
+}

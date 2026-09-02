@@ -5,7 +5,6 @@ import {
   useCardMintJobs,
   viewMintedCardJob,
 } from "@/features/agents/cardMintStore";
-import { Shimmer } from "@/shared/ui/Shimmer";
 
 /**
  * Composer-rail status for background card mints: a live "Minting card…"
@@ -31,9 +30,9 @@ export function CardMintComposerChip() {
               key={job.jobId}
             >
               <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin opacity-70" />
-              <Shimmer className="-my-px truncate py-px">
+              <span className="-my-px truncate py-px">
                 {`Minting ${job.input.agentName}’s card… (takes a few minutes)`}
-              </Shimmer>
+              </span>
             </span>
           );
         }

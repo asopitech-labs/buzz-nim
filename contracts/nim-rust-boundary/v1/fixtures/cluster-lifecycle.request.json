@@ -1,0 +1,25 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0048",
+  "operation": "domain.cluster.lifecycle",
+  "payload": {
+    "decision": "transition",
+    "request": {
+      "command": "mark_ready",
+      "currentState": "syncing",
+      "authenticated": true,
+      "revoked": false,
+      "identityUnique": true,
+      "productCapability": "nimino-v1",
+      "controlProtocolVersion": 1,
+      "dataProtocolVersion": 1,
+      "controlDecisionCommitted": true,
+      "snapshotInstalled": true,
+      "checkpointMatches": true,
+      "requiredVoterEpoch": 2,
+      "observedVoterEpoch": 2,
+      "activeWork": 0
+    }
+  }
+}

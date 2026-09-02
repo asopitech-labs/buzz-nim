@@ -8,7 +8,6 @@ use crate::app_state::AppState;
 pub(crate) enum IdentityStorage {
     Ephemeral = 0,
     SystemKeyring = 1,
-    LocalFile = 2,
     Environment = 3,
 }
 
@@ -17,7 +16,6 @@ impl IdentityStorage {
         match self {
             Self::Ephemeral => "ephemeral",
             Self::SystemKeyring => "system-keyring",
-            Self::LocalFile => "local-file",
             Self::Environment => "environment",
         }
     }
@@ -25,7 +23,6 @@ impl IdentityStorage {
     fn from_u8(value: u8) -> Self {
         match value {
             1 => Self::SystemKeyring,
-            2 => Self::LocalFile,
             3 => Self::Environment,
             _ => Self::Ephemeral,
         }

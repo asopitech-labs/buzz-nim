@@ -1,0 +1,446 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.naming",
+  "owner": "asopitech-labs",
+  "compatibilityAliases": false,
+  "matchSemantics": {
+    "exact": {
+      "caseSensitive": true,
+      "boundary": "whole-value",
+      "replacement": "whole-value"
+    },
+    "prefix": {
+      "caseSensitive": true,
+      "boundary": "start-of-value",
+      "replacement": "replace-prefix-preserve-suffix"
+    },
+    "oci-repository": {
+      "caseSensitive": true,
+      "boundary": "whole-repository-before-tag-or-sha256-digest",
+      "replacement": "replace-repository-preserve-tag-or-digest"
+    }
+  },
+  "surfaces": [
+    {
+      "id": "binary.cli",
+      "match": "exact",
+      "canonical": "nimino",
+      "legacy": ["buzz"],
+      "fixtures": [{ "input": "buzz", "output": "nimino" }]
+    },
+    {
+      "id": "binary.relay",
+      "match": "exact",
+      "canonical": "nimino-relay",
+      "legacy": ["buzz-relay"],
+      "fixtures": [{ "input": "buzz-relay", "output": "nimino-relay" }]
+    },
+    {
+      "id": "desktop.bundle-identifier",
+      "match": "prefix",
+      "canonical": "com.asopitech.nimino",
+      "legacy": ["xyz.block.buzz.app"],
+      "fixtures": [
+        { "input": "xyz.block.buzz.app", "output": "com.asopitech.nimino" },
+        { "input": "xyz.block.buzz.app.dev", "output": "com.asopitech.nimino.dev" },
+        {
+          "input": "xyz.block.buzz.app.dev.example",
+          "output": "com.asopitech.nimino.dev.example"
+        }
+      ]
+    },
+    {
+      "id": "environment.prefix",
+      "match": "prefix",
+      "canonical": "NIMINO_",
+      "legacy": ["BUZZ_"],
+      "fixtures": [
+        { "input": "BUZZ_PRIVATE_KEY", "output": "NIMINO_PRIVATE_KEY" }
+      ]
+    },
+    {
+      "id": "metrics.prefix",
+      "match": "prefix",
+      "canonical": "nimino_",
+      "legacy": ["buzz_"],
+      "fixtures": [
+        { "input": "buzz_events_total", "output": "nimino_events_total" }
+      ]
+    },
+    {
+      "id": "package.cargo",
+      "match": "prefix",
+      "canonical": "nimino-",
+      "legacy": ["buzz-"],
+      "fixtures": [
+        { "input": "buzz-core", "output": "nimino-core" },
+        { "input": "buzz-relay", "output": "nimino-relay" }
+      ]
+    },
+    {
+      "id": "package.nim",
+      "match": "prefix",
+      "canonical": "nimino_",
+      "legacy": ["buzz_"],
+      "fixtures": [{ "input": "buzz_core", "output": "nimino_core" }]
+    },
+    {
+      "id": "package.npm.desktop",
+      "match": "exact",
+      "canonical": "nimino-desktop",
+      "legacy": ["buzz"],
+      "fixtures": [{ "input": "buzz", "output": "nimino-desktop" }]
+    },
+    {
+      "id": "package.npm.family",
+      "match": "prefix",
+      "canonical": "nimino-",
+      "legacy": ["buzz-"],
+      "fixtures": [
+        { "input": "buzz-workspace", "output": "nimino-workspace" },
+        { "input": "buzz-web", "output": "nimino-web" },
+        { "input": "buzz-admin-web", "output": "nimino-admin-web" }
+      ]
+    },
+    {
+      "id": "package.rust-crate",
+      "match": "prefix",
+      "canonical": "nimino_",
+      "legacy": ["buzz_"],
+      "fixtures": [{ "input": "buzz_core", "output": "nimino_core" }]
+    },
+    {
+      "id": "product.display",
+      "match": "exact",
+      "canonical": "Nimino",
+      "legacy": ["Buzz"],
+      "fixtures": [{ "input": "Buzz", "output": "Nimino" }]
+    },
+    {
+      "id": "protocol.namespace",
+      "match": "exact",
+      "canonical": "nimino",
+      "legacy": ["buzz"],
+      "fixtures": [{ "input": "buzz", "output": "nimino" }]
+    },
+    {
+      "id": "protocol.tag-prefix",
+      "match": "prefix",
+      "canonical": "nimino-",
+      "legacy": ["buzz-"],
+      "fixtures": [
+        { "input": "buzz-channel", "output": "nimino-channel" },
+        { "input": "buzz-protect", "output": "nimino-protect" },
+        { "input": "buzz-visibility", "output": "nimino-visibility" },
+        { "input": "buzz-origin-agent", "output": "nimino-origin-agent" },
+        { "input": "buzz-mesh-status", "output": "nimino-mesh-status" }
+      ]
+    },
+    {
+      "id": "protocol.colon-tag-prefix",
+      "match": "prefix",
+      "canonical": "nimino:",
+      "legacy": ["buzz:"],
+      "fixtures": [
+        {
+          "input": "buzz:mention-snapshot",
+          "output": "nimino:mention-snapshot"
+        },
+        {
+          "input": "buzz:sent-from-thread",
+          "output": "nimino:sent-from-thread"
+        },
+        { "input": "buzz:custom-emoji", "output": "nimino:custom-emoji" }
+      ]
+    },
+    {
+      "id": "release.artifact-prefix",
+      "match": "prefix",
+      "canonical": "nimino-",
+      "legacy": ["buzz-"],
+      "fixtures": [
+        {
+          "input": "buzz-${sha}-${run_id}-arm64",
+          "output": "nimino-${sha}-${run_id}-arm64"
+        },
+        { "input": "buzz-macos-canary-${sha}", "output": "nimino-macos-canary-${sha}" }
+      ]
+    },
+    {
+      "id": "release.container-repository.agent",
+      "match": "oci-repository",
+      "canonical": "ghcr.io/asopitech-labs/nimino-agent",
+      "legacy": ["ghcr.io/block/buzz-sprig"],
+      "fixtures": [
+        {
+          "input": "ghcr.io/block/buzz-sprig",
+          "output": "ghcr.io/asopitech-labs/nimino-agent"
+        },
+        {
+          "input": "ghcr.io/block/buzz-sprig:sha-deadbee@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "output": "ghcr.io/asopitech-labs/nimino-agent:sha-deadbee@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ]
+    },
+    {
+      "id": "release.container-repository.relay",
+      "match": "oci-repository",
+      "canonical": "ghcr.io/asopitech-labs/nimino",
+      "legacy": ["ghcr.io/block/buzz"],
+      "fixtures": [
+        {
+          "input": "ghcr.io/block/buzz",
+          "output": "ghcr.io/asopitech-labs/nimino"
+        },
+        {
+          "input": "ghcr.io/block/buzz:main",
+          "output": "ghcr.io/asopitech-labs/nimino:main"
+        },
+        {
+          "input": "ghcr.io/block/buzz@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "output": "ghcr.io/asopitech-labs/nimino@sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      ]
+    },
+    {
+      "id": "release.desktop-artifact-prefix",
+      "match": "prefix",
+      "canonical": "Nimino",
+      "legacy": ["Buzz"],
+      "fixtures": [
+        { "input": "Buzz.app", "output": "Nimino.app" },
+        { "input": "Buzz.app.tar.gz", "output": "Nimino.app.tar.gz" },
+        {
+          "input": "Buzz_${VERSION}_aarch64.app.tar.gz",
+          "output": "Nimino_${VERSION}_aarch64.app.tar.gz"
+        },
+        {
+          "input": "Buzz_${VERSION}_aarch64-signed.dmg",
+          "output": "Nimino_${VERSION}_aarch64-signed.dmg"
+        }
+      ]
+    },
+    {
+      "id": "release.helm-chart.relay",
+      "match": "exact",
+      "canonical": "nimino",
+      "legacy": ["buzz"],
+      "fixtures": [{ "input": "buzz", "output": "nimino" }]
+    },
+    {
+      "id": "release.helm-chart-repository",
+      "match": "exact",
+      "canonical": "oci://ghcr.io/asopitech-labs/nimino/charts",
+      "legacy": ["oci://ghcr.io/block/buzz/charts"],
+      "fixtures": [
+        {
+          "input": "oci://ghcr.io/block/buzz/charts",
+          "output": "oci://ghcr.io/asopitech-labs/nimino/charts"
+        }
+      ]
+    },
+    {
+      "id": "release.rolling-tag",
+      "match": "exact",
+      "canonical": "nimino-desktop-latest",
+      "legacy": ["buzz-desktop-latest"],
+      "fixtures": [
+        { "input": "buzz-desktop-latest", "output": "nimino-desktop-latest" }
+      ]
+    },
+    {
+      "id": "repository.slug",
+      "match": "exact",
+      "canonical": "asopitech-labs/nimino",
+      "legacy": ["block/buzz", "asopitech-labs/buzz-nim"],
+      "fixtures": [
+        { "input": "block/buzz", "output": "asopitech-labs/nimino" },
+        {
+          "input": "asopitech-labs/buzz-nim",
+          "output": "asopitech-labs/nimino"
+        }
+      ]
+    },
+    {
+      "id": "storage.config-directory",
+      "match": "prefix",
+      "canonical": ".nimino",
+      "legacy": [".buzz"],
+      "fixtures": [
+        { "input": ".buzz", "output": ".nimino" },
+        { "input": ".buzz-dev", "output": ".nimino-dev" }
+      ]
+    },
+    {
+      "id": "storage.database",
+      "match": "exact",
+      "canonical": "nimino",
+      "legacy": ["buzz"],
+      "fixtures": [{ "input": "buzz", "output": "nimino" }]
+    },
+    {
+      "id": "storage.keyring-service",
+      "match": "prefix",
+      "canonical": "nimino-desktop",
+      "legacy": ["buzz-desktop"],
+      "fixtures": [
+        { "input": "buzz-desktop", "output": "nimino-desktop" },
+        { "input": "buzz-desktop-dev", "output": "nimino-desktop-dev" },
+        {
+          "input": "buzz-desktop-dev.example",
+          "output": "nimino-desktop-dev.example"
+        }
+      ]
+    },
+    {
+      "id": "storage.lock-prefix",
+      "match": "prefix",
+      "canonical": "nimino-keychain-",
+      "legacy": ["buzz-keychain-"],
+      "fixtures": [
+        {
+          "input": "buzz-keychain-",
+          "output": "nimino-keychain-"
+        }
+      ]
+    },
+    {
+      "id": "storage.object-bucket",
+      "match": "exact",
+      "canonical": "nimino-media",
+      "legacy": ["buzz-media"],
+      "fixtures": [{ "input": "buzz-media", "output": "nimino-media" }]
+    },
+    {
+      "id": "storage.preference-colon-prefix",
+      "match": "prefix",
+      "canonical": "nimino:",
+      "legacy": ["buzz:"],
+      "fixtures": [
+        { "input": "buzz:text-scale", "output": "nimino:text-scale" },
+        { "input": "buzz:last-runtime", "output": "nimino:last-runtime" }
+      ]
+    },
+    {
+      "id": "storage.preference-dot-prefix",
+      "match": "prefix",
+      "canonical": "nimino.",
+      "legacy": ["buzz."],
+      "fixtures": [
+        {
+          "input": "buzz.appearance.fontSize",
+          "output": "nimino.appearance.fontSize"
+        }
+      ]
+    },
+    {
+      "id": "storage.preference-hyphen-prefix",
+      "match": "prefix",
+      "canonical": "nimino-",
+      "legacy": ["buzz-"],
+      "fixtures": [
+        { "input": "buzz-theme", "output": "nimino-theme" },
+        { "input": "buzz-communities", "output": "nimino-communities" },
+        {
+          "input": "buzz-channel-mutes.v1",
+          "output": "nimino-channel-mutes.v1"
+        },
+        {
+          "input": "buzz-home-feed-done.v1",
+          "output": "nimino-home-feed-done.v1"
+        }
+      ]
+    },
+    {
+      "id": "url.deep-link-scheme",
+      "match": "exact",
+      "canonical": "nimino",
+      "legacy": ["buzz"],
+      "fixtures": [{ "input": "buzz", "output": "nimino" }]
+    },
+    {
+      "id": "url.media-scheme",
+      "match": "exact",
+      "canonical": "nimino-media",
+      "legacy": ["buzz-media"],
+      "fixtures": [{ "input": "buzz-media", "output": "nimino-media" }]
+    }
+  ],
+  "allowedExternalNames": [
+    {
+      "id": "alopex-chirps",
+      "owner": "alopex-db",
+      "names": ["Alopex Chirps", "alopex-chirps", "alopex_chirps"],
+      "occurrences": [
+        { "path": "Cargo.toml", "values": ["alopex-chirps"] },
+        { "path": "Cargo.lock", "values": ["alopex-chirps"] },
+        {
+          "path": "crates/nimino-chirps/**",
+          "values": ["Alopex Chirps", "alopex-chirps", "alopex_chirps"]
+        },
+        { "path": "contracts/chirps-v*.json", "values": ["alopex-chirps"] },
+        {
+          "path": "scripts/check-chirps-api-contract.mjs",
+          "values": ["alopex-chirps", "alopex_chirps"]
+        },
+        {
+          "path": "docs/development/nim-core.md",
+          "values": ["Alopex Chirps"]
+        },
+        {
+          "path": "docs/adr/nim-rust-boundary-v1.md",
+          "values": ["Alopex Chirps"]
+        }
+      ],
+      "reason": "Rust transport dependency and its narrow adapter contract"
+    }
+  ],
+  "allowedLegacyReferences": [
+    {
+      "id": "naming-contract-self-reference",
+      "category": "contract",
+      "occurrences": [
+        {
+          "path": "contracts/nimino-naming-v1.json",
+          "values": ["$generated-denylist"]
+        },
+        {
+          "path": "scripts/check-nimino-naming-contract.mjs",
+          "values": ["$generated-denylist"]
+        }
+      ],
+      "reason": "The deny contract must name what it rejects"
+    },
+    {
+      "id": "upstream-legal-attribution",
+      "category": "legal",
+      "occurrences": [],
+      "reason": "No current legal text requires a legacy-name exemption"
+    },
+    {
+      "id": "immutable-project-history",
+      "category": "history",
+      "occurrences": [
+        {
+          "path": "CHANGELOG.md",
+          "values": ["$generated-denylist"],
+          "boundary": {
+            "kind": "immutable-suffix",
+            "bytes": 312249,
+            "sha256": "e9d18565e5c4e8c1667ff1e4b41610022ea52293424facb84da015ae57068e85"
+          }
+        },
+        {
+          "path": "docs/adr/nim-rust-boundary-v1.md",
+          "values": ["$generated-denylist"],
+          "boundary": {
+            "kind": "immutable-prefix",
+            "bytes": 11642,
+            "sha256": "2d356712479624061a31dc4dc91243beb84086e0ff06dc3919af38182e043775"
+          }
+        }
+      ],
+      "reason": "Only hashed historical regions may retain their recorded name"
+    }
+  ]
+}

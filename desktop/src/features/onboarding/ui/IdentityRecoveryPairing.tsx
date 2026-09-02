@@ -177,7 +177,7 @@ export function IdentityRecoveryPairing({
           <div className="flex max-w-60 flex-col items-center gap-3 py-2 text-center text-foreground">
             <ShieldCheck className="h-10 w-10 text-primary" />
             <p className="text-sm font-medium">
-              Does this code match your phone?
+              Does this code match the sending Desktop?
             </p>
             <div className="rounded-xl border-2 border-primary/30 bg-primary/5 px-5 py-3">
               <p
@@ -188,7 +188,7 @@ export function IdentityRecoveryPairing({
               </p>
             </div>
             <p className="text-xs text-muted-foreground">
-              This gives this desktop permanent access to your Buzz identity.
+              This gives this desktop permanent access to your Nimino identity.
               Only continue if you trust it.
             </p>
             <div className="flex w-full flex-col gap-2">
@@ -232,7 +232,7 @@ export function IdentityRecoveryPairing({
             <LoaderCircle className="h-6 w-6 animate-spin text-muted-foreground" />
             <p className="text-sm text-muted-foreground">
               {step === "receiving"
-                ? "Receiving identity from mobile device..."
+                ? "Receiving identity from the sending Desktop..."
                 : "Starting pairing..."}
             </p>
           </div>
@@ -269,8 +269,8 @@ export function IdentityRecoveryPairing({
       ) : null}
       {step === "qr" || step === "loading" ? (
         <p className="max-w-[266px] text-sm leading-5 text-foreground/75">
-          On your phone, open Settings → Send identity to desktop. This code
-          expires shortly and works once.
+          On a signed-in Desktop you control, open Settings → Identity transfer
+          and paste this code. It expires shortly and works once.
         </p>
       ) : null}
     </div>

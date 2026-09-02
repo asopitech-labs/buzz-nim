@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.mcp-execution",
+  "version": 1,
+  "compatibilityMode": false,
+  "owner": "rust-adapter",
+  "crate": "crates/nimino-dev-mcp",
+  "configuration": {
+    "environment": "NIMINO_MCP_CAPABILITIES",
+    "separator": ",",
+    "unsetProfile": "developer-full",
+    "emptyProfile": "deny-all"
+  },
+  "capabilities": [
+    "process.exec",
+    "filesystem.read",
+    "filesystem.write",
+    "network.read"
+  ],
+  "tools": {
+    "shell": ["process.exec"],
+    "read_file": ["filesystem.read"],
+    "str_replace": ["filesystem.read", "filesystem.write"],
+    "view_image_file": ["filesystem.read"],
+    "view_image_url": ["network.read"],
+    "view_image_data_url": []
+  },
+  "limits": {
+    "commandBytes": 1000000,
+    "defaultTimeoutMs": 120000,
+    "maxTimeoutMs": 600000,
+    "captureBytes": 10485760,
+    "textResultBytes": 262144,
+    "imageSourceBytes": 20971520,
+    "imageResultBytes": 3145728,
+    "imageFetchTimeoutSeconds": 10
+  },
+  "cancellation": {
+    "killsProcessTree": true,
+    "reapsChild": true,
+    "bounded": true
+  },
+  "audit": {
+    "contract": "nimino.mcp-capability-audit/v1",
+    "transport": "structured-stderr",
+    "beforeSideEffect": true,
+    "outcomes": ["authorized", "denied"],
+    "fields": ["contract", "tool", "capability", "outcome", "scope"]
+  },
+  "compositionOwner": 42,
+  "cutoverOwner": 12
+}

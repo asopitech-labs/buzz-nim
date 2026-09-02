@@ -1,8 +1,8 @@
-.sprout-arc-spinner {
-  animation: sprout-arc-spinner-spin 500ms linear infinite;
+.nimino-arc-spinner {
+  animation: nimino-arc-spinner-spin 500ms linear infinite;
 }
 
-@keyframes buzz-qr-cell-reveal {
+@keyframes nimino-qr-cell-reveal {
   0% {
     opacity: 0;
     transform: scale(0);
@@ -49,47 +49,47 @@
   }
 }
 
-.buzz-qr-cell-reveal {
+.nimino-qr-cell-reveal {
   opacity: 0;
   transform-box: fill-box;
   transform-origin: center;
-  animation: buzz-qr-cell-reveal 58ms linear var(--buzz-qr-reveal-delay, 0ms)
-    forwards;
+  animation: nimino-qr-cell-reveal 58ms linear
+    var(--nimino-qr-reveal-delay, 0ms) forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .buzz-qr-cell-reveal {
+  .nimino-qr-cell-reveal {
     opacity: 1;
     transform: none;
     animation: none;
   }
 }
 
-@keyframes sprout-arc-spinner-spin {
+@keyframes nimino-arc-spinner-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-.buzz-wave-hand {
+.nimino-wave-hand {
   display: inline-block;
   transform-origin: 70% 70%;
   will-change: transform;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .buzz-wave-hover-trigger:hover .buzz-wave-hand {
-    animation: buzz-wave-hand 1200ms ease-in-out both;
+  .nimino-wave-hover-trigger:hover .nimino-wave-hand {
+    animation: nimino-wave-hand var(--motion-duration-state) ease-in-out both;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .buzz-wave-hover-trigger:hover .buzz-wave-hand {
+  .nimino-wave-hover-trigger:hover .nimino-wave-hand {
     animation: none;
   }
 }
 
-@keyframes buzz-wave-hand {
+@keyframes nimino-wave-hand {
   0%,
   100% {
     transform: rotate(0deg);
@@ -108,7 +108,7 @@
   }
 }
 
-.buzz-emoji-mart {
+.nimino-emoji-mart {
   align-items: stretch;
   display: flex;
   justify-content: stretch;
@@ -116,7 +116,7 @@
   width: 100%;
 }
 
-.buzz-emoji-mart > div {
+.nimino-emoji-mart > div {
   align-items: stretch;
   display: flex;
   height: 100%;
@@ -127,17 +127,17 @@
   width: 100%;
 }
 
-.buzz-emoji-mart em-emoji-picker {
+.nimino-emoji-mart em-emoji-picker {
   --border-radius: 12px;
   --category-icon-size: 24px;
   --color-border: transparent;
   --color-border-over: rgb(255 255 255 / 0.1);
   --font-family: inherit;
   --font-size: 14px;
-  --rgb-accent: var(--buzz-emoji-picker-rgb-color, 245, 247, 255);
-  --rgb-background: var(--buzz-emoji-picker-rgb-background, 54, 58, 79);
-  --rgb-color: var(--buzz-emoji-picker-rgb-color, 245, 247, 255);
-  --rgb-input: var(--buzz-emoji-picker-rgb-input, 47, 51, 68);
+  --rgb-accent: var(--nimino-emoji-picker-rgb-color, 245, 247, 255);
+  --rgb-background: var(--nimino-emoji-picker-rgb-background, 54, 58, 79);
+  --rgb-color: var(--nimino-emoji-picker-rgb-color, 245, 247, 255);
+  --rgb-input: var(--nimino-emoji-picker-rgb-input, 47, 51, 68);
   --shadow: none;
   height: 100%;
   max-height: 100%;
@@ -146,117 +146,53 @@
   width: 100%;
 }
 
-@keyframes buzz-avatar-squish {
+@keyframes nimino-avatar-squish {
   0% {
     transform: translate(
-        var(--buzz-avatar-emoji-offset-x, 0px),
-        var(--buzz-avatar-emoji-offset-y, 0px)
+        var(--nimino-avatar-emoji-offset-x, 0px),
+        var(--nimino-avatar-emoji-offset-y, 0px)
       )
       scale(1);
   }
 
   42% {
     transform: translate(
-        var(--buzz-avatar-emoji-offset-x, 0px),
-        var(--buzz-avatar-emoji-offset-y, 0px)
+        var(--nimino-avatar-emoji-offset-x, 0px),
+        var(--nimino-avatar-emoji-offset-y, 0px)
       )
       scaleX(0.96) scaleY(0.88);
   }
 
   100% {
     transform: translate(
-        var(--buzz-avatar-emoji-offset-x, 0px),
-        var(--buzz-avatar-emoji-offset-y, 0px)
+        var(--nimino-avatar-emoji-offset-x, 0px),
+        var(--nimino-avatar-emoji-offset-y, 0px)
       )
       scale(1);
   }
 }
 
-.buzz-avatar-emoji-glyph {
-  --buzz-avatar-emoji-offset-x: 1px;
-  --buzz-avatar-emoji-offset-y: 7px;
+.nimino-avatar-emoji-glyph {
+  --nimino-avatar-emoji-offset-x: 1px;
+  --nimino-avatar-emoji-offset-y: 7px;
   transform: translate(
-    var(--buzz-avatar-emoji-offset-x),
-    var(--buzz-avatar-emoji-offset-y)
+    var(--nimino-avatar-emoji-offset-x),
+    var(--nimino-avatar-emoji-offset-y)
   );
 }
 
-.buzz-avatar-squish {
-  animation: buzz-avatar-squish 200ms ease-out;
+.nimino-avatar-squish {
+  animation: nimino-avatar-squish 200ms ease-out;
   transform-origin: center;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .buzz-avatar-squish {
+  .nimino-avatar-squish {
     animation: none;
   }
 }
 
-.buzz-shimmer {
-  --buzz-shimmer-duration: 2600ms;
-  --buzz-shimmer-highlight: color-mix(
-    in srgb,
-    hsl(var(--background)) 60%,
-    hsl(var(--muted-foreground)) 40%
-  );
-  --buzz-shimmer-spread: 2rem;
-
-  color: hsl(var(--muted-foreground));
-  display: inline-block;
-  position: relative;
-}
-
-/*
- * The highlight lives on an aria-hidden overlay child that duplicates the
- * label text and animates ONLY opacity. The previous implementation animated
- * background-position under -webkit-background-clip: text, which WebKit
- * cannot run on the compositor: every animation frame forced a full document
- * style resolve + compositing-hierarchy walk, burning ~20% CPU at rest
- * whenever a large timeline was mounted with a working agent. Opacity is
- * compositor-accelerated: the layer paints once and the pulse runs outside
- * the web process's main thread. A real element (not ::after generated
- * content) is used so the duplicate text can be aria-hidden — pseudo-element
- * text is inconsistently exposed to screen readers and cannot be hidden.
- */
-.buzz-shimmer > .buzz-shimmer-overlay {
-  animation: buzz-shimmer var(--buzz-shimmer-duration) ease-in-out infinite;
-  background-clip: text;
-  background-image: linear-gradient(
-    90deg,
-    transparent calc(50% - var(--buzz-shimmer-spread)),
-    var(--buzz-shimmer-highlight) 50%,
-    transparent calc(50% + var(--buzz-shimmer-spread))
-  );
-  color: transparent;
-  inset: 0;
-  overflow: inherit;
-  padding: inherit;
-  position: absolute;
-  text-overflow: inherit;
-  white-space: inherit;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-@keyframes buzz-shimmer {
-  0%,
-  100% {
-    opacity: 0;
-  }
-
-  50% {
-    opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .buzz-shimmer > .buzz-shimmer-overlay {
-    animation: none;
-    display: none;
-  }
-}
-
-.buzz-poof-layer {
+.nimino-poof-layer {
   inset: 0;
   overflow: hidden;
   pointer-events: none;
@@ -264,22 +200,22 @@
   z-index: 2147483647;
 }
 
-.buzz-poof-burst {
+.nimino-poof-burst {
   contain: layout paint style;
-  height: var(--buzz-poof-size);
+  height: var(--nimino-poof-size);
   left: 0;
   position: absolute;
   top: 0;
   transform: translate3d(
-    calc(var(--buzz-poof-x) - 50%),
-    calc(var(--buzz-poof-y) - 50%),
+    calc(var(--nimino-poof-x) - 50%),
+    calc(var(--nimino-poof-y) - 50%),
     0
   );
-  width: var(--buzz-poof-size);
+  width: var(--nimino-poof-size);
 }
 
-.buzz-poof-frame {
-  animation: buzz-poof-frame 400ms linear both;
+.nimino-poof-frame {
+  animation: nimino-poof-frame var(--motion-duration-state) linear both;
   height: 100%;
   inset: 0;
   object-fit: contain;
@@ -290,27 +226,27 @@
   width: 100%;
 }
 
-.buzz-poof-frame-1 {
-  animation-name: buzz-poof-frame-1;
+.nimino-poof-frame-1 {
+  animation-name: nimino-poof-frame-1;
 }
 
-.buzz-poof-frame-2 {
-  animation-name: buzz-poof-frame-2;
+.nimino-poof-frame-2 {
+  animation-name: nimino-poof-frame-2;
 }
 
-.buzz-poof-frame-3 {
-  animation-name: buzz-poof-frame-3;
+.nimino-poof-frame-3 {
+  animation-name: nimino-poof-frame-3;
 }
 
-.buzz-poof-frame-4 {
-  animation-name: buzz-poof-frame-4;
+.nimino-poof-frame-4 {
+  animation-name: nimino-poof-frame-4;
 }
 
-.buzz-poof-frame-5 {
-  animation-name: buzz-poof-frame-5;
+.nimino-poof-frame-5 {
+  animation-name: nimino-poof-frame-5;
 }
 
-@keyframes buzz-poof-frame-1 {
+@keyframes nimino-poof-frame-1 {
   0%,
   19.99% {
     opacity: 1;
@@ -324,7 +260,7 @@
   }
 }
 
-@keyframes buzz-poof-frame-2 {
+@keyframes nimino-poof-frame-2 {
   0%,
   19.99% {
     opacity: 0;
@@ -343,7 +279,7 @@
   }
 }
 
-@keyframes buzz-poof-frame-3 {
+@keyframes nimino-poof-frame-3 {
   0%,
   39.99% {
     opacity: 0;
@@ -362,7 +298,7 @@
   }
 }
 
-@keyframes buzz-poof-frame-4 {
+@keyframes nimino-poof-frame-4 {
   0%,
   59.99% {
     opacity: 0;
@@ -381,7 +317,7 @@
   }
 }
 
-@keyframes buzz-poof-frame-5 {
+@keyframes nimino-poof-frame-5 {
   0%,
   79.99% {
     opacity: 0;
@@ -400,16 +336,16 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .buzz-poof-frame {
-    animation: buzz-poof-frame-reduced 180ms ease-out both;
+  .nimino-poof-frame {
+    animation: nimino-poof-frame-reduced 180ms ease-out both;
   }
 
-  .buzz-poof-frame:not(.buzz-poof-frame-3) {
+  .nimino-poof-frame:not(.nimino-poof-frame-3) {
     display: none;
   }
 }
 
-@keyframes buzz-poof-frame-reduced {
+@keyframes nimino-poof-frame-reduced {
   0% {
     opacity: 0.9;
   }
@@ -419,7 +355,7 @@
   }
 }
 
-.buzz-avatar-hue-scrubber {
+.nimino-avatar-hue-scrubber {
   background: linear-gradient(
     90deg,
     #ff0000 0%,
@@ -436,7 +372,7 @@
   -webkit-user-select: none;
 }
 
-.buzz-animated-count {
+.nimino-animated-count {
   display: inline-block;
   font-kerning: none;
   font-variant-numeric: tabular-nums;
@@ -444,16 +380,16 @@
   white-space: nowrap;
 }
 
-.buzz-animated-count__motion {
+.nimino-animated-count__motion {
   display: inline-flex;
   line-height: 1;
 }
 
-.buzz-animated-count__static {
+.nimino-animated-count__static {
   display: none;
 }
 
-.buzz-sidebar-action-card--success {
+.nimino-sidebar-action-card--success {
   background-color: color-mix(
     in srgb,
     var(--status-added) 12%,
@@ -467,7 +403,7 @@
   color: hsl(var(--foreground));
 }
 
-.buzz-sidebar-action-card--success:hover {
+.nimino-sidebar-action-card--success:hover {
   background-color: color-mix(
     in srgb,
     var(--status-added) 16%,
@@ -475,7 +411,7 @@
   );
 }
 
-.dark .buzz-sidebar-action-card--success {
+.dark .nimino-sidebar-action-card--success {
   background-color: color-mix(
     in srgb,
     var(--status-added) 15%,
@@ -488,7 +424,7 @@
   );
 }
 
-.dark .buzz-sidebar-action-card--success:hover {
+.dark .nimino-sidebar-action-card--success:hover {
   background-color: color-mix(
     in srgb,
     var(--status-added) 19%,
@@ -496,70 +432,70 @@
   );
 }
 
-.buzz-sidebar-action-card__success-icon {
+.nimino-sidebar-action-card__success-icon {
   color: var(--status-added);
 }
 
-.buzz-sidebar-action-description {
-  --buzz-sidebar-action-description-line-height: 1.375em;
+.nimino-sidebar-action-description {
+  --nimino-sidebar-action-description-line-height: 1.375em;
   display: inline-block;
-  line-height: var(--buzz-sidebar-action-description-line-height);
+  line-height: var(--nimino-sidebar-action-description-line-height);
   max-width: 100%;
   overflow-wrap: break-word;
 }
 
-.buzz-sidebar-action-description__motion {
+.nimino-sidebar-action-description__motion {
   display: block;
-  height: var(--buzz-sidebar-action-description-line-height);
+  height: var(--nimino-sidebar-action-description-line-height);
   overflow: hidden;
 }
 
-.buzz-sidebar-action-description__reel {
-  animation: buzz-sidebar-action-description-roll-up 260ms
-    cubic-bezier(0.2, 0.8, 0.2, 1) both;
+.nimino-sidebar-action-description__reel {
+  animation: nimino-sidebar-action-description-roll-up
+    var(--motion-duration-state) cubic-bezier(0.2, 0.8, 0.2, 1) both;
   display: flex;
   flex-direction: column;
-  line-height: var(--buzz-sidebar-action-description-line-height);
+  line-height: var(--nimino-sidebar-action-description-line-height);
   will-change: transform;
 }
 
 /* The roll-up reel animates between two fixed one-line slots, so text is
    clipped to a single line only while the transition plays; the settled
    state above wraps freely. */
-.buzz-sidebar-action-description__reel > span {
+.nimino-sidebar-action-description__reel > span {
   display: block;
-  height: var(--buzz-sidebar-action-description-line-height);
-  line-height: var(--buzz-sidebar-action-description-line-height);
+  height: var(--nimino-sidebar-action-description-line-height);
+  line-height: var(--nimino-sidebar-action-description-line-height);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-@keyframes buzz-sidebar-action-description-roll-up {
+@keyframes nimino-sidebar-action-description-roll-up {
   from {
     transform: translateY(0);
   }
 
   to {
     transform: translateY(
-      calc(-1 * var(--buzz-sidebar-action-description-line-height))
+      calc(-1 * var(--nimino-sidebar-action-description-line-height))
     );
   }
 }
 
-.buzz-animated-count__slot {
+.nimino-animated-count__slot {
   display: inline-block;
   height: 1em;
   line-height: 1;
 }
 
-.buzz-animated-count__slot--digit {
+.nimino-animated-count__slot--digit {
   overflow: hidden;
   text-align: center;
   width: 1ch;
 }
 
-.buzz-animated-count__reel {
+.nimino-animated-count__reel {
   display: flex;
   flex-direction: column;
   height: 2em;
@@ -567,38 +503,39 @@
   will-change: transform;
 }
 
-.buzz-animated-count__reel > span {
+.nimino-animated-count__reel > span {
   display: block;
   height: 1em;
   line-height: 1;
 }
 
-.buzz-animated-count__slot[data-direction="up"] .buzz-animated-count__reel {
-  animation: buzz-animated-count-roll-up 260ms cubic-bezier(0.2, 0.8, 0.2, 1)
-    both;
+.nimino-animated-count__slot[data-direction="up"] .nimino-animated-count__reel {
+  animation: nimino-animated-count-roll-up var(--motion-duration-state)
+    cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-.buzz-animated-count__slot[data-direction="down"] .buzz-animated-count__reel {
-  animation: buzz-animated-count-roll-down 260ms cubic-bezier(0.2, 0.8, 0.2, 1)
-    both;
+.nimino-animated-count__slot[data-direction="down"]
+  .nimino-animated-count__reel {
+  animation: nimino-animated-count-roll-down var(--motion-duration-state)
+    cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-.buzz-animated-count__symbol {
+.nimino-animated-count__symbol {
   display: inline-block;
   line-height: 1;
 }
 
-.buzz-animated-count__symbol[data-direction="up"] {
-  animation: buzz-animated-count-symbol-up 220ms cubic-bezier(0.2, 0.8, 0.2, 1)
-    both;
-}
-
-.buzz-animated-count__symbol[data-direction="down"] {
-  animation: buzz-animated-count-symbol-down 220ms
+.nimino-animated-count__symbol[data-direction="up"] {
+  animation: nimino-animated-count-symbol-up var(--motion-duration-state)
     cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
-@keyframes buzz-animated-count-roll-up {
+.nimino-animated-count__symbol[data-direction="down"] {
+  animation: nimino-animated-count-symbol-down var(--motion-duration-state)
+    cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes nimino-animated-count-roll-up {
   from {
     transform: translateY(0);
   }
@@ -608,7 +545,7 @@
   }
 }
 
-@keyframes buzz-animated-count-roll-down {
+@keyframes nimino-animated-count-roll-down {
   from {
     transform: translateY(-1em);
   }
@@ -618,7 +555,7 @@
   }
 }
 
-@keyframes buzz-animated-count-symbol-up {
+@keyframes nimino-animated-count-symbol-up {
   from {
     opacity: 0;
     transform: translateY(0.25em);
@@ -630,7 +567,7 @@
   }
 }
 
-@keyframes buzz-animated-count-symbol-down {
+@keyframes nimino-animated-count-symbol-down {
   from {
     opacity: 0;
     transform: translateY(-0.25em);
@@ -643,11 +580,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .buzz-animated-count__motion {
+  .nimino-animated-count__motion {
     display: none;
   }
 
-  .buzz-animated-count__static {
+  .nimino-animated-count__static {
     display: inline;
   }
 }
@@ -655,77 +592,26 @@
 /* ── Tiptap rich-text composer ──────────────────────────────────────── */
 
 /* ── Setup / cold-boot loading screen ───────────────────────────────────
-   Theme-adaptive grainient background for the "setting up your community"
-   gate. Restored from pre-#1570; the animated Buzz mark is the hero (see
-   AppLoadingGate in app/App.tsx). */
+   Static theme-adaptive background for setup status surfaces. */
 
-@property --buzz-grainient-x-0 {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 85%;
-}
-
-@property --buzz-grainient-y-0 {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 80%;
-}
-
-@property --buzz-grainient-x-1 {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 60%;
-}
-
-@property --buzz-grainient-y-1 {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 24%;
-}
-
-@property --buzz-grainient-x-2 {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 13%;
-}
-
-@property --buzz-grainient-y-2 {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 82%;
-}
-
-@property --buzz-grainient-x-3 {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 24%;
-}
-
-@property --buzz-grainient-y-3 {
-  syntax: "<percentage>";
-  inherits: false;
-  initial-value: 7%;
-}
-
-.buzz-setup-loading-shell {
-  --buzz-grainient-alpha-strong: 0.46;
-  --buzz-grainient-alpha-medium: 0.34;
-  --buzz-grainient-alpha-soft: 0.24;
-  --buzz-grainient-color-0: hsl(
+.nimino-setup-loading-shell {
+  --nimino-grainient-alpha-strong: 0.46;
+  --nimino-grainient-alpha-medium: 0.34;
+  --nimino-grainient-color-0: hsl(
     var(--chart-5) /
-    var(--buzz-grainient-alpha-strong)
+    var(--nimino-grainient-alpha-strong)
   );
-  --buzz-grainient-color-1: hsl(
+  --nimino-grainient-color-1: hsl(
     var(--chart-3) /
-    var(--buzz-grainient-alpha-strong)
+    var(--nimino-grainient-alpha-strong)
   );
-  --buzz-grainient-color-2: hsl(
+  --nimino-grainient-color-2: hsl(
     var(--primary) /
-    var(--buzz-grainient-alpha-medium)
+    var(--nimino-grainient-alpha-medium)
   );
-  --buzz-grainient-color-3: hsl(
+  --nimino-grainient-color-3: hsl(
     var(--chart-2) /
-    var(--buzz-grainient-alpha-strong)
+    var(--nimino-grainient-alpha-strong)
   );
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
@@ -733,13 +619,12 @@
   position: relative;
 }
 
-.dark .buzz-setup-loading-shell {
-  --buzz-grainient-alpha-strong: 0.68;
-  --buzz-grainient-alpha-medium: 0.5;
-  --buzz-grainient-alpha-soft: 0.34;
+.dark .nimino-setup-loading-shell {
+  --nimino-grainient-alpha-strong: 0.68;
+  --nimino-grainient-alpha-medium: 0.5;
 }
 
-.buzz-setup-grainient {
+.nimino-setup-grainient {
   inset: 0;
   overflow: hidden;
   pointer-events: none;
@@ -747,60 +632,58 @@
   z-index: 0;
 }
 
-.buzz-setup-grainient__wash,
-.buzz-setup-grainient__veil {
+.nimino-setup-grainient__wash,
+.nimino-setup-grainient__veil {
   inset: 0;
   position: absolute;
 }
 
-.buzz-setup-grainient__wash {
-  --buzz-grainient-s-start-0: 9%;
-  --buzz-grainient-s-end-0: 55%;
-  --buzz-grainient-s-start-1: 5%;
-  --buzz-grainient-s-end-1: 72%;
-  --buzz-grainient-s-start-2: 5%;
-  --buzz-grainient-s-end-2: 52%;
-  --buzz-grainient-s-start-3: 13%;
-  --buzz-grainient-s-end-3: 68%;
-  --buzz-grainient-x-0: 85%;
-  --buzz-grainient-y-0: 80%;
-  --buzz-grainient-x-1: 60%;
-  --buzz-grainient-y-1: 24%;
-  --buzz-grainient-x-2: 13%;
-  --buzz-grainient-y-2: 82%;
-  --buzz-grainient-x-3: 24%;
-  --buzz-grainient-y-3: 7%;
-  animation: buzz-grainient-orbit 10s linear infinite alternate;
+.nimino-setup-grainient__wash {
+  --nimino-grainient-s-start-0: 9%;
+  --nimino-grainient-s-end-0: 55%;
+  --nimino-grainient-s-start-1: 5%;
+  --nimino-grainient-s-end-1: 72%;
+  --nimino-grainient-s-start-2: 5%;
+  --nimino-grainient-s-end-2: 52%;
+  --nimino-grainient-s-start-3: 13%;
+  --nimino-grainient-s-end-3: 68%;
+  --nimino-grainient-x-0: 85%;
+  --nimino-grainient-y-0: 80%;
+  --nimino-grainient-x-1: 60%;
+  --nimino-grainient-y-1: 24%;
+  --nimino-grainient-x-2: 13%;
+  --nimino-grainient-y-2: 82%;
+  --nimino-grainient-x-3: 24%;
+  --nimino-grainient-y-3: 7%;
   background-color: hsl(var(--background));
   background-image:
     radial-gradient(
-      circle at var(--buzz-grainient-x-0) var(--buzz-grainient-y-0),
-      var(--buzz-grainient-color-0) var(--buzz-grainient-s-start-0),
-      transparent var(--buzz-grainient-s-end-0)
+      circle at var(--nimino-grainient-x-0) var(--nimino-grainient-y-0),
+      var(--nimino-grainient-color-0) var(--nimino-grainient-s-start-0),
+      transparent var(--nimino-grainient-s-end-0)
     ),
     radial-gradient(
-      circle at var(--buzz-grainient-x-1) var(--buzz-grainient-y-1),
-      var(--buzz-grainient-color-1) var(--buzz-grainient-s-start-1),
-      transparent var(--buzz-grainient-s-end-1)
+      circle at var(--nimino-grainient-x-1) var(--nimino-grainient-y-1),
+      var(--nimino-grainient-color-1) var(--nimino-grainient-s-start-1),
+      transparent var(--nimino-grainient-s-end-1)
     ),
     radial-gradient(
-      circle at var(--buzz-grainient-x-2) var(--buzz-grainient-y-2),
-      var(--buzz-grainient-color-2) var(--buzz-grainient-s-start-2),
-      transparent var(--buzz-grainient-s-end-2)
+      circle at var(--nimino-grainient-x-2) var(--nimino-grainient-y-2),
+      var(--nimino-grainient-color-2) var(--nimino-grainient-s-start-2),
+      transparent var(--nimino-grainient-s-end-2)
     ),
     radial-gradient(
-      circle at var(--buzz-grainient-x-3) var(--buzz-grainient-y-3),
-      var(--buzz-grainient-color-3) var(--buzz-grainient-s-start-3),
-      transparent var(--buzz-grainient-s-end-3)
+      circle at var(--nimino-grainient-x-3) var(--nimino-grainient-y-3),
+      var(--nimino-grainient-color-3) var(--nimino-grainient-s-start-3),
+      transparent var(--nimino-grainient-s-end-3)
     );
   background-blend-mode: normal, normal, normal, normal;
   contain: paint;
   filter: saturate(1.08);
   transform: translateZ(0);
-  will-change: transform, opacity;
 }
 
-.buzz-setup-grainient__veil {
+.nimino-setup-grainient__veil {
   background:
     radial-gradient(
       ellipse 74% 54% at 50% 52%,
@@ -813,120 +696,4 @@
       hsl(var(--background) / 0.04),
       hsl(var(--background) / 0.12)
     );
-}
-
-@keyframes buzz-grainient-orbit {
-  0% {
-    --buzz-grainient-x-0: 85%;
-    --buzz-grainient-y-0: 80%;
-    --buzz-grainient-x-1: 60%;
-    --buzz-grainient-y-1: 24%;
-    --buzz-grainient-x-2: 13%;
-    --buzz-grainient-y-2: 82%;
-    --buzz-grainient-x-3: 24%;
-    --buzz-grainient-y-3: 7%;
-  }
-
-  100% {
-    --buzz-grainient-x-0: 31%;
-    --buzz-grainient-y-0: 94%;
-    --buzz-grainient-x-1: 2%;
-    --buzz-grainient-y-1: 25%;
-    --buzz-grainient-x-2: 98%;
-    --buzz-grainient-y-2: 20%;
-    --buzz-grainient-x-3: 95%;
-    --buzz-grainient-y-3: 92%;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .buzz-setup-grainient__wash {
-    animation: none;
-  }
-}
-
-/* Buzz bee wing-flap (ported from the Buzz website's BeeField, tuned for a
-   single hero bee). The two wing lobes beat continuously — a fast in/out scale
-   so the bee reads as actively flapping on the loading gate rather than resting
-   most of the cycle (the website staggers many bees, so it could afford long
-   rests; one bee cannot).
-
-   The animated elements are HTML-level <svg> wings (see FlappingBee.tsx), not
-   SVG children: WebKit paints SVG children on the main thread, so their
-   animations freeze while boot work hogs the thread — exactly when the loading
-   gate is visible. HTML-level transforms run on the compositor and keep
-   flapping. Translation is in percentages of the wing's own 183.4-unit box
-   (30/183.4 = 16.3577%) so the beat is identical at any rendered size.
-
-   The loading gate can be short-lived on a warm refresh, so the flap starts
-   mid-stroke (negative animation-delay, quarter beat in) — the bee is never
-   caught frozen at the rest pose on first paint, and a one-frame flash shows
-   wings visibly mid-beat rather than at the squished full-tuck extreme. The
-   optional --flap-delay custom property can still stagger multiple bees. */
-.bee-sprite .bee-wing {
-  animation-delay: var(--flap-delay, -0.07s);
-  animation-duration: 0.28s;
-  animation-iteration-count: infinite;
-  animation-timing-function: ease-in-out;
-  will-change: transform;
-}
-
-.bee-sprite .bee-wing-left {
-  animation-name: bee-wing-left-flap;
-}
-
-.bee-sprite .bee-wing-right {
-  animation-name: bee-wing-right-flap;
-}
-
-/* Static cutout masks over the wing layers. In the single-SVG mark, the slot
-   cutouts punch through body AND wings (the wings tuck behind the body far
-   enough to sit under the slots' left ends). The wing layers reproduce those
-   holes with a static CSS mask on the non-animated wrapper, so the holes stay
-   fixed while the wing beats beneath them — matching the masked single-SVG
-   rendering. Rect coordinates are the mark's slot cutouts translated into each
-   wing's local 183.4x183.4 box (left wing box starts at x=0, y=62.8; right
-   wing box at x=282.6, y=62.8). The eye cutouts never intersect the wing
-   circles, so they are omitted. */
-.bee-wing-layer {
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-size: 100% 100%;
-  mask-size: 100% 100%;
-}
-
-.bee-wing-layer-left {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 183.4 183.4'%3E%3Cpath fill-rule='evenodd' d='M0,0H183.4V183.4H0ZM171.3,94.4H298.2A5,5 0 0 1 303.2,99.4V127.7A5,5 0 0 1 298.2,132.7H171.3A5,5 0 0 1 166.3,127.7V99.4A5,5 0 0 1 171.3,94.4ZM171.9,172.3H298.1A5,5 0 0 1 303.1,177.3V204.9A5,5 0 0 1 298.1,209.9H171.9A5,5 0 0 1 166.9,204.9V177.3A5,5 0 0 1 171.9,172.3Z'/%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 183.4 183.4'%3E%3Cpath fill-rule='evenodd' d='M0,0H183.4V183.4H0ZM171.3,94.4H298.2A5,5 0 0 1 303.2,99.4V127.7A5,5 0 0 1 298.2,132.7H171.3A5,5 0 0 1 166.3,127.7V99.4A5,5 0 0 1 171.3,94.4ZM171.9,172.3H298.1A5,5 0 0 1 303.1,177.3V204.9A5,5 0 0 1 298.1,209.9H171.9A5,5 0 0 1 166.9,204.9V177.3A5,5 0 0 1 171.9,172.3Z'/%3E%3C/svg%3E");
-}
-
-.bee-wing-layer-right {
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 183.4 183.4'%3E%3Cpath fill-rule='evenodd' d='M0,0H183.4V183.4H0ZM-111.3,94.4H15.6A5,5 0 0 1 20.6,99.4V127.7A5,5 0 0 1 15.6,132.7H-111.3A5,5 0 0 1 -116.3,127.7V99.4A5,5 0 0 1 -111.3,94.4ZM-110.7,172.3H15.5A5,5 0 0 1 20.5,177.3V204.9A5,5 0 0 1 15.5,209.9H-110.7A5,5 0 0 1 -115.7,204.9V177.3A5,5 0 0 1 -110.7,172.3Z'/%3E%3C/svg%3E");
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 183.4 183.4'%3E%3Cpath fill-rule='evenodd' d='M0,0H183.4V183.4H0ZM-111.3,94.4H15.6A5,5 0 0 1 20.6,99.4V127.7A5,5 0 0 1 15.6,132.7H-111.3A5,5 0 0 1 -116.3,127.7V99.4A5,5 0 0 1 -111.3,94.4ZM-110.7,172.3H15.5A5,5 0 0 1 20.5,177.3V204.9A5,5 0 0 1 15.5,209.9H-110.7A5,5 0 0 1 -115.7,204.9V177.3A5,5 0 0 1 -110.7,172.3Z'/%3E%3C/svg%3E");
-}
-
-@keyframes bee-wing-left-flap {
-  0%,
-  100% {
-    transform: translateX(0) scaleX(1);
-  }
-  50% {
-    transform: translateX(16.3577%) scaleX(0.62);
-  }
-}
-
-@keyframes bee-wing-right-flap {
-  0%,
-  100% {
-    transform: translateX(0) scaleX(1);
-  }
-  50% {
-    transform: translateX(-16.3577%) scaleX(0.62);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .bee-sprite .bee-wing {
-    animation: none;
-  }
 }

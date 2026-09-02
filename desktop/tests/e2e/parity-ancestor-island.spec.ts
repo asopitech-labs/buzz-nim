@@ -28,10 +28,10 @@ import { ancestorIsland, seedScenario } from "../helpers/seedRelay";
 // entirely — `gap` rows reached === 0); GREEN on the windowed read model, whose
 // relay-owned cursor cannot be moved by an out-of-band ancestor merge.
 
-const RELAY_HTTP = process.env.BUZZ_E2E_RELAY_URL ?? "http://localhost:3000";
+const RELAY_HTTP = process.env.NIMINO_E2E_RELAY_URL ?? "http://localhost:3000";
 
-// uuid5(NAMESPACE_DNS, "buzz.channel.general") — the seeded `general` channel.
-const GENERAL_CHANNEL_ID = "9f28288a-d724-587a-9709-92dc7f967110";
+// uuid5(NAMESPACE_DNS, "nimino.channel.general") — the seeded `general` channel.
+const GENERAL_CHANNEL_ID = "45a42f38-87ba-5146-b24d-0d24f4f57ea6";
 
 // >60 newest rows so the cold window (CHANNEL_HISTORY_LIMIT=60) does NOT reach
 // the gap; the gap sits below the frontier, the old root below the gap.

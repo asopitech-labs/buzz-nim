@@ -132,7 +132,7 @@ function ActionTile({
         className="flex items-center justify-center"
         transition={{
           delay: index * 0.11,
-          duration: 0.48,
+          duration: 0.18,
           ease: "easeOut",
         }}
       >

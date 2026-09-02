@@ -34,7 +34,7 @@ import {
 } from "@/features/projects/projectTaskCategories";
 import { useIdentityQuery } from "@/shared/api/hooks";
 import type { ChannelMember } from "@/shared/api/types";
-import { BuzzLoadingState } from "@/shared/ui/BuzzLoadingState";
+import { NiminoLoadingState } from "@/shared/ui/NiminoLoadingState";
 import { normalizePubkey } from "@/shared/lib/pubkey";
 import { IssueAssigneeFacepile, IssueAssigneesRow } from "./IssueAssigneesRow";
 import { DiscussedInChannels } from "./DiscussionChannels";
@@ -430,7 +430,7 @@ export function ProjectIssuesPanel({
     issues.find((issue) => issue.id === selectedIssueId) ?? null;
 
   if (issuesQuery.isLoading) {
-    return <BuzzLoadingState label="Loading tasks" />;
+    return <NiminoLoadingState label="Loading tasks" />;
   }
 
   if (issues.length === 0) {

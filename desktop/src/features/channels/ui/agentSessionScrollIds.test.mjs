@@ -7,16 +7,8 @@
  *     via useStableArrayShallow.
  *  4. Mode-toggle reset-key disjointness.
  *
- * Corrective action 3 (ordered DOM parity) — NAMED RESIDUAL:
- *  AgentSessionTranscriptList cannot render under node:test — the component
- *  tree transitively imports a .css file (BuzzLogoAnimation.tsx →
- *  buzz-logo-animation.css) and the test-loader has no CSS stub. The
- *  underlying invariant (outer-derived ids = inner data-message-id) is
- *  structurally guaranteed by both sides calling the same exported
- *  getDisplayBlockKey, but a full-component render test would additionally
- *  catch a block being filtered or the attribute being dropped. That
- *  coverage requires a CSS-stub addition to the test-loader (outside this
- *  PR's scope). See D1 in Paul's verification at event 8dfadd5f.
+ * Corrective action 3 (ordered DOM parity) is structurally guaranteed by both
+ * sides calling the same exported getDisplayBlockKey helper.
  *
  * Hook-level zero-write assertions (corrective action 2) and mode-toggle
  * re-pin behavior (corrective action 4) live in
@@ -425,13 +417,8 @@ test("stabilization chain: production helper → useStableArrayShallow → same 
 
 // ── Corrective action 3: ordered DOM parity — structural guarantee ──────────
 //
-// AgentSessionTranscriptList cannot render under node:test (CSS import blocker:
-// BuzzLogoAnimation.tsx → buzz-logo-animation.css). The test below verifies the
-// structural guarantee: both sides (outer derivation + inner render) call the
-// SAME getDisplayBlockKey function, and the outer uses the SAME
-// buildTranscriptDisplayBlocks output. This cannot catch a block being filtered
-// or the attribute being dropped by the component, but it does catch key-function
-// drift. Full-component coverage requires a CSS-stub in the test-loader.
+// Both sides (outer derivation + inner render) call the same key helper and use
+// the same buildTranscriptDisplayBlocks output.
 
 test("structural parity: getDisplayBlockKey output is ordered and deterministic across reorder", () => {
   const ts = "2026-07-08T10:00:00.000Z";

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.agent-bundle",
+  "releaseSetAuthority": "nimino.release-set",
+  "compatibilityAliases": false,
+  "components": [
+    { "role": "cli", "artifactId": "cli", "installName": "nimino" },
+    { "role": "acp", "artifactId": "acp", "installName": "nimino-acp" },
+    {
+      "role": "agent",
+      "artifactId": "agent",
+      "installName": "nimino-agent"
+    },
+    {
+      "role": "mcp",
+      "artifactId": "mcp",
+      "installName": "nimino-dev-mcp"
+    }
+  ],
+  "legacyAllInOne": "forbidden",
+  "physicalDeletionOwner": 66
+}

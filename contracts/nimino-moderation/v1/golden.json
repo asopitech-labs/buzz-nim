@@ -1,0 +1,464 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "name": "queue-tenant-scoped-event-report",
+      "invariant": "Moderation.Report.Queue",
+      "input": { "decision": "report", "request": {
+        "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "targetCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "targetExists": true, "reporterIsTarget": false, "duplicate": false,
+        "targetKind": "event", "reportType": "spam"
+      } },
+      "expected": { "decision": "report", "effect": "queue_report", "authority": "reporter", "auditAction": "none", "error": "none" }
+    },
+    {
+      "name": "cross-community-blob-report-fails-closed",
+      "invariant": "Moderation.Report.TenantIsolation",
+      "input": { "decision": "report", "request": {
+        "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "targetCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0002",
+        "targetExists": true, "reporterIsTarget": false, "duplicate": false,
+        "targetKind": "blob", "reportType": "malware"
+      } },
+      "expected": { "decision": "report", "effect": "reject", "authority": "none", "auditAction": "none", "error": "tenant_mismatch" }
+    },
+    {
+      "name": "self-pubkey-report-fails-closed",
+      "invariant": "Moderation.Report.SelfTarget",
+      "input": { "decision": "report", "request": {
+        "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "targetCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "targetExists": true, "reporterIsTarget": true, "duplicate": false,
+        "targetKind": "pubkey", "reportType": "impersonation"
+      } },
+      "expected": { "decision": "report", "effect": "reject", "authority": "none", "auditAction": "none", "error": "self_target" }
+    },
+    {
+      "name": "duplicate-report-fails-closed",
+      "invariant": "Moderation.Report.Duplicate",
+      "input": { "decision": "report", "request": {
+        "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "targetCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "targetExists": true, "reporterIsTarget": false, "duplicate": true,
+        "targetKind": "event", "reportType": "other"
+      } },
+      "expected": { "decision": "report", "effect": "reject", "authority": "none", "auditAction": "none", "error": "duplicate" }
+    },
+
+    {
+      "name": "owner-applies-permanent-ban",
+      "invariant": "Moderation.Restriction.Ban",
+      "input": { "decision": "restriction", "request": {
+        "command": "ban", "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "targetRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRestrictionCommunity": null, "targetRestrictionCommunity": null,
+        "actorRole": "owner", "targetRole": "member",
+        "actorRestrictionExists": false, "actorBanSet": false, "actorBanExpiresAt": null,
+        "targetRestrictionExists": false, "targetBanSet": false,
+        "targetBanExpiresAt": null, "targetMutedUntil": null,
+        "actorIsTarget": false, "createdAtSeconds": 1800000000,
+        "nowSeconds": 1800000000, "requestedExpiresAt": null
+      } },
+      "expected": { "decision": "restriction", "effect": "apply_ban", "authority": "community_owner", "auditAction": "ban", "error": "none" }
+    },
+    {
+      "name": "admin-cannot-ban-owner",
+      "invariant": "Moderation.Authority.ProtectedTarget",
+      "input": { "decision": "restriction", "request": {
+        "command": "ban", "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "targetRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRestrictionCommunity": null, "targetRestrictionCommunity": null,
+        "actorRole": "admin", "targetRole": "owner",
+        "actorRestrictionExists": false, "actorBanSet": false, "actorBanExpiresAt": null,
+        "targetRestrictionExists": false, "targetBanSet": false,
+        "targetBanExpiresAt": null, "targetMutedUntil": null,
+        "actorIsTarget": false, "createdAtSeconds": 1800000000,
+        "nowSeconds": 1800000000, "requestedExpiresAt": null
+      } },
+      "expected": { "decision": "restriction", "effect": "reject", "authority": "none", "auditAction": "none", "error": "protected_target" }
+    },
+    {
+      "name": "member-cannot-ban",
+      "invariant": "Moderation.Authority.Role",
+      "input": { "decision": "restriction", "request": {
+        "command": "ban", "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "targetRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRestrictionCommunity": null, "targetRestrictionCommunity": null,
+        "actorRole": "member", "targetRole": "member",
+        "actorRestrictionExists": false, "actorBanSet": false, "actorBanExpiresAt": null,
+        "targetRestrictionExists": false, "targetBanSet": false,
+        "targetBanExpiresAt": null, "targetMutedUntil": null,
+        "actorIsTarget": false, "createdAtSeconds": 1800000000,
+        "nowSeconds": 1800000000, "requestedExpiresAt": null
+      } },
+      "expected": { "decision": "restriction", "effect": "reject", "authority": "none", "auditAction": "none", "error": "not_authorized" }
+    },
+    {
+      "name": "self-ban-fails-closed",
+      "invariant": "Moderation.Restriction.SelfTarget",
+      "input": { "decision": "restriction", "request": {
+        "command": "ban", "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "targetRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRestrictionCommunity": null, "targetRestrictionCommunity": null,
+        "actorRole": "owner", "targetRole": "owner",
+        "actorRestrictionExists": false, "actorBanSet": false, "actorBanExpiresAt": null,
+        "targetRestrictionExists": false, "targetBanSet": false,
+        "targetBanExpiresAt": null, "targetMutedUntil": null,
+        "actorIsTarget": true, "createdAtSeconds": 1800000000,
+        "nowSeconds": 1800000000, "requestedExpiresAt": null
+      } },
+      "expected": { "decision": "restriction", "effect": "reject", "authority": "none", "auditAction": "none", "error": "self_target" }
+    },
+    {
+      "name": "banned-owner-cannot-moderate",
+      "invariant": "Moderation.Authority.ActorBan",
+      "input": { "decision": "restriction", "request": {
+        "command": "unban", "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "targetRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRestrictionCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "targetRestrictionCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRole": "owner", "targetRole": "member",
+        "actorRestrictionExists": true, "actorBanSet": true, "actorBanExpiresAt": null,
+        "targetRestrictionExists": true, "targetBanSet": true,
+        "targetBanExpiresAt": null, "targetMutedUntil": null,
+        "actorIsTarget": false, "createdAtSeconds": 1800000000,
+        "nowSeconds": 1800000000, "requestedExpiresAt": null
+      } },
+      "expected": { "decision": "restriction", "effect": "reject", "authority": "none", "auditAction": "none", "error": "actor_banned" }
+    },
+    {
+      "name": "stale-ban-command-fails-closed",
+      "invariant": "Moderation.Command.Freshness",
+      "input": { "decision": "restriction", "request": {
+        "command": "ban", "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "targetRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRestrictionCommunity": null, "targetRestrictionCommunity": null,
+        "actorRole": "owner", "targetRole": "member",
+        "actorRestrictionExists": false, "actorBanSet": false, "actorBanExpiresAt": null,
+        "targetRestrictionExists": false, "targetBanSet": false,
+        "targetBanExpiresAt": null, "targetMutedUntil": null,
+        "actorIsTarget": false, "createdAtSeconds": 1799999879,
+        "nowSeconds": 1800000000, "requestedExpiresAt": null
+      } },
+      "expected": { "decision": "restriction", "effect": "reject", "authority": "none", "auditAction": "none", "error": "stale_command" }
+    },
+    {
+      "name": "elapsed-ban-expiry-fails-closed",
+      "invariant": "Moderation.Restriction.RequestExpiry",
+      "input": { "decision": "restriction", "request": {
+        "command": "ban", "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "targetRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRestrictionCommunity": null, "targetRestrictionCommunity": null,
+        "actorRole": "owner", "targetRole": "member",
+        "actorRestrictionExists": false, "actorBanSet": false, "actorBanExpiresAt": null,
+        "targetRestrictionExists": false, "targetBanSet": false,
+        "targetBanExpiresAt": null, "targetMutedUntil": null,
+        "actorIsTarget": false, "createdAtSeconds": 1800000000,
+        "nowSeconds": 1800000000, "requestedExpiresAt": 1799999999
+      } },
+      "expected": { "decision": "restriction", "effect": "reject", "authority": "none", "auditAction": "none", "error": "expiration_elapsed" }
+    },
+    {
+      "name": "duplicate-active-ban-fails-closed",
+      "invariant": "Moderation.Restriction.DuplicateBan",
+      "input": { "decision": "restriction", "request": {
+        "command": "ban", "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "targetRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRestrictionCommunity": null,
+        "targetRestrictionCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRole": "owner", "targetRole": "member",
+        "actorRestrictionExists": false, "actorBanSet": false, "actorBanExpiresAt": null,
+        "targetRestrictionExists": true, "targetBanSet": true,
+        "targetBanExpiresAt": null, "targetMutedUntil": null,
+        "actorIsTarget": false, "createdAtSeconds": 1800000000,
+        "nowSeconds": 1800000000, "requestedExpiresAt": null
+      } },
+      "expected": { "decision": "restriction", "effect": "reject", "authority": "none", "auditAction": "none", "error": "duplicate" }
+    },
+    {
+      "name": "owner-lifts-active-ban",
+      "invariant": "Moderation.Restriction.Unban",
+      "input": { "decision": "restriction", "request": {
+        "command": "unban", "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "targetRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRestrictionCommunity": null,
+        "targetRestrictionCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRole": "owner", "targetRole": "member",
+        "actorRestrictionExists": false, "actorBanSet": false, "actorBanExpiresAt": null,
+        "targetRestrictionExists": true, "targetBanSet": true,
+        "targetBanExpiresAt": null, "targetMutedUntil": null,
+        "actorIsTarget": false, "createdAtSeconds": 1800000000,
+        "nowSeconds": 1800000000, "requestedExpiresAt": null
+      } },
+      "expected": { "decision": "restriction", "effect": "lift_ban", "authority": "community_owner", "auditAction": "unban", "error": "none" }
+    },
+    {
+      "name": "owner-applies-future-timeout",
+      "invariant": "Moderation.Restriction.Timeout",
+      "input": { "decision": "restriction", "request": {
+        "command": "timeout", "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "targetRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRestrictionCommunity": null, "targetRestrictionCommunity": null,
+        "actorRole": "owner", "targetRole": "member",
+        "actorRestrictionExists": false, "actorBanSet": false, "actorBanExpiresAt": null,
+        "targetRestrictionExists": false, "targetBanSet": false,
+        "targetBanExpiresAt": null, "targetMutedUntil": null,
+        "actorIsTarget": false, "createdAtSeconds": 1800000000,
+        "nowSeconds": 1800000000, "requestedExpiresAt": 1800000300
+      } },
+      "expected": { "decision": "restriction", "effect": "apply_timeout", "authority": "community_owner", "auditAction": "timeout", "error": "none" }
+    },
+    {
+      "name": "owner-clears-active-timeout",
+      "invariant": "Moderation.Restriction.Untimeout",
+      "input": { "decision": "restriction", "request": {
+        "command": "untimeout", "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "targetRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRestrictionCommunity": null,
+        "targetRestrictionCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRole": "owner", "targetRole": "member",
+        "actorRestrictionExists": false, "actorBanSet": false, "actorBanExpiresAt": null,
+        "targetRestrictionExists": true, "targetBanSet": false,
+        "targetBanExpiresAt": null, "targetMutedUntil": 1800000300,
+        "actorIsTarget": false, "createdAtSeconds": 1800000000,
+        "nowSeconds": 1800000000, "requestedExpiresAt": null
+      } },
+      "expected": { "decision": "restriction", "effect": "clear_timeout", "authority": "community_owner", "auditAction": "untimeout", "error": "none" }
+    },
+    {
+      "name": "cross-community-restriction-state-fails-closed",
+      "invariant": "Moderation.Restriction.TenantIsolation",
+      "input": { "decision": "restriction", "request": {
+        "command": "unban", "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "targetRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRestrictionCommunity": null,
+        "targetRestrictionCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0002",
+        "actorRole": "owner", "targetRole": "member",
+        "actorRestrictionExists": false, "actorBanSet": false, "actorBanExpiresAt": null,
+        "targetRestrictionExists": true, "targetBanSet": true,
+        "targetBanExpiresAt": null, "targetMutedUntil": null,
+        "actorIsTarget": false, "createdAtSeconds": 1800000000,
+        "nowSeconds": 1800000000, "requestedExpiresAt": null
+      } },
+      "expected": { "decision": "restriction", "effect": "reject", "authority": "none", "auditAction": "none", "error": "tenant_mismatch" }
+    },
+
+    {
+      "name": "resolve-report-with-delete",
+      "invariant": "Moderation.Resolution.Delete",
+      "input": { "decision": "resolution", "request": {
+        "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRestrictionCommunity": null,
+        "reportCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRole": "admin", "actorRestrictionExists": false,
+        "actorBanSet": false, "actorBanExpiresAt": null,
+        "reportExists": true, "reportOpen": true,
+        "createdAtSeconds": 1800000000, "nowSeconds": 1800000000,
+        "status": "resolved", "action": "delete"
+      } },
+      "expected": { "decision": "resolution", "effect": "resolve_report", "authority": "community_admin", "auditAction": "resolve_delete", "error": "none" }
+    },
+    {
+      "name": "resolve-report-with-kick",
+      "invariant": "Moderation.Resolution.Kick",
+      "input": { "decision": "resolution", "request": {
+        "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001", "actorRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRestrictionCommunity": null, "reportCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRole": "owner", "actorRestrictionExists": false, "actorBanSet": false, "actorBanExpiresAt": null,
+        "reportExists": true, "reportOpen": true, "createdAtSeconds": 1800000000, "nowSeconds": 1800000000,
+        "status": "resolved", "action": "kick"
+      } },
+      "expected": { "decision": "resolution", "effect": "resolve_report", "authority": "community_owner", "auditAction": "resolve_kick", "error": "none" }
+    },
+    {
+      "name": "resolve-report-with-ban",
+      "invariant": "Moderation.Resolution.Ban",
+      "input": { "decision": "resolution", "request": {
+        "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001", "actorRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRestrictionCommunity": null, "reportCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRole": "owner", "actorRestrictionExists": false, "actorBanSet": false, "actorBanExpiresAt": null,
+        "reportExists": true, "reportOpen": true, "createdAtSeconds": 1800000000, "nowSeconds": 1800000000,
+        "status": "resolved", "action": "ban"
+      } },
+      "expected": { "decision": "resolution", "effect": "resolve_report", "authority": "community_owner", "auditAction": "resolve_ban", "error": "none" }
+    },
+    {
+      "name": "resolve-report-with-timeout",
+      "invariant": "Moderation.Resolution.Timeout",
+      "input": { "decision": "resolution", "request": {
+        "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001", "actorRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRestrictionCommunity": null, "reportCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRole": "owner", "actorRestrictionExists": false, "actorBanSet": false, "actorBanExpiresAt": null,
+        "reportExists": true, "reportOpen": true, "createdAtSeconds": 1800000000, "nowSeconds": 1800000000,
+        "status": "resolved", "action": "timeout"
+      } },
+      "expected": { "decision": "resolution", "effect": "resolve_report", "authority": "community_owner", "auditAction": "resolve_timeout", "error": "none" }
+    },
+    {
+      "name": "dismiss-open-report",
+      "invariant": "Moderation.Resolution.Dismiss",
+      "input": { "decision": "resolution", "request": {
+        "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001", "actorRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRestrictionCommunity": null, "reportCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRole": "owner", "actorRestrictionExists": false, "actorBanSet": false, "actorBanExpiresAt": null,
+        "reportExists": true, "reportOpen": true, "createdAtSeconds": 1800000000, "nowSeconds": 1800000000,
+        "status": "dismissed", "action": "dismiss"
+      } },
+      "expected": { "decision": "resolution", "effect": "resolve_report", "authority": "community_owner", "auditAction": "dismiss_report", "error": "none" }
+    },
+    {
+      "name": "escalate-open-report",
+      "invariant": "Moderation.Resolution.Escalate",
+      "input": { "decision": "resolution", "request": {
+        "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001", "actorRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRestrictionCommunity": null, "reportCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRole": "owner", "actorRestrictionExists": false, "actorBanSet": false, "actorBanExpiresAt": null,
+        "reportExists": true, "reportOpen": true, "createdAtSeconds": 1800000000, "nowSeconds": 1800000000,
+        "status": "resolved", "action": "escalate"
+      } },
+      "expected": { "decision": "resolution", "effect": "resolve_report", "authority": "community_owner", "auditAction": "escalate", "error": "none" }
+    },
+    {
+      "name": "closed-report-cannot-resolve-again",
+      "invariant": "Moderation.Resolution.Duplicate",
+      "input": { "decision": "resolution", "request": {
+        "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001", "actorRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRestrictionCommunity": null, "reportCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRole": "owner", "actorRestrictionExists": false, "actorBanSet": false, "actorBanExpiresAt": null,
+        "reportExists": true, "reportOpen": false, "createdAtSeconds": 1800000000, "nowSeconds": 1800000000,
+        "status": "resolved", "action": "ban"
+      } },
+      "expected": { "decision": "resolution", "effect": "reject", "authority": "none", "auditAction": "none", "error": "report_closed" }
+    },
+    {
+      "name": "cross-community-report-resolution-fails-closed",
+      "invariant": "Moderation.Resolution.TenantIsolation",
+      "input": { "decision": "resolution", "request": {
+        "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001", "actorRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRestrictionCommunity": null, "reportCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0002",
+        "actorRole": "owner", "actorRestrictionExists": false, "actorBanSet": false, "actorBanExpiresAt": null,
+        "reportExists": true, "reportOpen": true, "createdAtSeconds": 1800000000, "nowSeconds": 1800000000,
+        "status": "resolved", "action": "ban"
+      } },
+      "expected": { "decision": "resolution", "effect": "reject", "authority": "none", "auditAction": "none", "error": "tenant_mismatch" }
+    },
+    {
+      "name": "dismiss-action-requires-dismissed-status",
+      "invariant": "Moderation.Resolution.Pair",
+      "input": { "decision": "resolution", "request": {
+        "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001", "actorRoleCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRestrictionCommunity": null, "reportCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "actorRole": "owner", "actorRestrictionExists": false, "actorBanSet": false, "actorBanExpiresAt": null,
+        "reportExists": true, "reportOpen": true, "createdAtSeconds": 1800000000, "nowSeconds": 1800000000,
+        "status": "resolved", "action": "dismiss"
+      } },
+      "expected": { "decision": "resolution", "effect": "reject", "authority": "none", "auditAction": "none", "error": "resolution_pair" }
+    },
+    {
+      "name": "clear-principal-authenticates",
+      "invariant": "Moderation.Enforcement.Allow",
+      "input": { "decision": "enforcement", "request": {
+        "operation": "authenticate", "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "principalRestrictionCommunity": null, "ownerRestrictionCommunity": null,
+        "principalRestrictionExists": false, "principalBanSet": false,
+        "principalBanExpiresAt": null, "principalMutedUntil": null,
+        "ownerAttested": false, "ownerRestrictionExists": false,
+        "ownerBanSet": false, "ownerBanExpiresAt": null, "nowSeconds": 1800000000
+      } },
+      "expected": { "decision": "enforcement", "effect": "allow", "authority": "none", "auditAction": "none", "error": "none" }
+    },
+    {
+      "name": "active-principal-ban-denies-authentication",
+      "invariant": "Moderation.Enforcement.PrincipalBan",
+      "input": { "decision": "enforcement", "request": {
+        "operation": "authenticate", "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "principalRestrictionCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001", "ownerRestrictionCommunity": null,
+        "principalRestrictionExists": true, "principalBanSet": true,
+        "principalBanExpiresAt": null, "principalMutedUntil": null,
+        "ownerAttested": false, "ownerRestrictionExists": false,
+        "ownerBanSet": false, "ownerBanExpiresAt": null, "nowSeconds": 1800000000
+      } },
+      "expected": { "decision": "enforcement", "effect": "deny_ban", "authority": "none", "auditAction": "none", "error": "none" }
+    },
+    {
+      "name": "expired-principal-ban-allows-authentication",
+      "invariant": "Moderation.Enforcement.BanExpiry",
+      "input": { "decision": "enforcement", "request": {
+        "operation": "authenticate", "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "principalRestrictionCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001", "ownerRestrictionCommunity": null,
+        "principalRestrictionExists": true, "principalBanSet": true,
+        "principalBanExpiresAt": 1799999999, "principalMutedUntil": null,
+        "ownerAttested": false, "ownerRestrictionExists": false,
+        "ownerBanSet": false, "ownerBanExpiresAt": null, "nowSeconds": 1800000000
+      } },
+      "expected": { "decision": "enforcement", "effect": "allow", "authority": "none", "auditAction": "none", "error": "none" }
+    },
+    {
+      "name": "attested-owner-ban-denies-authentication",
+      "invariant": "Moderation.Enforcement.OwnerCascade",
+      "input": { "decision": "enforcement", "request": {
+        "operation": "authenticate", "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "principalRestrictionCommunity": null,
+        "ownerRestrictionCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "principalRestrictionExists": false, "principalBanSet": false,
+        "principalBanExpiresAt": null, "principalMutedUntil": null,
+        "ownerAttested": true, "ownerRestrictionExists": true,
+        "ownerBanSet": true, "ownerBanExpiresAt": null, "nowSeconds": 1800000000
+      } },
+      "expected": { "decision": "enforcement", "effect": "deny_ban", "authority": "none", "auditAction": "none", "error": "none" }
+    },
+    {
+      "name": "active-timeout-denies-write",
+      "invariant": "Moderation.Enforcement.Timeout",
+      "input": { "decision": "enforcement", "request": {
+        "operation": "write", "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "principalRestrictionCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001", "ownerRestrictionCommunity": null,
+        "principalRestrictionExists": true, "principalBanSet": false,
+        "principalBanExpiresAt": null, "principalMutedUntil": 1800000300,
+        "ownerAttested": false, "ownerRestrictionExists": false,
+        "ownerBanSet": false, "ownerBanExpiresAt": null, "nowSeconds": 1800000000
+      } },
+      "expected": { "decision": "enforcement", "effect": "deny_timeout", "authority": "none", "auditAction": "none", "error": "none" }
+    },
+    {
+      "name": "expired-timeout-allows-write",
+      "invariant": "Moderation.Enforcement.TimeoutExpiry",
+      "input": { "decision": "enforcement", "request": {
+        "operation": "write", "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "principalRestrictionCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001", "ownerRestrictionCommunity": null,
+        "principalRestrictionExists": true, "principalBanSet": false,
+        "principalBanExpiresAt": null, "principalMutedUntil": 1799999999,
+        "ownerAttested": false, "ownerRestrictionExists": false,
+        "ownerBanSet": false, "ownerBanExpiresAt": null, "nowSeconds": 1800000000
+      } },
+      "expected": { "decision": "enforcement", "effect": "allow", "authority": "none", "auditAction": "none", "error": "none" }
+    },
+    {
+      "name": "cross-community-principal-restriction-fails-closed",
+      "invariant": "Moderation.Enforcement.TenantIsolation",
+      "input": { "decision": "enforcement", "request": {
+        "operation": "write", "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+        "principalRestrictionCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0002", "ownerRestrictionCommunity": null,
+        "principalRestrictionExists": true, "principalBanSet": true,
+        "principalBanExpiresAt": null, "principalMutedUntil": null,
+        "ownerAttested": false, "ownerRestrictionExists": false,
+        "ownerBanSet": false, "ownerBanExpiresAt": null, "nowSeconds": 1800000000
+      } },
+      "expected": { "decision": "enforcement", "effect": "reject", "authority": "none", "auditAction": "none", "error": "tenant_mismatch" }
+    }
+  ]
+}

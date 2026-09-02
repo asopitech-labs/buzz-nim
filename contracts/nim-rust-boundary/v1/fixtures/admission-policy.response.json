@@ -1,0 +1,63 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "admission-batch-1",
+  "operation": "domain.admission.policy",
+  "status": "ok",
+  "result": {
+    "decision": "apply_rate_limit_batch",
+    "result": {
+      "error": "none",
+      "results": [
+        {
+          "allowed": true,
+          "current": 1,
+          "limit": 2,
+          "resetInSecs": 60,
+          "error": "none",
+          "state": {
+            "namespace": "principal",
+            "key": "community-a:alice:api",
+            "windowStartedAtMs": 60000,
+            "windowSecs": 60,
+            "limit": 2,
+            "count": 1,
+            "lastControlIndex": 7
+          }
+        },
+        {
+          "allowed": true,
+          "current": 2,
+          "limit": 2,
+          "resetInSecs": 60,
+          "error": "none",
+          "state": {
+            "namespace": "principal",
+            "key": "community-a:alice:api",
+            "windowStartedAtMs": 60000,
+            "windowSecs": 60,
+            "limit": 2,
+            "count": 2,
+            "lastControlIndex": 7
+          }
+        },
+        {
+          "allowed": false,
+          "current": 3,
+          "limit": 2,
+          "resetInSecs": 60,
+          "error": "none",
+          "state": {
+            "namespace": "principal",
+            "key": "community-a:alice:api",
+            "windowStartedAtMs": 60000,
+            "windowSecs": 60,
+            "limit": 2,
+            "count": 3,
+            "lastControlIndex": 7
+          }
+        }
+      ]
+    }
+  }
+}

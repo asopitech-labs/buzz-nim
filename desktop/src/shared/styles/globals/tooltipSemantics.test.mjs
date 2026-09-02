@@ -7,11 +7,11 @@ const utilitiesCss = readFileSync(
   "utf8",
 );
 const huddleTooltipRule = utilitiesCss.match(
-  /\.buzz-huddle-tooltip\s*\{([\s\S]*?)\n\s*\}/,
+  /\.nimino-huddle-tooltip\s*\{([\s\S]*?)\n\s*\}/,
 )?.[1];
 
 test("huddle tooltips consume their dedicated semantic tokens", () => {
-  assert.ok(huddleTooltipRule, "missing .buzz-huddle-tooltip rule");
+  assert.ok(huddleTooltipRule, "missing .nimino-huddle-tooltip rule");
   assert.match(
     huddleTooltipRule,
     /background:\s*hsl\(\s*var\(--huddle-tooltip-surface,/,

@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.release-set",
+  "compatibilityMode": false,
+  "tagPrefix": "nimino-v",
+  "requiredComponents": [
+    "alopex-chirps",
+    "boundary-schema",
+    "nim-core",
+    "rust-workspace"
+  ],
+  "digestAlgorithm": "sha256",
+  "artifactMinimum": 1,
+  "sameVersionPolicy": "identical-release-set-only",
+  "downgradePolicy": "reject",
+  "promotionInput": "releaseSetId",
+  "physicalPromotionOwner": 68
+}

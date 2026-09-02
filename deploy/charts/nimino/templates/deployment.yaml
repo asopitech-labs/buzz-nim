@@ -1,0 +1,339 @@
+{{- include "nimino.validate" . -}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "nimino.fullname" . }}
+  labels:
+    {{- include "nimino.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "nimino.fullname" . }}-chirps
+  podManagementPolicy: Parallel
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  updateStrategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      {{- include "nimino.relaySelectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "nimino.relaySelectorLabels" . | nindent 8 }}
+        {{- with .Values.relay.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      annotations:
+        # Roll pods when the chart-managed Secret changes.
+        checksum/secret: {{ include (print $.Template.BasePath "/secret-chart.yaml") . | sha256sum }}
+        checksum/cluster-identities: {{ include (print $.Template.BasePath "/cluster-identities.yaml") . | sha256sum }}
+        {{- with .Values.relay.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      serviceAccountName: {{ include "nimino.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.relay.securityContext | nindent 8 }}
+      terminationGracePeriodSeconds: {{ .Values.relay.terminationGracePeriodSeconds }}
+      {{- with .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.relay.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.relay.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.relay.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.relay.topologySpreadConstraints }}
+      topologySpreadConstraints:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      initContainers:
+        - name: prepare-cluster-identity
+          image: {{ include "nimino.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              ordinal="${HOSTNAME##*-}"
+              source="/cluster-identities/node-${ordinal}.identity"
+              target="/var/lib/nimino/cluster/node.identity"
+              if [ -e "$target" ]; then
+                source_hash="$(sha256sum "$source")"
+                source_hash="${source_hash%% *}"
+                target_hash="$(sha256sum "$target")"
+                target_hash="${target_hash%% *}"
+                [ "$source_hash" = "$target_hash" ] || {
+                  echo "persisted Chirps identity does not match the fixed voter set" >&2
+                  exit 1
+                }
+              else
+                cp "$source" "$target"
+                chmod 600 "$target"
+              fi
+          securityContext:
+            {{- toYaml .Values.relay.containerSecurityContext | nindent 12 }}
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+          volumeMounts:
+            - { name: cluster-identities, mountPath: /cluster-identities, readOnly: true }
+            - { name: node-data, mountPath: /var/lib/nimino/cluster }
+        - name: prepare-chirps-mtls
+          image: {{ include "nimino.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -eu
+              cp /chirps-source/tls.crt /chirps/tls.crt
+              cp /chirps-source/tls.key /chirps/tls.key
+              cp /chirps-source/ca.crt /chirps/ca.crt
+              chmod 400 /chirps/tls.crt /chirps/ca.crt
+              chmod 600 /chirps/tls.key
+          securityContext:
+            {{- toYaml .Values.relay.containerSecurityContext | nindent 12 }}
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+          volumeMounts:
+            - { name: chirps-source, mountPath: /chirps-source, readOnly: true }
+            - { name: chirps-tls, mountPath: /chirps }
+      {{- if .Values.minio.enabled }}
+      # Quickstart only: the bundled MinIO bucket is created by a concurrent
+      # init Job (templates/quickstart-minio-init.yaml). The relay's A3 S3
+      # conformance probe is startup-fatal, so without this gate the relay Pods
+      # CrashLoopBackOff (with growing backoff) until the bucket appears. Block
+      # relay start until the bucket exists — deterministic, no crash-loops.
+        - name: wait-for-bucket
+          image: {{ .Values.minio.mcImage | quote }}
+          securityContext:
+            {{- toYaml .Values.relay.containerSecurityContext | nindent 12 }}
+          env:
+            - name: S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nimino.chartSecretName" . }}
+                  key: NIMINO_S3_ACCESS_KEY
+            - name: S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nimino.chartSecretName" . }}
+                  key: NIMINO_S3_SECRET_KEY
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              export MC_CONFIG_DIR=/tmp/.mc
+              until mc alias set local {{ include "nimino.minioEndpoint" . }} "$S3_ACCESS_KEY" "$S3_SECRET_KEY" >/dev/null 2>&1; do
+                echo "waiting for MinIO..."; sleep 2
+              done
+              until mc stat local/{{ .Values.s3.bucket }} >/dev/null 2>&1; do
+                echo "waiting for bucket {{ .Values.s3.bucket }}..."; sleep 2
+              done
+              echo "bucket {{ .Values.s3.bucket }} present"
+      {{- end }}
+      {{- with .Values.extraInitContainers }}
+      {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: relay
+          image: {{ include "nimino.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.relay.containerSecurityContext | nindent 12 }}
+          {{- with .Values.relay.command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.relay.args }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          ports:
+            - { name: app,     containerPort: 3000, protocol: TCP }
+            - { name: health,  containerPort: {{ .Values.service.healthPort }}, protocol: TCP }
+            - { name: metrics, containerPort: {{ .Values.service.metricsPort }}, protocol: TCP }
+            - { name: chirps, containerPort: {{ .Values.cluster.port }}, protocol: UDP }
+          env:
+            # ── Networking ───────────────────────────────────────────
+            - { name: NIMINO_BIND_ADDR,     value: {{ .Values.relay.bindAddr | quote }} }
+            - { name: NIMINO_HEALTH_PORT,   value: {{ .Values.service.healthPort | quote }} }
+            - { name: NIMINO_METRICS_PORT,  value: {{ .Values.service.metricsPort | quote }} }
+            - { name: RELAY_URL,          value: {{ .Values.relayUrl | quote }} }
+            {{- if .Values.pairingRelay.url }}
+            - { name: NIMINO_PAIRING_RELAY_URL, value: {{ .Values.pairingRelay.url | quote }} }
+            {{- end }}
+            - { name: NIMINO_MEDIA_BASE_URL, value: {{ include "nimino.mediaBaseUrl" . | quote }} }
+            - { name: NIMINO_CHIRPS_BIND_ADDR, value: {{ printf "0.0.0.0:%v" .Values.cluster.port | quote }} }
+            - { name: NIMINO_CHIRPS_SEEDS, value: {{ printf "%s-chirps:%v" (include "nimino.fullname" .) .Values.cluster.port | quote }} }
+            - { name: NIMINO_CLUSTER_REFRESH_SECS, value: {{ .Values.cluster.refreshSeconds | quote }} }
+            - { name: NIMINO_CLUSTER_MIN_PEERS, value: {{ max (sub (ternary .Values.autoscaling.minReplicas .Values.replicaCount .Values.autoscaling.enabled) 1) 0 | quote }} }
+            - { name: NIMINO_CLUSTER_VOTERS, value: {{ include "nimino.clusterVoters" . | quote }} }
+            - { name: NIMINO_CHIRPS_IDENTITY_PATH, value: "/var/lib/nimino/cluster/node.identity" }
+            - { name: NIMINO_NODE_STORE_PATH, value: "/var/lib/nimino/cluster/data.redb" }
+            - { name: NIMINO_OBJECT_STORE_PATH, value: "/var/lib/nimino/cluster/objects" }
+
+            # ── Behavior ─────────────────────────────────────────────
+            - { name: NIMINO_MAX_CONNECTIONS,        value: {{ .Values.relay.maxConnections | quote }} }
+            - { name: NIMINO_MAX_CONCURRENT_HANDLERS, value: {{ .Values.relay.maxConcurrentHandlers | quote }} }
+            - { name: NIMINO_SEND_BUFFER,            value: {{ .Values.relay.sendBuffer | quote }} }
+            - { name: NIMINO_DRAIN_JITTER_MS,        value: {{ .Values.relay.drainJitterMs | quote }} }
+            - { name: NIMINO_REQUIRE_AUTH_TOKEN,     value: {{ .Values.relay.requireAuthToken | quote }} }
+            - { name: NIMINO_REQUIRE_RELAY_MEMBERSHIP, value: {{ .Values.relay.requireRelayMembership | quote }} }
+            - { name: NIMINO_ALLOW_NIP_OA_AUTH,      value: {{ .Values.relay.allowNipOaAuth | quote }} }
+            - { name: NIMINO_PUBKEY_ALLOWLIST,       value: {{ .Values.relay.pubkeyAllowlist | quote }} }
+            {{- if .Values.relay.corsOrigins }}
+            - { name: NIMINO_CORS_ORIGINS, value: {{ join "," .Values.relay.corsOrigins | quote }} }
+            {{- end }}
+            {{- if gt (.Values.relay.ephemeralTtlOverride | int) 0 }}
+            - { name: NIMINO_EPHEMERAL_TTL_OVERRIDE, value: {{ .Values.relay.ephemeralTtlOverride | quote }} }
+            {{- end }}
+            {{- if .Values.relay.uploadRecords }}
+            - { name: NIMINO_MEDIA_UPLOAD_RECORDS, value: "true" }
+            {{- end }}
+            {{- if .Values.relay.uploadIpHeader }}
+            - { name: NIMINO_MEDIA_UPLOAD_IP_HEADER, value: {{ .Values.relay.uploadIpHeader | quote }} }
+            {{- end }}
+            {{- if .Values.relay.uploadPortHeader }}
+            - { name: NIMINO_MEDIA_UPLOAD_PORT_HEADER, value: {{ .Values.relay.uploadPortHeader | quote }} }
+            {{- end }}
+
+            # ── Owner ────────────────────────────────────────────────
+            - { name: RELAY_OWNER_PUBKEY, value: {{ .Values.ownerPubkey | quote }} }
+
+            # ── Migrations ───────────────────────────────────────────
+            - { name: NIMINO_AUTO_MIGRATE, value: {{ .Values.migrate.autoMigrate | quote }} }
+
+            # ── Git ──────────────────────────────────────────────────
+            - { name: NIMINO_GIT_REPO_PATH,         value: {{ .Values.persistence.git.mountPath | quote }} }
+            - { name: NIMINO_GIT_MAX_PACK_BYTES,    value: {{ .Values.git.maxPackBytes | quote }} }
+            - { name: NIMINO_GIT_PACK_CACHE_PATH,   value: {{ .Values.git.packCachePath | quote }} }
+            - { name: NIMINO_GIT_PACK_CACHE_MAX_BYTES, value: {{ .Values.git.packCacheMaxBytes | quote }} }
+            - { name: NIMINO_GIT_PACK_CACHE_MAX_CONCURRENT_POPULATIONS, value: {{ .Values.git.packCacheMaxConcurrentPopulations | quote }} }
+            - { name: NIMINO_GIT_MAX_REPOS_PER_PUBKEY, value: {{ .Values.git.maxReposPerPubkey | quote }} }
+            - { name: NIMINO_GIT_MAX_CONCURRENT_OPS, value: {{ .Values.git.maxConcurrentOps | quote }} }
+
+            # ── S3 (non-secret) ──────────────────────────────────────
+            {{- $s3Endpoint := include "nimino.s3Endpoint" . }}
+            {{- if $s3Endpoint }}
+            - { name: NIMINO_S3_ENDPOINT, value: {{ $s3Endpoint | quote }} }
+            {{- end }}
+            - { name: NIMINO_S3_BUCKET, value: {{ .Values.s3.bucket | quote }} }
+            - { name: NIMINO_S3_REGION, value: {{ .Values.s3.region | quote }} }
+            - { name: NIMINO_S3_ADDRESSING_STYLE, value: {{ .Values.s3.addressingStyle | quote }} }
+
+            # ── Secrets (from chart-managed or existing) ─────────────
+            - name: NIMINO_RELAY_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nimino.envSecretName" . }}
+                  key: NIMINO_RELAY_PRIVATE_KEY
+                  optional: true
+            - name: NIMINO_GIT_HOOK_HMAC_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nimino.envSecretName" . }}
+                  key: NIMINO_GIT_HOOK_HMAC_SECRET
+                  optional: true
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nimino.envSecretName" . }}
+                  key: DATABASE_URL
+            - name: READ_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nimino.envSecretName" . }}
+                  key: READ_DATABASE_URL
+                  optional: true
+            - name: NIMINO_S3_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nimino.envSecretName" . }}
+                  key: NIMINO_S3_ACCESS_KEY
+                  optional: true
+            - name: NIMINO_S3_SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "nimino.envSecretName" . }}
+                  key: NIMINO_S3_SECRET_KEY
+                  optional: true
+
+            - name: NIMINO_HUDDLE_AUDIO_AVAILABLE
+              value: {{ include "nimino.huddleAudioAvailable" . | quote }}
+
+            {{- with .Values.relay.extraEnv }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          {{- with .Values.relay.extraEnvFrom }}
+          envFrom:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          livenessProbe:
+            {{- toYaml .Values.relay.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.relay.readinessProbe | nindent 12 }}
+          startupProbe:
+            {{- toYaml .Values.relay.startupProbe | nindent 12 }}
+
+          resources:
+            {{- toYaml .Values.relay.resources | nindent 12 }}
+
+          volumeMounts:
+            - { name: git-repos, mountPath: {{ .Values.persistence.git.mountPath | quote }} }
+            - { name: git-pack-cache, mountPath: {{ .Values.git.packCachePath | quote }} }
+            - { name: node-data, mountPath: /var/lib/nimino/cluster }
+            - { name: chirps-tls, mountPath: /etc/nimino/chirps, readOnly: true }
+            {{- with .Values.relay.extraVolumeMounts }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+
+      volumes:
+        - name: cluster-identities
+          configMap:
+            name: {{ include "nimino.fullname" . }}-cluster-identities
+            defaultMode: 0444
+        - name: git-repos
+          emptyDir:
+            sizeLimit: {{ .Values.persistence.git.size | quote }}
+        - name: git-pack-cache
+          emptyDir:
+            sizeLimit: {{ .Values.git.packCacheVolumeSize | quote }}
+        - name: chirps-source
+          secret:
+            secretName: {{ .Values.cluster.tlsSecret | quote }}
+            defaultMode: 0440
+            items:
+              - { key: tls.crt, path: tls.crt }
+              - { key: tls.key, path: tls.key }
+              - { key: ca.crt, path: ca.crt }
+        - name: chirps-tls
+          emptyDir: {}
+        {{- with .Values.extraVolumes }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+  volumeClaimTemplates:
+    - metadata:
+        name: node-data
+        labels:
+          {{- include "nimino.labels" . | nindent 10 }}
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: {{ .Values.cluster.persistence.size | quote }}
+        {{- if .Values.cluster.persistence.storageClass }}
+        storageClassName: {{ .Values.cluster.persistence.storageClass | quote }}
+        {{- end }}

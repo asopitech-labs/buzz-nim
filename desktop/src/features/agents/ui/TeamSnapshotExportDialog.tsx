@@ -44,7 +44,7 @@ const FORMAT_OPTIONS: { value: SnapshotFormat; label: string }[] = [
 ];
 
 const MODAL_RESIZE_TRANSITION = {
-  duration: 0.22,
+  duration: 0.18,
   ease: [0.23, 1, 0.32, 1],
 } as const;
 

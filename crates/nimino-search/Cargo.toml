@@ -1,0 +1,19 @@
+[package]
+name = "nimino-search"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Postgres full-text search for Nimino, scoped by community"
+
+[dependencies]
+nimino-core   = { workspace = true }
+nimino-datastore-tracing = { workspace = true }
+sqlx        = { workspace = true }
+uuid        = { workspace = true }
+thiserror   = { workspace = true }
+tracing     = { workspace = true }
+
+[dev-dependencies]
+tokio       = { workspace = true }

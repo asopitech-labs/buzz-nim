@@ -1,0 +1,95 @@
+[package]
+name = "nimino-relay"
+default-run = "nimino-relay"
+# Independent version: nimino-relay ships as a pinnable artifact
+# (ghcr.io/asopitech-labs/nimino), released on its own cadence via `just release-relay`.
+# It does NOT inherit the workspace version.
+version = "0.2.1"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "WebSocket relay server for the Nimino communications platform"
+
+[[bin]]
+name = "nimino-relay"
+path = "src/main.rs"
+
+[dependencies]
+nimino-core = { workspace = true }
+nimino-boundary = { path = "../nimino-boundary" }
+nimino-chirps = { path = "../nimino-chirps" }
+nimino-conformance = { workspace = true }
+nimino-control = { path = "../nimino-control" }
+nimino-object-store = { path = "../nimino-object-store" }
+nimino-db = { workspace = true }
+nimino-datastore-tracing = { workspace = true }
+nimino-deletion = { workspace = true }
+nimino-auth = { workspace = true }
+nimino-local-delivery = { workspace = true }
+nimino-audit = { workspace = true }
+nimino-search = { workspace = true }
+nimino-store = { path = "../nimino-store" }
+nimino-sync = { path = "../nimino-sync" }
+async-trait = "0.1"
+axum = { workspace = true }
+tokio = { workspace = true }
+# `io` (ReaderStream) is needed to stream git subprocess stdout straight into
+# the HTTP response body — see api::git::transport read-path streaming. The
+# workspace default only enables rt+codec.
+tokio-util = { workspace = true, features = ["io"] }
+tower = { workspace = true }
+tower-http = { workspace = true }
+nostr = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+tracing-opentelemetry = { workspace = true }
+opentelemetry = { workspace = true }
+opentelemetry_sdk = { workspace = true }
+opentelemetry-otlp = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+dashmap = { workspace = true }
+futures-util = { workspace = true }
+# Select one rustls CryptoProvider explicitly before TLS clients start.
+rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
+sqlx = { workspace = true }
+reqwest = { workspace = true }
+base64 = "0.22"
+nimino-sdk = { workspace = true }
+nimino-workflow = { workspace = true, features = ["reqwest"] }
+nimino-media = { workspace = true }
+s3 = { version = "0.37", package = "rust-s3", default-features = false, features = ["tokio-rustls-tls", "fail-on-err", "tags"] }
+tempfile = "3"
+bytes = "1"
+infer = "0.19"
+serde_yaml      = { workspace = true }
+sha2            = { workspace = true }
+hmac            = { workspace = true }
+subtle          = { workspace = true }
+rand            = { workspace = true }
+hex             = { workspace = true }
+url             = { workspace = true }
+moka            = { workspace = true }
+metrics         = { workspace = true }
+metrics-exporter-prometheus = { workspace = true }
+metrics-util    = { workspace = true }
+pulldown-cmark = { version = "0.13.4", default-features = false, features = ["html"] }
+async-compression = { version = "0.4.42", features = ["tokio", "gzip"] }
+
+[features]
+dev = ["nimino-auth/dev"]
+
+[dev-dependencies]
+nimino-core = { workspace = true, features = ["test-utils"] }
+nimino-auth = { workspace = true, features = ["dev"] }
+tokio = { workspace = true, features = ["test-util"] }
+reqwest = { workspace = true }
+tokio-tungstenite = { workspace = true }
+futures = "0.3"
+flate2 = "1.1.9"
+opentelemetry_sdk = { workspace = true, features = ["testing"] }

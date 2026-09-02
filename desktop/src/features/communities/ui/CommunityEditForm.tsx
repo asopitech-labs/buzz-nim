@@ -280,7 +280,7 @@ export function CommunityEditForm({
             transition={
               shouldReduceMotion
                 ? { duration: 0 }
-                : { duration: 0.22, ease: POLICY_REVEAL_EASE }
+                : { duration: 0.18, ease: POLICY_REVEAL_EASE }
             }
           >
             <JoinPolicyNotice

@@ -57,7 +57,7 @@ pub fn get_default_relay_url() -> String {
 
 #[tauri::command]
 pub fn auto_connect_default_relay_enabled() -> bool {
-    option_env!("BUZZ_DESKTOP_BUILD_AUTO_CONNECT_DEFAULT_RELAY").is_some()
+    option_env!("NIMINO_DESKTOP_BUILD_AUTO_CONNECT_DEFAULT_RELAY").is_some()
 }
 
 #[cfg(test)]
@@ -67,7 +67,7 @@ mod auto_connect_default_relay_tests {
     #[test]
     #[ignore]
     fn compiled_flag_matches_expected() {
-        let expected = std::env::var("BUZZ_TEST_EXPECTED_AUTO_CONNECT_DEFAULT_RELAY")
+        let expected = std::env::var("NIMINO_TEST_EXPECTED_AUTO_CONNECT_DEFAULT_RELAY")
             .expect("compiled-flag test requires an expected value");
         assert_eq!(
             auto_connect_default_relay_enabled(),
@@ -78,10 +78,10 @@ mod auto_connect_default_relay_tests {
 
 #[tauri::command]
 pub fn is_shared_identity() -> bool {
-    std::env::var("BUZZ_SHARE_IDENTITY")
+    std::env::var("NIMINO_SHARE_IDENTITY")
         .map(|v| v == "1")
         .unwrap_or(false)
-        && std::env::var("BUZZ_PRIVATE_KEY")
+        && std::env::var("NIMINO_PRIVATE_KEY")
             .ok()
             .and_then(|k| Keys::parse(k.trim()).ok())
             .is_some()
@@ -154,7 +154,7 @@ pub async fn decrypt_observer_event(
             return Err("observer event has invalid signature".into());
         }
 
-        buzz_core_pkg::observer::decrypt_observer_payload(&keys, &event)
+        nimino_core_pkg::observer::decrypt_observer_payload(&keys, &event)
             .map_err(|error| format!("decrypt observer event failed: {error}"))
     })
     .await
@@ -172,12 +172,12 @@ pub fn build_observer_control_event(
         .map_err(|error| format!("invalid agent pubkey: {error}"))?;
     let agent_pubkey_hex = agent_pubkey.to_hex();
     let encrypted =
-        buzz_core_pkg::observer::encrypt_observer_payload(&keys, &agent_pubkey, &payload)
+        nimino_core_pkg::observer::encrypt_observer_payload(&keys, &agent_pubkey, &payload)
             .map_err(|error| format!("encrypt observer control failed: {error}"))?;
-    let builder = buzz_sdk_pkg::build_agent_observer_frame(
+    let builder = nimino_sdk_pkg::build_agent_observer_frame(
         &agent_pubkey_hex,
         &agent_pubkey_hex,
-        buzz_core_pkg::observer::OBSERVER_FRAME_CONTROL,
+        nimino_core_pkg::observer::OBSERVER_FRAME_CONTROL,
         &encrypted,
     )
     .map_err(|error| format!("build observer control failed: {error}"))?;
@@ -359,21 +359,16 @@ pub async fn import_identity(
             .app_data_dir()
             .map_err(|e| format!("app data dir: {e}"))?;
         std::fs::create_dir_all(&data_dir).map_err(|e| format!("create app data dir: {e}"))?;
-        let key_path = data_dir.join("identity.key");
-
         let (pubkey, storage) = commit_imported_identity(&state, &data_dir, keys, |keys| {
-            // Persist into the OS keyring first (store → read-back verify →
-            // marker → delete file). Falls back to the 0o600 file when the
-            // keyring is unavailable; returns Err only when both backends fail.
             let store =
                 crate::secret_store::SecretStore::shared(crate::app_state::keyring_service());
-            crate::app_state::persist_imported_identity(store, keys, &key_path, &data_dir)
+            crate::app_state::persist_imported_identity(store, keys, &data_dir)
         })?;
 
         let pubkey_hex = pubkey.to_hex();
         let display_name = truncated_display_name(&pubkey)?;
 
-        eprintln!("buzz-desktop: imported identity pubkey {}", pubkey_hex);
+        eprintln!("nimino-desktop: imported identity pubkey {}", pubkey_hex);
 
         Ok(IdentityInfo {
             pubkey: pubkey_hex,
@@ -394,8 +389,7 @@ pub async fn import_identity(
 ///
 /// Ordering is the contract:
 ///
-/// 1. `persist` runs FIRST. If it fails (`Err` from both keyring and file
-///    fallback), nothing has changed — the previous identity stays live in
+/// 1. `persist` runs FIRST. If it fails, nothing has changed — the previous identity stays live in
 ///    memory AND its valid canonical `identity.ncryptsec` stays on disk.
 /// 2. Only after durable persistence do we swap `state.keys` and clear the
 ///    recovery flags.
@@ -425,11 +419,7 @@ pub(crate) fn commit_imported_identity(
         state.set_identity_storage(storage);
     }
 
-    // Clear both recovery flags — an import is valid in either lost or
-    // keyring-locked state and resolves both. In the locked case the
-    // keyring is unreachable, so the persist step already fell back to
-    // identity.key; on the next Unreachable boot the file is loaded
-    // directly and when the keyring returns the adoption path picks it up.
+    // Clear both recovery flags after Secret Service persistence succeeds.
     state
         .identity_lost
         .store(false, std::sync::atomic::Ordering::Release);
@@ -442,7 +432,7 @@ pub(crate) fn commit_imported_identity(
     // per the ordering contract above.
     if let Err(e) = crate::key_backup::cleanup_stale_backup(&previous_pubkey, &pubkey, data_dir) {
         eprintln!(
-            "buzz-desktop: import committed, but stale key backup cleanup failed: {e}; \
+            "nimino-desktop: import committed, but stale key backup cleanup failed: {e}; \
              the leftover identity.ncryptsec encrypts the PREVIOUS key and will be \
              replaced by the next backup creation"
         );
@@ -451,18 +441,15 @@ pub(crate) fn commit_imported_identity(
     Ok((pubkey, storage))
 }
 
-/// Make the current ephemeral identity durable by persisting it to the OS
-/// keyring (or falling back to identity.key). This is called when the user
+/// Make the current ephemeral identity durable by persisting it to Secret
+/// Service. This is called when the user
 /// chooses to start a new identity instead of re-importing their previous one
 /// — it converts the transient lost-state key into a permanent identity.
 ///
 /// **LOST-ONLY**: returns `Err` when `identity_lost` is false, and deliberately
 /// does NOT accept `keyring_locked`. In locked state the user's real identity
-/// still exists in the unreachable keyring; persisting the ephemeral key to
-/// `identity.key` would make it appear as a "different key" on next boot,
-/// and the mismatched-file adoption path would then clobber the real keyring
-/// key once the keyring becomes reachable again. The correct action in locked
-/// state is to unlock the keyring and relaunch — not to adopt the ephemeral key.
+/// still exists in the unreachable keyring. The correct action in locked state
+/// is to unlock the keyring and relaunch — not to adopt the ephemeral key.
 #[tauri::command]
 pub async fn persist_current_identity(
     app_handle: tauri::AppHandle,
@@ -491,11 +478,8 @@ pub async fn persist_current_identity(
             .app_data_dir()
             .map_err(|e| format!("app data dir: {e}"))?;
         std::fs::create_dir_all(&data_dir).map_err(|e| format!("create app data dir: {e}"))?;
-        let key_path = data_dir.join("identity.key");
-
         let store = crate::secret_store::SecretStore::shared(crate::app_state::keyring_service());
-        let storage =
-            crate::app_state::persist_imported_identity(store, &keys, &key_path, &data_dir)?;
+        let storage = crate::app_state::persist_imported_identity(store, &keys, &data_dir)?;
 
         // Keys are already the live identity. Record where the durable write
         // landed before clearing identity_lost.
@@ -530,21 +514,21 @@ pub async fn persist_current_identity(
 /// restart is safe — the sentinel persists and the wipe completes on the next
 /// open.
 ///
-/// Not available in shared-identity mode (`BUZZ_SHARE_IDENTITY=1`): the key
+/// Not available in shared-identity mode (`NIMINO_SHARE_IDENTITY=1`): the key
 /// comes from an env var, not the keychain, so wiping would have no effect and
 /// would be confusing.
 #[tauri::command]
 pub async fn sign_out(app: tauri::AppHandle) -> Result<(), String> {
     if is_shared_identity() {
         return Err(
-            "Sign out isn't available while BUZZ_SHARE_IDENTITY provides your identity. Unset BUZZ_SHARE_IDENTITY and BUZZ_PRIVATE_KEY, then relaunch to sign out."
+            "Sign out isn't available while NIMINO_SHARE_IDENTITY provides your identity. Unset NIMINO_SHARE_IDENTITY and NIMINO_PRIVATE_KEY, then relaunch to sign out."
                 .to_string(),
         );
     }
 
     // Stop all managed agents before restart so they don't race the wipe.
     if let Err(e) = crate::shutdown::shutdown_managed_agents(&app) {
-        eprintln!("buzz-desktop sign-out: agent shutdown: {e}");
+        eprintln!("nimino-desktop sign-out: agent shutdown: {e}");
     }
 
     // Write the reset sentinel — destruction happens on next boot.
@@ -744,9 +728,9 @@ mod nostr_identity_binding_tests {
             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi01234567".into(),
         ]));
         assert!(tags.contains(&vec!["verification_code".into(), "123456".into(),]));
-        assert!(tags.contains(&vec!["audience".into(), "buzz:nostr-identity".into()]));
+        assert!(tags.contains(&vec!["audience".into(), "nimino:nostr-identity".into()]));
         assert!(tags.contains(&vec!["action".into(), "bind_nostr_identity".into(),]));
-        assert!(tags.contains(&vec!["protocol".into(), "buzz-nostr-identity".into(),]));
+        assert!(tags.contains(&vec!["protocol".into(), "nimino-nostr-identity".into(),]));
         assert!(tags.contains(&vec!["version".into(), "1".into(),]));
         assert!(tags.contains(&vec!["origin".into(), "https://example.com".into(),]));
         assert!(tags.contains(&vec!["expires_at".into(), "2999-01-01T00:00:00Z".into(),]));

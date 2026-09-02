@@ -1,0 +1,306 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "name": "open-new-direct-message",
+      "invariant": "DM.ImmutableSet.Create",
+      "input": {
+        "decision": "mutation",
+        "request": {
+          "command": "open",
+          "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "sourceCommunity": null,
+          "destinationCommunity": null,
+          "sourceExists": false,
+          "sourceIsDm": false,
+          "actorIsSourceParticipant": false,
+          "sourceActorHidden": false,
+          "actorIncluded": true,
+          "participantCount": 2,
+          "newParticipantCount": 0,
+          "destinationExists": false,
+          "destinationIsDm": false,
+          "destinationActorHidden": false
+        }
+      },
+      "expected": { "decision": "mutation", "action": "create", "error": "none" }
+    },
+    {
+      "name": "open-requires-actor-in-participant-set",
+      "invariant": "DM.ActorIncluded",
+      "input": {
+        "decision": "mutation",
+        "request": {
+          "command": "open",
+          "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "sourceCommunity": null,
+          "destinationCommunity": null,
+          "sourceExists": false,
+          "sourceIsDm": false,
+          "actorIsSourceParticipant": false,
+          "sourceActorHidden": false,
+          "actorIncluded": false,
+          "participantCount": 2,
+          "newParticipantCount": 0,
+          "destinationExists": false,
+          "destinationIsDm": false,
+          "destinationActorHidden": false
+        }
+      },
+      "expected": { "decision": "mutation", "action": "reject", "error": "actor_missing" }
+    },
+    {
+      "name": "open-rejects-single-participant",
+      "invariant": "DM.ParticipantBounds",
+      "input": {
+        "decision": "mutation",
+        "request": {
+          "command": "open",
+          "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "sourceCommunity": null,
+          "destinationCommunity": null,
+          "sourceExists": false,
+          "sourceIsDm": false,
+          "actorIsSourceParticipant": false,
+          "sourceActorHidden": false,
+          "actorIncluded": true,
+          "participantCount": 1,
+          "newParticipantCount": 0,
+          "destinationExists": false,
+          "destinationIsDm": false,
+          "destinationActorHidden": false
+        }
+      },
+      "expected": { "decision": "mutation", "action": "reject", "error": "participant_count" }
+    },
+    {
+      "name": "open-restores-hidden-dm",
+      "invariant": "DM.Visibility.Restore",
+      "input": {
+        "decision": "mutation",
+        "request": {
+          "command": "open",
+          "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "sourceCommunity": null,
+          "destinationCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "sourceExists": false,
+          "sourceIsDm": false,
+          "actorIsSourceParticipant": false,
+          "sourceActorHidden": false,
+          "actorIncluded": true,
+          "participantCount": 2,
+          "newParticipantCount": 0,
+          "destinationExists": true,
+          "destinationIsDm": true,
+          "destinationActorHidden": true
+        }
+      },
+      "expected": { "decision": "mutation", "action": "unhide", "error": "none" }
+    },
+    {
+      "name": "participant-opens-expanded-dm",
+      "invariant": "DM.ImmutableSet.Expand",
+      "input": {
+        "decision": "mutation",
+        "request": {
+          "command": "add",
+          "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "sourceCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "destinationCommunity": null,
+          "sourceExists": true,
+          "sourceIsDm": true,
+          "actorIsSourceParticipant": true,
+          "sourceActorHidden": false,
+          "actorIncluded": true,
+          "participantCount": 3,
+          "newParticipantCount": 1,
+          "destinationExists": false,
+          "destinationIsDm": false,
+          "destinationActorHidden": false
+        }
+      },
+      "expected": { "decision": "mutation", "action": "create", "error": "none" }
+    },
+    {
+      "name": "non-participant-cannot-expand-dm",
+      "invariant": "DM.ParticipantAuthority",
+      "input": {
+        "decision": "mutation",
+        "request": {
+          "command": "add",
+          "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "sourceCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "destinationCommunity": null,
+          "sourceExists": true,
+          "sourceIsDm": true,
+          "actorIsSourceParticipant": false,
+          "sourceActorHidden": false,
+          "actorIncluded": true,
+          "participantCount": 3,
+          "newParticipantCount": 1,
+          "destinationExists": false,
+          "destinationIsDm": false,
+          "destinationActorHidden": false
+        }
+      },
+      "expected": { "decision": "mutation", "action": "reject", "error": "not_participant" }
+    },
+    {
+      "name": "cross-community-source-fails-closed",
+      "invariant": "DM.TenantIsolation",
+      "input": {
+        "decision": "mutation",
+        "request": {
+          "command": "add",
+          "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "sourceCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0002",
+          "destinationCommunity": null,
+          "sourceExists": true,
+          "sourceIsDm": true,
+          "actorIsSourceParticipant": true,
+          "sourceActorHidden": false,
+          "actorIncluded": true,
+          "participantCount": 3,
+          "newParticipantCount": 1,
+          "destinationExists": false,
+          "destinationIsDm": false,
+          "destinationActorHidden": false
+        }
+      },
+      "expected": { "decision": "mutation", "action": "reject", "error": "tenant_mismatch" }
+    },
+    {
+      "name": "add-requires-new-unique-participant",
+      "invariant": "DM.ImmutableSet.NoopExpansion",
+      "input": {
+        "decision": "mutation",
+        "request": {
+          "command": "add",
+          "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "sourceCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "destinationCommunity": null,
+          "sourceExists": true,
+          "sourceIsDm": true,
+          "actorIsSourceParticipant": true,
+          "sourceActorHidden": false,
+          "actorIncluded": true,
+          "participantCount": 2,
+          "newParticipantCount": 0,
+          "destinationExists": false,
+          "destinationIsDm": false,
+          "destinationActorHidden": false
+        }
+      },
+      "expected": { "decision": "mutation", "action": "reject", "error": "no_new_participant" }
+    },
+    {
+      "name": "participant-hides-own-dm",
+      "invariant": "DM.Visibility.Owner",
+      "input": {
+        "decision": "mutation",
+        "request": {
+          "command": "hide",
+          "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "sourceCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "destinationCommunity": null,
+          "sourceExists": true,
+          "sourceIsDm": true,
+          "actorIsSourceParticipant": true,
+          "sourceActorHidden": false,
+          "actorIncluded": false,
+          "participantCount": 0,
+          "newParticipantCount": 0,
+          "destinationExists": false,
+          "destinationIsDm": false,
+          "destinationActorHidden": false
+        }
+      },
+      "expected": { "decision": "mutation", "action": "hide", "error": "none" }
+    },
+    {
+      "name": "participant-reads-dm",
+      "invariant": "DM.Access.Participant",
+      "input": {
+        "decision": "access",
+        "request": {
+          "operation": "read",
+          "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "resourceCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "resourceExists": true,
+          "channelIsDm": true,
+          "actorIsParticipant": true,
+          "actorIsViewer": false
+        }
+      },
+      "expected": { "decision": "access", "allowed": true, "error": "none" }
+    },
+    {
+      "name": "non-participant-cannot-write-dm",
+      "invariant": "DM.Access.NonParticipant",
+      "input": {
+        "decision": "access",
+        "request": {
+          "operation": "write",
+          "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "resourceCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "resourceExists": true,
+          "channelIsDm": true,
+          "actorIsParticipant": false,
+          "actorIsViewer": false
+        }
+      },
+      "expected": { "decision": "access", "allowed": false, "error": "not_participant" }
+    },
+    {
+      "name": "cross-community-read-fails-closed",
+      "invariant": "DM.Access.TenantIsolation",
+      "input": {
+        "decision": "access",
+        "request": {
+          "operation": "read",
+          "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "resourceCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0002",
+          "resourceExists": true,
+          "channelIsDm": true,
+          "actorIsParticipant": true,
+          "actorIsViewer": false
+        }
+      },
+      "expected": { "decision": "access", "allowed": false, "error": "tenant_mismatch" }
+    },
+    {
+      "name": "viewer-reads-own-visibility-snapshot",
+      "invariant": "DM.Visibility.ReadOwner",
+      "input": {
+        "decision": "access",
+        "request": {
+          "operation": "visibility",
+          "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "resourceCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "resourceExists": true,
+          "channelIsDm": false,
+          "actorIsParticipant": false,
+          "actorIsViewer": true
+        }
+      },
+      "expected": { "decision": "access", "allowed": true, "error": "none" }
+    },
+    {
+      "name": "third-party-cannot-read-visibility-snapshot",
+      "invariant": "DM.Visibility.NoMetadataLeak",
+      "input": {
+        "decision": "access",
+        "request": {
+          "operation": "visibility",
+          "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "resourceCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "resourceExists": true,
+          "channelIsDm": false,
+          "actorIsParticipant": false,
+          "actorIsViewer": false
+        }
+      },
+      "expected": { "decision": "access", "allowed": false, "error": "viewer_mismatch" }
+    }
+  ]
+}

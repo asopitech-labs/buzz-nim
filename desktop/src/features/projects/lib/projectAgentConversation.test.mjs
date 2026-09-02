@@ -54,7 +54,7 @@ beforeEach(() => store.clear());
 
 test("conversation scopes isolate same-relay identities and restore on return", () => {
   const relay = "wss://relay.example.com";
-  const resource = "30617:owner:buzz";
+  const resource = "30617:owner:nimino";
   const identityA = "a".repeat(64);
   const identityB = "b".repeat(64);
   const scopeA = projectsConversationScope(
@@ -302,7 +302,7 @@ test("storage read rejects legacy timestamp-only pointers", () => {
   // `visibleAfter`. They cannot uphold the same-second isolation invariant,
   // so they are not restorable.
   globalThis.localStorage.setItem(
-    `buzz.projects.agentConversation.${encodeURIComponent(WORKSPACE_ID)}`,
+    `nimino.projects.agentConversation.${encodeURIComponent(WORKSPACE_ID)}`,
     JSON.stringify({
       agentPubkey: AGENT_PUBKEY,
       channelId: EXISTING_DM.id,
@@ -321,7 +321,7 @@ test("storage read rejects malformed opener pointers", () => {
     null,
   ]) {
     globalThis.localStorage.setItem(
-      `buzz.projects.agentConversation.${encodeURIComponent(WORKSPACE_ID)}`,
+      `nimino.projects.agentConversation.${encodeURIComponent(WORKSPACE_ID)}`,
       JSON.stringify({
         agentPubkey: AGENT_PUBKEY,
         channelId: EXISTING_DM.id,

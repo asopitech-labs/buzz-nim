@@ -1,0 +1,31 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0051",
+  "operation": "domain.control.policy",
+  "status": "ok",
+  "result": {
+    "decision": "recover",
+    "result": {
+      "error": "none",
+      "state": {
+        "valid": true,
+        "metadataRevision": 0,
+        "term": 0,
+        "votedFor": null,
+        "voterEpoch": 1,
+        "phase": "stable_old",
+        "oldVoters": ["node-a"],
+        "newVoters": [],
+        "leaderId": "",
+        "leaderTerm": 0,
+        "leaderProof": [],
+        "lastIndex": 0,
+        "commitIndex": 0,
+        "appliedIndex": 0,
+        "snapshot": null,
+        "log": []
+      }
+    }
+  }
+}

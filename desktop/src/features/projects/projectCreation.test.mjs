@@ -25,7 +25,7 @@ test("buildInitialProjectEventTemplates emits a NIP-MP project", () => {
   assert.deepEqual(templates.project.tags, [
     ["d", "sprout"],
     ["name", "Sprout"],
-    ["buzz-channel", CHANNEL],
+    ["nimino-channel", CHANNEL],
     ["description", "A multi-repository workspace"],
     ["a", `30617:${OWNER}:sprout`],
   ]);
@@ -33,7 +33,7 @@ test("buildInitialProjectEventTemplates emits a NIP-MP project", () => {
   assert.deepEqual(templates.repository.tags, [
     ["d", "sprout"],
     ["name", "Sprout"],
-    ["buzz-channel", CHANNEL],
+    ["nimino-channel", CHANNEL],
     ["description", "A multi-repository workspace"],
     ["clone", "https://relay.example/git/owner/sprout.git"],
     ["web", "https://example.com/sprout"],

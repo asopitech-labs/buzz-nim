@@ -1,0 +1,276 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "name": "operator-creates-free-host",
+      "invariant": "Lifecycle.Create",
+      "input": {
+        "decision": "lifecycle",
+        "request": {
+          "command": "create",
+          "state": "missing",
+          "actorIsOperator": true,
+          "actorIsOwner": false,
+          "ownerProvided": true,
+          "ownerAtLimit": false,
+          "protectedDeployment": false
+        }
+      },
+      "expected": {
+        "decision": "lifecycle",
+        "action": "create",
+        "error": "none"
+      }
+    },
+    {
+      "name": "non-operator-cannot-create",
+      "invariant": "Authority.Operator",
+      "input": {
+        "decision": "lifecycle",
+        "request": {
+          "command": "create",
+          "state": "missing",
+          "actorIsOperator": false,
+          "actorIsOwner": false,
+          "ownerProvided": true,
+          "ownerAtLimit": false,
+          "protectedDeployment": false
+        }
+      },
+      "expected": {
+        "decision": "lifecycle",
+        "action": "reject",
+        "error": "not_operator"
+      }
+    },
+    {
+      "name": "create-requires-owner",
+      "invariant": "Lifecycle.InitialOwner",
+      "input": {
+        "decision": "lifecycle",
+        "request": {
+          "command": "create",
+          "state": "missing",
+          "actorIsOperator": true,
+          "actorIsOwner": false,
+          "ownerProvided": false,
+          "ownerAtLimit": false,
+          "protectedDeployment": false
+        }
+      },
+      "expected": {
+        "decision": "lifecycle",
+        "action": "reject",
+        "error": "owner_required"
+      }
+    },
+    {
+      "name": "create-respects-owner-limit",
+      "invariant": "Lifecycle.OwnerLimit",
+      "input": {
+        "decision": "lifecycle",
+        "request": {
+          "command": "create",
+          "state": "missing",
+          "actorIsOperator": true,
+          "actorIsOwner": false,
+          "ownerProvided": true,
+          "ownerAtLimit": true,
+          "protectedDeployment": false
+        }
+      },
+      "expected": {
+        "decision": "lifecycle",
+        "action": "reject",
+        "error": "owner_limit"
+      }
+    },
+    {
+      "name": "archived-host-remains-reserved",
+      "invariant": "Lifecycle.HostReservation",
+      "input": {
+        "decision": "lifecycle",
+        "request": {
+          "command": "create",
+          "state": "archived",
+          "actorIsOperator": true,
+          "actorIsOwner": false,
+          "ownerProvided": true,
+          "ownerAtLimit": false,
+          "protectedDeployment": false
+        }
+      },
+      "expected": {
+        "decision": "lifecycle",
+        "action": "reject",
+        "error": "host_reserved"
+      }
+    },
+    {
+      "name": "owner-archives-active-community",
+      "invariant": "Lifecycle.Archive",
+      "input": {
+        "decision": "lifecycle",
+        "request": {
+          "command": "archive",
+          "state": "active",
+          "actorIsOperator": true,
+          "actorIsOwner": true,
+          "ownerProvided": false,
+          "ownerAtLimit": false,
+          "protectedDeployment": false
+        }
+      },
+      "expected": {
+        "decision": "lifecycle",
+        "action": "archive",
+        "error": "none"
+      }
+    },
+    {
+      "name": "non-owner-cannot-archive",
+      "invariant": "Authority.Owner",
+      "input": {
+        "decision": "lifecycle",
+        "request": {
+          "command": "archive",
+          "state": "active",
+          "actorIsOperator": true,
+          "actorIsOwner": false,
+          "ownerProvided": false,
+          "ownerAtLimit": false,
+          "protectedDeployment": false
+        }
+      },
+      "expected": {
+        "decision": "lifecycle",
+        "action": "reject",
+        "error": "not_owner"
+      }
+    },
+    {
+      "name": "archive-retry-is-noop",
+      "invariant": "Lifecycle.Idempotency",
+      "input": {
+        "decision": "lifecycle",
+        "request": {
+          "command": "archive",
+          "state": "archived",
+          "actorIsOperator": true,
+          "actorIsOwner": true,
+          "ownerProvided": false,
+          "ownerAtLimit": false,
+          "protectedDeployment": false
+        }
+      },
+      "expected": { "decision": "lifecycle", "action": "noop", "error": "none" }
+    },
+    {
+      "name": "deployment-community-cannot-be-archived",
+      "invariant": "Lifecycle.ProtectedDeployment",
+      "input": {
+        "decision": "lifecycle",
+        "request": {
+          "command": "archive",
+          "state": "active",
+          "actorIsOperator": true,
+          "actorIsOwner": true,
+          "ownerProvided": false,
+          "ownerAtLimit": false,
+          "protectedDeployment": true
+        }
+      },
+      "expected": {
+        "decision": "lifecycle",
+        "action": "reject",
+        "error": "protected_community"
+      }
+    },
+    {
+      "name": "owner-unarchives-community",
+      "invariant": "Lifecycle.Unarchive",
+      "input": {
+        "decision": "lifecycle",
+        "request": {
+          "command": "unarchive",
+          "state": "archived",
+          "actorIsOperator": true,
+          "actorIsOwner": true,
+          "ownerProvided": false,
+          "ownerAtLimit": false,
+          "protectedDeployment": false
+        }
+      },
+      "expected": {
+        "decision": "lifecycle",
+        "action": "unarchive",
+        "error": "none"
+      }
+    },
+    {
+      "name": "deleting-community-cannot-be-unarchived",
+      "invariant": "Lifecycle.DeletionFence",
+      "input": {
+        "decision": "lifecycle",
+        "request": {
+          "command": "unarchive",
+          "state": "deleting",
+          "actorIsOperator": true,
+          "actorIsOwner": true,
+          "ownerProvided": false,
+          "ownerAtLimit": false,
+          "protectedDeployment": false
+        }
+      },
+      "expected": {
+        "decision": "lifecycle",
+        "action": "reject",
+        "error": "invalid_state"
+      }
+    },
+    {
+      "name": "same-tenant-resource-is-allowed",
+      "invariant": "Tenant.RowZero",
+      "input": {
+        "decision": "scope",
+        "request": {
+          "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "resourceCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001"
+        }
+      },
+      "expected": { "decision": "scope", "allowed": true, "error": "none" }
+    },
+    {
+      "name": "cross-tenant-resource-fails-closed",
+      "invariant": "Tenant.RowZero",
+      "input": {
+        "decision": "scope",
+        "request": {
+          "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "resourceCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0002"
+        }
+      },
+      "expected": {
+        "decision": "scope",
+        "allowed": false,
+        "error": "tenant_mismatch"
+      }
+    },
+    {
+      "name": "missing-resource-fails-closed",
+      "invariant": "Tenant.RowZero",
+      "input": {
+        "decision": "scope",
+        "request": {
+          "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+          "resourceCommunity": null
+        }
+      },
+      "expected": {
+        "decision": "scope",
+        "allowed": false,
+        "error": "resource_missing"
+      }
+    }
+  ]
+}

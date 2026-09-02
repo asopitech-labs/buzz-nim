@@ -1,0 +1,26 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0052",
+  "operation": "domain.lease.policy",
+  "payload": {
+    "decision": "plan_grant",
+    "state": {
+      "valid": true,
+      "resourceId": "workflow-scheduler",
+      "lastFenceToken": 0,
+      "lastControlIndex": 0,
+      "lastCommand": null,
+      "activeLease": null
+    },
+    "authority": {
+      "leaderId": "node-a",
+      "term": 1,
+      "voterEpoch": 1,
+      "quorumAvailable": true
+    },
+    "transitionId": "grant-1",
+    "eligibleOwners": ["node-b", "node-a"],
+    "durationTicks": 1000
+  }
+}

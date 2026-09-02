@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "name": "persona-overrides-pack-and-shallow-triggers",
+      "invariant": "A present persona trigger object replaces pack triggers rather than deep-merging them.",
+      "input": {
+        "decision": "persona",
+        "persona": {
+          "model": "gpt-5", "temperature": null, "maxContextTokens": null,
+          "subscribe": [],
+          "triggers": {"mentions": false, "keywords": null, "allMessages": null},
+          "threadReplies": null, "broadcastReplies": null
+        },
+        "defaults": {
+          "model": "default", "temperature": 0.7, "maxContextTokens": 8192,
+          "subscribe": ["general"],
+          "triggers": {"mentions": true, "keywords": ["incident"], "allMessages": true},
+          "threadReplies": false, "broadcastReplies": true
+        }
+      },
+      "expected": {
+        "decision": "persona",
+        "behavior": {
+          "model": "gpt-5", "temperature": 0.7, "maxContextTokens": 8192,
+          "subscribe": [],
+          "triggers": {"mentions": false, "keywords": [], "allMessages": false},
+          "threadReplies": false, "broadcastReplies": true
+        }
+      }
+    },
+    {
+      "name": "persona-builtins-are-stable",
+      "invariant": "Absent pack and persona values use only the documented built-ins.",
+      "input": {
+        "decision": "persona",
+        "persona": {"model": null, "temperature": null, "maxContextTokens": null, "subscribe": null, "triggers": null, "threadReplies": null, "broadcastReplies": null},
+        "defaults": {"model": null, "temperature": null, "maxContextTokens": null, "subscribe": null, "triggers": null, "threadReplies": null, "broadcastReplies": null}
+      },
+      "expected": {
+        "decision": "persona",
+        "behavior": {"model": null, "temperature": null, "maxContextTokens": null, "subscribe": null, "triggers": null, "threadReplies": true, "broadcastReplies": false}
+      }
+    },
+    {
+      "name": "trigger-first-match",
+      "invariant": "The first rule whose channel, kind, mention, and expression match wins.",
+      "input": {
+        "decision": "trigger",
+        "event": {"content": "P1 incident", "author": "alice", "kind": 9, "channelId": "general", "timestamp": 10, "mentioned": true},
+        "rules": [
+          {"name": "wrong-kind", "allChannels": true, "channels": [], "kinds": [1], "requireMention": false, "filter": "", "promptTag": ""},
+          {"name": "incident", "allChannels": true, "channels": [], "kinds": [9], "requireMention": true, "filter": "str_contains(content, \"P1\") && kind == 9", "promptTag": "urgent"},
+          {"name": "later", "allChannels": true, "channels": [], "kinds": [], "requireMention": false, "filter": "", "promptTag": "later"}
+        ]
+      },
+      "expected": {"decision": "trigger", "matched": true, "ruleIndex": 1, "promptTag": "urgent", "error": "none"}
+    },
+    {
+      "name": "trigger-filter-error-fails-closed",
+      "invariant": "An invalid earlier rule never falls through to a broader later rule.",
+      "input": {
+        "decision": "trigger",
+        "event": {"content": "hello", "author": "alice", "kind": 9, "channelId": "general", "timestamp": 10, "mentioned": false},
+        "rules": [
+          {"name": "broken", "allChannels": true, "channels": [], "kinds": [], "requireMention": false, "filter": "missing", "promptTag": ""},
+          {"name": "catch-all", "allChannels": true, "channels": [], "kinds": [], "requireMention": false, "filter": "", "promptTag": "catch-all"}
+        ]
+      },
+      "expected": {"decision": "trigger", "matched": false, "ruleIndex": -1, "promptTag": "", "error": "invalid_filter"}
+    },
+    {
+      "name": "lifecycle-starts-lazily",
+      "invariant": "Pending work creates exactly one numbered start attempt.",
+      "input": {"decision": "lifecycle", "request": {"state": {"phase": "absent", "attempt": 0, "retryAtMs": 0, "turnId": ""}, "command": "start", "commandAttempt": 0, "commandTurnId": "", "pendingWork": true, "nowMs": 100}},
+      "expected": {"decision": "lifecycle", "allowed": true, "error": "none", "action": "spawn", "nextState": {"phase": "starting", "attempt": 1, "retryAtMs": 0, "turnId": ""}}
+    },
+    {
+      "name": "lifecycle-start-failure-waits",
+      "invariant": "A failed matching start is reaped before a bounded retry delay.",
+      "input": {"decision": "lifecycle", "request": {"state": {"phase": "starting", "attempt": 1, "retryAtMs": 0, "turnId": ""}, "command": "start_failed", "commandAttempt": 1, "commandTurnId": "", "pendingWork": true, "nowMs": 100}},
+      "expected": {"decision": "lifecycle", "allowed": true, "error": "none", "action": "reap_and_wait", "nextState": {"phase": "restart_wait", "attempt": 1, "retryAtMs": 5100, "turnId": ""}}
+    },
+    {
+      "name": "lifecycle-retry-before-deadline-is-noop",
+      "invariant": "A retry never spawns before its declared deadline.",
+      "input": {"decision": "lifecycle", "request": {"state": {"phase": "restart_wait", "attempt": 1, "retryAtMs": 5100, "turnId": ""}, "command": "retry", "commandAttempt": 0, "commandTurnId": "", "pendingWork": true, "nowMs": 5099}},
+      "expected": {"decision": "lifecycle", "allowed": true, "error": "none", "action": "noop", "nextState": {"phase": "restart_wait", "attempt": 1, "retryAtMs": 5100, "turnId": ""}}
+    },
+    {
+      "name": "lifecycle-retry-after-deadline-spawns",
+      "invariant": "A due retry advances the attempt token exactly once.",
+      "input": {"decision": "lifecycle", "request": {"state": {"phase": "restart_wait", "attempt": 1, "retryAtMs": 5100, "turnId": ""}, "command": "retry", "commandAttempt": 0, "commandTurnId": "", "pendingWork": true, "nowMs": 5100}},
+      "expected": {"decision": "lifecycle", "allowed": true, "error": "none", "action": "spawn", "nextState": {"phase": "starting", "attempt": 2, "retryAtMs": 0, "turnId": ""}}
+    },
+    {
+      "name": "lifecycle-cancels-matching-turn",
+      "invariant": "Cancellation targets only the current turn and enters a drain phase.",
+      "input": {"decision": "lifecycle", "request": {"state": {"phase": "running", "attempt": 0, "retryAtMs": 0, "turnId": "turn-1"}, "command": "cancel", "commandAttempt": 0, "commandTurnId": "turn-1", "pendingWork": true, "nowMs": 100}},
+      "expected": {"decision": "lifecycle", "allowed": true, "error": "none", "action": "send_cancel", "nextState": {"phase": "cancelling", "attempt": 0, "retryAtMs": 0, "turnId": "turn-1"}}
+    },
+    {
+      "name": "lifecycle-cancel-timeout-reaps",
+      "invariant": "An undrained cancellation kills and reaps before replacement.",
+      "input": {"decision": "lifecycle", "request": {"state": {"phase": "cancelling", "attempt": 0, "retryAtMs": 0, "turnId": "turn-1"}, "command": "cancel_timeout", "commandAttempt": 0, "commandTurnId": "turn-1", "pendingWork": true, "nowMs": 200}},
+      "expected": {"decision": "lifecycle", "allowed": true, "error": "none", "action": "reap_and_wait", "nextState": {"phase": "restart_wait", "attempt": 0, "retryAtMs": 5200, "turnId": ""}}
+    },
+    {
+      "name": "lifecycle-rejects-stale-start",
+      "invariant": "A stale start result cannot replace the current attempt.",
+      "input": {"decision": "lifecycle", "request": {"state": {"phase": "starting", "attempt": 2, "retryAtMs": 0, "turnId": ""}, "command": "started", "commandAttempt": 1, "commandTurnId": "", "pendingWork": true, "nowMs": 100}},
+      "expected": {"decision": "lifecycle", "allowed": false, "error": "stale_attempt", "action": "reject", "nextState": {"phase": "starting", "attempt": 2, "retryAtMs": 0, "turnId": ""}}
+    },
+    {
+      "name": "lifecycle-shutdown-is-terminal",
+      "invariant": "Shutdown never leaves a restart path.",
+      "input": {"decision": "lifecycle", "request": {"state": {"phase": "ready", "attempt": 0, "retryAtMs": 0, "turnId": ""}, "command": "shutdown", "commandAttempt": 0, "commandTurnId": "", "pendingWork": true, "nowMs": 100}},
+      "expected": {"decision": "lifecycle", "allowed": true, "error": "none", "action": "stop", "nextState": {"phase": "stopped", "attempt": 0, "retryAtMs": 0, "turnId": ""}}
+    }
+  ]
+}

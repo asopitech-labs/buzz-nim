@@ -1,0 +1,336 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "name": "regular-message-is-stored",
+      "standard": "NIP-01",
+      "input": {
+        "decision": "classify",
+        "kind": 9,
+        "dTagCount": 0,
+        "dTagLen": 0
+      },
+      "expected": {
+        "decision": "classify",
+        "disposition": "stored",
+        "error": "none"
+      }
+    },
+    {
+      "name": "auth-event-never-enters-storage",
+      "standard": "NIP-42",
+      "input": {
+        "decision": "classify",
+        "kind": 22242,
+        "dTagCount": 0,
+        "dTagLen": 0
+      },
+      "expected": {
+        "decision": "classify",
+        "disposition": "rejected",
+        "error": "auth_not_storable"
+      }
+    },
+    {
+      "name": "addressable-event-requires-one-d-tag",
+      "standard": "NIP-33",
+      "input": {
+        "decision": "classify",
+        "kind": 30023,
+        "dTagCount": 0,
+        "dTagLen": 0
+      },
+      "expected": {
+        "decision": "classify",
+        "disposition": "rejected",
+        "error": "d_tag_required"
+      }
+    },
+    {
+      "name": "same-second-lowest-id-wins",
+      "standard": "NIP-33",
+      "input": {
+        "decision": "replacement",
+        "incoming": {
+          "createdAt": 10,
+          "eventId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "current": {
+          "createdAt": 10,
+          "eventId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        }
+      },
+      "expected": { "decision": "replacement", "action": "replace" }
+    },
+    {
+      "name": "nested-reply-uses-parent-ancestry",
+      "standard": "NIP-10",
+      "input": {
+        "decision": "thread",
+        "request": {
+          "eventId": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "createdAt": 10,
+          "channelId": "channel-a",
+          "tags": [
+            [
+              "e",
+              "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+              "",
+              "root"
+            ],
+            [
+              "e",
+              "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+              "",
+              "reply"
+            ],
+            ["broadcast", "1"]
+          ],
+          "parent": {
+            "eventId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "createdAt": 9,
+            "channelId": "channel-a",
+            "tags": [],
+            "metadata": {
+              "rootId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "depth": 1
+            }
+          },
+          "rootCreatedAt": 8
+        }
+      },
+      "expected": {
+        "decision": "thread",
+        "error": "none",
+        "plan": {
+          "rootId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "parentId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "rootCreatedAt": 8,
+          "parentCreatedAt": 9,
+          "depth": 2,
+          "broadcast": true,
+          "parentReplyDelta": 1,
+          "rootDescendantDelta": 1
+        }
+      }
+    },
+    {
+      "name": "reply-root-must-match-ancestry",
+      "standard": "NIP-10",
+      "input": {
+        "decision": "thread",
+        "request": {
+          "eventId": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "createdAt": 10,
+          "channelId": "channel-a",
+          "tags": [
+            [
+              "e",
+              "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+              "",
+              "root"
+            ],
+            [
+              "e",
+              "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+              "",
+              "reply"
+            ]
+          ],
+          "parent": {
+            "eventId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "createdAt": 9,
+            "channelId": "channel-a",
+            "tags": [],
+            "metadata": {
+              "rootId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "depth": 1
+            }
+          },
+          "rootCreatedAt": null
+        }
+      },
+      "expected": {
+        "decision": "thread",
+        "error": "thread_root_mismatch",
+        "plan": null
+      }
+    },
+    {
+      "name": "author-deletes-reply-and-repairs-counters",
+      "standard": "NIP-09",
+      "input": {
+        "decision": "deletion",
+        "request": {
+          "actor": "1111111111111111111111111111111111111111111111111111111111111111",
+          "createdAt": 10,
+          "eTargets": [
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          ],
+          "aTargets": [],
+          "target": {
+            "eventId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "author": "1111111111111111111111111111111111111111111111111111111111111111",
+            "createdAt": 9,
+            "active": true,
+            "parentId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "rootId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        }
+      },
+      "expected": {
+        "decision": "deletion",
+        "error": "none",
+        "action": "delete_event",
+        "parentReplyDelta": -1,
+        "rootDescendantDelta": -1
+      }
+    },
+    {
+      "name": "replayed-deletion-does-not-decrement-counters-twice",
+      "standard": "NIP-09",
+      "input": {
+        "decision": "deletion",
+        "request": {
+          "actor": "1111111111111111111111111111111111111111111111111111111111111111",
+          "createdAt": 10,
+          "eTargets": [
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          ],
+          "aTargets": [],
+          "target": {
+            "eventId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "author": "1111111111111111111111111111111111111111111111111111111111111111",
+            "createdAt": 9,
+            "active": false,
+            "parentId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "rootId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          }
+        }
+      },
+      "expected": {
+        "decision": "deletion",
+        "error": "none",
+        "action": "noop",
+        "parentReplyDelta": 0,
+        "rootDescendantDelta": 0
+      }
+    },
+    {
+      "name": "stale-tombstone-keeps-newer-event",
+      "standard": "NIP-09",
+      "input": {
+        "decision": "deletion",
+        "request": {
+          "actor": "1111111111111111111111111111111111111111111111111111111111111111",
+          "createdAt": 10,
+          "eTargets": [
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          ],
+          "aTargets": [],
+          "target": {
+            "eventId": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+            "author": "1111111111111111111111111111111111111111111111111111111111111111",
+            "createdAt": 11,
+            "active": true,
+            "parentId": null,
+            "rootId": null
+          }
+        }
+      },
+      "expected": {
+        "decision": "deletion",
+        "error": "none",
+        "action": "keep_newer",
+        "parentReplyDelta": 0,
+        "rootDescendantDelta": 0
+      }
+    },
+    {
+      "name": "owner-deletes-addressable-coordinate",
+      "standard": "NIP-09/NIP-33",
+      "input": {
+        "decision": "deletion",
+        "request": {
+          "actor": "1111111111111111111111111111111111111111111111111111111111111111",
+          "createdAt": 10,
+          "eTargets": [],
+          "aTargets": [
+            "30023:1111111111111111111111111111111111111111111111111111111111111111:article"
+          ],
+          "target": null
+        }
+      },
+      "expected": {
+        "decision": "deletion",
+        "error": "none",
+        "action": "delete_coordinate",
+        "parentReplyDelta": 0,
+        "rootDescendantDelta": 0
+      }
+    },
+    {
+      "name": "active-reaction-is-idempotent",
+      "standard": "NIP-25",
+      "input": {
+        "decision": "reaction",
+        "request": {
+          "targetExists": true,
+          "activeDuplicate": true,
+          "content": "+",
+          "tags": []
+        }
+      },
+      "expected": {
+        "decision": "reaction",
+        "error": "none",
+        "action": "duplicate",
+        "emoji": ""
+      }
+    },
+    {
+      "name": "missing-reaction-target-is-rejected",
+      "standard": "NIP-25",
+      "input": {
+        "decision": "reaction",
+        "request": {
+          "targetExists": false,
+          "activeDuplicate": false,
+          "content": "+",
+          "tags": []
+        }
+      },
+      "expected": {
+        "decision": "reaction",
+        "error": "reaction_target_missing",
+        "action": "reject",
+        "emoji": ""
+      }
+    },
+    {
+      "name": "long-custom-emoji-needs-matching-tag",
+      "standard": "NIP-25/NIP-30",
+      "input": {
+        "decision": "reaction",
+        "request": {
+          "targetExists": true,
+          "activeDuplicate": false,
+          "content": ":aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:",
+          "tags": [
+            [
+              "emoji",
+              "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+              "https://example.test/emoji.png"
+            ]
+          ]
+        }
+      },
+      "expected": {
+        "decision": "reaction",
+        "error": "none",
+        "action": "insert",
+        "emoji": ":aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa:"
+      }
+    }
+  ]
+}

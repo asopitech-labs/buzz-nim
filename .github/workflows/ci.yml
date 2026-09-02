@@ -10,7 +10,7 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
-  BUZZ_TEST_POSTGRES_PASSWORD: buzz_dev
+  NIMINO_TEST_POSTGRES_PASSWORD: nimino_dev
   PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.cache/ms-playwright
 
 jobs:
@@ -23,10 +23,11 @@ jobs:
       pull-requests: read
     outputs:
       rust: ${{ steps.filter.outputs.rust }}
+      nim: ${{ steps.filter.outputs.nim }}
+      boundary: ${{ steps.filter.outputs.boundary }}
       desktop: ${{ steps.filter.outputs.desktop }}
       desktop-rust: ${{ steps.filter.outputs.desktop-rust }}
       web: ${{ steps.filter.outputs.web }}
-      mobile: ${{ steps.filter.outputs.mobile }}
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
         with:
@@ -36,20 +37,127 @@ jobs:
         id: filter
         with:
           token: ''
+          predicate-quantifier: 'some-with-excludes'
           filters: |
+            nim:
+              - 'nim/**'
+              - 'hermit-packages/nim.hcl'
+              - 'bin/hermit.hcl'
+              - 'bin/.nim-*.pkg'
+              - 'bin/nim*'
+              - 'bin/atlas'
+              - 'bin/testament'
+              - 'Justfile'
+              - 'scripts/measure-nim-feedback.sh'
+              - 'scripts/test-nim-bootstrap-contract.sh'
+              - '.github/workflows/ci.yml'
+            boundary:
+              - 'nim/nimino_core/nimino_core.nimble'
+              - 'nim/nimino_core/nim.cfg'
+              - 'nim/nimino_core/src/nimino_core.nim'
+              - 'nim/nimino_core/src/nimino_core_worker.nim'
+              - 'nim/nimino_core/src/nimino_core/boundary/**'
+              - 'nim/nimino_core/src/nimino_core/domain/event_policy.nim'
+              - 'nim/nimino_core/src/nimino_core/domain/community_policy.nim'
+              - 'nim/nimino_core/src/nimino_core/domain/membership_policy.nim'
+              - 'nim/nimino_core/src/nimino_core/domain/dm_policy.nim'
+              - 'nim/nimino_core/src/nimino_core/domain/moderation_policy.nim'
+              - 'nim/nimino_core/src/nimino_core/domain/workflow_policy.nim'
+              - 'nim/nimino_core/src/nimino_core/domain/cli_policy.nim'
+              - 'nim/nimino_core/src/nimino_core/domain/agent_policy.nim'
+              - 'nim/nimino_core/src/nimino_core/domain/cluster_lifecycle.nim'
+              - 'nim/nimino_core/src/nimino_core/domain/control_state_machine.nim'
+              - 'nim/nimino_core/src/nimino_core/domain/admission_policy.nim'
+              - 'nim/nimino_core/src/nimino_core/domain/ephemeral_policy.nim'
+              - 'nim/nimino_core/src/nimino_core/domain/lease_fencing.nim'
+              - 'nim/nimino_core/src/nimino_core/domain/effect_ledger.nim'
+              - 'nim/nimino_core/src/nimino_core/domain/object_sync_policy.nim'
+              - 'nim/nimino_core/src/nimino_core/domain/projection_lifecycle.nim'
+              - 'nim/nimino_core/src/nimino_core/domain/sync_protocol.nim'
+              - 'nim/nimino_core/tests/test_boundary_protocol.nim'
+              - 'nim/nimino_core/tests/test_event_policy.nim'
+              - 'nim/nimino_core/tests/test_community_policy.nim'
+              - 'nim/nimino_core/tests/test_membership_policy.nim'
+              - 'nim/nimino_core/tests/test_dm_policy.nim'
+              - 'nim/nimino_core/tests/test_moderation_policy.nim'
+              - 'nim/nimino_core/tests/test_workflow_policy.nim'
+              - 'nim/nimino_core/tests/test_cli_policy.nim'
+              - 'nim/nimino_core/tests/test_agent_policy.nim'
+              - 'nim/nimino_core/tests/test_cluster_lifecycle.nim'
+              - 'nim/nimino_core/tests/test_control_state_machine.nim'
+              - 'nim/nimino_core/tests/test_admission_policy.nim'
+              - 'nim/nimino_core/tests/test_ephemeral_policy.nim'
+              - 'nim/nimino_core/tests/test_lease_fencing.nim'
+              - 'nim/nimino_core/tests/test_effect_ledger.nim'
+              - 'nim/nimino_core/tests/test_object_sync_policy.nim'
+              - 'nim/nimino_core/tests/test_projection_lifecycle.nim'
+              - 'nim/nimino_core/tests/test_sync_protocol.nim'
+              - 'hermit-packages/nim.hcl'
+              - 'bin/hermit.hcl'
+              - 'bin/.nim-*.pkg'
+              - 'bin/nim*'
+              - 'bin/atlas'
+              - 'bin/testament'
+              - 'Justfile'
+              - 'scripts/test-nim-boundary-contract.sh'
+              - 'scripts/test-nimino-event-contract.mjs'
+              - 'scripts/test-nimino-community-contract.mjs'
+              - 'scripts/test-nimino-membership-contract.mjs'
+              - 'scripts/test-nimino-dm-contract.mjs'
+              - 'scripts/test-nimino-moderation-contract.mjs'
+              - 'scripts/test-nimino-workflow-contract.mjs'
+              - 'scripts/test-nimino-cli-contract.mjs'
+              - 'scripts/test-nimino-agent-contract.mjs'
+              - 'scripts/test-nimino-cluster-contract.mjs'
+              - 'scripts/test-nimino-projection-contract.mjs'
+              - 'contracts/nim-rust-boundary/**'
+              - 'contracts/nimino-event/**'
+              - 'contracts/nimino-community/**'
+              - 'contracts/nimino-membership/**'
+              - 'contracts/nimino-dm/**'
+              - 'contracts/nimino-moderation/**'
+              - 'contracts/nimino-workflow/**'
+              - 'contracts/nimino-cli/**'
+              - 'contracts/nimino-agent/**'
+              - 'contracts/nimino-cluster/**'
+              - 'contracts/nimino-cluster-scenarios/**'
+              - 'contracts/nimino-control-state/**'
+              - 'contracts/nimino-projection/**'
+              - 'contracts/nimino-sync-scenarios/**'
+              - 'contracts/nimino-wsl-chirps/**'
+              - 'crates/nimino-boundary/**'
+              - 'crates/nimino-chirps/**'
+              - 'crates/nimino-sync/**'
+              - 'crates/nimino-control/**'
+              - 'crates/nimino-object-store/**'
+              - 'crates/nimino-data-ops/**'
+              - 'crates/nimino-workflow/src/effect_ledger.rs'
+              - 'crates/nimino-workflow/Cargo.toml'
+              - 'crates/nimino-store/**'
+              - 'scripts/test-nimino-cluster-scenario-contract.mjs'
+              - 'scripts/test-nimino-control-state-contract.mjs'
+              - 'scripts/test-nimino-sync-scenario-contract.mjs'
+              - 'scripts/test-nimino-wsl-chirps-contract.mjs'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'rust-toolchain.toml'
+              - '.github/workflows/ci.yml'
             rust:
               - 'crates/**'
+              - '!crates/nimino-boundary/**'
               - 'migrations/**'
               - 'schema/**'
               - 'Cargo.toml'
               - 'Cargo.lock'
               - 'rust-toolchain.toml'
               - 'deny.toml'
+              - 'contracts/chirps-v0.6.3.json'
               - '.github/workflows/ci.yml'
+              - 'scripts/check-chirps-api-contract.mjs'
               - 'scripts/run-tests.sh'
               - 'scripts/model-capabilities.json'
               - 'scripts/normative-corpus.json'
-              - 'justfile'
+              - 'Justfile'
             desktop:
               - 'scripts/model-capabilities.json'
               - 'scripts/normative-corpus.json'
@@ -60,35 +168,163 @@ jobs:
               - 'desktop/src-tauri/**'
             web:
               - 'web/**'
+              - 'admin-web/**'
               - 'pnpm-lock.yaml'
-            mobile:
-              - 'mobile/**'
-              - 'scripts/mobile-release.sh'
-              - 'scripts/mobile-worktree-overrides.sh'
-              - 'scripts/mobile-worktree-clean.sh'
-              - 'scripts/publish-mobile-release-candidate.sh'
-              - 'scripts/release-rulesets.sh'
-              - 'scripts/test-mobile-release-contract.sh'
-              - 'scripts/test-mobile-release-candidate-publisher.sh'
-              - 'scripts/test-mobile-worktree-overrides.sh'
-              - '.github/workflows/mobile-release-candidate.yml'
-              - '.github/workflows/ci.yml'
-      - name: Release workflow source contract
-        run: scripts/test-release-ref-contract.sh
-      - name: Desktop release candidate contract
-        run: scripts/test-desktop-release-candidate.sh
-      - name: OSS desktop promotion contract
-        run: |
-          scripts/test-oss-desktop-promotion.sh
-          scripts/test-oss-desktop-promotion-behavior.sh
-      - name: Mobile release contract
-        run: |
-          scripts/test-mobile-release-contract.sh
-          scripts/test-mobile-release-candidate-publisher.sh
-      - name: Mobile worktree identity contract
-        run: scripts/test-mobile-worktree-overrides.sh
+      - name: CI lane contract
+        run: just ci-lanes-contract
+      - name: Nimino naming contract
+        run: just naming-contract
+      - name: Nimino protocol contract
+        run: just protocol-contract
+      - name: Nimino control model contract
+        run: just control-model-contract
+      - name: Nimino control state-machine contract
+        run: just nimino-control-state-contract
+      - name: Nimino lease and fencing contract
+        run: just nimino-lease-contract
+      - name: Nimino bounded anti-entropy contract
+        run: just nimino-sync-contract
+      - name: Nimino deterministic convergence contract
+        run: just nimino-convergence-contract
+      - name: Nimino object sync contract
+        run: just nimino-object-sync-contract
+      - name: Nimino projection rebuild contract
+        run: just nimino-projection-contract
+      - name: Nimino workflow effect ledger contract
+        run: just nimino-effect-ledger-contract
+      - name: Nimino data operations contract
+        run: just nimino-data-ops-contract
+      - name: Nimino cutover recovery rehearsal contract
+        run: just nimino-cutover-rehearsal-contract
+      - name: Nimino MCP execution contract
+        run: just nimino-mcp-execution-contract
+      - name: Legacy mesh and Redis replacement manifest
+        run: just legacy-control-manifest-contract
+      - name: Nimino Tauri adapter contract
+        run: just nimino-tauri-contract
+      - name: Rust responsibility contract
+        run: just rust-responsibility-contract
+      - name: Immutable release-set contract
+        run: just release-set-contract
+      - name: Unified Nimino relay release contract
+        run: just relay-release-contract
+      - name: Signed Nimino platform release contract
+        run: just platform-release-contract
+      - name: Nimino promotion and supply-chain contract
+        run: just promotion-contract
+      - name: Legacy release authority retirement contract
+        run: just legacy-release-deletion-contract
+      - name: Unified cutover readiness contract
+        run: just cutover-readiness-contract
+      - name: Final cutover certification contract
+        run: just cutover-certification-contract
+      - name: Manifest-driven agent bundle contract
+        run: just agent-bundle-contract
+      - name: Nimino data contract
+        run: node scripts/test-nimino-data-contract.mjs
+      - name: Nimino event policy contract
+        run: node scripts/test-nimino-event-contract.mjs
+      - name: Nimino community policy contract
+        run: node scripts/test-nimino-community-contract.mjs
+      - name: Nimino membership policy contract
+        run: node scripts/test-nimino-membership-contract.mjs
+      - name: Nimino DM policy contract
+        run: node scripts/test-nimino-dm-contract.mjs
+      - name: Nimino moderation policy contract
+        run: node scripts/test-nimino-moderation-contract.mjs
+      - name: Nimino workflow policy contract
+        run: node scripts/test-nimino-workflow-contract.mjs
+      - name: Nimino CLI contract
+        run: just nimino-cli-contract
+      - name: Nimino agent and persona contract
+        run: just nimino-agent-contract
+      - name: Nimino cluster lifecycle contract
+        run: just nimino-cluster-contract
+      - name: Nimino real-mesh scenario contract
+        run: just nimino-cluster-scenario-contract
+      - name: Nimino runtime namespace contract
+        run: just runtime-namespace-contract
+      - name: GUI surface contract
+        run: just gui-surface-contract
+      - name: WSL support contract
+        run: just wsl-support-contract
+      - name: WSL service lifecycle contract
+        run: just wsl-service-contract
+      - name: WSL launcher and secret boundary contract
+        run: just wsl-launcher-contract
+      - name: WSL Chirps runtime certification contract
+        run: just wsl-chirps-contract
+      - name: WSL complete install bundle contract
+        run: just wsl-bundle-contract
+      - name: Removed client contract
+        run: just removed-client-contract
       - name: File size policy
         run: just file-size-check
+
+  nim:
+    name: Nim Core
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [changes]
+    if: github.event_name == 'push' || needs.changes.outputs.nim == 'true'
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: cashapp/activate-hermit@cea9af7913204a965fd488637a8d1811bba2e616 # v1
+      - name: Verify pinned Nim toolchain
+        run: |
+          nim --version
+          nimble --version
+      - name: Verify Nim bootstrap contract
+        run: scripts/test-nim-bootstrap-contract.sh
+      - name: Verify Nim core and record feedback baseline
+        run: scripts/measure-nim-feedback.sh "$RUNNER_TEMP/nim-feedback-baseline.json"
+      - name: Upload Nim feedback baseline
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: nim-feedback-baseline
+          path: ${{ runner.temp }}/nim-feedback-baseline.json
+
+  boundary:
+    name: Nim/Rust Boundary
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [changes]
+    if: github.event_name == 'push' || needs.changes.outputs.boundary == 'true'
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - uses: cashapp/activate-hermit@cea9af7913204a965fd488637a8d1811bba2e616 # v1
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
+        with:
+          key: nim-boundary
+          save-if: ${{ github.event_name != 'pull_request' }}
+      - name: Boundary Rust format
+        run: cargo fmt -p nimino-boundary -p nimino-sync -p nimino-control -p nimino-object-store -p nimino-data-ops -p nimino-workflow -- --check
+      - name: Boundary Rust clippy
+        run: cargo clippy -p nimino-boundary -p nimino-sync -p nimino-control -p nimino-object-store -p nimino-data-ops -p nimino-workflow --all-targets --all-features -- -D warnings
+      - name: Verify cross-language lifecycle and performance
+        run: just nim-boundary-ci
+      - name: Upload Nim/Rust boundary benchmark
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: nim-rust-boundary-benchmark
+          path: target/nim/nimino-boundary-benchmark.json
+      - name: Upload real-mesh lifecycle evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: nimino-cluster-scenarios
+          path: target/nim/nimino-cluster-scenarios.json
+      - name: Upload real-mesh synchronization evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: nimino-sync-scenarios
+          path: target/nim/nimino-sync-scenarios.json
 
   rust-lint:
     name: Rust Lint
@@ -108,6 +344,8 @@ jobs:
         run: just fmt-check
       - name: Desktop Tauri format check
         run: just desktop-tauri-fmt-check
+      - name: Chirps dependency and API contract
+        run: just chirps-contract
       - name: Clippy
         run: just clippy
 
@@ -317,7 +555,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [changes]
-    if: github.event_name == 'push' || needs.changes.outputs.desktop == 'true' || needs.changes.outputs.desktop-rust == 'true' || needs.changes.outputs.rust == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.desktop == 'true' || needs.changes.outputs.desktop-rust == 'true' || needs.changes.outputs.rust == 'true' || needs.changes.outputs.nim == 'true' || needs.changes.outputs.boundary == 'true'
     permissions:
       contents: read
     env:
@@ -334,10 +572,11 @@ jobs:
         uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
           path: |
-            target/ci/buzz-relay
+            target/ci/nimino-relay
             target/ci/git-credential-nostr
+            target/ci/nimino-core-worker
             target/ci/backend-integration-tests.tar.zst
-          key: relay-artifacts-${{ runner.os }}-${{ hashFiles('crates/**', 'migrations/**', 'Dockerfile', 'Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', '.cargo/config.toml', '.github/workflows/ci.yml') }}
+          key: relay-artifacts-${{ runner.os }}-${{ hashFiles('crates/**', 'nim/**', 'contracts/nim-rust-boundary/**', 'migrations/**', 'Dockerfile', 'Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', '.cargo/config.toml', 'Justfile', '.github/workflows/ci.yml') }}
       - uses: rui314/setup-mold@9c9c13bf4c3f1adef0cc596abc155580bcb04444 # v1
         if: steps.relay-artifacts-cache.outputs.cache-hit != 'true'
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
@@ -364,12 +603,14 @@ jobs:
         env:
           RUSTC_WRAPPER: sccache
         run: |
-          cargo build --profile ci -p buzz-relay -p git-credential-nostr
+          just nim-boundary-build
+          cargo build --profile ci -p nimino-relay -p git-credential-nostr
+          cp target/nim/nimino_boundary/bin/nimino-core-worker target/ci/nimino-core-worker
           cargo nextest archive \
             --cargo-profile ci \
-            -p buzz-db \
-            -p buzz-relay \
-            -p buzz-test-client \
+            -p nimino-db \
+            -p nimino-relay \
+            -p nimino-test-client \
             --lib \
             --test e2e_event_reminder \
             --archive-file target/ci/backend-integration-tests.tar.zst
@@ -380,17 +621,19 @@ jobs:
         uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
         with:
           path: |
-            target/ci/buzz-relay
+            target/ci/nimino-relay
             target/ci/git-credential-nostr
+            target/ci/nimino-core-worker
             target/ci/backend-integration-tests.tar.zst
-          key: relay-artifacts-${{ runner.os }}-${{ hashFiles('crates/**', 'migrations/**', 'Dockerfile', 'Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', '.cargo/config.toml', '.github/workflows/ci.yml') }}
+          key: relay-artifacts-${{ runner.os }}-${{ hashFiles('crates/**', 'nim/**', 'contracts/nim-rust-boundary/**', 'migrations/**', 'Dockerfile', 'Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml', '.cargo/config.toml', 'Justfile', '.github/workflows/ci.yml') }}
       - name: Upload relay artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: desktop-e2e-relay
           path: |
-            target/ci/buzz-relay
+            target/ci/nimino-relay
             target/ci/git-credential-nostr
+            target/ci/nimino-core-worker
             target/ci/backend-integration-tests.tar.zst
           if-no-files-found: error
           retention-days: 1
@@ -400,7 +643,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [changes, desktop-e2e-relay]
-    if: github.event_name == 'push' || needs.changes.outputs.desktop == 'true' || needs.changes.outputs.desktop-rust == 'true' || needs.changes.outputs.rust == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.desktop == 'true' || needs.changes.outputs.desktop-rust == 'true' || needs.changes.outputs.rust == 'true' || needs.changes.outputs.nim == 'true' || needs.changes.outputs.boundary == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -413,7 +656,7 @@ jobs:
       - name: Start integration services
         run: |
           for attempt in 1 2 3; do
-            if docker compose up -d postgres redis minio minio-init; then
+            if docker compose up -d postgres minio minio-init; then
               break
             fi
             if [ "$attempt" -eq 3 ]; then
@@ -472,9 +715,8 @@ jobs:
             docker logs "${container}" || true
             return 1
           }
-          wait_healthy "Postgres" "buzz-postgres"
-          wait_healthy "Redis" "buzz-redis"
-          wait_healthy "MinIO" "buzz-minio"
+          wait_healthy "Postgres" "nimino-postgres"
+          wait_healthy "MinIO" "nimino-minio"
       - name: Download relay binary
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -487,53 +729,62 @@ jobs:
         # exits permanently on an unmapped host, so the 'localhost:3000'
         # community MUST exist before the relay starts — the retry loop only
         # handles late-seeded channels, not a late-seeded community. The relay
-        # migrates at boot via BUZZ_AUTO_MIGRATE, but that's too late for the
+        # migrates at boot via NIMINO_AUTO_MIGRATE, but that's too late for the
         # pre-boot seed, so apply the schema here first (then drop AUTO_MIGRATE
         # below). lower(host) is the unique index → ON CONFLICT target. psql
-        # isn't on PATH in hermit → exec into the buzz-postgres container.
+        # isn't on PATH in hermit → exec into the nimino-postgres container.
         env:
           PGHOST: localhost
           PGPORT: "5432"
-          PGUSER: buzz
-          PGPASSWORD: buzz_dev
-          PGDATABASE: buzz
+          PGUSER: nimino
+          PGPASSWORD: nimino_dev
+          PGDATABASE: nimino
           # Use the already-running docker postgres for desired-state planning instead of
           # downloading an embedded Postgres from Maven Central (transient-fetch flake source).
           PGSCHEMA_PLAN_HOST: localhost
           PGSCHEMA_PLAN_PORT: "5432"
-          PGSCHEMA_PLAN_DB: buzz
-          PGSCHEMA_PLAN_USER: buzz
-          PGSCHEMA_PLAN_PASSWORD: buzz_dev
+          PGSCHEMA_PLAN_DB: nimino
+          PGSCHEMA_PLAN_USER: nimino
+          PGSCHEMA_PLAN_PASSWORD: nimino_dev
         run: |
           ./bin/pgschema apply --file schema/schema.sql --auto-approve
-          docker exec -i -e PGPASSWORD=buzz_dev buzz-postgres \
-            psql -U buzz -d buzz -v ON_ERROR_STOP=1 < scripts/attach-schema-partitions.sql
-          docker exec -e PGPASSWORD=buzz_dev buzz-postgres \
-            psql -U buzz -d buzz -qtA -c "
+          docker exec -i -e PGPASSWORD=nimino_dev nimino-postgres \
+            psql -U nimino -d nimino -v ON_ERROR_STOP=1 < scripts/attach-schema-partitions.sql
+          docker exec -e PGPASSWORD=nimino_dev nimino-postgres \
+            psql -U nimino -d nimino -qtA -c "
           INSERT INTO communities (id, host)
           VALUES ('00000000-0000-4000-8000-00000000c0de', 'localhost:3000')
           ON CONFLICT (lower(host)) DO NOTHING
           ;"
       - name: Start relay
         run: |
-          chmod +x ./target/ci/buzz-relay
+          just _dev-cluster-material
+          mkdir -p "${RUNNER_TEMP}/nimino-cluster"
+          chmod +x ./target/ci/nimino-relay ./target/ci/nimino-core-worker
           nohup env \
-            DATABASE_URL="postgres://buzz:${BUZZ_TEST_POSTGRES_PASSWORD}@localhost:5432/buzz" \
-            REDIS_URL=redis://localhost:6379 \
+            DATABASE_URL="postgres://nimino:${NIMINO_TEST_POSTGRES_PASSWORD}@localhost:5432/nimino" \
             RELAY_URL=ws://localhost:3000 \
-            BUZZ_BIND_ADDR=0.0.0.0:3000 \
-            BUZZ_REQUIRE_AUTH_TOKEN=false \
-            BUZZ_RECONCILE_CHANNELS=true \
-            BUZZ_RATE_LIMIT_HUMAN_MESSAGES_PER_MIN=100000 \
-            BUZZ_RATE_LIMIT_HUMAN_API_CALLS_PER_MIN=100000 \
-            BUZZ_RATE_LIMIT_HUMAN_WS_EVENTS_PER_SEC=10000 \
-            BUZZ_GIT_PROBE_WRITERS=8 \
-            SPROUT_REMINDER_SCHEDULER_INTERVAL_SECS=1 \
-            ./target/ci/buzz-relay > /tmp/buzz-relay.log 2>&1 &
-          echo $! > /tmp/buzz-relay.pid
+            NIMINO_BIND_ADDR=0.0.0.0:3000 \
+            NIMINO_BOUNDARY_WORKER="${GITHUB_WORKSPACE}/target/ci/nimino-core-worker" \
+            NIMINO_CHIRPS_BIND_ADDR=127.0.0.1:7443 \
+            NIMINO_CHIRPS_IDENTITY_PATH="${RUNNER_TEMP}/nimino-cluster/node.identity" \
+            NIMINO_CHIRPS_CERTIFICATE_PATH="${GITHUB_WORKSPACE}/target/nim/dev-cluster/tls.crt" \
+            NIMINO_CHIRPS_PRIVATE_KEY_PATH="${GITHUB_WORKSPACE}/target/nim/dev-cluster/tls.key" \
+            NIMINO_CHIRPS_TRUST_ANCHOR_PATHS="${GITHUB_WORKSPACE}/target/nim/dev-cluster/ca.crt" \
+            NIMINO_NODE_STORE_PATH="${RUNNER_TEMP}/nimino-cluster/data.redb" \
+            NIMINO_OBJECT_STORE_PATH="${RUNNER_TEMP}/nimino-cluster/objects" \
+            NIMINO_REQUIRE_AUTH_TOKEN=false \
+            NIMINO_RECONCILE_CHANNELS=true \
+            NIMINO_RATE_LIMIT_HUMAN_MESSAGES_PER_MIN=100000 \
+            NIMINO_RATE_LIMIT_HUMAN_API_CALLS_PER_MIN=100000 \
+            NIMINO_RATE_LIMIT_HUMAN_WS_EVENTS_PER_SEC=10000 \
+            NIMINO_GIT_PROBE_WRITERS=8 \
+            NIMINO_REMINDER_SCHEDULER_INTERVAL_SECS=1 \
+            ./target/ci/nimino-relay > /tmp/nimino-relay.log 2>&1 &
+          echo $! > /tmp/nimino-relay.pid
           for attempt in $(seq 1 60); do
-            if ! kill -0 "$(cat /tmp/buzz-relay.pid)" 2>/dev/null; then
-              cat /tmp/buzz-relay.log
+            if ! kill -0 "$(cat /tmp/nimino-relay.pid)" 2>/dev/null; then
+              cat /tmp/nimino-relay.log
               exit 1
             fi
             status_code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/_readiness || true)
@@ -542,7 +793,7 @@ jobs:
             fi
             sleep 1
           done
-          cat /tmp/buzz-relay.log
+          cat /tmp/nimino-relay.log
           exit 1
       - name: Seed desktop e2e data
         run: bash scripts/setup-desktop-test-data.sh
@@ -561,7 +812,7 @@ jobs:
             desktop/playwright-report
             desktop/playwright-report.json
             desktop/test-results
-            /tmp/buzz-relay.log
+            /tmp/nimino-relay.log
           if-no-files-found: ignore
           retention-days: 7
       - name: Save pnpm store cache
@@ -576,7 +827,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [changes, desktop-e2e-integration-shard]
-    if: always() && (github.event_name == 'push' || needs.changes.outputs.desktop == 'true' || needs.changes.outputs.desktop-rust == 'true' || needs.changes.outputs.rust == 'true')
+    if: always() && (github.event_name == 'push' || needs.changes.outputs.desktop == 'true' || needs.changes.outputs.desktop-rust == 'true' || needs.changes.outputs.rust == 'true' || needs.changes.outputs.nim == 'true' || needs.changes.outputs.boundary == 'true')
     permissions:
       contents: read
     steps:
@@ -593,7 +844,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [changes, desktop-e2e-relay]
-    if: github.event_name == 'push' || needs.changes.outputs.rust == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.rust == 'true' || needs.changes.outputs.nim == 'true' || needs.changes.outputs.boundary == 'true'
     permissions:
       contents: read
     steps:
@@ -606,7 +857,7 @@ jobs:
       - name: Start integration services
         run: |
           for attempt in 1 2 3; do
-            if docker compose up -d postgres redis minio minio-init; then
+            if docker compose up -d postgres minio minio-init; then
               break
             fi
             if [ "$attempt" -eq 3 ]; then
@@ -632,9 +883,8 @@ jobs:
             docker logs "${container}" || true
             return 1
           }
-          wait_healthy "Postgres" "buzz-postgres"
-          wait_healthy "Redis" "buzz-redis"
-          wait_healthy "MinIO" "buzz-minio"
+          wait_healthy "Postgres" "nimino-postgres"
+          wait_healthy "MinIO" "nimino-minio"
       - name: Download relay artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
@@ -647,50 +897,59 @@ jobs:
         # unmapped host (no retry, unlike the channel reconciler), so the
         # 'localhost:3000' community MUST exist before the relay starts — seeding
         # after boot leaves the scheduler dead. The relay migrates at boot via
-        # BUZZ_AUTO_MIGRATE, but that's too late for the pre-boot seed, so apply
+        # NIMINO_AUTO_MIGRATE, but that's too late for the pre-boot seed, so apply
         # the schema here first (then drop AUTO_MIGRATE below). lower(host) is the
         # unique index → ON CONFLICT target. psql isn't on PATH in hermit → exec
-        # into the buzz-postgres container.
+        # into the nimino-postgres container.
         env:
           PGHOST: localhost
           PGPORT: "5432"
-          PGUSER: buzz
-          PGPASSWORD: buzz_dev
-          PGDATABASE: buzz
+          PGUSER: nimino
+          PGPASSWORD: nimino_dev
+          PGDATABASE: nimino
           # Use the already-running docker postgres for desired-state planning instead of
           # downloading an embedded Postgres from Maven Central (transient-fetch flake source).
           PGSCHEMA_PLAN_HOST: localhost
           PGSCHEMA_PLAN_PORT: "5432"
-          PGSCHEMA_PLAN_DB: buzz
-          PGSCHEMA_PLAN_USER: buzz
-          PGSCHEMA_PLAN_PASSWORD: buzz_dev
+          PGSCHEMA_PLAN_DB: nimino
+          PGSCHEMA_PLAN_USER: nimino
+          PGSCHEMA_PLAN_PASSWORD: nimino_dev
         run: |
           ./bin/pgschema apply --file schema/schema.sql --auto-approve
-          docker exec -i -e PGPASSWORD=buzz_dev buzz-postgres \
-            psql -U buzz -d buzz -v ON_ERROR_STOP=1 < scripts/attach-schema-partitions.sql
-          docker exec -e PGPASSWORD=buzz_dev buzz-postgres \
-            psql -U buzz -d buzz -qtA -c "
+          docker exec -i -e PGPASSWORD=nimino_dev nimino-postgres \
+            psql -U nimino -d nimino -v ON_ERROR_STOP=1 < scripts/attach-schema-partitions.sql
+          docker exec -e PGPASSWORD=nimino_dev nimino-postgres \
+            psql -U nimino -d nimino -qtA -c "
           INSERT INTO communities (id, host)
           VALUES ('00000000-0000-4000-8000-00000000c0de', 'localhost:3000')
           ON CONFLICT (lower(host)) DO NOTHING
           ;"
       - name: Start relay
         run: |
-          chmod +x ./target/ci/buzz-relay
+          just _dev-cluster-material
+          mkdir -p "${RUNNER_TEMP}/nimino-cluster"
+          chmod +x ./target/ci/nimino-relay ./target/ci/nimino-core-worker
           nohup env \
-            DATABASE_URL="postgres://buzz:${BUZZ_TEST_POSTGRES_PASSWORD}@localhost:5432/buzz" \
-            REDIS_URL=redis://localhost:6379 \
+            DATABASE_URL="postgres://nimino:${NIMINO_TEST_POSTGRES_PASSWORD}@localhost:5432/nimino" \
             RELAY_URL=ws://localhost:3000 \
-            BUZZ_BIND_ADDR=0.0.0.0:3000 \
-            BUZZ_REQUIRE_AUTH_TOKEN=false \
-            BUZZ_RECONCILE_CHANNELS=true \
-            BUZZ_GIT_PROBE_WRITERS=8 \
-            SPROUT_REMINDER_SCHEDULER_INTERVAL_SECS=1 \
-            ./target/ci/buzz-relay > /tmp/buzz-relay.log 2>&1 &
-          echo $! > /tmp/buzz-relay.pid
+            NIMINO_BIND_ADDR=0.0.0.0:3000 \
+            NIMINO_BOUNDARY_WORKER="${GITHUB_WORKSPACE}/target/ci/nimino-core-worker" \
+            NIMINO_CHIRPS_BIND_ADDR=127.0.0.1:7443 \
+            NIMINO_CHIRPS_IDENTITY_PATH="${RUNNER_TEMP}/nimino-cluster/node.identity" \
+            NIMINO_CHIRPS_CERTIFICATE_PATH="${GITHUB_WORKSPACE}/target/nim/dev-cluster/tls.crt" \
+            NIMINO_CHIRPS_PRIVATE_KEY_PATH="${GITHUB_WORKSPACE}/target/nim/dev-cluster/tls.key" \
+            NIMINO_CHIRPS_TRUST_ANCHOR_PATHS="${GITHUB_WORKSPACE}/target/nim/dev-cluster/ca.crt" \
+            NIMINO_NODE_STORE_PATH="${RUNNER_TEMP}/nimino-cluster/data.redb" \
+            NIMINO_OBJECT_STORE_PATH="${RUNNER_TEMP}/nimino-cluster/objects" \
+            NIMINO_REQUIRE_AUTH_TOKEN=false \
+            NIMINO_RECONCILE_CHANNELS=true \
+            NIMINO_GIT_PROBE_WRITERS=8 \
+            NIMINO_REMINDER_SCHEDULER_INTERVAL_SECS=1 \
+            ./target/ci/nimino-relay > /tmp/nimino-relay.log 2>&1 &
+          echo $! > /tmp/nimino-relay.pid
           for attempt in $(seq 1 60); do
-            if ! kill -0 "$(cat /tmp/buzz-relay.pid)" 2>/dev/null; then
-              cat /tmp/buzz-relay.log
+            if ! kill -0 "$(cat /tmp/nimino-relay.pid)" 2>/dev/null; then
+              cat /tmp/nimino-relay.log
               exit 1
             fi
             status_code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:3000/_readiness || true)
@@ -699,16 +958,17 @@ jobs:
             fi
             sleep 1
           done
-          cat /tmp/buzz-relay.log
+          cat /tmp/nimino-relay.log
           exit 1
       - name: Invite security tests
         run: |
           cargo nextest run \
             --archive-file target/ci/backend-integration-tests.tar.zst \
-            -E '(package(buzz-db) and test(/relay_invite::tests/)) or (package(buzz-relay) and test(/api::invites::tests/))' \
+            -E '(package(nimino-db) and test(/relay_invite::tests/)) or (package(nimino-relay) and test(/api::invites::tests/))' \
             --run-ignored ignored-only
         env:
-          DATABASE_URL: postgres://buzz:${{ env.BUZZ_TEST_POSTGRES_PASSWORD }}@localhost:5432/buzz
+          DATABASE_URL: postgres://nimino:${{ env.NIMINO_TEST_POSTGRES_PASSWORD }}@localhost:5432/nimino
+          NIMINO_BOUNDARY_WORKER: ${{ github.workspace }}/target/ci/nimino-core-worker
       - name: Workspace profile (kind:9033) gate tests
         # Call-site integration for the 9033 authorization gate: open relay
         # rosterless/steward transitions and the closed-relay admin/owner rule,
@@ -717,15 +977,15 @@ jobs:
         run: |
           cargo nextest run \
             --archive-file target/ci/backend-integration-tests.tar.zst \
-            -E 'package(buzz-relay) and test(/handlers::relay_admin::tests/)' \
+            -E 'package(nimino-relay) and test(/handlers::relay_admin::tests/)' \
             --run-ignored ignored-only
         env:
-          DATABASE_URL: postgres://buzz:${{ env.BUZZ_TEST_POSTGRES_PASSWORD }}@localhost:5432/buzz
+          DATABASE_URL: postgres://nimino:${{ env.NIMINO_TEST_POSTGRES_PASSWORD }}@localhost:5432/nimino
       - name: NIP-ER reminder e2e
         # Feature e2e for NIP-ER (Event Reminders, kind:30300): write-path
         # validation, author-only read filtering, and scheduler delivery against
         # a live relay. The schema-drift / migration-version guarantee is owned
-        # by the buzz-db migration.rs unit tests, not this suite.
+        # by the nimino-db migration.rs unit tests, not this suite.
         run: |
           cargo nextest run \
             --archive-file target/ci/backend-integration-tests.tar.zst \
@@ -740,16 +1000,16 @@ jobs:
         run: |
           cargo nextest run \
             --archive-file target/ci/backend-integration-tests.tar.zst \
-            -E 'package(buzz-db) and test(coordinate_delete_spares_head_newer_than_the_deletion)' \
+            -E 'package(nimino-db) and test(coordinate_delete_spares_head_newer_than_the_deletion)' \
             --run-ignored ignored-only
         env:
-          DATABASE_URL: postgres://buzz:${{ env.BUZZ_TEST_POSTGRES_PASSWORD }}@localhost:5432/buzz
+          DATABASE_URL: postgres://nimino:${{ env.NIMINO_TEST_POSTGRES_PASSWORD }}@localhost:5432/nimino
       - name: Upload relay log
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: backend-integration-relay-log
-          path: /tmp/buzz-relay.log
+          path: /tmp/nimino-relay.log
           if-no-files-found: ignore
 
   relay-e2e:
@@ -757,7 +1017,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [changes, desktop-e2e-relay]
-    if: github.event_name == 'push' || needs.changes.outputs.rust == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.rust == 'true' || needs.changes.outputs.nim == 'true' || needs.changes.outputs.boundary == 'true'
     permissions:
       contents: read
     steps:
@@ -775,13 +1035,13 @@ jobs:
           path: target/ci
       - name: Start relay
         run: |
-          chmod +x ./target/ci/buzz-relay ./target/ci/git-credential-nostr
+          chmod +x ./target/ci/nimino-relay ./target/ci/git-credential-nostr ./target/ci/nimino-core-worker
           ./scripts/start-relay-for-tests.sh --no-build
       - name: Relay E2E tests
         run: |
-          cargo test -p buzz-test-client --test e2e_persona --test e2e_team_catalog --test e2e_nostr_interop --test e2e_project -- --ignored --nocapture
-          cargo test -p buzz-test-client --test e2e_relay invite -- --ignored --nocapture
-          cargo test -p buzz-test-client --test e2e_relay nip43_membership_snapshots_are_rejected -- --ignored --nocapture
+          cargo test -p nimino-test-client --test e2e_persona --test e2e_team_catalog --test e2e_nostr_interop --test e2e_project -- --ignored --nocapture
+          cargo test -p nimino-test-client --test e2e_relay invite -- --ignored --nocapture
+          cargo test -p nimino-test-client --test e2e_relay nip43_membership_snapshots_are_rejected -- --ignored --nocapture
         env:
           RELAY_URL: ws://localhost:3000
           GIT_CREDENTIAL_NOSTR_BIN: ${{ github.workspace }}/target/ci/git-credential-nostr
@@ -794,7 +1054,7 @@ jobs:
         # --no-fail-fast: without it cargo stops after the first failing binary,
         # so one broken case hides every later binary's result.
         run: |
-          cargo test -p buzz-test-client --no-fail-fast --test e2e_media --test e2e_media_extended --test e2e_media_video -- --ignored --nocapture
+          cargo test -p nimino-test-client --no-fail-fast --test e2e_media --test e2e_media_extended --test e2e_media_video -- --ignored --nocapture
         env:
           RELAY_URL: ws://localhost:3000
           RELAY_HTTP_URL: http://localhost:3000
@@ -803,7 +1063,7 @@ jobs:
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: relay-e2e-artifacts
-          path: /tmp/buzz-relay.log
+          path: /tmp/nimino-relay.log
           if-no-files-found: ignore
 
   web:
@@ -834,6 +1094,10 @@ jobs:
         run: just web-check
       - name: Web build
         run: just web-build
+      - name: Admin Web lint, typecheck, and tests
+        run: pnpm -C admin-web check
+      - name: Admin Web build
+        run: pnpm -C admin-web build
       - name: Save pnpm store cache
         if: github.event_name == 'push'
         uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
@@ -841,71 +1105,12 @@ jobs:
           path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
           key: pnpm-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
 
-  mobile:
-    name: Mobile
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    needs: [changes]
-    if: github.event_name == 'push' || needs.changes.outputs.mobile == 'true'
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
-        with:
-          fetch-depth: 2
-      - uses: cashapp/activate-hermit@cea9af7913204a965fd488637a8d1811bba2e616 # v1
-      - name: Compute Hermit cache key
-        id: hermit-bin-hash
-        run: |
-          hash="$(find ./bin ! -type d | sort | xargs openssl sha256 | openssl sha256 -r | cut -d' ' -f1)"
-          echo "hash=$hash" >> "$GITHUB_OUTPUT"
-      - name: Restore Hermit package cache
-        id: hermit-cache
-        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
-        with:
-          path: ~/.cache/hermit/pkg
-          key: ${{ runner.os }}-hermit-cache-${{ steps.hermit-bin-hash.outputs.hash }}
-          restore-keys: ${{ runner.os }}-hermit-cache-
-      - name: Prime Flutter SDK
-        run: flutter --version
-      - name: Save Hermit package cache
-        if: always() && steps.hermit-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
-        continue-on-error: true
-        with:
-          path: ~/.cache/hermit/pkg
-          key: ${{ runner.os }}-hermit-cache-${{ steps.hermit-bin-hash.outputs.hash }}
-      - name: Restore pub cache
-        id: pub-cache
-        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
-        with:
-          path: ~/.pub-cache
-          key: pub-${{ runner.os }}-${{ hashFiles('mobile/pubspec.lock') }}
-          restore-keys: pub-${{ runner.os }}-
-      - name: Install dependencies
-        run: cd mobile && flutter pub get
-      - name: Save pub cache
-        if: always() && steps.pub-cache.outputs.cache-hit != 'true'
-        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
-        continue-on-error: true
-        with:
-          path: ~/.pub-cache
-          key: pub-${{ runner.os }}-${{ hashFiles('mobile/pubspec.lock') }}
-      - name: Format check
-        run: cd mobile && dart format --output=none --set-exit-if-changed .
-      - name: Analyze
-        run: cd mobile && flutter analyze
-      - name: Test
-        run: cd mobile && flutter test
-      - name: Build Android debug APK
-        run: just mobile-build-android
-
   security:
     name: Security
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: [changes]
-    if: github.event_name == 'push' || needs.changes.outputs.rust == 'true'
+    if: github.event_name == 'push' || needs.changes.outputs.rust == 'true' || needs.changes.outputs.boundary == 'true'
     permissions:
       contents: read
     steps:
@@ -924,11 +1129,11 @@ jobs:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Check for dead API token references in client code
         run: |
-          # Fail if dead API token patterns reappear in desktop, mobile, docs, or config.
+          # Fail if dead API token patterns reappear in active client code or config.
           # Relay crates are excluded — they still use token auth internally.
           PATTERNS='TokenScope|MintTokenResponse|hasApiToken|spr_tok_'
-          PATHS='desktop/src/ desktop/tests/ mobile/test/ mobile/lib/ .env.example'
-          EXCLUDES='--exclude-dir=node_modules --exclude-dir=.dart_tool'
+          PATHS='desktop/src/ desktop/tests/ .env.example'
+          EXCLUDES='--exclude-dir=node_modules'
           if grep -rn $EXCLUDES -E "$PATTERNS" $PATHS 2>/dev/null; then
             echo "::error::Dead API token references found in client code. See above."
             exit 1
@@ -967,10 +1172,10 @@ jobs:
           CARGO_CMD: ${{ github.event_name == 'pull_request' && 'check' || 'build' }}
         run: |
           cross "$CARGO_CMD" --release --target "$TARGET" \
-            -p buzz-relay \
-            -p buzz-acp \
-            -p buzz-agent \
-            -p buzz-dev-mcp \
+            -p nimino-relay \
+            -p nimino-acp \
+            -p nimino-agent \
+            -p nimino-dev-mcp \
             -p git-credential-nostr \
             -p git-sign-nostr
 
@@ -1008,19 +1213,19 @@ jobs:
         shell: bash
         run: |
           mkdir -p desktop/src-tauri/binaries
-          for bin in buzz-acp buzz-agent buzz-dev-mcp git-credential-nostr buzz; do
+          for bin in nimino-acp nimino-agent nimino-dev-mcp git-credential-nostr nimino; do
             touch "desktop/src-tauri/binaries/${bin}-${TARGET}.exe"
           done
       - name: Clippy (workspace)
         run: cargo clippy --workspace --all-targets --target $env:TARGET -- -D warnings
       - name: Check (workspace)
         run: cargo check --workspace --all-targets --target $env:TARGET
-      - name: Test (buzz-dev-mcp)
-        # The Windows-only bash resolver lives in buzz-dev-mcp; its unit tests
+      - name: Test (nimino-dev-mcp)
+        # The Windows-only bash resolver lives in nimino-dev-mcp; its unit tests
         # only gate if this crate is tested ON Windows.
         # Serial: windows_resolver_tests mutate process-global env
-        # (BUZZ_SHELL/GIT_BASH/SystemRoot) that SharedState::new reads.
-        run: cargo test -p buzz-dev-mcp --target $env:TARGET -- --test-threads=1
+        # (NIMINO_SHELL/GIT_BASH/SystemRoot) that SharedState::new reads.
+        run: cargo test -p nimino-dev-mcp --target $env:TARGET -- --test-threads=1
       # Smoke-test the new host-prereq contract: Git for Windows (which provides
       # bash) is available on the runner, a shell command round-trips, and bash
       # does NOT resolve from System32 (so WSL's launcher is never picked up).
@@ -1080,19 +1285,19 @@ jobs:
         run: |
           TARGET=$(rustc -vV | sed -n 's|host: ||p')
           mkdir -p desktop/src-tauri/binaries
-          touch "desktop/src-tauri/binaries/buzz-acp-$TARGET"
-          touch "desktop/src-tauri/binaries/buzz-agent-$TARGET"
-          touch "desktop/src-tauri/binaries/buzz-backend-kubernetes-$TARGET"
-          touch "desktop/src-tauri/binaries/buzz-dev-mcp-$TARGET"
+          touch "desktop/src-tauri/binaries/nimino-acp-$TARGET"
+          touch "desktop/src-tauri/binaries/nimino-agent-$TARGET"
+          touch "desktop/src-tauri/binaries/nimino-backend-kubernetes-$TARGET"
+          touch "desktop/src-tauri/binaries/nimino-dev-mcp-$TARGET"
           touch "desktop/src-tauri/binaries/git-credential-nostr-$TARGET"
-          touch "desktop/src-tauri/binaries/buzz-$TARGET"
-      # Mesh rev is derived from Cargo.lock so a dependency bump needs no
+          touch "desktop/src-tauri/binaries/nimino-$TARGET"
+      # Mesh rev is derived from the desktop lock so a dependency bump needs no
       # lockstep edit here; the cache key tracks it automatically.
       - name: Resolve mesh-llm rev
         id: mesh_rev
         run: |
           set -euo pipefail
-          REV=$(python3 -c 'import tomllib; d=tomllib.load(open("Cargo.lock", "rb")); p=next(p for p in d["package"] if p["name"] == "mesh-llm-sdk"); print(p["source"].rsplit("#", 1)[1])')
+          REV=$(python3 -c 'import tomllib; d=tomllib.load(open("desktop/src-tauri/Cargo.lock", "rb")); p=next(p for p in d["package"] if p["name"] == "mesh-llm-sdk"); print(p["source"].rsplit("#", 1)[1])')
           [[ -n "$REV" ]] || { echo "::error::could not resolve mesh-llm rev from Cargo.lock"; exit 1; }
           echo "rev=$REV" >> "$GITHUB_OUTPUT"
           echo "short=${REV:0:7}" >> "$GITHUB_OUTPUT"

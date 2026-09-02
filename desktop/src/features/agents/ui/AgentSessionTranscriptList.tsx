@@ -23,7 +23,7 @@ import {
 } from "@/shared/ui/dialog";
 import { Toggle } from "@/shared/ui/toggle";
 import { AnimatedCount } from "@/shared/ui/AnimatedCount";
-import { FuzzyLogo } from "@/shared/ui/buzz-logo/FuzzyLogo";
+import { NiminoMark } from "@/shared/ui/nimino-logo/NiminoMark";
 import type { PromptSection, TranscriptItem } from "./agentSessionTypes";
 import { TurnLivenessIndicator } from "./TurnLivenessIndicator";
 import { PromptSectionList as PromptContextSections } from "./PromptSectionAccordion";
@@ -61,7 +61,7 @@ import { formatTranscriptTimestampTitle } from "./agentSessionUtils";
 import { hasFileEditLineDiff } from "./FileEditDiffView";
 import { UserMessageBubble } from "./activityRenderClasses/UserMessageBubble";
 
-const TRANSCRIPT_ACP_SOURCE_STORAGE_KEY = "buzz:show-transcript-acp-source";
+const TRANSCRIPT_ACP_SOURCE_STORAGE_KEY = "nimino:show-transcript-acp-source";
 
 const ROW_ENTER_SPRING = {
   damping: 38,
@@ -208,11 +208,9 @@ export function AgentSessionTranscriptList({
       <div className={scrollContainerClassNames}>
         <div className="flex h-full min-h-40 flex-col items-center justify-center px-6 py-10 text-center">
           {isLoading ? (
-            <FuzzyLogo
+            <NiminoMark
               ariaLabel="Waiting for ACP activity"
-              className="mx-auto text-muted-foreground"
-              fuzz={false}
-              loop
+              className="mx-auto w-6 text-muted-foreground"
             />
           ) : (
             <>

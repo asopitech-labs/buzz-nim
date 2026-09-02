@@ -11,7 +11,7 @@
  * Context to ensure the panel is visible before the event fires.
  */
 
-const OPEN_EDIT_AGENT_EVENT = "buzz:open-edit-agent";
+const OPEN_EDIT_AGENT_EVENT = "nimino:open-edit-agent";
 
 /**
  * Optional focus target for the Edit Agent dialog.
@@ -29,6 +29,12 @@ type OpenEditAgentDetail = { pubkey: string; focus?: EditAgentFocusTarget };
 
 let pendingEditAgentPubkey: string | null = null;
 let pendingEditAgentFocus: EditAgentFocusTarget | undefined;
+
+/** Drop a request captured for the community being left. */
+export function resetPendingOpenEditAgent(): void {
+  pendingEditAgentPubkey = null;
+  pendingEditAgentFocus = undefined;
+}
 
 export function requestOpenEditAgent(
   pubkey: string,

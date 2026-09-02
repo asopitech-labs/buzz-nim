@@ -208,7 +208,7 @@ fn migrate_inline_key(store: &impl KeyStore, record: &ManagedAgentRecord) -> Key
                 Ok(()) => KeyMigration::Persisted,
                 Err(e) => {
                     eprintln!(
-                        "buzz-desktop: keyring write for agent {} failed ({e}), keeping inline",
+                        "nimino-desktop: keyring write for agent {} failed ({e}), keeping inline",
                         record.pubkey
                     );
                     KeyMigration::KeptInline
@@ -222,7 +222,7 @@ fn migrate_inline_key(store: &impl KeyStore, record: &ManagedAgentRecord) -> Key
 /// `Some(error)` when `private_key_nsec` is empty — after [`hydrate_keys`] an
 /// empty key means a keyring outage or a genuinely absent secret, NOT a
 /// deliberately keyless agent. Spawning anyway would inject an empty
-/// `BUZZ_PRIVATE_KEY`/`NOSTR_PRIVATE_KEY`, launching with no identity. Callers
+/// `NIMINO_PRIVATE_KEY`/`NOSTR_PRIVATE_KEY`, launching with no identity. Callers
 /// (the spawn path) must fail closed (Wes storage.rs:158).
 pub(crate) fn spawn_key_refusal(record: &ManagedAgentRecord) -> Option<String> {
     record.private_key_nsec.is_empty().then(|| {
@@ -285,7 +285,7 @@ pub(crate) fn backup_invalid_store(path: &Path) {
     let backup = path.with_extension("json.invalid");
     if let Err(e) = fs::copy(path, &backup) {
         eprintln!(
-            "buzz-desktop: failed to preserve malformed store {} as {}: {e}",
+            "nimino-desktop: failed to preserve malformed store {} as {}: {e}",
             path.display(),
             backup.display()
         );
@@ -329,7 +329,7 @@ fn hydrate_keys_with(store: &impl KeyStore, records: &mut [ManagedAgentRecord]) 
                 Ok(Some(nsec)) => record.private_key_nsec = nsec,
                 Ok(None) => {
                     eprintln!(
-                        "buzz-desktop: agent {} has no key in JSON or keyring",
+                        "nimino-desktop: agent {} has no key in JSON or keyring",
                         record.pubkey
                     );
                 }
@@ -338,7 +338,7 @@ fn hydrate_keys_with(store: &impl KeyStore, records: &mut [ManagedAgentRecord]) 
                 // refuses rather than launching with no identity.
                 Err(e) => {
                     eprintln!(
-                        "buzz-desktop: agent {} key unavailable — keyring read failed ({e}); \
+                        "nimino-desktop: agent {} key unavailable — keyring read failed ({e}); \
                          agent will be refused until the keyring is reachable",
                         record.pubkey
                     );
@@ -444,8 +444,8 @@ fn persist_agent_keys_with(store: &impl KeyStore, records: &mut [ManagedAgentRec
 }
 
 /// One-time migration of agent keys from the production keyring service
-/// (`"buzz-desktop"`) to the dev service (`"buzz-desktop-dev"`). Only runs
-/// in debug builds — release builds never touch `"buzz-desktop"` from this
+/// (`"nimino-desktop"`) to the dev service (`"nimino-desktop-dev"`). Only runs
+/// in debug builds — release builds never touch `"nimino-desktop"` from this
 /// path.
 ///
 /// Idempotent: skips any key that already exists in the dev service so
@@ -458,7 +458,7 @@ fn persist_agent_keys_with(store: &impl KeyStore, records: &mut [ManagedAgentRec
 /// after the service-name change.
 #[cfg(debug_assertions)]
 pub fn migrate_agent_keys_to_dev_service(app: &tauri::AppHandle) {
-    if !cfg!(feature = "system-keyring") || keyring_service() != "buzz-desktop-dev" {
+    if !cfg!(feature = "system-keyring") || keyring_service() != "nimino-desktop-dev" {
         return;
     }
 
@@ -468,7 +468,7 @@ pub fn migrate_agent_keys_to_dev_service(app: &tauri::AppHandle) {
     let records = match load_agent_store(app) {
         Ok(r) => r,
         Err(e) => {
-            eprintln!("buzz-desktop: keyring-dev-migration: cannot read agent store: {e}");
+            eprintln!("nimino-desktop: keyring-dev-migration: cannot read agent store: {e}");
             return;
         }
     };
@@ -481,7 +481,7 @@ pub fn migrate_agent_keys_to_dev_service(app: &tauri::AppHandle) {
     // A fresh non-singleton store for the prod service — its own empty
     // cache so reads go to the OS keyring without polluting the dev
     // singleton's cache.
-    let prod_store = crate::secret_store::SecretStore::keyring("buzz-desktop");
+    let prod_store = crate::secret_store::SecretStore::keyring("nimino-desktop");
     let dev_store = crate::secret_store::SecretStore::shared(keyring_service());
     copy_agent_keys_between_stores(&pubkeys, &prod_store, dev_store);
 }
@@ -522,7 +522,7 @@ fn copy_agent_keys_between_stores(pubkeys: &[String], src: &impl KeyStore, dst: 
         Ok(Some(map)) => map,
         Ok(None) => HashMap::new(),
         Err(e) => {
-            eprintln!("buzz-desktop: keyring-dev-migration: cannot read dev keyring: {e}");
+            eprintln!("nimino-desktop: keyring-dev-migration: cannot read dev keyring: {e}");
             return;
         }
     };
@@ -537,7 +537,7 @@ fn copy_agent_keys_between_stores(pubkeys: &[String], src: &impl KeyStore, dst: 
             Ok(Some(map)) => map,
             Ok(None) => HashMap::new(), // prod has no blob yet — nothing to copy
             Err(e) => {
-                eprintln!("buzz-desktop: keyring-dev-migration: cannot read prod keyring: {e}");
+                eprintln!("nimino-desktop: keyring-dev-migration: cannot read prod keyring: {e}");
                 return;
             }
         }
@@ -564,13 +564,13 @@ fn copy_agent_keys_between_stores(pubkeys: &[String], src: &impl KeyStore, dst: 
     to_write.insert(DEV_MIGRATION_MARKER.to_string(), "done".to_string());
 
     if let Err(e) = dst.store_all(&to_write) {
-        eprintln!("buzz-desktop: keyring-dev-migration: cannot write to dev keyring: {e}");
+        eprintln!("nimino-desktop: keyring-dev-migration: cannot write to dev keyring: {e}");
         return;
     }
 
     if copied > 0 {
         eprintln!(
-            "buzz-desktop: keyring-dev-migration: copied {copied} agent key(s) from buzz-desktop"
+            "nimino-desktop: keyring-dev-migration: copied {copied} agent key(s) from nimino-desktop"
         );
     }
 }
@@ -591,7 +591,7 @@ pub(crate) fn try_delete_agent_key(pubkey: &str) -> Result<(), String> {
 /// is deleted so its secret does not linger in the OS store.
 pub fn delete_agent_key(pubkey: &str) {
     if let Err(e) = try_delete_agent_key(pubkey) {
-        eprintln!("buzz-desktop: failed to delete agent {pubkey} key from keyring: {e}");
+        eprintln!("nimino-desktop: failed to delete agent {pubkey} key from keyring: {e}");
     }
 }
 
@@ -844,7 +844,7 @@ pub fn read_log_tail(path: &Path, max_lines: usize) -> Result<String, String> {
 
     // Strip ANSI escapes here (not in the harness) so the desktop log view
     // renders cleanly while terminals and other tools still get the colors
-    // buzz-acp emits.
+    // nimino-acp emits.
     let cleaned = strip_ansi_escapes::strip_str(String::from_utf8_lossy(&buf));
     let lines: Vec<&str> = cleaned.lines().collect();
     let start = lines.len().saturating_sub(max_lines);
@@ -878,7 +878,7 @@ pub fn meaningful_agent_error_from_log(path: &Path) -> Option<AgentLogError> {
                 });
             }
         }
-        // Legacy format (older buzz-acp builds): "Agent reported error: ..."
+        // Legacy format (older nimino-acp builds): "Agent reported error: ..."
         if line.starts_with("Agent reported error:") {
             return Some(AgentLogError {
                 message: line.to_string(),

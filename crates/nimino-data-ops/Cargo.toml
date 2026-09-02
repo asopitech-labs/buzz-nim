@@ -1,0 +1,23 @@
+[package]
+name = "nimino-data-ops"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { version = "4", features = ["derive"] }
+hex = { workspace = true }
+nimino-object-store = { path = "../nimino-object-store" }
+nimino-boundary = { path = "../nimino-boundary" }
+nimino-store = { path = "../nimino-store" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"
+uuid = { workspace = true }

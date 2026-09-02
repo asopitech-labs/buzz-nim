@@ -375,7 +375,7 @@ export function InviteRedeemForm({
                   autoCorrect="off"
                   className={cn(
                     ONBOARDING_KEY_TEXT_CLASS,
-                    "block border-0 bg-transparent p-0 text-center shadow-none outline-none placeholder:text-[var(--buzz-onboarding-backup-ink)] placeholder:opacity-40 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+                    "block border-0 bg-transparent p-0 text-center shadow-none outline-none placeholder:text-[var(--nimino-onboarding-backup-ink)] placeholder:opacity-40 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
                   )}
                   data-testid="invite-redeem-input"
                   disabled={isRedeeming}
@@ -508,7 +508,7 @@ export function InviteRedeemForm({
             transition={
               shouldReduceMotion
                 ? { duration: 0 }
-                : { duration: 0.22, ease: POLICY_REVEAL_EASE }
+                : { duration: 0.18, ease: POLICY_REVEAL_EASE }
             }
           >
             <JoinPolicyNotice

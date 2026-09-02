@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.workflow-policy",
+  "owner": "nim/nimino_core/src/nimino_core/domain/workflow_policy.nim",
+  "boundaryOperation": "domain.workflow.policy",
+  "compatibilityMode": false,
+  "cutoverOwner": 12,
+  "effectLedgerOwner": 57,
+  "effectLedgerContract": "nimino.effect-ledger/v1",
+  "decisions": ["definition", "condition", "plan", "transition"],
+  "actionKinds": [
+    "send_message",
+    "send_dm",
+    "set_channel_topic",
+    "add_reaction",
+    "call_webhook",
+    "request_approval",
+    "delay"
+  ],
+  "conditionLanguage": {
+    "operators": ["!", "&&", "||", "==", "!=", ">", ">=", "<", "<="],
+    "functions": ["str_contains", "str_starts_with", "str_ends_with", "str_len"],
+    "maxExpressionBytes": 4096
+  },
+  "transitionCommands": [
+    "start",
+    "skip_step",
+    "effect_completed",
+    "await_approval",
+    "resume",
+    "complete",
+    "fail",
+    "cancel"
+  ],
+  "rustAdapters": [
+    "crates/nimino-boundary/src/workflow.rs",
+    "crates/nimino-boundary/src/contract.rs",
+    "crates/nimino-boundary/src/runtime.rs"
+  ],
+  "productionCutover": [
+    {
+      "path": "crates/nimino-relay/src/main.rs",
+      "symbols": ["WorkflowEngine::new_with_policy"]
+    },
+    {
+      "path": "crates/nimino-relay/src/handlers/command_executor.rs",
+      "symbols": ["parse_yaml_codec", "validate_definition_policy"]
+    },
+    {
+      "path": "crates/nimino-workflow/src/lib.rs",
+      "symbols": [
+        "evaluate_condition_policy",
+        "plan_step_policy",
+        "transition_run",
+        "WorkflowPolicyRequest::Definition",
+        "WorkflowPolicyRequest::Condition",
+        "WorkflowPolicyRequest::Plan",
+        "WorkflowPolicyRequest::Transition"
+      ]
+    },
+    {
+      "path": "crates/nimino-workflow/src/executor.rs",
+      "symbols": ["plan_step_policy", "WorkflowTransitionCommand::EffectCompleted"]
+    },
+    {
+      "path": "crates/nimino-db/src/workflow.rs",
+      "symbols": [
+        "FOR UPDATE",
+        "revision = $12",
+        "transition_ids || jsonb_build_array",
+        "create_approval_with_event",
+        "update_approval_by_stored_hash_in_transaction"
+      ]
+    },
+    {
+      "path": "crates/nimino-relay/src/workflow_sink.rs",
+      "symbols": [
+        "nimino-workflow-approval-v1",
+        "KIND_WORKFLOW_APPROVAL_REQUESTED",
+        "approval-token"
+      ]
+    }
+  ],
+  "forbiddenProductionSymbols": ["update_workflow_run", "WorkflowEngine::new("],
+  "retainedRustResponsibilities": [
+    "YAML and JSON codec",
+    "trigger and durable-state fact loading",
+    "effect I/O and timeout enforcement",
+    "revision and transition-ID compare-and-swap persistence",
+    "cryptographic approval-token generation",
+    "scheduler clock and process supervision"
+  ],
+  "approvalProtocol": {
+    "requestKind": 46010,
+    "grantKind": 46030,
+    "denyKind": 46031,
+    "referenceTag": "d",
+    "requestTokenTag": "approval-token",
+    "storage": "sha256(raw UUID)",
+    "commitBoundary": "approval row and signed event"
+  },
+  "cutoverRule": "Issue #12 routes every workflow policy door through Nimino and removes Rust definition, condition, planning, and lifecycle decisions. Rust may only enforce the exact returned effect and CAS transition.",
+  "outOfScope": {
+    "effectLedgerPersistence": 57,
+    "cliInput": 38,
+    "publicCutover": 12
+  }
+}

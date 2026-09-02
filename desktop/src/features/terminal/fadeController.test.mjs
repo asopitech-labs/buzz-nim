@@ -84,9 +84,9 @@ test("reversal reuses the one timeline and scales return playback", () => {
   assert.equal(calls[0].options.easing, FADE_EASING);
 });
 
-test("fade durations are half the original timing", () => {
-  assert.equal(REVEAL_DURATION_MS, 360);
-  assert.equal(CONCEAL_DURATION_MS, 210);
+test("fade durations stay within the shared motion budget", () => {
+  assert.equal(REVEAL_DURATION_MS, 180);
+  assert.equal(CONCEAL_DURATION_MS, 105);
 });
 
 test("completed fades retain the timeline but release its compositor hint", async () => {

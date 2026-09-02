@@ -1,14 +1,12 @@
 //! Huddle audio wire protocol — versioning + frame header.
 //!
-//! ## v1 (legacy)
+//! ## v1 (rejected)
 //!
 //! Client → relay: `<opus_bytes>`
 //! Relay   → client: `<peer_index: u8><opus_bytes>`
 //!
-//! No per-frame metadata; receiver synthesizes sequence/timestamp on arrival.
-//! Kept for backward compatibility — relay still admits v1 clients into
-//! v1-pinned rooms — but new clients speak v2 while deployed relays remain
-//! capped at the released v2 contract.
+//! Nimino requires an explicit protocol version and rejects this predecessor
+//! format before room admission.
 //!
 //! ## v2 (compatibility contract)
 //!

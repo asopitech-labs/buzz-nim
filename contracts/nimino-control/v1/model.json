@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.control-log",
+  "version": 1,
+  "compatibilityMode": false,
+  "publicationState": "cutover-ready",
+  "owner": "nimino-control-plane",
+  "transport": {
+    "adapter": "nimino-chirps",
+    "providesAuthority": false,
+    "observations": ["authenticated-node-id", "reachability", "opaque-message"]
+  },
+  "quorum": {
+    "formula": "floor(voter-count/2)+1",
+    "stable": "majority-of-active-voters",
+    "joint": "majority-of-old-and-majority-of-new",
+    "minorityCanElect": false,
+    "minorityCanCommit": false,
+    "certificatesMustIntersect": true
+  },
+  "epochs": {
+    "term": "monotonic-election-epoch",
+    "voterEpoch": "increment-on-each-committed-voter-transition",
+    "clock": "monotonic-election-timeout-only",
+    "clockCanAuthorizeCommit": false
+  },
+  "voterTransition": [
+    "stable-old",
+    "committed-begin-joint",
+    "joint",
+    "committed-finalize",
+    "stable-new"
+  ],
+  "authorityAfterVoterTransition": "invalidate-and-reelect",
+  "controlLog": {
+    "indices": "contiguous-prefix",
+    "appendRequires": "quorum-elected-leader",
+    "commitRequires": "active-phase-quorum",
+    "applyLimit": "commit-index",
+    "antiEntropyOwner": 50,
+    "runtimeStateMachineOwner": 51,
+    "runtimeStateMachineContract": "nimino.control-state-machine/v1",
+    "durableStoreOwner": 49
+  },
+  "durableStore": {
+    "adapter": "crates/nimino-store",
+    "tables": [
+      "nimino_control_metadata_v2",
+      "nimino_control_log_v2",
+      "nimino_control_snapshot_v2"
+    ],
+    "metadata": "revision-CAS term/vote/commit/apply record in one fsynced transaction",
+    "log": "contiguous prefix with atomic replacement limited to the uncommitted suffix",
+    "snapshot": "atomic install with required authority metadata and covered-prefix compaction",
+    "recovery": "latest snapshot plus validated contiguous suffix",
+    "eventAntiEntropyTables": false
+  },
+  "snapshot": {
+    "source": "applied-committed-prefix",
+    "requiredMetadata": [
+      "last-included-index",
+      "last-included-term",
+      "voter-epoch",
+      "voter-phase"
+    ],
+    "recovery": "install-snapshot-then-replay-committed-suffix",
+    "mayContainUncommittedState": false
+  },
+  "formal": {
+    "model": "formal/tla/cluster/NiminoControlLog.tla",
+    "modelSha256": "4f3739c597ea27e9994279dc5332a7469c1dcbe3bf3d22b011490fd27ec64ea6",
+    "scenario": "formal/scenarios/NiminoControlLog_3Node.cfg",
+    "scenarioSha256": "6a326c1e945217fb09e01d77b9c532f30dba8712ca604e4a70c18754bbd6a810",
+    "invariants": [
+      "TypeOK",
+      "AuthorityHasQuorum",
+      "QuorumsIntersect",
+      "CommittedWithQuorum",
+      "SequentialVoterTransition",
+      "EpochsMonotonic",
+      "SnapshotCoversCommittedOnly"
+    ],
+    "boundedScenario": {
+      "nodes": 3,
+      "oldVoters": 2,
+      "newVoters": 2,
+      "maxLogIndex": 3,
+      "maxTerm": 4,
+      "maxClock": 3
+    }
+  },
+  "cutoverOwner": 12
+}

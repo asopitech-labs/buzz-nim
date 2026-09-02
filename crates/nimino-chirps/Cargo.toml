@@ -1,0 +1,18 @@
+[package]
+name = "nimino-chirps"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+alopex-chirps = { workspace = true }
+tokio = { workspace = true }
+
+[dev-dependencies]
+nimino-boundary = { path = "../nimino-boundary" }
+rcgen = "0.12"
+serde = { workspace = true }
+serde_json = { workspace = true }
+tempfile = "3"

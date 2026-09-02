@@ -1,0 +1,18 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "fixture-workflow-1",
+  "operation": "domain.workflow.policy",
+  "payload": {
+    "decision": "transition",
+    "request": {
+      "state": { "status": "running", "currentStep": 0, "revision": 3 },
+      "expectedRevision": 3,
+      "transitionId": "run-1-step-0-complete",
+      "transitionAlreadyApplied": false,
+      "command": "effect_completed",
+      "stepCount": 1,
+      "stepIndex": 0
+    }
+  }
+}

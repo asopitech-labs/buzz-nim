@@ -1,0 +1,23 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "fixture-ephemeral-apply",
+  "operation": "domain.ephemeral.policy",
+  "payload": {
+    "decision": "apply",
+    "state": null,
+    "command": {
+      "scope": "community-a",
+      "kind": "presence",
+      "subject": "0101010101010101010101010101010101010101010101010101010101010101",
+      "context": "",
+      "value": "online",
+      "active": true,
+      "observedAtMs": 1000,
+      "ttlSecs": 180,
+      "originNodeId": "11111111111111111111111111111111",
+      "transitionId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "nowMs": 1000
+  }
+}

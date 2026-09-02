@@ -1,0 +1,14 @@
+{{- include "nimino.validate" . -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "nimino.fullname" . }}-chirps
+  labels:
+    {{- include "nimino.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    {{- include "nimino.relaySelectorLabels" . | nindent 4 }}
+  ports:
+    - { name: chirps, port: {{ .Values.cluster.port }}, targetPort: chirps, protocol: UDP }

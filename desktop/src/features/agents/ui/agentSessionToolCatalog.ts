@@ -11,7 +11,7 @@ import {
   XCircle,
 } from "lucide-react";
 
-import type { BuzzToolInfo, ToolStatus } from "./agentSessionTypes";
+import type { NiminoToolInfo, ToolStatus } from "./agentSessionTypes";
 
 export function normalizeToolStatus(status: string): ToolStatus {
   const normalized = status.toLowerCase();
@@ -64,7 +64,7 @@ export function getToolStatusDisplay(status: ToolStatus, isError: boolean) {
   };
 }
 
-const BUZZ_READ_TOOLS = new Set([
+const NIMINO_READ_TOOLS = new Set([
   "get_messages",
   "get_channel_history",
   "get_thread",
@@ -85,7 +85,7 @@ const BUZZ_READ_TOOLS = new Set([
   "get_contact_list",
 ]);
 
-const BUZZ_WRITE_TOOLS = new Set([
+const NIMINO_WRITE_TOOLS = new Set([
   "send_message",
   "send_diff_message",
   "edit_message",
@@ -119,13 +119,16 @@ const BUZZ_WRITE_TOOLS = new Set([
   "set_contact_list",
 ]);
 
-const BUZZ_TOOL_NAMES = new Set([...BUZZ_READ_TOOLS, ...BUZZ_WRITE_TOOLS]);
+const NIMINO_TOOL_NAMES = new Set([
+  ...NIMINO_READ_TOOLS,
+  ...NIMINO_WRITE_TOOLS,
+]);
 
-const BUZZ_TOOL_NAMES_BY_LENGTH = [...BUZZ_TOOL_NAMES].sort(
+const NIMINO_TOOL_NAMES_BY_LENGTH = [...NIMINO_TOOL_NAMES].sort(
   (left, right) => right.length - left.length,
 );
 
-const BUZZ_TOOL_TITLE_ALIASES: Array<[RegExp, string]> = [
+const NIMINO_TOOL_TITLE_ALIASES: Array<[RegExp, string]> = [
   [/\bsending message to channel\b/, "send_message"],
   [/\bretrieving recent messages from channel\b/, "get_messages"],
   [/\bgetting channel details\b/, "get_channel"],
@@ -136,10 +139,10 @@ const BUZZ_TOOL_TITLE_ALIASES: Array<[RegExp, string]> = [
   [/\bremoving reaction\b/, "remove_reaction"],
 ];
 
-export function getBuzzToolInfo(title: string): BuzzToolInfo | null {
+export function getNiminoToolInfo(title: string): NiminoToolInfo | null {
   const name = normalizeToolName(title);
-  const isRead = BUZZ_READ_TOOLS.has(name);
-  const isWrite = BUZZ_WRITE_TOOLS.has(name);
+  const isRead = NIMINO_READ_TOOLS.has(name);
+  const isWrite = NIMINO_WRITE_TOOLS.has(name);
   if (!isRead && !isWrite) {
     return null;
   }
@@ -148,8 +151,8 @@ export function getBuzzToolInfo(title: string): BuzzToolInfo | null {
     return {
       icon: Workflow,
       label: isRead
-        ? "Reads workflow state from Buzz."
-        : "Updates workflow state in Buzz.",
+        ? "Reads workflow state from Nimino."
+        : "Updates workflow state in Nimino.",
       tone: isWrite ? "write" : "read",
     };
   }
@@ -161,8 +164,8 @@ export function getBuzzToolInfo(title: string): BuzzToolInfo | null {
     return {
       icon: Hash,
       label: isRead
-        ? "Reads channel context from the Buzz relay."
-        : "Changes channel state in the Buzz relay.",
+        ? "Reads channel context from the Nimino relay."
+        : "Changes channel state in the Nimino relay.",
       tone: isWrite ? "write" : "read",
     };
   }
@@ -174,15 +177,15 @@ export function getBuzzToolInfo(title: string): BuzzToolInfo | null {
     return {
       icon: Users,
       label: isRead
-        ? "Reads Buzz identity or presence data."
-        : "Updates Buzz identity or membership data.",
+        ? "Reads Nimino identity or presence data."
+        : "Updates Nimino identity or membership data.",
       tone: isWrite ? "write" : "admin",
     };
   }
   if (name.includes("search") || name === "get_feed") {
     return {
       icon: Search,
-      label: "Searches relay-visible Buzz history.",
+      label: "Searches relay-visible Nimino history.",
       tone: "read",
     };
   }
@@ -193,23 +196,23 @@ export function getBuzzToolInfo(title: string): BuzzToolInfo | null {
   ) {
     return {
       icon: Send,
-      label: "Publishes relay-visible Buzz activity.",
+      label: "Publishes relay-visible Nimino activity.",
       tone: "write",
     };
   }
 
   return {
     icon: MessageSquare,
-    label: isRead ? "Reads from Buzz." : "Writes to Buzz.",
+    label: isRead ? "Reads from Nimino." : "Writes to Nimino.",
     tone: isWrite ? "write" : "read",
   };
 }
 
 export function normalizeToolName(title: string): string {
-  const knownName = findBuzzToolName(title, true);
+  const knownName = findNiminoToolName(title, true);
   if (knownName) return knownName;
 
-  const normalized = normalizeToolNameText(title).replace(/^buzz_/, "");
+  const normalized = normalizeToolNameText(title).replace(/^nimino_/, "");
   return normalized.match(/[a-z][a-z0-9_]+/)?.[0] ?? normalized;
 }
 
@@ -222,27 +225,27 @@ export function normalizeToolNameText(value: string): string {
     .replace(/^_+|_+$/g, "");
 }
 
-export function findBuzzToolName(value: string, includeShortNames: boolean) {
-  const alias = findBuzzToolAlias(value);
+export function findNiminoToolName(value: string, includeShortNames: boolean) {
+  const alias = findNiminoToolAlias(value);
   if (alias) return alias;
 
   const normalized = normalizeToolNameText(value);
   return (
-    BUZZ_TOOL_NAMES_BY_LENGTH.find(
+    NIMINO_TOOL_NAMES_BY_LENGTH.find(
       (name) =>
         (includeShortNames || name.length >= 8) && normalized.includes(name),
     ) ?? null
   );
 }
 
-function findBuzzToolAlias(value: string) {
+function findNiminoToolAlias(value: string) {
   const normalizedPhrase = value
     .trim()
     .toLowerCase()
     .replace(/[_-]+/g, " ")
     .replace(/\s+/g, " ");
   return (
-    BUZZ_TOOL_TITLE_ALIASES.find(([pattern]) =>
+    NIMINO_TOOL_TITLE_ALIASES.find(([pattern]) =>
       pattern.test(normalizedPhrase),
     )?.[1] ?? null
   );
@@ -268,7 +271,7 @@ export function formatToolTitle(
   fallbackTitle?: string,
 ): string {
   const name = normalizeToolName(toolName);
-  if (BUZZ_READ_TOOLS.has(name) || BUZZ_WRITE_TOOLS.has(name)) {
+  if (NIMINO_READ_TOOLS.has(name) || NIMINO_WRITE_TOOLS.has(name)) {
     return name
       .split("_")
       .map((part) => part.charAt(0).toUpperCase() + part.slice(1))

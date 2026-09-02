@@ -17,7 +17,7 @@ import {
 } from "./ProfileAvatarEditor.utils";
 
 const PANEL_MOTION_TRANSITION = {
-  duration: 0.25,
+  duration: 0.18,
   ease: "easeOut",
 } as const;
 
@@ -228,7 +228,7 @@ export function AvatarCustomColorPanel({
         aria-valuemax={360}
         aria-valuemin={0}
         aria-valuenow={hue}
-        className="buzz-avatar-hue-scrubber relative mt-3 h-10 w-full cursor-pointer select-none rounded-full touch-none"
+        className="nimino-avatar-hue-scrubber relative mt-3 h-10 w-full cursor-pointer select-none rounded-full touch-none"
         data-testid={`${testIdPrefix}-custom-color-hue`}
         onKeyDown={(event) => {
           if (event.key === "ArrowLeft" || event.key === "ArrowDown") {

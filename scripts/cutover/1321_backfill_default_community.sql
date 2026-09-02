@@ -55,11 +55,11 @@
 -- USAGE  (run from anywhere; \ir below resolves the schema include relative to
 --         this file, so cwd does not matter)
 --   psql "$DATABASE_URL" \
---        -v host="'sprout-oss.stage.blox.sqprod.co'" \
+--        -v host="'relay.nimino.example'" \
 --        -v ON_ERROR_STOP=1 \
 --        -f scripts/cutover/1321_backfill_default_community.sql
 --
--- After commit: boot the 1321 relay with BUZZ_AUTO_MIGRATE=false. The schema is
+-- After commit: boot the 1321 relay with NIMINO_AUTO_MIGRATE=false. The schema is
 -- already correct; the relay's idempotent boot-time
 -- ensure_configured_community / allowlist->relay_members backfill finds this
 -- community and no-ops. (If you instead want the relay's sqlx migrator to

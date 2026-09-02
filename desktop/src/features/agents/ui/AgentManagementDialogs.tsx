@@ -2,7 +2,7 @@ import { useAgentManagement } from "@/features/agents/useAgentManagement";
 import { AgentCardDialogs } from "./AgentCardViewerDialog";
 import { AgentDialog } from "./AgentDialog";
 
-/** Global review surfaces opened by owned agents through the Buzz harness. */
+/** Global review surfaces opened by owned agents through the Nimino harness. */
 export function AgentManagementDialogs() {
   const management = useAgentManagement();
 

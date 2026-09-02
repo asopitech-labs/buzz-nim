@@ -1,0 +1,349 @@
+import std/[json, strutils, unicode, unittest]
+import nimino_core/boundary/[
+  agent_policy_codec,
+  cluster_lifecycle_codec,
+  community_policy_codec,
+  dm_policy_codec,
+  event_policy_codec,
+  membership_policy_codec,
+  moderation_policy_codec,
+  protocol,
+  workflow_policy_codec,
+]
+
+suite "Nim/Rust boundary protocol v1":
+  test "decodes the canonical request envelope":
+    let request = decodeRequest("""{
+      "protocol":"nimino.core.boundary",
+      "version":1,
+      "requestId":"request-1",
+      "operation":"boundary.echo",
+      "payload":{"data":{"message":"hello from Nim"}}
+    }""")
+
+    check request.protocol == BoundaryProtocolName
+    check request.version == BoundaryProtocolVersion
+    check request.requestId == "request-1"
+    check request.operationName == "boundary.echo"
+    check request.operation.kind == boEcho
+    check request.operation.data == %*{"message": "hello from Nim"}
+
+  test "rejects unsupported versions with a stable code":
+    expect BoundaryProtocolError:
+      discard decodeRequest("""{
+        "protocol":"nimino.core.boundary",
+        "version":2,
+        "requestId":"request-2",
+        "operation":"boundary.echo",
+        "payload":{}
+      }""")
+
+    try:
+      discard decodeRequest("""{
+        "protocol":"nimino.core.boundary",
+        "version":2,
+        "requestId":"request-2",
+        "operation":"boundary.echo",
+        "payload":{}
+      }""")
+    except BoundaryProtocolError as error:
+      check error.code == "UNSUPPORTED_VERSION"
+
+  test "encodes typed success and failure envelopes":
+    let success = parseJson(
+      encodeSuccess("request-3", "boundary.echo", %*{"data": {"ok": true}})
+    )
+    check success["status"].getStr() == "ok"
+    check success["operation"].getStr() == "boundary.echo"
+    check success["result"] == %*{"data": {"ok": true}}
+
+    let failure = parseJson(
+      encodeFailure(
+        "request-4",
+        "unknown.operation",
+        "UNKNOWN_OPERATION",
+        "not supported",
+      )
+    )
+    check failure["status"].getStr() == "error"
+    check failure["error"]["code"].getStr() == "UNKNOWN_OPERATION"
+    check failure["error"]["retry"].getStr() == "never"
+
+    let bounded = parseJson(
+      encodeFailure(
+        "request-5",
+        "boundary.echo",
+        "INVALID_REQUEST",
+        repeat("界", 1_025),
+      )
+    )
+    check bounded["error"]["message"].getStr().runeLen == 1_024
+
+    let sanitized = parseJson(
+      encodeFailure("", repeat("界", 129), "INVALID_REQUEST", "invalid")
+    )
+    check sanitized["requestId"].getStr() == "__unknown__"
+    check sanitized["operation"].getStr() == "system.decode"
+
+  test "rejects unknown and duplicate envelope fields":
+    for malformed in [
+      """{"protocol":"nimino.core.boundary","version":1,"requestId":"request-5","operation":"boundary.echo","payload":{"data":{}},"legacyMode":true}""",
+      """{"protocol":"nimino.core.boundary","version":1,"requestId":"request-5","requestId":"request-6","operation":"boundary.echo","payload":{"data":{}}}""",
+    ]:
+      expect BoundaryProtocolError:
+        discard decodeRequest(malformed)
+
+  test "rejects operation payloads that do not match their typed shape":
+    for malformed in [
+      """{"protocol":"nimino.core.boundary","version":1,"requestId":"request-7","operation":"boundary.echo","payload":{"message":"missing data field"}}""",
+      """{"protocol":"nimino.core.boundary","version":1,"requestId":"request-8","operation":"system.hello","payload":{"schemaHash":"abc"}}""",
+    ]:
+      expect BoundaryProtocolError:
+        discard decodeRequest(malformed)
+
+  test "routes typed event policy payloads and rejects unknown fields":
+    let request = decodeRequest("""{
+      "protocol":"nimino.core.boundary",
+      "version":1,
+      "requestId":"request-31",
+      "operation":"domain.event.policy",
+      "payload":{"decision":"classify","kind":30023,"dTagCount":1,"dTagLen":4}
+    }""")
+    check request.operation.kind == boEventPolicy
+    check executeEventPolicy(request.operation.data, request.requestId) == %*{
+      "decision": "classify", "disposition": "parameterized", "error": "none"
+    }
+
+    expect BoundaryProtocolError:
+      discard executeEventPolicy(
+        %*{
+          "decision": "classify",
+          "kind": 9,
+          "dTagCount": 0,
+          "dTagLen": 0,
+          "legacyMode": true,
+        },
+        "request-31-invalid",
+      )
+
+  test "routes typed community policy payloads and rejects unknown fields":
+    let request = decodeRequest("""{
+      "protocol":"nimino.core.boundary",
+      "version":1,
+      "requestId":"request-85",
+      "operation":"domain.community.policy",
+      "payload":{"decision":"scope","request":{"requestCommunity":"018f5e5a-9b7d-7c01-a7bb-46fbe46d0001","resourceCommunity":null}}
+    }""")
+    check request.operation.kind == boCommunityPolicy
+    check executeCommunityPolicy(request.operation.data, request.requestId) == %*{
+      "decision": "scope", "allowed": false, "error": "resource_missing"
+    }
+
+    expect BoundaryProtocolError:
+      discard executeCommunityPolicy(
+        %*{
+          "decision": "scope",
+          "request": {
+            "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+            "resourceCommunity": nil,
+        },
+        "legacyMode": true,
+      },
+        "request-85-invalid",
+      )
+
+  test "routes typed membership policy payloads and rejects unknown fields":
+    let request = decodeRequest("""{
+      "protocol":"nimino.core.boundary",
+      "version":1,
+      "requestId":"request-86",
+      "operation":"domain.membership.policy",
+      "payload":{"decision":"relay","request":{"command":"add","actorRole":"owner","targetRole":"none","requestedRole":"admin","actorIsTarget":false}}
+    }""")
+    check request.operation.kind == boMembershipPolicy
+    check executeMembershipPolicy(request.operation.data, request.requestId) == %*{
+      "decision": "relay",
+      "action": "insert",
+      "error": "none",
+      "effectiveRole": "admin",
+    }
+
+    expect BoundaryProtocolError:
+      discard executeMembershipPolicy(
+        %*{
+          "decision": "relay",
+          "request": {
+            "command": "add",
+            "actorRole": "owner",
+            "targetRole": "none",
+            "requestedRole": "admin",
+            "actorIsTarget": false,
+        },
+        "legacyMode": true,
+      },
+        "request-86-invalid",
+      )
+
+    expect BoundaryProtocolError:
+      discard executeMembershipPolicy(
+        %*{
+          "decision": "channel",
+          "request": {
+            "command": "remove",
+            "visibility": "private",
+            "actorRole": "admin",
+            "targetRole": "member",
+            "requestedRole": "none",
+            "actorIsTarget": false,
+            "actorOwnsTargetAgent": false,
+            "targetIsAgent": false,
+            "targetAddPolicy": "anyone",
+            "ownerCount": -1,
+        },
+      },
+        "request-86-owner-count",
+      )
+
+  test "routes typed DM policy payloads and rejects unknown fields":
+    let request = decodeRequest("""{
+      "protocol":"nimino.core.boundary",
+      "version":1,
+      "requestId":"request-87",
+      "operation":"domain.dm.policy",
+      "payload":{"decision":"access","request":{"operation":"read","requestCommunity":"018f5e5a-9b7d-7c01-a7bb-46fbe46d0001","resourceCommunity":"018f5e5a-9b7d-7c01-a7bb-46fbe46d0001","resourceExists":true,"channelIsDm":true,"actorIsParticipant":true,"actorIsViewer":false}}
+    }""")
+    check request.operation.kind == boDmPolicy
+    check executeDmPolicy(request.operation.data, request.requestId) == %*{
+      "decision": "access", "allowed": true, "error": "none"
+    }
+
+    expect BoundaryProtocolError:
+      discard executeDmPolicy(
+        %*{
+          "decision": "access",
+          "request": {
+            "operation": "read",
+            "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+            "resourceCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+            "resourceExists": true,
+            "channelIsDm": true,
+            "actorIsParticipant": true,
+            "actorIsViewer": false,
+            "legacyMode": true,
+          },
+        },
+        "request-87-invalid",
+      )
+
+  test "routes typed moderation policy payloads and rejects unknown fields":
+    let request = decodeRequest("""{
+      "protocol":"nimino.core.boundary",
+      "version":1,
+      "requestId":"request-88",
+      "operation":"domain.moderation.policy",
+      "payload":{"decision":"report","request":{"requestCommunity":"018f5e5a-9b7d-7c01-a7bb-46fbe46d0001","targetCommunity":"018f5e5a-9b7d-7c01-a7bb-46fbe46d0001","targetExists":true,"reporterIsTarget":false,"duplicate":false,"targetKind":"event","reportType":"spam"}}
+    }""")
+    check request.operation.kind == boModerationPolicy
+    check executeModerationPolicy(request.operation.data, request.requestId) == %*{
+      "decision": "report",
+      "effect": "queue_report",
+      "authority": "reporter",
+      "auditAction": "none",
+      "error": "none",
+    }
+
+    expect BoundaryProtocolError:
+      discard executeModerationPolicy(
+        %*{
+          "decision": "report",
+          "request": {
+            "requestCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+            "targetCommunity": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0001",
+            "targetExists": true,
+            "reporterIsTarget": false,
+            "duplicate": false,
+            "targetKind": "event",
+            "reportType": "spam",
+            "legacyMode": true,
+          },
+        },
+        "request-88-invalid",
+      )
+
+  test "routes typed workflow transitions and rejects unknown fields":
+    let raw = """{
+      "protocol":"nimino.core.boundary",
+      "version":1,
+      "requestId":"request-29",
+      "operation":"domain.workflow.policy",
+      "payload":{"decision":"transition","request":{"state":{"status":"running","currentStep":0,"revision":3},"expectedRevision":3,"transitionId":"step-0","transitionAlreadyApplied":false,"command":"effect_completed","stepCount":1,"stepIndex":0}}
+    }"""
+    let request = decodeRequest(raw)
+    check request.operation.kind == boWorkflowPolicy
+    check executeWorkflowPolicy(request.operation.data, request.requestId) == %*{
+      "decision": "transition",
+      "allowed": true,
+      "error": "none",
+      "nextState": {"status": "running", "currentStep": 1, "revision": 4},
+      "portEffect": "persist_transition",
+    }
+
+    let invalidRequest = decodeRequest(raw.replace(
+      "\"stepIndex\":0", "\"stepIndex\":0,\"extra\":true"
+    ))
+    expect BoundaryProtocolError:
+      discard executeWorkflowPolicy(invalidRequest.operation.data, "request-29-invalid")
+
+  test "routes typed agent lifecycle and rejects unknown fields":
+    let raw = """{
+      "protocol":"nimino.core.boundary",
+      "version":1,
+      "requestId":"request-40",
+      "operation":"domain.agent.policy",
+      "payload":{"decision":"lifecycle","request":{"state":{"phase":"running","attempt":0,"retryAtMs":0,"turnId":"turn-1"},"command":"cancel","commandAttempt":0,"commandTurnId":"turn-1","pendingWork":true,"nowMs":100}}
+    }"""
+    let request = decodeRequest(raw)
+    check request.operation.kind == boAgentPolicy
+    check executeAgentPolicy(request.operation.data, request.requestId) == %*{
+      "decision": "lifecycle",
+      "allowed": true,
+      "error": "none",
+      "action": "send_cancel",
+      "nextState": {
+        "phase": "cancelling", "attempt": 0, "retryAtMs": 0,
+        "turnId": "turn-1",
+      },
+    }
+
+    let invalidRequest = decodeRequest(raw.replace(
+      "\"nowMs\":100", "\"nowMs\":100,\"legacyMode\":true"
+    ))
+    expect BoundaryProtocolError:
+      discard executeAgentPolicy(
+        invalidRequest.operation.data, "request-40-invalid"
+      )
+
+  test "routes typed cluster lifecycle transitions and rejects unknown fields":
+    let raw = """{
+      "protocol":"nimino.core.boundary",
+      "version":1,
+      "requestId":"request-48",
+      "operation":"domain.cluster.lifecycle",
+      "payload":{"decision":"transition","request":{"command":"mark_ready","currentState":"syncing","authenticated":true,"revoked":false,"identityUnique":true,"productCapability":"nimino-v1","controlProtocolVersion":1,"dataProtocolVersion":1,"controlDecisionCommitted":true,"snapshotInstalled":true,"checkpointMatches":true,"requiredVoterEpoch":2,"observedVoterEpoch":2,"activeWork":0}}
+    }"""
+    let request = decodeRequest(raw)
+    check request.operation.kind == boClusterLifecycle
+    check executeClusterLifecycle(request.operation.data, request.requestId) == %*{
+      "decision": "transition",
+      "effect": "enter_ready",
+      "nextState": "ready",
+      "error": "none",
+    }
+
+    let invalidRequest = decodeRequest(raw.replace(
+      "\"activeWork\":0", "\"activeWork\":0,\"legacyMode\":true"
+    ))
+    expect BoundaryProtocolError:
+      discard executeClusterLifecycle(
+        invalidRequest.operation.data, "request-48-invalid"
+      )

@@ -1,0 +1,249 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.cutover-readiness",
+  "issue": 17,
+  "milestone": "Nimino v1.0 — Independent Cutover",
+  "phase": "blocked-for-release-authority",
+  "compatibilityMode": false,
+  "workstreams": [
+    {
+      "epic": 2,
+      "name": "mobile",
+      "children": [18, 28, 33],
+      "keep": ["desktop identity transfer over NIP-AB"],
+      "delete": ["Mobile source, toolchain, release, push, and smartphone UX"],
+      "owner": { "implementation": [18, 28, 33], "cleanup": 66 },
+      "proof": {
+        "contracts": ["contracts/mobile-removal-v1.json"],
+        "commands": ["removed-client-contract"]
+      }
+    },
+    {
+      "epic": 3,
+      "name": "brand-and-protocol",
+      "children": [14, 20, 24],
+      "keep": ["Nimino names and versioned Nostr extensions"],
+      "delete": ["Buzz runtime aliases and predecessor artifact identities"],
+      "owner": { "implementation": [14, 20, 24], "cleanup": 66 },
+      "proof": {
+        "contracts": [
+          "contracts/nimino-naming-v1.json",
+          "contracts/nimino-protocol-v1.json"
+        ],
+        "commands": [
+          "naming-contract",
+          "protocol-contract",
+          "runtime-namespace-contract"
+        ]
+      }
+    },
+    {
+      "epic": 4,
+      "name": "nim-core",
+      "children": [13, 22, 26, 29, 30, 31, 47, 85, 86, 87, 88],
+      "keep": ["pure Nim product policy and supervised typed boundary"],
+      "delete": ["duplicate Rust product-policy decisions"],
+      "owner": {
+        "implementation": [26, 29, 31, 85, 86, 87, 88],
+        "cleanup": 66
+      },
+      "proof": {
+        "contracts": [
+          "contracts/nim-rust-boundary/v1/lifecycle.json",
+          "contracts/rust-responsibility/v1/manifest.json"
+        ],
+        "commands": [
+          "nim-ci",
+          "nim-boundary-ci",
+          "rust-responsibility-contract"
+        ]
+      }
+    },
+    {
+      "epic": 5,
+      "name": "chirps",
+      "children": [27, 36, 43, 45],
+      "keep": ["Alopex Chirps negotiation and bounded transport adapter"],
+      "delete": ["nimino-relay-mesh and cluster-domain ownership in transport"],
+      "owner": { "implementation": [27, 36, 43, 45], "cleanup": 66 },
+      "proof": {
+        "contracts": [
+          "contracts/chirps-v0.6.3.json",
+          "contracts/nimino-cluster/v1/contract.json"
+        ],
+        "commands": ["chirps-contract", "nimino-cluster-contract"]
+      }
+    },
+    {
+      "epic": 6,
+      "name": "agent-cli-mcp",
+      "children": [32, 38, 40, 42],
+      "keep": ["Nim agent and CLI policy with ACP/MCP I/O adapters"],
+      "delete": ["Sprig all-in-one runtime and duplicate Rust use-case policy"],
+      "owner": { "implementation": [32, 38, 40, 42], "cleanup": 66 },
+      "proof": {
+        "contracts": [
+          "contracts/nimino-agent/v1/contract.json",
+          "contracts/nimino-cli/v1/contract.json",
+          "contracts/nimino-mcp-execution/v1/contract.json",
+          "contracts/nimino-agent-bundle/v1/contract.json"
+        ],
+        "commands": [
+          "nimino-agent-contract",
+          "nimino-cli-contract",
+          "nimino-mcp-execution-contract",
+          "agent-bundle-contract"
+        ]
+      }
+    },
+    {
+      "epic": 7,
+      "name": "gui",
+      "children": [15, 21, 23, 28, 34, 39, 44],
+      "keep": ["approved Desktop, Web, and Admin use cases"],
+      "delete": [
+        "superseded routes, overlays, inert controls, and duplicate state owners"
+      ],
+      "owner": { "implementation": [21, 23, 34, 39, 44], "cleanup": 66 },
+      "proof": {
+        "contracts": [
+          "contracts/gui-surface-v1.json",
+          "contracts/nimino-tauri/v1/manifest.json"
+        ],
+        "commands": ["gui-surface-contract", "nimino-tauri-contract"]
+      }
+    },
+    {
+      "epic": 8,
+      "name": "wsl",
+      "children": [16, 19, 25, 45, 60],
+      "keep": [
+        "Ubuntu 24.04 WSL2 install, service, launcher, Chirps, and qualified bundle"
+      ],
+      "delete": ["native Windows release and unsupported distro paths"],
+      "owner": { "implementation": [19, 25, 45, 60], "cleanup": 66 },
+      "proof": {
+        "contracts": [
+          "contracts/wsl-support-v1.json",
+          "contracts/nimino-wsl-bundle/v1/contract.json"
+        ],
+        "commands": [
+          "wsl-service-contract",
+          "wsl-launcher-contract",
+          "wsl-chirps-contract",
+          "wsl-bundle-contract"
+        ]
+      }
+    },
+    {
+      "epic": 9,
+      "name": "cluster-control",
+      "children": [36, 43, 46, 48, 49, 51, 52, 56, 58, 91, 92, 93, 94],
+      "keep": [
+        "Nim-owned control log, admission, lifecycle, lease, fencing, and routing"
+      ],
+      "delete": ["legacy mesh and Redis control-plane ownership"],
+      "owner": {
+        "implementation": [46, 48, 49, 51, 52, 56, 58, 91, 92, 93, 94],
+        "cleanup": 66
+      },
+      "proof": {
+        "contracts": [
+          "contracts/nimino-legacy-control/v1/manifest.json",
+          "contracts/nimino-cluster-scenarios/v1/contract.json"
+        ],
+        "commands": [
+          "control-model-contract",
+          "nimino-control-state-contract",
+          "nimino-cluster-scenario-contract",
+          "legacy-control-manifest-contract"
+        ]
+      }
+    },
+    {
+      "epic": 10,
+      "name": "data-sync",
+      "children": [30, 35, 49, 50, 53, 54, 55, 57, 59],
+      "keep": [
+        "per-node canonical store, bounded sync, convergence, objects, projections, effects, and repair"
+      ],
+      "delete": ["shared Postgres or Redis as product authority"],
+      "owner": {
+        "implementation": [35, 49, 50, 53, 54, 55, 57, 59],
+        "cleanup": 66
+      },
+      "proof": {
+        "contracts": [
+          "contracts/nimino-data/v1/contract.json",
+          "contracts/nimino-data-ops/v1/contract.json"
+        ],
+        "commands": [
+          "nimino-data-ops-contract",
+          "nimino-sync-contract",
+          "nimino-convergence-contract",
+          "nimino-object-sync-contract",
+          "nimino-projection-contract",
+          "nimino-effect-ledger-contract"
+        ]
+      }
+    },
+    {
+      "epic": 11,
+      "name": "release",
+      "children": [37, 41, 61, 62, 63, 65, 95],
+      "keep": ["one asopitech-labs Nimino release-set and protected promotion"],
+      "delete": [
+        "Block, Square, Mobile, component-specific, and predecessor release authorities"
+      ],
+      "owner": { "implementation": [41, 61, 62, 63, 65, 95], "cleanup": 66 },
+      "proof": {
+        "contracts": [
+          "contracts/nimino-release-set/v1/contract.json",
+          "contracts/nimino-legacy-release/v1/manifest.json"
+        ],
+        "commands": [
+          "release-set-contract",
+          "relay-release-contract",
+          "platform-release-contract",
+          "promotion-contract",
+          "legacy-release-deletion-contract"
+        ]
+      }
+    }
+  ],
+  "sourceBlockers": [
+    {
+      "id": "canonical-release-authority",
+      "surfaces": [
+        "source-repository",
+        "release-workflow-identity",
+        "sigstore-identity"
+      ],
+      "ownerIssues": [95],
+      "releaseImpact": "tag publication and external certification blocked"
+    }
+  ],
+  "nextGates": [
+    {
+      "issue": 95,
+      "goal": "resolve the canonical source and release repository without overwriting another product"
+    },
+    {
+      "issue": 66,
+      "goal": "apply every physical delete/replace disposition atomically"
+    },
+    {
+      "issue": 67,
+      "goal": "certify clean clone, negative compatibility, and real platform matrix"
+    },
+    {
+      "issue": 68,
+      "goal": "promote one release-set and record post-cutover smoke"
+    }
+  ],
+  "trackerAudit": {
+    "requiredEpicStates": "CLOSED before issue 68",
+    "command": "gh issue list --milestone 'Nimino v1.0 — Independent Cutover' --state all",
+    "publicationIsNotPerformedByThisContract": true
+  }
+}

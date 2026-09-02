@@ -49,64 +49,21 @@ load_env() {
     set +o allexport
   fi
 
-  # Smooth the local rename path for developers with a pre-Buzz .env copied
-  # from .env.example. Only rewrite the old default values; custom values stay
-  # untouched.
-  if [[ "${DATABASE_URL:-}" == "postgres://sprout:sprout_dev@localhost:5432/sprout" ]]; then
-    warn "Migrating legacy default DATABASE_URL from sprout to buzz for this setup run"
-    DATABASE_URL="postgres://buzz:buzz_dev@localhost:5432/buzz"
-  fi
-  if [[ "${PGUSER:-}" == "sprout" ]]; then PGUSER="buzz"; fi
-  if [[ "${PGPASSWORD:-}" == "sprout_dev" ]]; then PGPASSWORD="buzz_dev"; fi
-  if [[ "${PGDATABASE:-}" == "sprout" ]]; then PGDATABASE="buzz"; fi
-
-  export DATABASE_URL="${DATABASE_URL:-postgres://buzz:buzz_dev@localhost:5432/buzz}"
+  export DATABASE_URL="${DATABASE_URL:-postgres://nimino:nimino_dev@localhost:5432/nimino}"
   export PGHOST="${PGHOST:-localhost}"
   export PGPORT="${PGPORT:-5432}"
-  export PGUSER="${PGUSER:-buzz}"
-  export PGPASSWORD="${PGPASSWORD:-buzz_dev}"
-  export PGDATABASE="${PGDATABASE:-buzz}"
-  export REDIS_URL="${REDIS_URL:-redis://localhost:6379}"
-}
-
-cleanup_legacy_sprout_containers() {
-  local legacy_containers
-  legacy_containers=$(docker ps -a --format '{{.Names}}' | grep -E '^sprout-(postgres|redis|adminer|keycloak|minio|minio-init|prometheus)$' || true)
-  if [[ -z "${legacy_containers}" ]]; then
-    return
-  fi
-
-  warn "Stopping/removing legacy sprout-* dev containers so buzz-* containers can bind the standard ports"
-  echo "${legacy_containers}" | xargs docker stop >/dev/null 2>&1 || true
-  echo "${legacy_containers}" | xargs docker rm >/dev/null 2>&1 || true
-  success "Legacy sprout-* containers removed (volumes preserved)"
-}
-
-fail_if_local_redis_blocks_compose() {
-  if ! command -v lsof >/dev/null 2>&1; then
-    return
-  fi
-  if docker ps --format '{{.Names}}' | grep -qx 'buzz-redis'; then
-    return
-  fi
-  local redis_pids
-  redis_pids=$(lsof -nP -iTCP:6379 -sTCP:LISTEN 2>/dev/null | awk 'NR > 1 && $1 == "redis-ser" {print $2}' | sort -u | tr '
-' ' ' || true)
-  if [[ -n "${redis_pids}" ]]; then
-    error "Local Redis is already listening on port 6379 (pid(s): ${redis_pids}). Stop it before running setup: brew services stop redis"
-    exit 1
-  fi
+  export PGUSER="${PGUSER:-nimino}"
+  export PGPASSWORD="${PGPASSWORD:-nimino_dev}"
+  export PGDATABASE="${PGDATABASE:-nimino}"
 }
 
 postgres_accepting_connections() {
-  docker exec buzz-postgres \
+  docker exec nimino-postgres \
     pg_isready -h localhost -p 5432 -U "${PGUSER}" -d "${PGDATABASE}" \
     >/dev/null 2>&1
 }
 
 load_env
-cleanup_legacy_sprout_containers
-fail_if_local_redis_blocks_compose
 
 # ---- Start services ---------------------------------------------------------
 
@@ -128,7 +85,7 @@ until postgres_accepting_connections; do
   sleep 2
 done
 
-"${REPO_ROOT}/bin/cargo" run -p buzz-admin -- migrate
+"${REPO_ROOT}/bin/cargo" run -p nimino-admin -- migrate
 "${REPO_ROOT}/scripts/seed-local-community.sh"
 success "Database migrations complete"
 
@@ -182,11 +139,10 @@ success "Git hooks installed"
 
 echo ""
 echo -e "${GREEN}=======================================================${NC}"
-echo -e "${GREEN}  Buzz dev environment is ready!${NC}"
+echo -e "${GREEN}  Nimino dev environment is ready!${NC}"
 echo -e "${GREEN}=======================================================${NC}"
 echo ""
 echo -e "  ${BLUE}Postgres${NC}    ${DATABASE_URL}"
-echo -e "  ${BLUE}Redis${NC}       ${REDIS_URL}"
 echo -e "  ${BLUE}Adminer${NC}     http://localhost:8082  (DB browser)"
 echo -e "  ${BLUE}Keycloak${NC}    http://localhost:8180  (admin / admin — local OAuth testing)"
 echo ""

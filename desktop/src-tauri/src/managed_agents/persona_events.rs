@@ -5,7 +5,7 @@
 
 use std::collections::BTreeMap;
 
-use buzz_core_pkg::kind::{event_is_shared, KIND_PERSONA};
+use nimino_core_pkg::kind::{event_is_shared, KIND_PERSONA};
 use nostr::{EventBuilder, Kind, Tag};
 use serde::{Deserialize, Serialize};
 
@@ -314,7 +314,7 @@ pub(crate) async fn flush_pending_events_at(
         // and `mark_synced` below still compares against the retained row's
         // original `created_at`/`content`, which are untouched.
         let is_archive_request =
-            buzz_core_pkg::kind::is_identity_archive_request_kind(current.kind);
+            nimino_core_pkg::kind::is_identity_archive_request_kind(current.kind);
         let event = if is_archive_request {
             resign_with_fresh_timestamp(&event, state)?
         } else {

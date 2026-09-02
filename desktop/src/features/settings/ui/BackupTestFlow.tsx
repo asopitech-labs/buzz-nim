@@ -95,7 +95,7 @@ function SuccessBurst() {
           initial={{ x: 0, y: 0, opacity: 1, scale: 0.3, rotate: 0 }}
           key={particle.id}
           transition={{
-            duration: 0.9,
+            duration: 0.18,
             delay: particle.delay,
             ease: "easeOut",
           }}
@@ -256,7 +256,7 @@ export function BackupTestFlow({
           animate={{ opacity: 1, y: 0 }}
           initial={reduceMotion ? false : { opacity: 0, y: 8 }}
           transition={
-            reduceMotion ? { duration: 0 } : { delay: 0.15, duration: 0.35 }
+            reduceMotion ? { duration: 0 } : { delay: 0.15, duration: 0.18 }
           }
         >
           <p className="text-lg font-medium text-foreground">
@@ -264,7 +264,7 @@ export function BackupTestFlow({
           </p>
           <p className="mt-1.5 text-sm leading-6 text-muted-foreground">
             {result.matchesCurrentIdentity
-              ? "It restores your current Buzz identity."
+              ? "It restores your current Nimino identity."
               : "It restores a different identity than the one signed in here."}
           </p>
           <div className="mt-3 flex justify-center">

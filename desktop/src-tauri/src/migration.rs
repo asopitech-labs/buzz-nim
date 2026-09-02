@@ -1,14 +1,11 @@
-//! Worktree data sync and on-launch reconciliation for the Buzz desktop app.
+//! Worktree data sync and on-launch reconciliation for the Nimino desktop app.
 //!
 //! **Worktree sync** (`sync_shared_agent_data`): Per-launch symlink creation
 //! from the current worktree data directory to the canonical dev data
-//! directory (`xyz.block.buzz.app.dev`). Only runs when
-//! `BUZZ_SHARE_IDENTITY=1` and `BUZZ_PRIVATE_KEY` is set. All dev
+//! directory (`com.asopitech.nimino.dev`). Only runs when
+//! `NIMINO_SHARE_IDENTITY=1` and `NIMINO_PRIVATE_KEY` is set. All dev
 //! instances share the same physical files — edits in any worktree are
 //! immediately visible to all others.
-//!
-//! **Command reconciliation** (`reconcile_legacy_command_names`): Per-launch
-//! fix-up of persisted built-in command names from the Sprout→Buzz rename.
 //!
 //! **Provider reconciliation** (`reconcile_provider_mcp_commands`): Per-launch
 //! fix-up of `mcp_command` values in `managed-agents.json` against the
@@ -21,14 +18,12 @@ use tauri::Manager;
 
 use crate::util::replace_with_symlink;
 
-const CANONICAL_DEV_IDENTIFIER: &str = "xyz.block.buzz.app.dev";
-const LEGACY_CANONICAL_DEV_IDENTIFIER: &str = "xyz.block.sprout.app.dev";
-const LEGACY_RELEASE_IDENTIFIER: &str = "xyz.block.sprout.app";
+const CANONICAL_DEV_IDENTIFIER: &str = "com.asopitech.nimino.dev";
 
 /// JSON files symlinked from worktree data directories to the canonical
 /// dev data directory. Only data files — never `agent-pids/` or `logs/`.
 /// `identity.key` is deliberately excluded because worktree instances
-/// receive their identity via the `BUZZ_PRIVATE_KEY` env var.
+/// receive their identity via the `NIMINO_PRIVATE_KEY` env var.
 const SHARED_AGENT_FILES: &[&str] = &[
     "agents/managed-agents.json",
     "agents/personas.json",
@@ -41,8 +36,8 @@ const SHARED_AGENT_DIRS: &[&str] = &["agents/teams"];
 
 /// Returns `true` when `name` is a dev data dir name — i.e. it is exactly the
 /// canonical dev identifier or a worktree variant separated by a `.` (e.g.
-/// `xyz.block.buzz.app.dev.my-branch`). Rejects prefix-collisions such as
-/// `xyz.block.buzz.app.developer`. This is the authoritative dev/prod
+/// `com.asopitech.nimino.dev.my-branch`). Rejects prefix-collisions such as
+/// `com.asopitech.nimino.developer`. This is the authoritative dev/prod
 /// discriminator shared by `run_boot_migrations`, `sync_shared_agent_data`,
 /// and `reconcile_target_dir`.
 pub(crate) fn is_dev_data_dir_name(name: &str) -> bool {
@@ -54,18 +49,6 @@ pub(crate) fn is_dev_data_dir_name(name: &str) -> bool {
 
 fn canonical_dev_data_dir(current: &Path) -> Option<PathBuf> {
     current.parent().map(|p| p.join(CANONICAL_DEV_IDENTIFIER))
-}
-
-pub(crate) fn legacy_app_data_dir(current: &Path) -> Option<PathBuf> {
-    let name = current.file_name()?.to_str()?;
-    let legacy_name = if name.starts_with(CANONICAL_DEV_IDENTIFIER) {
-        name.replacen(CANONICAL_DEV_IDENTIFIER, LEGACY_CANONICAL_DEV_IDENTIFIER, 1)
-    } else if name.starts_with("xyz.block.buzz.app") {
-        name.replacen("xyz.block.buzz.app", LEGACY_RELEASE_IDENTIFIER, 1)
-    } else {
-        return None;
-    };
-    current.parent().map(|parent| parent.join(legacy_name))
 }
 
 fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
@@ -103,8 +86,7 @@ fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
 }
 
 /// Run every data migration that must complete before identity resolution and
-/// agent restore. Ordering is load-bearing: `migrate_legacy_app_data_dir` must
-/// precede any disk read, and `sync_shared_agent_data` must precede
+/// agent restore. Ordering is load-bearing: `sync_shared_agent_data` must precede
 /// `restore_managed_agents_on_launch` (which reads `managed-agents.json`).
 /// Identity-dependent migrations (persona/team event signing) run separately in
 /// boot setup after the persisted identity is resolved.
@@ -144,7 +126,7 @@ fn run_boot_migrations_inner(app: &tauri::AppHandle, reset_completed: bool) {
         false
     };
 
-    // On dev builds, copy `.repos-dir` from ~/.buzz → ~/.buzz-dev BEFORE
+    // On dev builds, copy `.repos-dir` from ~/.nimino → ~/.nimino-dev BEFORE
     // control returns to lib.rs where resolve_repos_at_boot() reads it. This
     // ensures the dev nest boots with the correct workspace on its first launch,
     // matching what the prod nest had configured. Skip-if-dest-exists so it is
@@ -154,10 +136,9 @@ fn run_boot_migrations_inner(app: &tauri::AppHandle, reset_completed: bool) {
         maybe_migrate_dev_repos_dir(is_dev, reset_completed, &home, &dev_nest);
     }
 
-    migrate_legacy_app_data_dir(app);
     sync_shared_agent_data(app);
     // Dev-build-only: copy any agent keys that exist in the production
-    // keyring ("buzz-desktop") into the dev service ("buzz-desktop-dev")
+    // keyring ("nimino-desktop") into the dev service ("nimino-desktop-dev")
     // so existing agents don't lose their keys after the service-name split.
     // Must run after sync_shared_agent_data (JSON symlinked) and before
     // any load_managed_agents call (which runs hydrate_keys against the
@@ -167,7 +148,6 @@ fn run_boot_migrations_inner(app: &tauri::AppHandle, reset_completed: bool) {
         crate::managed_agents::migrate_agent_keys_to_dev_service(app);
     }
     migrate_persona_provider_to_runtime(app);
-    reconcile_legacy_command_names(app);
     // Fold personas.json after its JSON-level migrations and before consumers
     // below; otherwise sync_team_personas sees an empty definition set.
     // Post-fold runtime reads fall back to unified-store definitions.
@@ -191,38 +171,6 @@ fn run_boot_migrations_inner(app: &tauri::AppHandle, reset_completed: bool) {
     materialize_agent_runtimes(app);
 }
 
-/// Copy one-time app state from the legacy app identifier directory to
-/// the current Buzz identifier directory. The Tauri identifier controls the app
-/// data path, so without this copy a product rename would look like a fresh
-/// install and users would lose their persisted identity and agent settings.
-pub fn migrate_legacy_app_data_dir(app: &tauri::AppHandle) {
-    let current_dir = match app.path().app_data_dir() {
-        Ok(dir) => dir,
-        Err(e) => {
-            eprintln!("buzz-desktop: app-data-migration: cannot resolve app data dir: {e}");
-            return;
-        }
-    };
-    let Some(legacy_dir) = legacy_app_data_dir(&current_dir) else {
-        return;
-    };
-    if !legacy_dir.exists() {
-        return;
-    }
-    match copy_dir_all(&legacy_dir, &current_dir) {
-        Ok(()) => eprintln!(
-            "buzz-desktop: app-data-migration: copied legacy data from {} to {}",
-            legacy_dir.display(),
-            current_dir.display()
-        ),
-        Err(error) => eprintln!(
-            "buzz-desktop: app-data-migration: failed to copy {} to {}: {error}",
-            legacy_dir.display(),
-            current_dir.display()
-        ),
-    }
-}
-
 /// Knowledge directories and files carried from the legacy nest into the live
 /// nest. Deliberately excludes `REPOS/`: cloned repositories are re-clonable by
 /// definition (Will's stranded `REPOS/` measured 62 GB of checkouts plus build
@@ -238,7 +186,7 @@ pub fn migrate_legacy_app_data_dir(app: &tauri::AppHandle) {
 /// these dirs (e.g. by a skill writing into `.scratch/`) would hit that branch's
 /// clobber/abort hazard. The per-entry log-and-continue below bounds the blast
 /// radius of such a failure to the single offending entry.
-const LEGACY_NEST_KNOWLEDGE: &[&str] = &[
+const NEST_KNOWLEDGE: &[&str] = &[
     "AGENTS.md",
     "RESEARCH",
     "PLANS",
@@ -248,64 +196,34 @@ const LEGACY_NEST_KNOWLEDGE: &[&str] = &[
     ".scratch",
 ];
 
-/// Migrate the legacy agent nest (`~/.sprout`) into the current nest.
-///
-/// PR #960 renamed the nest directory but shipped no migration, stranding the
-/// agent's accumulated knowledge in `~/.sprout` while `~/.buzz` booted empty —
-/// so agents searched `$HOME` for files they "remembered", triggering macOS TCC
-/// prompts. This copies only the knowledge directories (see
-/// [`LEGACY_NEST_KNOWLEDGE`]), never `REPOS/`.
-///
-/// Non-fatal and idempotent, mirroring [`migrate_legacy_app_data_dir`]: a copy
-/// error is logged and never aborts startup. There is no completion sentinel —
-/// the migration re-runs on every launch while `~/.sprout` exists, which is
-/// cheap because the copy is tiny and `copy_dir_all` skips files that already
-/// exist in the destination. This relies on `REPOS/` being out of scope; if it
-/// is ever added back, a sentinel or off-thread copy becomes mandatory.
-///
-/// Returns `true` when a legacy `~/.sprout` nest was present (migration ran),
-/// so the caller can emit a one-time hint inviting the user to delete it. The
-/// frontend dedupes the hint, so re-firing while `~/.sprout` lingers is benign.
-pub fn migrate_legacy_nest() -> bool {
-    let Some(home) = dirs::home_dir() else {
-        eprintln!("buzz-desktop: nest-migration: cannot resolve home directory");
-        return false;
-    };
-    // Destination is the current build's nest dir (`.buzz` or `.buzz-dev`).
-    let Some(current_nest) = crate::managed_agents::nest_dir() else {
-        eprintln!("buzz-desktop: nest-migration: cannot resolve nest directory");
-        return false;
-    };
-    migrate_legacy_nest_at(&home.join(".sprout"), &current_nest)
-}
-
-/// Copy the [`LEGACY_NEST_KNOWLEDGE`] entries from `legacy` to `current`.
+/// Copy the [`NEST_KNOWLEDGE`] entries from `source` to `destination`.
 ///
 /// Each entry is copied independently with its own log-and-continue, so a
-/// failure on one entry never skips the rest. No-ops cleanly when `legacy` is
-/// absent or an entry does not exist. Returns `true` when `legacy` existed.
-fn migrate_legacy_nest_at(legacy: &Path, current: &Path) -> bool {
-    if !legacy.exists() {
+/// failure on one entry never skips the rest. No-ops cleanly when `source` is
+/// absent or an entry does not exist. Returns `true` when `source` existed.
+fn copy_nest_knowledge_at(source: &Path, destination: &Path) -> bool {
+    if !source.exists() {
         return false;
     }
-    // A deliberate dev reset pre-creates this marker to opt out of every
-    // production/legacy nest import. Normal first-run migration still copies
-    // `.sprout` before `migrate_dev_nest()` writes the marker later in boot.
-    if current.file_name().is_some_and(|name| name == ".buzz-dev")
-        && current.join(DEV_NEST_MIGRATED_SENTINEL).exists()
+    // A deliberate dev reset pre-creates this marker to opt out of the
+    // production nest import.
+    if destination
+        .file_name()
+        .is_some_and(|name| name == ".nimino-dev")
+        && destination.join(DEV_NEST_MIGRATED_SENTINEL).exists()
     {
         return false;
     }
-    for name in LEGACY_NEST_KNOWLEDGE {
-        let src = legacy.join(name);
+    for name in NEST_KNOWLEDGE {
+        let src = source.join(name);
         if !src.exists() {
             continue;
         }
-        let dst = current.join(name);
+        let dst = destination.join(name);
         let result = if src.is_dir() {
             copy_dir_all(&src, &dst)
         } else if *name == "AGENTS.md" {
-            // `ensure_nest` writes a default `~/.buzz/AGENTS.md` before this
+            // `ensure_nest` writes a default `~/.nimino/AGENTS.md` before this
             // migration runs, so the plain absent-only guard would always skip
             // the legacy file and strand the user's instructions. Overwrite the
             // destination only when it is still the untouched generated default;
@@ -316,12 +234,12 @@ fn migrate_legacy_nest_at(legacy: &Path, current: &Path) -> bool {
         };
         match result {
             Ok(()) => eprintln!(
-                "buzz-desktop: nest-migration: migrated {} to {}",
+                "nimino-desktop: nest-migration: migrated {} to {}",
                 src.display(),
                 dst.display()
             ),
             Err(error) => eprintln!(
-                "buzz-desktop: nest-migration: failed to migrate {} to {}: {error}",
+                "nimino-desktop: nest-migration: failed to migrate {} to {}: {error}",
                 src.display(),
                 dst.display()
             ),
@@ -331,11 +249,10 @@ fn migrate_legacy_nest_at(legacy: &Path, current: &Path) -> bool {
 }
 
 /// Filename of the completion sentinel written after a successful dev-nest
-/// knowledge migration. Presence of this file means `~/.buzz` content has
-/// already been copied into `~/.buzz-dev` and subsequent boots can skip the
+/// knowledge migration. Presence of this file means `~/.nimino` content has
+/// already been copied into `~/.nimino-dev` and subsequent boots can skip the
 /// copy. Using an explicit marker instead of checking for RESEARCH/PLANS
-/// content decouples the dev migration from the `.sprout` migration, which
-/// also copies into `~/.buzz-dev` and could otherwise set the sentinel early.
+/// content avoids mistaking partially copied content for a completed migration.
 const DEV_NEST_MIGRATED_SENTINEL: &str = ".dev-nest-migrated";
 
 /// Returns true when `migrate_dev_repos_dir` should run: dev build AND no
@@ -345,11 +262,11 @@ pub(crate) fn should_migrate_dev_repos_dir(is_dev: bool, reset_completed: bool) 
     is_dev && !reset_completed
 }
 
-/// Injectable core: copy `.repos-dir` from `<home>/.buzz/` into `dev_nest`,
+/// Injectable core: copy `.repos-dir` from `<home>/.nimino/` into `dev_nest`,
 /// non-destructively. Extracted so tests can inject temp paths without
 /// touching `dirs::home_dir()` or the global `nest_dir()` OnceLock.
 pub(crate) fn migrate_dev_repos_dir_at(home: &Path, dev_nest: &Path) {
-    let src = home.join(".buzz").join(".repos-dir");
+    let src = home.join(".nimino").join(".repos-dir");
     if !src.exists() {
         return;
     }
@@ -367,18 +284,15 @@ pub(crate) fn migrate_dev_repos_dir_at(home: &Path, dev_nest: &Path) {
     // Ensure the dev nest directory itself exists — this migration runs before
     // ensure_nest() in the boot sequence, so the directory may not yet exist.
     if let Err(e) = std::fs::create_dir_all(dev_nest) {
-        eprintln!(
-            "buzz-desktop: dev-nest-migration: failed to create dev nest {}: {e}",
-            dev_nest.display()
-        );
+        eprintln!("nimino-desktop: create nest {}: {e}", dev_nest.display());
         return;
     }
     match std::fs::copy(&src, &dst) {
         Ok(_) => eprintln!(
-            "buzz-desktop: dev-nest-migration: migrated .repos-dir to {}",
+            "nimino-desktop: dev-nest-migration: migrated .repos-dir to {}",
             dst.display()
         ),
-        Err(e) => eprintln!("buzz-desktop: dev-nest-migration: failed to migrate .repos-dir: {e}"),
+        Err(e) => eprintln!("nimino-desktop: dev-nest: .repos-dir copy failed: {e}"),
     }
 }
 
@@ -397,48 +311,45 @@ pub(crate) fn maybe_migrate_dev_repos_dir(
     }
 }
 
-/// One-time migration of dev-build nest contents from `~/.buzz` → `~/.buzz-dev`.
+/// One-time migration of dev-build nest contents from `~/.nimino` → `~/.nimino-dev`.
 ///
 /// When a dev build first boots after this change ships, it switches from the
-/// shared `~/.buzz` nest to a dedicated `~/.buzz-dev` nest. Without migration,
+/// shared `~/.nimino` nest to a dedicated `~/.nimino-dev` nest. Without migration,
 /// all accumulated knowledge (RESEARCH/, PLANS/, GUIDES/, WORK_LOGS/, mem_*
 /// slugs, AGENTS.md, managed-agents.json) would be invisible to dev instances.
 ///
 /// Migration is non-destructive: `copy_dir_all` skips files already at the
 /// destination, so a partially-migrated state is safe to re-run. The source
-/// `~/.buzz` is never deleted — prod builds continue to use it normally.
+/// `~/.nimino` is never deleted — prod builds continue to use it normally.
 ///
 /// Completion is tracked by a [`DEV_NEST_MIGRATED_SENTINEL`] file written into
-/// `~/.buzz-dev`. Using an explicit sentinel (rather than RESEARCH/PLANS file
-/// presence) decouples this migration from the `.sprout` → `~/.buzz-dev`
-/// migration that runs earlier in the same boot, which might otherwise populate
-/// RESEARCH/PLANS and incorrectly suppress the `~/.buzz` copy.
+/// `~/.nimino-dev`. Using an explicit sentinel avoids treating partial content
+/// as a completed migration.
 ///
 /// Only runs on dev builds (checked by the caller). Returns `true` when
 /// contents were copied (useful for a one-time log message, not required).
 pub fn migrate_dev_nest() -> bool {
     let Some(home) = dirs::home_dir() else {
-        eprintln!("buzz-desktop: dev-nest-migration: cannot resolve home directory");
+        eprintln!("nimino-desktop: dev-nest-migration: cannot resolve home directory");
         return false;
     };
-    let legacy = home.join(".buzz");
-    let current = home.join(".buzz-dev");
-    // If legacy doesn't exist, nothing to migrate.
-    if !legacy.exists() {
+    let source = home.join(".nimino");
+    let destination = home.join(".nimino-dev");
+    if !source.exists() {
         return false;
     }
     // Skip if migration has already run (explicit sentinel, not content-based).
-    if current.join(DEV_NEST_MIGRATED_SENTINEL).exists() {
+    if destination.join(DEV_NEST_MIGRATED_SENTINEL).exists() {
         return false;
     }
-    let copied = migrate_legacy_nest_at(&legacy, &current);
+    let copied = copy_nest_knowledge_at(&source, &destination);
     // Write the sentinel so future boots skip the copy. Non-fatal if it fails
     // — worst case we re-run the (idempotent) migration on the next boot.
     if copied {
-        let sentinel = current.join(DEV_NEST_MIGRATED_SENTINEL);
+        let sentinel = destination.join(DEV_NEST_MIGRATED_SENTINEL);
         if let Err(e) = std::fs::write(&sentinel, "") {
             eprintln!(
-                "buzz-desktop: dev-nest-migration: failed to write sentinel {}: {e}",
+                "nimino-desktop: dev-nest-migration: failed to write sentinel {}: {e}",
                 sentinel.display()
             );
         }
@@ -496,7 +407,7 @@ fn patch_json_records(
     };
     let Ok(mut records) = serde_json::from_str::<Vec<serde_json::Value>>(&content) else {
         eprintln!(
-            "buzz-desktop: patch-json-records: failed to parse {}",
+            "nimino-desktop: patch-json-records: failed to parse {}",
             path.display()
         );
         return;
@@ -510,7 +421,7 @@ fn patch_json_records(
     if changed {
         if let Ok(bytes) = serde_json::to_vec_pretty(&records) {
             if let Err(e) = crate::managed_agents::atomic_write_json_restricted(path, &bytes) {
-                eprintln!("buzz-desktop: patch-json-records: {e}");
+                eprintln!("nimino-desktop: patch-json-records: {e}");
             }
         }
     }
@@ -581,7 +492,7 @@ fn refresh_builtin_agent_avatars_in_file(
     };
     let Ok(mut records) = serde_json::from_str::<Vec<serde_json::Value>>(&contents) else {
         eprintln!(
-            "buzz-desktop: refresh-builtin-agent-avatars: invalid JSON in {}",
+            "nimino-desktop: refresh-builtin-agent-avatars: invalid JSON in {}",
             path.display()
         );
         return;
@@ -661,7 +572,7 @@ fn refresh_builtin_agent_avatars_in_file(
     if changed {
         if let Ok(bytes) = serde_json::to_vec_pretty(&records) {
             if let Err(e) = crate::managed_agents::atomic_write_json_restricted(path, &bytes) {
-                eprintln!("buzz-desktop: refresh-builtin-agent-avatars: {e}");
+                eprintln!("nimino-desktop: refresh-builtin-agent-avatars: {e}");
             }
         }
     }
@@ -757,33 +668,33 @@ fn replace_builtin_avatar(record: &mut serde_json::Value, persona_id: &str, now:
 /// data directory to the canonical dev data directory.
 ///
 /// Guards:
-/// - `BUZZ_SHARE_IDENTITY` must be `"1"`
-/// - `BUZZ_PRIVATE_KEY` must parse as valid `nostr::Keys`
+/// - `NIMINO_SHARE_IDENTITY` must be `"1"`
+/// - `NIMINO_PRIVATE_KEY` must parse as valid `nostr::Keys`
 /// - The canonical dir must differ from the current dir (skip if we ARE canonical)
 /// - The canonical dir must exist
 pub fn sync_shared_agent_data(app: &tauri::AppHandle) {
     // Guard: only runs when sharing identity with a worktree.
-    let is_shared = std::env::var("BUZZ_SHARE_IDENTITY")
+    let is_shared = std::env::var("NIMINO_SHARE_IDENTITY")
         .map(|v| v == "1")
         .unwrap_or(false);
     if !is_shared {
         return;
     }
 
-    // Guard: BUZZ_PRIVATE_KEY must be a valid nostr key.
-    let has_valid_key = std::env::var("BUZZ_PRIVATE_KEY")
+    // Guard: NIMINO_PRIVATE_KEY must be a valid nostr key.
+    let has_valid_key = std::env::var("NIMINO_PRIVATE_KEY")
         .ok()
         .and_then(|k| k.parse::<nostr::Keys>().ok())
         .is_some();
     if !has_valid_key {
-        eprintln!("buzz-desktop: shared-agent-sync: BUZZ_PRIVATE_KEY missing or invalid, skipping");
+        eprintln!("nimino-desktop: shared sync: NIMINO_PRIVATE_KEY missing or invalid");
         return;
     }
 
     let current_dir = match app.path().app_data_dir() {
         Ok(dir) => dir,
         Err(e) => {
-            eprintln!("buzz-desktop: shared-agent-sync: cannot resolve app data dir: {e}");
+            eprintln!("nimino-desktop: shared-agent-sync: cannot resolve app data dir: {e}");
             return;
         }
     };
@@ -799,7 +710,7 @@ pub fn sync_shared_agent_data(app: &tauri::AppHandle) {
         .is_some_and(is_dev_data_dir_name);
     if !is_dev {
         eprintln!(
-            "buzz-desktop: shared-agent-sync: skipping — data dir is not a dev dir ({})",
+            "nimino-desktop: shared-agent-sync: skipping — data dir is not a dev dir ({})",
             current_dir.display()
         );
         return;
@@ -808,7 +719,7 @@ pub fn sync_shared_agent_data(app: &tauri::AppHandle) {
     let canonical_dir = match canonical_dev_data_dir(&current_dir) {
         Some(dir) => dir,
         None => {
-            eprintln!("buzz-desktop: shared-agent-sync: cannot compute canonical dir (no parent)");
+            eprintln!("nimino-desktop: shared sync: canonical dir has no parent");
             return;
         }
     };
@@ -826,7 +737,7 @@ pub fn sync_shared_agent_data(app: &tauri::AppHandle) {
     // Guard: skip if canonical dir doesn't exist.
     if !canonical_dir.exists() {
         eprintln!(
-            "buzz-desktop: shared-agent-sync: canonical dir does not exist: {}",
+            "nimino-desktop: shared-agent-sync: canonical dir does not exist: {}",
             canonical_dir.display()
         );
         return;
@@ -858,7 +769,7 @@ pub fn sync_shared_agent_data(app: &tauri::AppHandle) {
                 if let Some(file_parent) = canonical_file.parent() {
                     if let Err(e) = std::fs::create_dir_all(file_parent) {
                         eprintln!(
-                            "buzz-desktop: shared-agent-sync: failed to create {}: {e}",
+                            "nimino-desktop: shared-agent-sync: failed to create {}: {e}",
                             file_parent.display()
                         );
                         break;
@@ -866,7 +777,7 @@ pub fn sync_shared_agent_data(app: &tauri::AppHandle) {
                 }
                 let _ = std::fs::rename(&sibling_file, &canonical_file);
                 eprintln!(
-                    "buzz-desktop: shared-agent-sync: seeded {rel} from {}",
+                    "nimino-desktop: shared-agent-sync: seeded {rel} from {}",
                     sibling.display()
                 );
                 break;
@@ -886,7 +797,7 @@ pub fn sync_shared_agent_data(app: &tauri::AppHandle) {
         if let Some(parent) = dst.parent() {
             if let Err(e) = std::fs::create_dir_all(parent) {
                 eprintln!(
-                    "buzz-desktop: shared-agent-sync: failed to create {}: {e}",
+                    "nimino-desktop: shared-agent-sync: failed to create {}: {e}",
                     parent.display()
                 );
                 continue;
@@ -904,7 +815,7 @@ pub fn sync_shared_agent_data(app: &tauri::AppHandle) {
         if !canonical_target.exists() {
             if let Err(e) = std::fs::create_dir_all(&canonical_target) {
                 eprintln!(
-                    "buzz-desktop: shared-agent-sync: failed to create {}: {e}",
+                    "nimino-desktop: shared-agent-sync: failed to create {}: {e}",
                     canonical_target.display()
                 );
             }
@@ -930,7 +841,7 @@ pub fn sync_shared_agent_data(app: &tauri::AppHandle) {
                             // replace_with_symlink backs up any leftover real content.
                             replace_with_symlink(&canonical_target, &sibling_dir);
                             eprintln!(
-                                "buzz-desktop: shared-agent-sync: migrated {rel} from {}",
+                                "nimino-desktop: shared-agent-sync: migrated {rel} from {}",
                                 sibling.display()
                             );
                             break;
@@ -952,7 +863,7 @@ pub fn sync_shared_agent_data(app: &tauri::AppHandle) {
         if let Some(parent) = dst.parent() {
             if let Err(e) = std::fs::create_dir_all(parent) {
                 eprintln!(
-                    "buzz-desktop: shared-agent-sync: failed to create {}: {e}",
+                    "nimino-desktop: shared-agent-sync: failed to create {}: {e}",
                     parent.display()
                 );
                 continue;
@@ -964,7 +875,7 @@ pub fn sync_shared_agent_data(app: &tauri::AppHandle) {
 
     if synced > 0 {
         eprintln!(
-            "buzz-desktop: shared-agent-sync: {synced} item(s) linked to {}",
+            "nimino-desktop: shared-agent-sync: {synced} item(s) linked to {}",
             canonical_dir.display()
         );
     }
@@ -1008,11 +919,11 @@ fn reconcile_mcp_commands_in_file(path: &Path) {
         }
         // Only fix values that are clearly stale (empty or a removed binary).
         // Leave user-customized values untouched.
-        if !current.is_empty() && current != "buzz-mcp-server" {
+        if !current.is_empty() && current != "nimino-mcp-server" {
             return false;
         }
         eprintln!(
-            "buzz-desktop: runtime-reconcile: {:?} ({:?}): mcp_command {:?} → {:?}",
+            "nimino-desktop: runtime-reconcile: {:?} ({:?}): mcp_command {:?} → {:?}",
             obj.get("name").and_then(|v| v.as_str()).unwrap_or("?"),
             effective_command,
             current,
@@ -1024,191 +935,6 @@ fn reconcile_mcp_commands_in_file(path: &Path) {
         );
         true
     });
-}
-
-fn replace_command_field(
-    obj: &mut serde_json::Map<String, serde_json::Value>,
-    field: &str,
-    replacement: String,
-) -> bool {
-    let Some(current) = obj.get(field).and_then(|v| v.as_str()) else {
-        return false;
-    };
-    if current == replacement {
-        return false;
-    }
-    eprintln!(
-        "buzz-desktop: command-rename-reconcile: {:?}: {field} {:?} → {:?}",
-        obj.get("name").and_then(|v| v.as_str()).unwrap_or("?"),
-        current,
-        replacement,
-    );
-    obj.insert(field.to_string(), serde_json::Value::String(replacement));
-    true
-}
-
-fn reconcile_legacy_command_names_in_file(path: &Path) {
-    patch_json_records(path, |obj| {
-        let mut changed = false;
-
-        if let Some(acp_command) = obj
-            .get("acp_command")
-            .and_then(|v| v.as_str())
-            .map(str::to_string)
-        {
-            if acp_command == "sprout-acp" {
-                changed |= replace_command_field(obj, "acp_command", "buzz-acp".to_string());
-            }
-        }
-
-        let mut agent_command = obj
-            .get("agent_command")
-            .and_then(|v| v.as_str())
-            .unwrap_or("")
-            .to_string();
-        if agent_command == "sprout-agent" {
-            agent_command = "buzz-agent".to_string();
-            changed |= replace_command_field(obj, "agent_command", agent_command.clone());
-        }
-
-        if let Some(mcp_command) = obj
-            .get("mcp_command")
-            .and_then(|v| v.as_str())
-            .map(str::to_string)
-        {
-            match mcp_command.as_str() {
-                "sprout-dev-mcp" => {
-                    changed |=
-                        replace_command_field(obj, "mcp_command", "buzz-dev-mcp".to_string());
-                }
-                "sprout-mcp" | "sprout-mcp-server" | "buzz-mcp-server" => {
-                    let replacement = if agent_command == "buzz-agent" {
-                        "buzz-dev-mcp"
-                    } else {
-                        ""
-                    };
-                    changed |= replace_command_field(obj, "mcp_command", replacement.to_string());
-                }
-                _ => {}
-            }
-        }
-
-        changed
-    });
-}
-
-fn reconcile_legacy_persona_runtimes_in_file(path: &Path) {
-    patch_json_records(path, |obj| {
-        let Some(runtime) = obj.get("runtime").and_then(|v| v.as_str()) else {
-            return false;
-        };
-        if runtime != "sprout-agent" {
-            return false;
-        }
-        eprintln!(
-            "buzz-desktop: command-rename-reconcile: persona {:?}: runtime {:?} → {:?}",
-            obj.get("display_name")
-                .or_else(|| obj.get("displayName"))
-                .and_then(|v| v.as_str())
-                .unwrap_or("?"),
-            runtime,
-            "buzz-agent",
-        );
-        obj.insert(
-            "runtime".to_string(),
-            serde_json::Value::String("buzz-agent".to_string()),
-        );
-        true
-    });
-}
-
-fn rewrite_legacy_persona_md_runtime(content: &str) -> Option<String> {
-    let (frontmatter, body) = buzz_persona_pkg::persona::split_frontmatter(content).ok()?;
-    let mut value = serde_yaml::from_str::<serde_yaml::Value>(frontmatter).ok()?;
-    let mapping = value.as_mapping_mut()?;
-    let runtime = mapping.get_mut(serde_yaml::Value::String("runtime".to_string()))?;
-    if runtime.as_str()? != "sprout-agent" {
-        return None;
-    }
-    *runtime = serde_yaml::Value::String("buzz-agent".to_string());
-    let frontmatter = serde_yaml::to_string(&value).ok()?;
-    Some(format!("---\n{frontmatter}---\n{body}"))
-}
-
-fn reconcile_legacy_team_persona_runtime_files(dir: &Path) {
-    let Ok(entries) = std::fs::read_dir(dir) else {
-        return;
-    };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        let Ok(file_type) = entry.file_type() else {
-            continue;
-        };
-        if file_type.is_dir() {
-            reconcile_legacy_team_persona_runtime_files(&path);
-            continue;
-        }
-        if !file_type.is_file() {
-            continue;
-        }
-        let Some(name) = path.file_name().and_then(|name| name.to_str()) else {
-            continue;
-        };
-        if !name.ends_with(".persona.md") {
-            continue;
-        }
-        let Ok(content) = std::fs::read_to_string(&path) else {
-            continue;
-        };
-        let Some(updated) = rewrite_legacy_persona_md_runtime(&content) else {
-            continue;
-        };
-        if updated == content {
-            continue;
-        }
-        match std::fs::write(&path, updated) {
-            Ok(()) => {
-                eprintln!(
-                    "buzz-desktop: command-rename-reconcile: updated {}",
-                    path.display()
-                );
-            }
-            Err(error) => {
-                eprintln!(
-                    "buzz-desktop: command-rename-reconcile: failed to update {}: {error}",
-                    path.display()
-                );
-            }
-        }
-    }
-}
-
-/// Reconcile exact built-in command values persisted before the Sprout→Buzz
-/// rename. Custom commands and explicit paths are left untouched.
-pub fn reconcile_legacy_command_names(app: &tauri::AppHandle) {
-    let Ok(current_dir) = app.path().app_data_dir() else {
-        return;
-    };
-    let mut dirs = vec![current_dir.clone()];
-    if let Some(canonical) = canonical_dev_data_dir(&current_dir) {
-        if canonical.exists() && canonical != current_dir {
-            dirs.push(canonical);
-        }
-    }
-    for dir in dirs {
-        let path = dir.join("agents/managed-agents.json");
-        if path.exists() {
-            reconcile_legacy_command_names_in_file(&path);
-        }
-        let personas_path = dir.join("agents/personas.json");
-        if personas_path.exists() {
-            reconcile_legacy_persona_runtimes_in_file(&personas_path);
-        }
-        let teams_dir = dir.join("agents/teams");
-        if teams_dir.exists() && !teams_dir.is_symlink() {
-            reconcile_legacy_team_persona_runtime_files(&teams_dir);
-        }
-    }
 }
 
 /// Reconcile `mcp_command` values in managed-agents.json against the
@@ -1239,7 +965,7 @@ fn reconcile_databricks_v1_to_v2_in_file(path: &Path, rewrite_v1_provider: bool)
         let mut changed = false;
 
         // Only rewrite the structured provider field when the baked build env
-        // marks this as a Block build (BUZZ_AGENT_PROVIDER == "databricks_v2").
+        // marks this as a Block build (NIMINO_AGENT_PROVIDER == "databricks_v2").
         // OSS users may intentionally select V1 (Model Serving), so we must not
         // silently migrate their provider to V2 (AI Gateway).
         if rewrite_v1_provider && obj.get("provider").and_then(|v| v.as_str()) == Some("databricks")
@@ -1250,7 +976,7 @@ fn reconcile_databricks_v1_to_v2_in_file(path: &Path, rewrite_v1_provider: bool)
                 .unwrap_or("?")
                 .to_string();
             eprintln!(
-                "buzz-desktop: databricks-v1-to-v2: {name:?}: provider \"databricks\" → \"databricks_v2\"",
+                "nimino-desktop: databricks-v1-to-v2: {name:?}: provider \"databricks\" → \"databricks_v2\"",
             );
             obj.insert(
                 "provider".to_string(),
@@ -1258,11 +984,11 @@ fn reconcile_databricks_v1_to_v2_in_file(path: &Path, rewrite_v1_provider: bool)
             );
             // Also clear the model field — a V1 model name (e.g. "dbrx-instruct")
             // on a V2 provider would shadow the baked DATABRICKS_MODEL at spawn time
-            // (BUZZ_AGENT_MODEL from runtime_metadata_env_vars takes priority in
-            // buzz-agent config.rs). Clearing it lets the baked V2 default win.
+            // (NIMINO_AGENT_MODEL from runtime_metadata_env_vars takes priority in
+            // nimino-agent config.rs). Clearing it lets the baked V2 default win.
             if obj.remove("model").is_some() {
                 eprintln!(
-                    "buzz-desktop: databricks-v1-to-v2: {name:?}: cleared stale V1 model field",
+                    "nimino-desktop: databricks-v1-to-v2: {name:?}: cleared stale V1 model field",
                 );
             }
             changed = true;
@@ -1284,7 +1010,7 @@ fn reconcile_databricks_v1_to_v2_in_file(path: &Path, rewrite_v1_provider: bool)
                 .collect();
             for key in stale_keys {
                 env_vars.remove(key.as_str());
-                eprintln!("buzz-desktop: databricks-v1-to-v2: removed stale env_vars[\"{key}\"]",);
+                eprintln!("nimino-desktop: databricks-v1-to-v2: removed stale env_vars[\"{key}\"]",);
                 changed = true;
             }
         }
@@ -1298,7 +1024,7 @@ fn reconcile_databricks_v1_to_v2_in_file(path: &Path, rewrite_v1_provider: bool)
 /// `provider: "databricks"` to `"databricks_v2"`.
 ///
 /// **Block builds** (where `baked_build_env()` contains
-/// `BUZZ_AGENT_PROVIDER=databricks_v2`): the structured `provider` field is
+/// `NIMINO_AGENT_PROVIDER=databricks_v2`): the structured `provider` field is
 /// rewritten V1→V2 because the baked release targets V2 exclusively. Records
 /// that were saved before this migration would otherwise silently override the
 /// baked value at spawn time (last-write-wins in `Command::env`).
@@ -1306,22 +1032,22 @@ fn reconcile_databricks_v1_to_v2_in_file(path: &Path, rewrite_v1_provider: bool)
 /// **OSS builds** (baked env empty): the `provider` field is left alone —
 /// V1 (`databricks`) is a valid Model Serving choice for OSS users.
 ///
-/// In both cases, stale `BUZZ_AGENT_PROVIDER` / `BUZZ_AGENT_MODEL` /
+/// In both cases, stale `NIMINO_AGENT_PROVIDER` / `NIMINO_AGENT_MODEL` /
 /// `GOOSE_PROVIDER` / `GOOSE_MODEL` are stripped from `env_vars`. These keys
 /// are always re-derived from structured fields at spawn time; persisted copies
 /// silence UI edits and cause stale routing.
 ///
 /// Covers both the current app data dir and the canonical dev data dir
 /// (for worktree instances) — same dual-dir pattern as
-/// `reconcile_legacy_command_names` and `reconcile_provider_mcp_commands`.
+/// `reconcile_provider_mcp_commands`.
 pub fn reconcile_databricks_v1_to_v2(app: &tauri::AppHandle) {
     use crate::managed_agents::baked_build_env;
-    // On Block builds, the baked env contains BUZZ_AGENT_PROVIDER=databricks_v2.
+    // On Block builds, the baked env contains NIMINO_AGENT_PROVIDER=databricks_v2.
     // Use that as a reliable signal that this is a Block build and the V1
     // provider should be migrated. OSS builds have an empty baked env, so
     // rewrite_v1_provider is false and the structured provider is preserved.
     let rewrite_v1_provider = baked_build_env()
-        .get("BUZZ_AGENT_PROVIDER")
+        .get("NIMINO_AGENT_PROVIDER")
         .map(|v| v == "databricks_v2")
         .unwrap_or(false);
     let Ok(current_dir) = app.path().app_data_dir() else {
@@ -1390,10 +1116,6 @@ mod tests;
 #[cfg(test)]
 #[path = "migration_avatar_tests.rs"]
 mod avatar_tests;
-
-#[cfg(test)]
-#[path = "migration_command_tests.rs"]
-mod command_tests;
 
 #[cfg(test)]
 #[path = "migration_databricks_tests.rs"]

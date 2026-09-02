@@ -1,0 +1,40 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0050",
+  "operation": "domain.sync.policy",
+  "payload": {
+    "decision": "accept_digest",
+    "state": {
+      "valid": true,
+      "revision": 0,
+      "phase": "idle",
+      "sessionId": "sync-1",
+      "communityId": "community-a",
+      "localNodeId": "target",
+      "remoteNodeId": "source",
+      "checkpoint": 0,
+      "checkpointDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+      "remoteCheckpoint": 0,
+      "remoteDigest": "",
+      "maxRecords": 1000,
+      "maxEncodedBytes": 64512,
+      "timeoutTicks": 10,
+      "deadlineTick": 0,
+      "pendingBatchId": ""
+    },
+    "frame": {
+      "envelope": {
+        "protocol": "nimino.sync",
+        "version": 2,
+        "sessionId": "sync-1",
+        "communityId": "community-a",
+        "senderNodeId": "source",
+        "receiverNodeId": "target"
+      },
+      "checkpoint": 2,
+      "prefixDigest": "1111111111111111111111111111111111111111111111111111111111111111"
+    },
+    "nowTick": 5
+  }
+}

@@ -80,6 +80,19 @@ test("foreground paints and handles a sidebar action before resume fetches", asy
   await page.getByTestId("channel-general").click();
   await expect(page.getByTestId("chat-title")).toHaveText("general");
 
+  const originalHasFocus = await page.evaluateHandle(() => document.hasFocus);
+  await page.evaluate(() => {
+    (
+      window as typeof window & { __FOREGROUND_PROBE_ARMED__?: boolean }
+    ).__FOREGROUND_PROBE_ARMED__ = true;
+    Object.defineProperty(document, "hasFocus", {
+      configurable: true,
+      value: () => false,
+    });
+    window.dispatchEvent(new Event("blur"));
+  });
+  await expect.poll(() => page.evaluate(() => document.hasFocus())).toBe(false);
+
   const seasonedKeys = await page.evaluate(
     (representativeFamilies) => {
       type QueryLike = {
@@ -97,7 +110,7 @@ test("foreground paints and handles a sidebar action before resume fetches", asy
       };
       type QueryClientLike = { getQueryCache: () => QueryCacheLike };
       const client =
-        window.__BUZZ_E2E_QUERY_CLIENT__ as unknown as QueryClientLike;
+        window.__NIMINO_E2E_QUERY_CLIENT__ as unknown as QueryClientLike;
       if (!client) throw new Error("E2E query client is unavailable.");
 
       const families = new Set(representativeFamilies);
@@ -151,19 +164,6 @@ test("foreground paints and handles a sidebar action before resume fetches", asy
   );
 
   expect(seasonedKeys.length).toBeGreaterThanOrEqual(3);
-
-  const originalHasFocus = await page.evaluateHandle(() => document.hasFocus);
-  await page.evaluate(() => {
-    (
-      window as typeof window & { __FOREGROUND_PROBE_ARMED__?: boolean }
-    ).__FOREGROUND_PROBE_ARMED__ = true;
-    Object.defineProperty(document, "hasFocus", {
-      configurable: true,
-      value: () => false,
-    });
-    window.dispatchEvent(new Event("blur"));
-  });
-  await expect.poll(() => page.evaluate(() => document.hasFocus())).toBe(false);
 
   // Headless Chromium reports every page as focused, even after bringToFront on
   // another target. Drive the production listener and isAppFocused predicate

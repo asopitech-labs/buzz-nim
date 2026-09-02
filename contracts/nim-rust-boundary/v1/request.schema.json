@@ -1,0 +1,2696 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://asopitech.com/nimino/contracts/nim-rust-boundary/v1/request.schema.json",
+  "title": "NiminoBoundaryRequestV1",
+  "$defs": {
+    "eventVersion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["createdAt", "eventId"],
+      "properties": {
+        "createdAt": { "type": "integer" },
+        "eventId": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" }
+      }
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "threadMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rootId", "depth"],
+      "properties": {
+        "rootId": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "depth": { "type": "integer", "minimum": 0, "maximum": 100 }
+      }
+    },
+    "threadParent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["eventId", "createdAt", "channelId", "tags", "metadata"],
+      "properties": {
+        "eventId": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "createdAt": { "type": "integer" },
+        "channelId": { "type": "string", "minLength": 1 },
+        "tags": { "$ref": "#/$defs/tags" },
+        "metadata": {
+          "oneOf": [{ "$ref": "#/$defs/threadMetadata" }, { "type": "null" }]
+        }
+      }
+    },
+    "threadRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "eventId",
+        "createdAt",
+        "channelId",
+        "tags",
+        "parent",
+        "rootCreatedAt"
+      ],
+      "properties": {
+        "eventId": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "createdAt": { "type": "integer" },
+        "channelId": { "type": "string", "minLength": 1 },
+        "tags": { "$ref": "#/$defs/tags" },
+        "parent": {
+          "oneOf": [{ "$ref": "#/$defs/threadParent" }, { "type": "null" }]
+        },
+        "rootCreatedAt": {
+          "oneOf": [{ "type": "integer" }, { "type": "null" }]
+        }
+      }
+    },
+    "deletionTarget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "eventId",
+        "author",
+        "createdAt",
+        "active",
+        "parentId",
+        "rootId"
+      ],
+      "properties": {
+        "eventId": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "author": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "createdAt": { "type": "integer" },
+        "active": { "type": "boolean" },
+        "parentId": {
+          "oneOf": [
+            { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+            { "type": "null" }
+          ]
+        },
+        "rootId": {
+          "oneOf": [
+            { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "deletionRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["actor", "createdAt", "eTargets", "aTargets", "target"],
+      "properties": {
+        "actor": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "createdAt": { "type": "integer" },
+        "eTargets": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" }
+        },
+        "aTargets": { "type": "array", "items": { "type": "string" } },
+        "target": {
+          "oneOf": [{ "$ref": "#/$defs/deletionTarget" }, { "type": "null" }]
+        }
+      }
+    },
+    "reactionRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["targetExists", "activeDuplicate", "content", "tags"],
+      "properties": {
+        "targetExists": { "type": "boolean" },
+        "activeDuplicate": { "type": "boolean" },
+        "content": { "type": "string" },
+        "tags": { "$ref": "#/$defs/tags" }
+      }
+    },
+    "eventPolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "kind", "dTagCount", "dTagLen"],
+          "properties": {
+            "decision": { "const": "classify" },
+            "kind": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+            "dTagCount": { "type": "integer", "minimum": 0, "maximum": 65535 },
+            "dTagLen": { "type": "integer", "minimum": 0, "maximum": 65535 }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "incoming", "current"],
+          "properties": {
+            "decision": { "const": "replacement" },
+            "incoming": { "$ref": "#/$defs/eventVersion" },
+            "current": {
+              "oneOf": [{ "$ref": "#/$defs/eventVersion" }, { "type": "null" }]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "thread" },
+            "request": { "$ref": "#/$defs/threadRequest" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "deletion" },
+            "request": { "$ref": "#/$defs/deletionRequest" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "reaction" },
+            "request": { "$ref": "#/$defs/reactionRequest" }
+          }
+        }
+      ]
+    },
+    "membershipRole": {
+      "enum": ["none", "owner", "admin", "member", "guest", "bot"]
+    },
+    "membershipCommand": {
+      "enum": ["join", "add", "change_role", "remove", "leave"]
+    },
+    "channelMembershipRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command",
+        "visibility",
+        "actorRole",
+        "targetRole",
+        "requestedRole",
+        "actorIsTarget",
+        "actorOwnsTargetAgent",
+        "targetIsAgent",
+        "targetAddPolicy",
+        "ownerCount"
+      ],
+      "properties": {
+        "command": { "$ref": "#/$defs/membershipCommand" },
+        "visibility": { "enum": ["open", "private"] },
+        "actorRole": { "$ref": "#/$defs/membershipRole" },
+        "targetRole": { "$ref": "#/$defs/membershipRole" },
+        "requestedRole": { "$ref": "#/$defs/membershipRole" },
+        "actorIsTarget": { "type": "boolean" },
+        "actorOwnsTargetAgent": { "type": "boolean" },
+        "targetIsAgent": { "type": "boolean" },
+        "targetAddPolicy": { "enum": ["anyone", "owner_only", "nobody"] },
+        "ownerCount": { "type": "integer", "minimum": 0, "maximum": 2147483647 }
+      }
+    },
+    "relayMembershipRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command",
+        "actorRole",
+        "targetRole",
+        "requestedRole",
+        "actorIsTarget"
+      ],
+      "properties": {
+        "command": { "$ref": "#/$defs/membershipCommand" },
+        "actorRole": { "$ref": "#/$defs/membershipRole" },
+        "targetRole": { "$ref": "#/$defs/membershipRole" },
+        "requestedRole": { "$ref": "#/$defs/membershipRole" },
+        "actorIsTarget": { "type": "boolean" }
+      }
+    },
+    "invitePolicyRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command",
+        "actorRole",
+        "inviteState",
+        "ttlSeconds",
+        "maxUses",
+        "alreadyMember",
+        "policyRequired",
+        "policyAccepted"
+      ],
+      "properties": {
+        "command": { "enum": ["mint", "claim"] },
+        "actorRole": { "$ref": "#/$defs/membershipRole" },
+        "inviteState": { "enum": ["valid", "expired", "exhausted", "invalid"] },
+        "ttlSeconds": { "type": "integer" },
+        "maxUses": {
+          "oneOf": [
+            { "type": "integer", "minimum": -2147483648, "maximum": 2147483647 },
+            { "type": "null" }
+          ]
+        },
+        "alreadyMember": { "type": "boolean" },
+        "policyRequired": { "type": "boolean" },
+        "policyAccepted": { "type": "boolean" }
+      }
+    },
+    "ownershipTransferRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "actorIsOperator",
+        "ownerPresent",
+        "expectedOwnerMatches",
+        "newOwnerIsCurrentOwner",
+        "newOwnerAtLimit"
+      ],
+      "properties": {
+        "actorIsOperator": { "type": "boolean" },
+        "ownerPresent": { "type": "boolean" },
+        "expectedOwnerMatches": { "type": "boolean" },
+        "newOwnerIsCurrentOwner": { "type": "boolean" },
+        "newOwnerAtLimit": { "type": "boolean" }
+      }
+    },
+    "membershipPolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "channel" },
+            "request": { "$ref": "#/$defs/channelMembershipRequest" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "relay" },
+            "request": { "$ref": "#/$defs/relayMembershipRequest" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "invite" },
+            "request": { "$ref": "#/$defs/invitePolicyRequest" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "ownership_transfer" },
+            "request": { "$ref": "#/$defs/ownershipTransferRequest" }
+          }
+        }
+      ]
+    },
+    "dmMutationRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command",
+        "requestCommunity",
+        "sourceCommunity",
+        "destinationCommunity",
+        "sourceExists",
+        "sourceIsDm",
+        "actorIsSourceParticipant",
+        "sourceActorHidden",
+        "actorIncluded",
+        "participantCount",
+        "newParticipantCount",
+        "destinationExists",
+        "destinationIsDm",
+        "destinationActorHidden"
+      ],
+      "properties": {
+        "command": { "enum": ["open", "add", "hide"] },
+        "requestCommunity": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "sourceCommunity": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            { "type": "null" }
+          ]
+        },
+        "destinationCommunity": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            { "type": "null" }
+          ]
+        },
+        "sourceExists": { "type": "boolean" },
+        "sourceIsDm": { "type": "boolean" },
+        "actorIsSourceParticipant": { "type": "boolean" },
+        "sourceActorHidden": { "type": "boolean" },
+        "actorIncluded": { "type": "boolean" },
+        "participantCount": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+        "newParticipantCount": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+        "destinationExists": { "type": "boolean" },
+        "destinationIsDm": { "type": "boolean" },
+        "destinationActorHidden": { "type": "boolean" }
+      }
+    },
+    "dmAccessRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "requestCommunity",
+        "resourceCommunity",
+        "resourceExists",
+        "channelIsDm",
+        "actorIsParticipant",
+        "actorIsViewer"
+      ],
+      "properties": {
+        "operation": { "enum": ["read", "write", "visibility"] },
+        "requestCommunity": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "resourceCommunity": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            { "type": "null" }
+          ]
+        },
+        "resourceExists": { "type": "boolean" },
+        "channelIsDm": { "type": "boolean" },
+        "actorIsParticipant": { "type": "boolean" },
+        "actorIsViewer": { "type": "boolean" }
+      }
+    },
+    "dmPolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "mutation" },
+            "request": { "$ref": "#/$defs/dmMutationRequest" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "access" },
+            "request": { "$ref": "#/$defs/dmAccessRequest" }
+          }
+        }
+      ]
+    },
+    "boundaryUuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+    },
+    "nullableBoundaryUuid": {
+      "oneOf": [{ "$ref": "#/$defs/boundaryUuid" }, { "type": "null" }]
+    },
+    "nonNegativeSeconds": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9223372036854775807
+    },
+    "nullableSeconds": {
+      "oneOf": [{ "$ref": "#/$defs/nonNegativeSeconds" }, { "type": "null" }]
+    },
+    "moderationReportRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requestCommunity",
+        "targetCommunity",
+        "targetExists",
+        "reporterIsTarget",
+        "duplicate",
+        "targetKind",
+        "reportType"
+      ],
+      "properties": {
+        "requestCommunity": { "$ref": "#/$defs/boundaryUuid" },
+        "targetCommunity": { "$ref": "#/$defs/nullableBoundaryUuid" },
+        "targetExists": { "type": "boolean" },
+        "reporterIsTarget": { "type": "boolean" },
+        "duplicate": { "type": "boolean" },
+        "targetKind": { "enum": ["event", "pubkey", "blob"] },
+        "reportType": {
+          "enum": [
+            "illegal",
+            "nudity",
+            "malware",
+            "spam",
+            "impersonation",
+            "profanity",
+            "other"
+          ]
+        }
+      }
+    },
+    "moderationRestrictionRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command",
+        "requestCommunity",
+        "actorRoleCommunity",
+        "targetRoleCommunity",
+        "actorRestrictionCommunity",
+        "targetRestrictionCommunity",
+        "actorRole",
+        "targetRole",
+        "actorRestrictionExists",
+        "actorBanSet",
+        "actorBanExpiresAt",
+        "targetRestrictionExists",
+        "targetBanSet",
+        "targetBanExpiresAt",
+        "targetMutedUntil",
+        "actorIsTarget",
+        "createdAtSeconds",
+        "nowSeconds",
+        "requestedExpiresAt"
+      ],
+      "properties": {
+        "command": { "enum": ["ban", "unban", "timeout", "untimeout"] },
+        "requestCommunity": { "$ref": "#/$defs/boundaryUuid" },
+        "actorRoleCommunity": { "$ref": "#/$defs/nullableBoundaryUuid" },
+        "targetRoleCommunity": { "$ref": "#/$defs/nullableBoundaryUuid" },
+        "actorRestrictionCommunity": { "$ref": "#/$defs/nullableBoundaryUuid" },
+        "targetRestrictionCommunity": { "$ref": "#/$defs/nullableBoundaryUuid" },
+        "actorRole": { "$ref": "#/$defs/membershipRole" },
+        "targetRole": { "$ref": "#/$defs/membershipRole" },
+        "actorRestrictionExists": { "type": "boolean" },
+        "actorBanSet": { "type": "boolean" },
+        "actorBanExpiresAt": { "$ref": "#/$defs/nullableSeconds" },
+        "targetRestrictionExists": { "type": "boolean" },
+        "targetBanSet": { "type": "boolean" },
+        "targetBanExpiresAt": { "$ref": "#/$defs/nullableSeconds" },
+        "targetMutedUntil": { "$ref": "#/$defs/nullableSeconds" },
+        "actorIsTarget": { "type": "boolean" },
+        "createdAtSeconds": { "$ref": "#/$defs/nonNegativeSeconds" },
+        "nowSeconds": { "$ref": "#/$defs/nonNegativeSeconds" },
+        "requestedExpiresAt": { "$ref": "#/$defs/nullableSeconds" }
+      }
+    },
+    "moderationResolutionRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requestCommunity",
+        "actorRoleCommunity",
+        "actorRestrictionCommunity",
+        "reportCommunity",
+        "actorRole",
+        "actorRestrictionExists",
+        "actorBanSet",
+        "actorBanExpiresAt",
+        "reportExists",
+        "reportOpen",
+        "createdAtSeconds",
+        "nowSeconds",
+        "status",
+        "action"
+      ],
+      "properties": {
+        "requestCommunity": { "$ref": "#/$defs/boundaryUuid" },
+        "actorRoleCommunity": { "$ref": "#/$defs/nullableBoundaryUuid" },
+        "actorRestrictionCommunity": { "$ref": "#/$defs/nullableBoundaryUuid" },
+        "reportCommunity": { "$ref": "#/$defs/nullableBoundaryUuid" },
+        "actorRole": { "$ref": "#/$defs/membershipRole" },
+        "actorRestrictionExists": { "type": "boolean" },
+        "actorBanSet": { "type": "boolean" },
+        "actorBanExpiresAt": { "$ref": "#/$defs/nullableSeconds" },
+        "reportExists": { "type": "boolean" },
+        "reportOpen": { "type": "boolean" },
+        "createdAtSeconds": { "$ref": "#/$defs/nonNegativeSeconds" },
+        "nowSeconds": { "$ref": "#/$defs/nonNegativeSeconds" },
+        "status": { "enum": ["resolved", "dismissed"] },
+        "action": { "enum": ["delete", "kick", "ban", "timeout", "dismiss", "escalate"] }
+      }
+    },
+    "moderationEnforcementRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "requestCommunity",
+        "principalRestrictionCommunity",
+        "ownerRestrictionCommunity",
+        "principalRestrictionExists",
+        "principalBanSet",
+        "principalBanExpiresAt",
+        "principalMutedUntil",
+        "ownerAttested",
+        "ownerRestrictionExists",
+        "ownerBanSet",
+        "ownerBanExpiresAt",
+        "nowSeconds"
+      ],
+      "properties": {
+        "operation": { "enum": ["authenticate", "write"] },
+        "requestCommunity": { "$ref": "#/$defs/boundaryUuid" },
+        "principalRestrictionCommunity": { "$ref": "#/$defs/nullableBoundaryUuid" },
+        "ownerRestrictionCommunity": { "$ref": "#/$defs/nullableBoundaryUuid" },
+        "principalRestrictionExists": { "type": "boolean" },
+        "principalBanSet": { "type": "boolean" },
+        "principalBanExpiresAt": { "$ref": "#/$defs/nullableSeconds" },
+        "principalMutedUntil": { "$ref": "#/$defs/nullableSeconds" },
+        "ownerAttested": { "type": "boolean" },
+        "ownerRestrictionExists": { "type": "boolean" },
+        "ownerBanSet": { "type": "boolean" },
+        "ownerBanExpiresAt": { "$ref": "#/$defs/nullableSeconds" },
+        "nowSeconds": { "$ref": "#/$defs/nonNegativeSeconds" }
+      }
+    },
+    "moderationPolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "report" },
+            "request": { "$ref": "#/$defs/moderationReportRequest" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "restriction" },
+            "request": { "$ref": "#/$defs/moderationRestrictionRequest" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "resolution" },
+            "request": { "$ref": "#/$defs/moderationResolutionRequest" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "enforcement" },
+            "request": { "$ref": "#/$defs/moderationEnforcementRequest" }
+          }
+        }
+      ]
+    },
+    "communityLifecycleRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command",
+        "state",
+        "actorIsOperator",
+        "actorIsOwner",
+        "ownerProvided",
+        "ownerAtLimit",
+        "protectedDeployment"
+      ],
+      "properties": {
+        "command": { "enum": ["create", "archive", "unarchive"] },
+        "state": {
+          "enum": ["missing", "active", "archived", "deleting", "deleted"]
+        },
+        "actorIsOperator": { "type": "boolean" },
+        "actorIsOwner": { "type": "boolean" },
+        "ownerProvided": { "type": "boolean" },
+        "ownerAtLimit": { "type": "boolean" },
+        "protectedDeployment": { "type": "boolean" }
+      }
+    },
+    "communityScopeRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requestCommunity", "resourceCommunity"],
+      "properties": {
+        "requestCommunity": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        },
+        "resourceCommunity": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "communityPolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "lifecycle" },
+            "request": { "$ref": "#/$defs/communityLifecycleRequest" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "scope" },
+            "request": { "$ref": "#/$defs/communityScopeRequest" }
+          }
+        }
+      ]
+    },
+    "clusterNodeState": {
+      "enum": ["offline", "joining", "syncing", "ready", "draining"]
+    },
+    "clusterTransitionRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "command", "currentState", "authenticated", "revoked",
+        "identityUnique", "productCapability", "controlProtocolVersion",
+        "dataProtocolVersion", "controlDecisionCommitted",
+        "snapshotInstalled", "checkpointMatches", "requiredVoterEpoch",
+        "observedVoterEpoch", "activeWork"
+      ],
+      "properties": {
+        "command": {
+          "enum": [
+            "join", "start_sync", "mark_ready", "begin_drain", "mark_offline"
+          ]
+        },
+        "currentState": { "$ref": "#/$defs/clusterNodeState" },
+        "authenticated": { "type": "boolean" },
+        "revoked": { "type": "boolean" },
+        "identityUnique": { "type": "boolean" },
+        "productCapability": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "controlProtocolVersion": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "dataProtocolVersion": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "controlDecisionCommitted": { "type": "boolean" },
+        "snapshotInstalled": { "type": "boolean" },
+        "checkpointMatches": { "type": "boolean" },
+        "requiredVoterEpoch": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+        "observedVoterEpoch": { "type": "integer", "minimum": 0, "maximum": 2147483647 },
+        "activeWork": { "type": "integer", "minimum": 0, "maximum": 2147483647 }
+      }
+    },
+    "clusterLaneRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "lane"],
+      "properties": {
+        "state": { "$ref": "#/$defs/clusterNodeState" },
+        "lane": {
+          "enum": [
+            "negotiation", "control", "data_sync", "client_read",
+            "client_write", "lease"
+          ]
+        }
+      }
+    },
+    "clusterLifecyclePayload": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "transition" },
+            "request": { "$ref": "#/$defs/clusterTransitionRequest" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "lane" },
+            "request": { "$ref": "#/$defs/clusterLaneRequest" }
+          }
+        }
+      ]
+    },
+    "admissionU64": {
+      "type": "integer", "minimum": 0, "maximum": 9223372036854775807
+    },
+    "replayClaimState": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scope", "eventId", "expiresAtMs", "lastControlIndex"],
+      "properties": {
+        "scope": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "eventId": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "expiresAtMs": { "$ref": "#/$defs/admissionU64" },
+        "lastControlIndex": { "$ref": "#/$defs/admissionU64" }
+      }
+    },
+    "replayClaimCommand": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scope", "eventId", "observedAtMs", "ttlSecs"],
+      "properties": {
+        "scope": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "eventId": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "observedAtMs": { "$ref": "#/$defs/admissionU64" },
+        "ttlSecs": { "$ref": "#/$defs/admissionU64" }
+      }
+    },
+    "rateLimitState": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "namespace", "key", "windowStartedAtMs", "windowSecs", "limit",
+        "count", "lastControlIndex"
+      ],
+      "properties": {
+        "namespace": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "key": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "windowStartedAtMs": { "$ref": "#/$defs/admissionU64" },
+        "windowSecs": { "$ref": "#/$defs/admissionU64" },
+        "limit": { "$ref": "#/$defs/admissionU64" },
+        "count": { "$ref": "#/$defs/admissionU64" },
+        "lastControlIndex": { "$ref": "#/$defs/admissionU64" }
+      }
+    },
+    "rateLimitCommand": {
+      "type": "object", "additionalProperties": false,
+      "required": ["namespace", "key", "observedAtMs", "windowSecs", "limit"],
+      "properties": {
+        "namespace": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "key": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "observedAtMs": { "$ref": "#/$defs/admissionU64" },
+        "windowSecs": { "$ref": "#/$defs/admissionU64" },
+        "limit": { "$ref": "#/$defs/admissionU64" }
+      }
+    },
+    "authorizationInvalidationKind": {
+      "enum": ["ban", "membership", "visibility", "community"]
+    },
+    "authorizationInvalidationState": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scope", "kind", "subject", "channelId", "factId", "revision"],
+      "properties": {
+        "scope": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "kind": { "$ref": "#/$defs/authorizationInvalidationKind" },
+        "subject": { "type": "string", "maxLength": 64 },
+        "channelId": { "type": "string", "maxLength": 128 },
+        "factId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "revision": { "$ref": "#/$defs/admissionU64" }
+      }
+    },
+    "authorizationInvalidationCommand": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scope", "kind", "subject", "channelId", "factId"],
+      "properties": {
+        "scope": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "kind": { "$ref": "#/$defs/authorizationInvalidationKind" },
+        "subject": { "type": "string", "maxLength": 64 },
+        "channelId": { "type": "string", "maxLength": 128 },
+        "factId": { "type": "string", "minLength": 1, "maxLength": 128 }
+      }
+    },
+    "admissionPolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "command", "controlIndex"],
+          "properties": {
+            "decision": { "const": "apply_replay_claim" },
+            "state": {
+              "oneOf": [{ "$ref": "#/$defs/replayClaimState" }, { "type": "null" }]
+            },
+            "command": { "$ref": "#/$defs/replayClaimCommand" },
+            "controlIndex": { "$ref": "#/$defs/admissionU64" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "states", "beforeMs"],
+          "properties": {
+            "decision": { "const": "prune_replay" },
+            "states": {
+              "type": "array", "maxItems": 256,
+              "items": { "$ref": "#/$defs/replayClaimState" }
+            },
+            "beforeMs": { "$ref": "#/$defs/admissionU64" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "command", "controlIndex"],
+          "properties": {
+            "decision": { "const": "apply_rate_limit" },
+            "state": {
+              "oneOf": [{ "$ref": "#/$defs/rateLimitState" }, { "type": "null" }]
+            },
+            "command": { "$ref": "#/$defs/rateLimitCommand" },
+            "controlIndex": { "$ref": "#/$defs/admissionU64" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "states", "commands", "controlIndex"],
+          "properties": {
+            "decision": { "const": "apply_rate_limit_batch" },
+            "states": {
+              "type": "array", "maxItems": 64,
+              "items": { "$ref": "#/$defs/rateLimitState" }
+            },
+            "commands": {
+              "type": "array", "minItems": 1, "maxItems": 64,
+              "items": { "$ref": "#/$defs/rateLimitCommand" }
+            },
+            "controlIndex": { "$ref": "#/$defs/admissionU64" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "command", "revision"],
+          "properties": {
+            "decision": { "const": "apply_authorization_invalidation" },
+            "state": {
+              "oneOf": [
+                { "$ref": "#/$defs/authorizationInvalidationState" },
+                { "type": "null" }
+              ]
+            },
+            "command": { "$ref": "#/$defs/authorizationInvalidationCommand" },
+            "revision": { "$ref": "#/$defs/admissionU64" }
+          }
+        }
+      ]
+    },
+    "ephemeralKind": { "enum": ["presence", "typing"] },
+    "ephemeralState": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "scope", "kind", "subject", "context", "value", "active",
+        "observedAtMs", "expiresAtMs", "originNodeId", "transitionId"
+      ],
+      "properties": {
+        "scope": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "kind": { "$ref": "#/$defs/ephemeralKind" },
+        "subject": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "context": { "type": "string", "maxLength": 128 },
+        "value": { "type": "string", "maxLength": 512 },
+        "active": { "type": "boolean" },
+        "observedAtMs": { "$ref": "#/$defs/admissionU64" },
+        "expiresAtMs": { "$ref": "#/$defs/admissionU64" },
+        "originNodeId": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "transitionId": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "ephemeralCommand": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "scope", "kind", "subject", "context", "value", "active",
+        "observedAtMs", "ttlSecs", "originNodeId", "transitionId"
+      ],
+      "properties": {
+        "scope": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "kind": { "$ref": "#/$defs/ephemeralKind" },
+        "subject": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "context": { "type": "string", "maxLength": 128 },
+        "value": { "type": "string", "maxLength": 512 },
+        "active": { "type": "boolean" },
+        "observedAtMs": { "$ref": "#/$defs/admissionU64" },
+        "ttlSecs": { "$ref": "#/$defs/admissionU64" },
+        "originNodeId": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "transitionId": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "ephemeralPolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "command", "nowMs"],
+          "properties": {
+            "decision": { "const": "apply" },
+            "state": {
+              "oneOf": [{ "$ref": "#/$defs/ephemeralState" }, { "type": "null" }]
+            },
+            "command": { "$ref": "#/$defs/ephemeralCommand" },
+            "nowMs": { "$ref": "#/$defs/admissionU64" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "states", "beforeMs"],
+          "properties": {
+            "decision": { "const": "prune" },
+            "states": {
+              "type": "array", "maxItems": 256,
+              "items": { "$ref": "#/$defs/ephemeralState" }
+            },
+            "beforeMs": { "$ref": "#/$defs/admissionU64" }
+          }
+        }
+      ]
+    },
+    "cliFailureKind": {
+      "enum": [
+        "usage", "relay", "network", "auth", "key", "conflict",
+        "not_found", "delivery_unknown", "other"
+      ]
+    },
+    "cliPolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "path"],
+          "properties": {
+            "decision": { "const": "command" },
+            "path": { "type": "string", "minLength": 1, "maxLength": 128 }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "kind", "status", "transportRetryable"],
+          "properties": {
+            "decision": { "const": "failure" },
+            "kind": { "$ref": "#/$defs/cliFailureKind" },
+            "status": { "type": "integer", "minimum": 0, "maximum": 999 },
+            "transportRetryable": { "type": "boolean" }
+          }
+        }
+      ]
+    },
+    "agentStringList": {
+      "type": "array", "maxItems": 256,
+      "items": {"type": "string", "maxLength": 4096}
+    },
+    "personaTriggers": {
+      "type": "object", "additionalProperties": false,
+      "required": ["mentions", "keywords", "allMessages"],
+      "properties": {
+        "mentions": {"type": ["boolean", "null"]},
+        "keywords": {"oneOf": [{"$ref": "#/$defs/agentStringList"}, {"type": "null"}]},
+        "allMessages": {"type": ["boolean", "null"]}
+      }
+    },
+    "personaBehavior": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "model", "temperature", "maxContextTokens", "subscribe", "triggers",
+        "threadReplies", "broadcastReplies"
+      ],
+      "properties": {
+        "model": {"type": ["string", "null"], "maxLength": 4096},
+        "temperature": {"type": ["number", "null"]},
+        "maxContextTokens": {"type": ["integer", "null"], "minimum": 0},
+        "subscribe": {"oneOf": [{"$ref": "#/$defs/agentStringList"}, {"type": "null"}]},
+        "triggers": {"oneOf": [{"$ref": "#/$defs/personaTriggers"}, {"type": "null"}]},
+        "threadReplies": {"type": ["boolean", "null"]},
+        "broadcastReplies": {"type": ["boolean", "null"]}
+      }
+    },
+    "agentEventFacts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["content", "author", "kind", "channelId", "timestamp", "mentioned"],
+      "properties": {
+        "content": {"type": "string", "maxLength": 4096},
+        "author": {"type": "string", "maxLength": 4096},
+        "kind": {"type": "integer", "minimum": 0, "maximum": 4294967295},
+        "channelId": {"type": "string", "maxLength": 4096},
+        "timestamp": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807},
+        "mentioned": {"type": "boolean"}
+      }
+    },
+    "agentTriggerRule": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "name", "allChannels", "channels", "kinds", "requireMention",
+        "filter", "promptTag"
+      ],
+      "properties": {
+        "name": {"type": "string", "maxLength": 4096},
+        "allChannels": {"type": "boolean"},
+        "channels": {"$ref": "#/$defs/agentStringList"},
+        "kinds": {
+          "type": "array", "maxItems": 256,
+          "items": {"type": "integer", "minimum": 0, "maximum": 4294967295}
+        },
+        "requireMention": {"type": "boolean"},
+        "filter": {"type": "string", "maxLength": 4096},
+        "promptTag": {"type": "string", "maxLength": 4096}
+      }
+    },
+    "agentLifecycleState": {
+      "type": "object", "additionalProperties": false,
+      "required": ["phase", "attempt", "retryAtMs", "turnId"],
+      "properties": {
+        "phase": {"enum": ["absent", "starting", "ready", "running", "cancelling", "restart_wait", "stopped"]},
+        "attempt": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807},
+        "retryAtMs": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807},
+        "turnId": {"type": "string", "maxLength": 4096}
+      }
+    },
+    "agentLifecycleRequest": {
+      "type": "object", "additionalProperties": false,
+      "required": ["state", "command", "commandAttempt", "commandTurnId", "pendingWork", "nowMs"],
+      "properties": {
+        "state": {"$ref": "#/$defs/agentLifecycleState"},
+        "command": {"enum": ["start", "started", "start_failed", "begin_turn", "cancel", "turn_finished", "cancel_timeout", "process_exited", "retry", "shutdown"]},
+        "commandAttempt": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807},
+        "commandTurnId": {"type": "string", "maxLength": 4096},
+        "pendingWork": {"type": "boolean"},
+        "nowMs": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807}
+      }
+    },
+    "agentPolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "persona", "defaults"],
+          "properties": {
+            "decision": {"const": "persona"},
+            "persona": {"$ref": "#/$defs/personaBehavior"},
+            "defaults": {"$ref": "#/$defs/personaBehavior"}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "event", "rules"],
+          "properties": {
+            "decision": {"const": "trigger"},
+            "event": {"$ref": "#/$defs/agentEventFacts"},
+            "rules": {"type": "array", "maxItems": 256, "items": {"$ref": "#/$defs/agentTriggerRule"}}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": {"const": "lifecycle"},
+            "request": {"$ref": "#/$defs/agentLifecycleRequest"}
+          }
+        }
+      ]
+    },
+    "workflowValue": {
+      "oneOf": [
+        { "type": "null" },
+        { "type": "string" },
+        { "type": "boolean" },
+        { "type": "number" }
+      ]
+    },
+    "workflowValueMap": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/workflowValue" }
+    },
+    "workflowAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind", "text", "channel", "replyInThread", "recipient", "topic",
+        "emoji", "url", "httpMethod", "headers", "body", "approver",
+        "message", "timeout", "duration"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "send_message", "send_dm", "set_channel_topic", "add_reaction",
+            "call_webhook", "request_approval", "delay"
+          ]
+        },
+        "text": { "type": "string" },
+        "channel": { "type": "string" },
+        "replyInThread": { "type": "boolean" },
+        "recipient": { "type": "string" },
+        "topic": { "type": "string" },
+        "emoji": { "type": "string" },
+        "url": { "type": "string" },
+        "httpMethod": { "type": "string" },
+        "headers": { "type": "object", "additionalProperties": { "type": "string" } },
+        "body": { "type": "string" },
+        "approver": { "type": "string" },
+        "message": { "type": "string" },
+        "timeout": { "type": "string" },
+        "duration": { "type": "string" }
+      }
+    },
+    "workflowTrigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "filter", "emoji", "cron", "interval"],
+      "properties": {
+        "kind": {
+          "enum": [
+            "message_posted", "reaction_added", "diff_posted", "schedule", "webhook"
+          ]
+        },
+        "filter": { "type": "string" },
+        "emoji": { "type": "string" },
+        "cron": { "type": "string" },
+        "interval": { "type": "string" }
+      }
+    },
+    "workflowStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "condition", "timeoutSecs", "action"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "name": { "type": "string" },
+        "condition": { "type": "string", "maxLength": 4096 },
+        "timeoutSecs": { "type": "integer", "minimum": 0 },
+        "action": { "$ref": "#/$defs/workflowAction" }
+      }
+    },
+    "workflowDefinition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "description", "trigger", "steps", "enabled"],
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "trigger": { "$ref": "#/$defs/workflowTrigger" },
+        "steps": { "type": "array", "items": { "$ref": "#/$defs/workflowStep" } },
+        "enabled": { "type": "boolean" }
+      }
+    },
+    "workflowRunState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "currentStep", "revision"],
+      "properties": {
+        "status": {
+          "enum": [
+            "pending", "running", "waiting_approval", "completed", "failed", "cancelled"
+          ]
+        },
+        "currentStep": { "type": "integer", "minimum": 0 },
+        "revision": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "workflowPlanRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["definition", "state", "boundChannel", "trigger", "stepOutputs"],
+      "properties": {
+        "definition": { "$ref": "#/$defs/workflowDefinition" },
+        "state": { "$ref": "#/$defs/workflowRunState" },
+        "boundChannel": { "type": "string" },
+        "trigger": { "$ref": "#/$defs/workflowValueMap" },
+        "stepOutputs": {
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/workflowValueMap" }
+        }
+      }
+    },
+    "workflowTransitionRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state", "expectedRevision", "transitionId", "transitionAlreadyApplied",
+        "command", "stepCount", "stepIndex"
+      ],
+      "properties": {
+        "state": { "$ref": "#/$defs/workflowRunState" },
+        "expectedRevision": { "type": "integer", "minimum": 0 },
+        "transitionId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "transitionAlreadyApplied": { "type": "boolean" },
+        "command": {
+          "enum": [
+            "start", "skip_step", "effect_completed", "await_approval",
+            "resume", "complete", "fail", "cancel"
+          ]
+        },
+        "stepCount": { "type": "integer", "minimum": 0 },
+        "stepIndex": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "controlU64": {
+      "type": "integer", "minimum": 0, "maximum": 9223372036854775807
+    },
+    "controlEntry": {
+      "type": "object", "additionalProperties": false,
+      "required": ["index", "term", "voterEpoch", "kind", "commandId", "payload", "targetVoters"],
+      "properties": {
+        "index": { "$ref": "#/$defs/controlU64" },
+        "term": { "$ref": "#/$defs/controlU64" },
+        "voterEpoch": { "$ref": "#/$defs/controlU64" },
+        "kind": { "enum": ["command", "begin_joint", "finalize"] },
+        "commandId": { "type": "string" },
+        "payload": { "type": "string" },
+        "targetVoters": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "controlSnapshot": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "lastIncludedIndex", "lastIncludedTerm", "voterEpoch", "phase",
+        "oldVoters", "newVoters", "statePayload"
+      ],
+      "properties": {
+        "lastIncludedIndex": { "$ref": "#/$defs/controlU64" },
+        "lastIncludedTerm": { "$ref": "#/$defs/controlU64" },
+        "voterEpoch": { "$ref": "#/$defs/controlU64" },
+        "phase": { "enum": ["stable_old", "joint", "stable_new"] },
+        "oldVoters": { "type": "array", "items": { "type": "string" } },
+        "newVoters": { "type": "array", "items": { "type": "string" } },
+        "statePayload": { "type": "string" }
+      }
+    },
+    "controlState": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "valid", "metadataRevision", "term", "votedFor", "voterEpoch", "phase",
+        "oldVoters", "newVoters", "leaderId", "leaderTerm", "leaderProof",
+        "lastIndex", "commitIndex", "appliedIndex", "snapshot", "log"
+      ],
+      "properties": {
+        "valid": { "type": "boolean" },
+        "metadataRevision": { "$ref": "#/$defs/controlU64" },
+        "term": { "$ref": "#/$defs/controlU64" },
+        "votedFor": { "oneOf": [{ "type": "string" }, { "type": "null" }] },
+        "voterEpoch": { "$ref": "#/$defs/controlU64" },
+        "phase": { "enum": ["stable_old", "joint", "stable_new"] },
+        "oldVoters": { "type": "array", "items": { "type": "string" } },
+        "newVoters": { "type": "array", "items": { "type": "string" } },
+        "leaderId": { "type": "string" },
+        "leaderTerm": { "$ref": "#/$defs/controlU64" },
+        "leaderProof": { "type": "array", "items": { "type": "string" } },
+        "lastIndex": { "$ref": "#/$defs/controlU64" },
+        "commitIndex": { "$ref": "#/$defs/controlU64" },
+        "appliedIndex": { "$ref": "#/$defs/controlU64" },
+        "snapshot": { "oneOf": [{ "$ref": "#/$defs/controlSnapshot" }, { "type": "null" }] },
+        "log": { "type": "array", "items": { "$ref": "#/$defs/controlEntry" } }
+      }
+    },
+    "controlStoreAction": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "expectedMetadataRevision", "previousIndex"],
+      "properties": {
+        "kind": { "enum": ["metadata", "log", "snapshot"] },
+        "expectedMetadataRevision": { "$ref": "#/$defs/controlU64" },
+        "previousIndex": { "$ref": "#/$defs/controlU64" }
+      }
+    },
+    "controlPlan": {
+      "type": "object", "additionalProperties": false,
+      "required": ["effect", "error", "beforeState", "nextState", "actions", "appliedEntry"],
+      "properties": {
+        "effect": { "$ref": "#/$defs/controlEffect" },
+        "error": { "$ref": "#/$defs/controlError" },
+        "beforeState": { "$ref": "#/$defs/controlState" },
+        "nextState": { "$ref": "#/$defs/controlState" },
+        "actions": { "type": "array", "items": { "$ref": "#/$defs/controlStoreAction" } },
+        "appliedEntry": { "oneOf": [{ "$ref": "#/$defs/controlEntry" }, { "type": "null" }] }
+      }
+    },
+    "controlEffect": {
+      "enum": ["reject", "vote", "elect_leader", "append", "replay", "commit", "apply", "snapshot"]
+    },
+    "controlError": {
+      "enum": [
+        "none", "invalid_voters", "stale_term", "candidate_not_voter",
+        "candidate_log_stale", "quorum_required", "leader_required", "authority_stale",
+        "pending_entry", "entry_kind_invalid", "command_required", "command_conflict", "log_gap",
+        "commit_order", "apply_order", "snapshot_unavailable", "fact_conflict",
+        "store_failure", "corrupt_recovery"
+      ]
+    },
+    "controlPolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "request"],
+          "properties": {
+            "decision": { "const": "vote" },
+            "state": { "$ref": "#/$defs/controlState" },
+            "request": {
+              "type": "object", "additionalProperties": false,
+              "required": ["term", "candidateId", "lastIndex", "lastTerm"],
+              "properties": {
+                "term": { "$ref": "#/$defs/controlU64" },
+                "candidateId": { "type": "string" },
+                "lastIndex": { "$ref": "#/$defs/controlU64" },
+                "lastTerm": { "$ref": "#/$defs/controlU64" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "request"],
+          "properties": {
+            "decision": { "const": "election" },
+            "state": { "$ref": "#/$defs/controlState" },
+            "request": {
+              "type": "object", "additionalProperties": false,
+              "required": ["term", "candidateId", "supporters"],
+              "properties": {
+                "term": { "$ref": "#/$defs/controlU64" },
+                "candidateId": { "type": "string" },
+                "supporters": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "request"],
+          "properties": {
+            "decision": { "const": "append" },
+            "state": { "$ref": "#/$defs/controlState" },
+            "request": {
+              "type": "object", "additionalProperties": false,
+              "required": ["leaderId", "term", "kind", "commandId", "payload", "targetVoters"],
+              "properties": {
+                "leaderId": { "type": "string" },
+                "term": { "$ref": "#/$defs/controlU64" },
+                "kind": { "enum": ["command", "begin_joint", "finalize"] },
+                "commandId": { "type": "string" },
+                "payload": { "type": "string" },
+                "targetVoters": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "request"],
+          "properties": {
+            "decision": { "const": "replicate" },
+            "state": { "$ref": "#/$defs/controlState" },
+            "request": {
+              "type": "object", "additionalProperties": false,
+              "required": ["leaderId", "term", "supporters", "previousIndex", "entry"],
+              "properties": {
+                "leaderId": { "type": "string" },
+                "term": { "$ref": "#/$defs/controlU64" },
+                "supporters": { "type": "array", "items": { "type": "string" } },
+                "previousIndex": { "$ref": "#/$defs/controlU64" },
+                "entry": { "$ref": "#/$defs/controlEntry" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "request"],
+          "properties": {
+            "decision": { "const": "commit" },
+            "state": { "$ref": "#/$defs/controlState" },
+            "request": {
+              "type": "object", "additionalProperties": false,
+              "required": ["index", "leaderId", "term", "supporters"],
+              "properties": {
+                "index": { "$ref": "#/$defs/controlU64" },
+                "leaderId": { "type": "string" },
+                "term": { "$ref": "#/$defs/controlU64" },
+                "supporters": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "request"],
+          "properties": {
+            "decision": { "const": "quorum" },
+            "state": { "$ref": "#/$defs/controlState" },
+            "request": {
+              "type": "object", "additionalProperties": false,
+              "required": ["supporters"],
+              "properties": {
+                "supporters": { "type": "array", "items": { "type": "string" } }
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state"],
+          "properties": {
+            "decision": { "const": "apply" },
+            "state": { "$ref": "#/$defs/controlState" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "statePayload"],
+          "properties": {
+            "decision": { "const": "snapshot" },
+            "state": { "$ref": "#/$defs/controlState" },
+            "statePayload": { "type": "string" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "plan", "storeSucceeded"],
+          "properties": {
+            "decision": { "const": "settle" },
+            "plan": { "$ref": "#/$defs/controlPlan" },
+            "storeSucceeded": { "type": "boolean" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "input"],
+          "properties": {
+            "decision": { "const": "recover" },
+            "input": {
+              "type": "object", "additionalProperties": false,
+              "required": [
+                "metadataRevision", "term", "votedFor", "commitIndex", "appliedIndex",
+                "initialVoters", "snapshot", "entries"
+              ],
+              "properties": {
+                "metadataRevision": { "$ref": "#/$defs/controlU64" },
+                "term": { "$ref": "#/$defs/controlU64" },
+                "votedFor": { "oneOf": [{ "type": "string" }, { "type": "null" }] },
+                "commitIndex": { "$ref": "#/$defs/controlU64" },
+                "appliedIndex": { "$ref": "#/$defs/controlU64" },
+                "initialVoters": { "type": "array", "items": { "type": "string" } },
+                "snapshot": { "oneOf": [{ "$ref": "#/$defs/controlSnapshot" }, { "type": "null" }] },
+                "entries": { "type": "array", "items": { "$ref": "#/$defs/controlEntry" } }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "leaseCommand": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "resourceId", "transitionId", "ownerId", "eligibleOwners",
+        "expectedPreviousFence", "fenceToken", "durationTicks", "leaderId",
+        "term", "voterEpoch"
+      ],
+      "properties": {
+        "resourceId": { "type": "string" },
+        "transitionId": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "eligibleOwners": { "type": "array", "items": { "type": "string" } },
+        "expectedPreviousFence": { "$ref": "#/$defs/controlU64" },
+        "fenceToken": { "$ref": "#/$defs/controlU64" },
+        "durationTicks": { "$ref": "#/$defs/controlU64" },
+        "leaderId": { "type": "string" },
+        "term": { "$ref": "#/$defs/controlU64" },
+        "voterEpoch": { "$ref": "#/$defs/controlU64" }
+      }
+    },
+    "activeLease": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "resourceId", "ownerId", "fenceToken", "leaderId", "term",
+        "voterEpoch", "clockEpoch", "activatedAtTick", "expiresAtTick"
+      ],
+      "properties": {
+        "resourceId": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "fenceToken": { "$ref": "#/$defs/controlU64" },
+        "leaderId": { "type": "string" },
+        "term": { "$ref": "#/$defs/controlU64" },
+        "voterEpoch": { "$ref": "#/$defs/controlU64" },
+        "clockEpoch": { "type": "string" },
+        "activatedAtTick": { "$ref": "#/$defs/controlU64" },
+        "expiresAtTick": { "$ref": "#/$defs/controlU64" }
+      }
+    },
+    "leaseState": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "valid", "resourceId", "lastFenceToken", "lastControlIndex",
+        "lastCommand", "activeLease"
+      ],
+      "properties": {
+        "valid": { "type": "boolean" },
+        "resourceId": { "type": "string" },
+        "lastFenceToken": { "$ref": "#/$defs/controlU64" },
+        "lastControlIndex": { "$ref": "#/$defs/controlU64" },
+        "lastCommand": { "oneOf": [{ "$ref": "#/$defs/leaseCommand" }, { "type": "null" }] },
+        "activeLease": { "oneOf": [{ "$ref": "#/$defs/activeLease" }, { "type": "null" }] }
+      }
+    },
+    "leaseAuthority": {
+      "type": "object", "additionalProperties": false,
+      "required": ["leaderId", "term", "voterEpoch", "quorumAvailable"],
+      "properties": {
+        "leaderId": { "type": "string" },
+        "term": { "$ref": "#/$defs/controlU64" },
+        "voterEpoch": { "$ref": "#/$defs/controlU64" },
+        "quorumAvailable": { "type": "boolean" }
+      }
+    },
+    "committedLeaseFact": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "committed", "controlIndex", "leaderId", "term", "voterEpoch",
+        "clockEpoch", "nowTick"
+      ],
+      "properties": {
+        "committed": { "type": "boolean" },
+        "controlIndex": { "$ref": "#/$defs/controlU64" },
+        "leaderId": { "type": "string" },
+        "term": { "$ref": "#/$defs/controlU64" },
+        "voterEpoch": { "$ref": "#/$defs/controlU64" },
+        "clockEpoch": { "type": "string" },
+        "nowTick": { "$ref": "#/$defs/controlU64" }
+      }
+    },
+    "servingLeaseFact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["quorumAvailable", "leaderId", "term", "voterEpoch", "clockEpoch", "nowTick"],
+      "properties": {
+        "quorumAvailable": { "type": "boolean" },
+        "leaderId": { "type": "string" },
+        "term": { "$ref": "#/$defs/controlU64" },
+        "voterEpoch": { "$ref": "#/$defs/controlU64" },
+        "clockEpoch": { "type": "string" },
+        "nowTick": { "$ref": "#/$defs/controlU64" }
+      }
+    },
+    "leasePolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "authority", "transitionId", "eligibleOwners", "durationTicks"],
+          "properties": {
+            "decision": { "const": "plan_grant" },
+            "state": { "$ref": "#/$defs/leaseState" },
+            "authority": { "$ref": "#/$defs/leaseAuthority" },
+            "transitionId": { "type": "string" },
+            "eligibleOwners": { "type": "array", "items": { "type": "string" } },
+            "durationTicks": { "$ref": "#/$defs/controlU64" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "command", "fact", "mode"],
+          "properties": {
+            "decision": { "const": "apply_committed" },
+            "state": { "$ref": "#/$defs/leaseState" },
+            "command": { "$ref": "#/$defs/leaseCommand" },
+            "fact": { "$ref": "#/$defs/committedLeaseFact" },
+            "mode": { "enum": ["live", "recovery"] }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "fact"],
+          "properties": {
+            "decision": { "const": "route" },
+            "state": { "$ref": "#/$defs/leaseState" },
+            "fact": { "$ref": "#/$defs/servingLeaseFact" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "attempt", "fact"],
+          "properties": {
+            "decision": { "const": "authorize" },
+            "state": { "$ref": "#/$defs/leaseState" },
+            "attempt": {
+              "type": "object", "additionalProperties": false,
+              "required": ["resourceId", "ownerId", "fenceToken"],
+              "properties": {
+                "resourceId": { "type": "string" },
+                "ownerId": { "type": "string" },
+                "fenceToken": { "$ref": "#/$defs/controlU64" }
+              }
+            },
+            "fact": { "$ref": "#/$defs/servingLeaseFact" }
+          }
+        }
+      ]
+    },
+    "effectReceipt": {
+      "type": "object", "additionalProperties": false,
+      "required": ["outcome", "receiptId", "resultDigest"],
+      "properties": {
+        "outcome": { "enum": ["succeeded", "failed"] },
+        "receiptId": { "type": "string" },
+        "resultDigest": { "type": "string" }
+      }
+    },
+    "effectState": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "valid", "communityId", "workflowId", "runId", "stepId",
+        "idempotencyKey", "effectDigest", "leaseResourceId", "revision",
+        "attempt", "status", "ownerNodeId", "fenceToken", "receipt",
+        "reconciledBy", "reconcileReason"
+      ],
+      "properties": {
+        "valid": { "type": "boolean" },
+        "communityId": { "type": "string" },
+        "workflowId": { "type": "string" },
+        "runId": { "type": "string" },
+        "stepId": { "type": "string" },
+        "idempotencyKey": { "type": "string" },
+        "effectDigest": { "type": "string" },
+        "leaseResourceId": { "type": "string" },
+        "revision": { "$ref": "#/$defs/controlU64" },
+        "attempt": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+        "status": { "enum": ["pending", "claimed", "executing", "succeeded", "failed", "unknown"] },
+        "ownerNodeId": { "type": "string" },
+        "fenceToken": { "$ref": "#/$defs/controlU64" },
+        "receipt": { "oneOf": [{ "$ref": "#/$defs/effectReceipt" }, { "type": "null" }] },
+        "reconciledBy": { "type": "string" },
+        "reconcileReason": { "type": "string" }
+      }
+    },
+    "effectError": {
+      "enum": [
+        "none", "invalid_state", "invalid_identity", "invalid_receipt",
+        "lease_rejected", "owner_mismatch", "fence_mismatch", "claim_conflict",
+        "manual_reconcile_required", "reconcile_unauthorized",
+        "reconcile_reason_required", "terminal_conflict", "persistence_failure",
+        "revision_overflow", "attempt_overflow"
+      ]
+    },
+    "effectKind": {
+      "enum": [
+        "reject", "replay", "claimed", "execute_external", "receipt_recorded",
+        "claim_recovered", "unknown", "manual_retry", "reconciled"
+      ]
+    },
+    "effectPlan": {
+      "type": "object", "additionalProperties": false,
+      "required": ["effect", "error", "leaseError", "portEffect", "beforeState", "nextState"],
+      "properties": {
+        "effect": { "$ref": "#/$defs/effectKind" },
+        "error": { "$ref": "#/$defs/effectError" },
+        "leaseError": {
+          "enum": [
+            "none", "invalid_state", "transition_required", "invalid_eligible_owners",
+            "lease_duration_invalid", "quorum_unavailable", "authority_invalid",
+            "control_not_committed", "authority_stale", "control_replay", "stale_fence",
+            "future_fence", "owner_mismatch", "resource_mismatch", "no_active_lease",
+            "clock_epoch_mismatch", "clock_regression", "lease_expired", "replay_conflict",
+            "tick_overflow"
+          ]
+        },
+        "portEffect": { "enum": ["none", "commit_canonical"] },
+        "beforeState": { "$ref": "#/$defs/effectState" },
+        "nextState": { "$ref": "#/$defs/effectState" }
+      }
+    },
+    "effectPolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "ownerNodeId", "fenceToken", "leaseState", "fact"],
+          "properties": {
+            "decision": { "enum": ["claim", "execute"] },
+            "state": { "$ref": "#/$defs/effectState" },
+            "ownerNodeId": { "type": "string" },
+            "fenceToken": { "$ref": "#/$defs/controlU64" },
+            "leaseState": { "$ref": "#/$defs/leaseState" },
+            "fact": { "$ref": "#/$defs/servingLeaseFact" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "ownerNodeId", "fenceToken", "receipt"],
+          "properties": {
+            "decision": { "const": "receipt" },
+            "state": { "$ref": "#/$defs/effectState" },
+            "ownerNodeId": { "type": "string" },
+            "fenceToken": { "$ref": "#/$defs/controlU64" },
+            "receipt": { "$ref": "#/$defs/effectReceipt" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "leaseState", "fact"],
+          "properties": {
+            "decision": { "const": "recover" },
+            "state": { "$ref": "#/$defs/effectState" },
+            "leaseState": { "$ref": "#/$defs/leaseState" },
+            "fact": { "$ref": "#/$defs/servingLeaseFact" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "request"],
+          "properties": {
+            "decision": { "const": "reconcile" },
+            "state": { "$ref": "#/$defs/effectState" },
+            "request": {
+              "type": "object", "additionalProperties": false,
+              "required": ["operatorAuthorized", "operatorId", "reason", "command", "receipt"],
+              "properties": {
+                "operatorAuthorized": { "type": "boolean" },
+                "operatorId": { "type": "string" },
+                "reason": { "type": "string" },
+                "command": { "enum": ["mark_succeeded", "mark_failed", "retry"] },
+                "receipt": { "oneOf": [{ "$ref": "#/$defs/effectReceipt" }, { "type": "null" }] }
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "plan", "persistenceSucceeded"],
+          "properties": {
+            "decision": { "const": "settle" },
+            "plan": { "$ref": "#/$defs/effectPlan" },
+            "persistenceSucceeded": { "type": "boolean" }
+          }
+        }
+      ]
+    },
+    "objectU64": {
+      "type": "integer", "minimum": 0, "maximum": 9223372036854775807
+    },
+    "objectDigest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "objectDigests": {
+      "type": "array", "items": { "$ref": "#/$defs/objectDigest" }
+    },
+    "objectDescriptor": {
+      "type": "object", "additionalProperties": false,
+      "required": ["digest", "size", "kind"],
+      "properties": {
+        "digest": { "$ref": "#/$defs/objectDigest" },
+        "size": { "$ref": "#/$defs/objectU64" },
+        "kind": { "enum": ["media", "git-pack", "git-manifest"] }
+      }
+    },
+    "objectManifest": {
+      "type": "object", "additionalProperties": false,
+      "required": ["communityId", "manifestId", "generation", "objects"],
+      "properties": {
+        "communityId": { "type": "string" },
+        "manifestId": { "$ref": "#/$defs/objectDigest" },
+        "generation": { "$ref": "#/$defs/objectU64" },
+        "objects": {
+          "type": "array", "items": { "$ref": "#/$defs/objectDescriptor" }
+        }
+      }
+    },
+    "objectLocalFact": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "digest", "size", "present", "verified", "partial", "partialOffset",
+        "unreferencedSinceEpoch"
+      ],
+      "properties": {
+        "digest": { "$ref": "#/$defs/objectDigest" },
+        "size": { "$ref": "#/$defs/objectU64" },
+        "present": { "type": "boolean" },
+        "verified": { "type": "boolean" },
+        "partial": { "type": "boolean" },
+        "partialOffset": { "$ref": "#/$defs/objectU64" },
+        "unreferencedSinceEpoch": {
+          "oneOf": [{ "$ref": "#/$defs/objectU64" }, { "type": "null" }]
+        }
+      }
+    },
+    "objectOriginFact": {
+      "type": "object", "additionalProperties": false,
+      "required": ["nodeId", "available", "digests"],
+      "properties": {
+        "nodeId": { "type": "string" },
+        "available": { "type": "boolean" },
+        "digests": { "$ref": "#/$defs/objectDigests" }
+      }
+    },
+    "objectSyncRequest": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "communityId", "manifest", "manifestDigestVerified",
+        "lifecycleAllowsSync", "cancelled", "mode", "requestedDigest",
+        "pinnedDigests", "localFacts", "origins", "maxFetches"
+      ],
+      "properties": {
+        "communityId": { "type": "string" },
+        "manifest": { "$ref": "#/$defs/objectManifest" },
+        "manifestDigestVerified": { "type": "boolean" },
+        "lifecycleAllowsSync": { "type": "boolean" },
+        "cancelled": { "type": "boolean" },
+        "mode": { "enum": ["eager", "lazy"] },
+        "requestedDigest": { "type": "string" },
+        "pinnedDigests": { "$ref": "#/$defs/objectDigests" },
+        "localFacts": {
+          "type": "array", "items": { "$ref": "#/$defs/objectLocalFact" }
+        },
+        "origins": {
+          "type": "array", "items": { "$ref": "#/$defs/objectOriginFact" }
+        },
+        "maxFetches": { "type": "integer", "minimum": 0, "maximum": 65535 }
+      }
+    },
+    "objectPinState": {
+      "type": "object", "additionalProperties": false,
+      "required": ["valid", "communityId", "revision", "digests"],
+      "properties": {
+        "valid": { "type": "boolean" },
+        "communityId": { "type": "string" },
+        "revision": { "$ref": "#/$defs/objectU64" },
+        "digests": { "$ref": "#/$defs/objectDigests" }
+      }
+    },
+    "objectPinRequest": {
+      "type": "object", "additionalProperties": false,
+      "required": ["communityId", "expectedRevision", "digest", "pin"],
+      "properties": {
+        "communityId": { "type": "string" },
+        "expectedRevision": { "$ref": "#/$defs/objectU64" },
+        "digest": { "$ref": "#/$defs/objectDigest" },
+        "pin": { "type": "boolean" }
+      }
+    },
+    "objectGcRequest": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "communityId", "currentEpoch", "graceEpochs", "referencedDigests",
+        "pinnedDigests", "objects", "maxDeletes"
+      ],
+      "properties": {
+        "communityId": { "type": "string" },
+        "currentEpoch": { "$ref": "#/$defs/objectU64" },
+        "graceEpochs": { "$ref": "#/$defs/objectU64" },
+        "referencedDigests": { "$ref": "#/$defs/objectDigests" },
+        "pinnedDigests": { "$ref": "#/$defs/objectDigests" },
+        "objects": {
+          "type": "array", "items": { "$ref": "#/$defs/objectLocalFact" }
+        },
+        "maxDeletes": { "type": "integer", "minimum": 0, "maximum": 65535 }
+      }
+    },
+    "objectPolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "sync" },
+            "request": { "$ref": "#/$defs/objectSyncRequest" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "request"],
+          "properties": {
+            "decision": { "const": "pin" },
+            "state": { "$ref": "#/$defs/objectPinState" },
+            "request": { "$ref": "#/$defs/objectPinRequest" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "gc" },
+            "request": { "$ref": "#/$defs/objectGcRequest" }
+          }
+        }
+      ]
+    },
+    "projectionU64": {
+      "type": "integer", "minimum": 0, "maximum": 9223372036854775807
+    },
+    "projectionKind": { "enum": ["search", "thread", "feed"] },
+    "projectionStatus": {
+      "enum": ["building", "ready", "published", "cancelled"]
+    },
+    "projectionEffect": {
+      "enum": ["reject", "start", "stage", "ready", "publish", "cancel"]
+    },
+    "projectionError": {
+      "enum": [
+        "none", "invalid_state", "scope_mismatch", "owner_mismatch",
+        "epoch_mismatch", "source_changed", "revision_conflict",
+        "cursor_conflict", "batch_invalid", "record_invalid",
+        "current_row_invalid", "stage_failure", "publish_unavailable",
+        "publish_failure", "revision_overflow"
+      ]
+    },
+    "projectionState": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "valid", "projection", "communityId", "sourceCheckpoint", "sourceDigest",
+        "epoch", "ownerNodeId", "revision", "cursor", "status"
+      ],
+      "properties": {
+        "valid": { "type": "boolean" },
+        "projection": { "$ref": "#/$defs/projectionKind" },
+        "communityId": { "type": "string" },
+        "sourceCheckpoint": { "$ref": "#/$defs/projectionU64" },
+        "sourceDigest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "epoch": { "type": "string" },
+        "ownerNodeId": { "type": "string" },
+        "revision": { "$ref": "#/$defs/projectionU64" },
+        "cursor": { "type": "string" },
+        "status": { "$ref": "#/$defs/projectionStatus" }
+      }
+    },
+    "projectionCanonicalRecord": {
+      "type": "object", "additionalProperties": false,
+      "required": ["sequence", "recordType", "key", "deleted", "value"],
+      "properties": {
+        "sequence": { "$ref": "#/$defs/projectionU64" },
+        "recordType": { "type": "string" },
+        "key": { "type": "string" },
+        "deleted": { "type": "boolean" },
+        "value": {}
+      }
+    },
+    "projectionRow": {
+      "type": "object", "additionalProperties": false,
+      "required": ["recordType", "key", "value"],
+      "properties": {
+        "recordType": { "type": "string" },
+        "key": { "type": "string" },
+        "value": {}
+      }
+    },
+    "projectionStageRow": {
+      "type": "object", "additionalProperties": false,
+      "required": ["recordType", "key", "deleted", "value"],
+      "properties": {
+        "recordType": { "type": "string" },
+        "key": { "type": "string" },
+        "deleted": { "type": "boolean" },
+        "value": {}
+      }
+    },
+    "projectionBatchPlan": {
+      "type": "object", "additionalProperties": false,
+      "required": ["effect", "error", "beforeState", "nextState", "rows"],
+      "properties": {
+        "effect": { "$ref": "#/$defs/projectionEffect" },
+        "error": { "$ref": "#/$defs/projectionError" },
+        "beforeState": { "$ref": "#/$defs/projectionState" },
+        "nextState": { "$ref": "#/$defs/projectionState" },
+        "rows": {
+          "type": "array", "items": { "$ref": "#/$defs/projectionStageRow" }
+        }
+      }
+    },
+    "projectionPublishPlan": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "effect", "error", "beforeState", "nextState", "intentId", "recordType",
+        "sourceCheckpoint", "sourceDigest"
+      ],
+      "properties": {
+        "effect": { "$ref": "#/$defs/projectionEffect" },
+        "error": { "$ref": "#/$defs/projectionError" },
+        "beforeState": { "$ref": "#/$defs/projectionState" },
+        "nextState": { "$ref": "#/$defs/projectionState" },
+        "intentId": { "type": "string" },
+        "recordType": { "type": "string" },
+        "sourceCheckpoint": { "$ref": "#/$defs/projectionU64" },
+        "sourceDigest": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "projectionPolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "start" },
+            "request": {
+              "type": "object", "additionalProperties": false,
+              "required": [
+                "projection", "communityId", "sourceCheckpoint", "sourceDigest",
+                "epoch", "ownerNodeId"
+              ],
+              "properties": {
+                "projection": { "$ref": "#/$defs/projectionKind" },
+                "communityId": { "type": "string" },
+                "sourceCheckpoint": { "$ref": "#/$defs/projectionU64" },
+                "sourceDigest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+                "epoch": { "type": "string" },
+                "ownerNodeId": { "type": "string" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "request"],
+          "properties": {
+            "decision": { "const": "batch" },
+            "state": { "$ref": "#/$defs/projectionState" },
+            "request": {
+              "type": "object", "additionalProperties": false,
+              "required": [
+                "communityId", "epoch", "ownerNodeId", "expectedRevision",
+                "expectedCursor", "sourceCheckpointMatches", "complete", "records",
+                "currentRows"
+              ],
+              "properties": {
+                "communityId": { "type": "string" },
+                "epoch": { "type": "string" },
+                "ownerNodeId": { "type": "string" },
+                "expectedRevision": { "$ref": "#/$defs/projectionU64" },
+                "expectedCursor": { "type": "string" },
+                "sourceCheckpointMatches": { "type": "boolean" },
+                "complete": { "type": "boolean" },
+                "records": {
+                  "type": "array", "maxItems": 1000,
+                  "items": { "$ref": "#/$defs/projectionCanonicalRecord" }
+                },
+                "currentRows": {
+                  "type": "array", "items": { "$ref": "#/$defs/projectionRow" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "plan", "stageSucceeded"],
+          "properties": {
+            "decision": { "const": "settle_batch" },
+            "plan": { "$ref": "#/$defs/projectionBatchPlan" },
+            "stageSucceeded": { "type": "boolean" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "ownerNodeId"],
+          "properties": {
+            "decision": { "enum": ["publish", "cancel"] },
+            "state": { "$ref": "#/$defs/projectionState" },
+            "ownerNodeId": { "type": "string" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "plan", "publishSucceeded"],
+          "properties": {
+            "decision": { "const": "settle_publish" },
+            "plan": { "$ref": "#/$defs/projectionPublishPlan" },
+            "publishSucceeded": { "type": "boolean" }
+          }
+        }
+      ]
+    },
+    "syncU64": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9223372036854775807
+    },
+    "syncEnvelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol", "version", "sessionId", "communityId",
+        "senderNodeId", "receiverNodeId"
+      ],
+      "properties": {
+        "protocol": { "type": "string" },
+        "version": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "sessionId": { "type": "string" },
+        "communityId": { "type": "string" },
+        "senderNodeId": { "type": "string" },
+        "receiverNodeId": { "type": "string" }
+      }
+    },
+    "syncState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "valid", "revision", "phase", "sessionId", "communityId",
+        "localNodeId", "remoteNodeId", "checkpoint", "checkpointDigest",
+        "remoteCheckpoint", "remoteDigest", "maxRecords", "maxEncodedBytes",
+        "timeoutTicks", "deadlineTick", "pendingBatchId"
+      ],
+      "properties": {
+        "valid": { "type": "boolean" },
+        "revision": { "$ref": "#/$defs/syncU64" },
+        "phase": {
+          "enum": ["idle", "waiting_batch", "applying", "complete", "cancelled"]
+        },
+        "sessionId": { "type": "string" },
+        "communityId": { "type": "string" },
+        "localNodeId": { "type": "string" },
+        "remoteNodeId": { "type": "string" },
+        "checkpoint": { "$ref": "#/$defs/syncU64" },
+        "checkpointDigest": { "type": "string" },
+        "remoteCheckpoint": { "$ref": "#/$defs/syncU64" },
+        "remoteDigest": { "type": "string" },
+        "maxRecords": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "maxEncodedBytes": {
+          "type": "integer", "minimum": 0, "maximum": 4294967295
+        },
+        "timeoutTicks": { "$ref": "#/$defs/syncU64" },
+        "deadlineTick": { "$ref": "#/$defs/syncU64" },
+        "pendingBatchId": { "type": "string" }
+      }
+    },
+    "syncDigestFrame": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["envelope", "checkpoint", "prefixDigest"],
+      "properties": {
+        "envelope": { "$ref": "#/$defs/syncEnvelope" },
+        "checkpoint": { "$ref": "#/$defs/syncU64" },
+        "prefixDigest": { "type": "string" }
+      }
+    },
+    "syncRangeRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["envelope", "afterCheckpoint", "limitRecords", "maxEncodedBytes"],
+      "properties": {
+        "envelope": { "$ref": "#/$defs/syncEnvelope" },
+        "afterCheckpoint": { "$ref": "#/$defs/syncU64" },
+        "limitRecords": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "maxEncodedBytes": {
+          "type": "integer", "minimum": 0, "maximum": 4294967295
+        }
+      }
+    },
+    "syncRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sequence", "recordType", "key", "deleted", "payload", "contentDigest"
+      ],
+      "properties": {
+        "sequence": { "$ref": "#/$defs/syncU64" },
+        "recordType": { "type": "string" },
+        "key": { "type": "string" },
+        "deleted": { "type": "boolean" },
+        "payload": { "type": "string" },
+        "contentDigest": { "type": "string" }
+      }
+    },
+    "syncRecords": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": { "$ref": "#/$defs/syncRecord" }
+    },
+    "syncInventoryFact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recordType", "key", "deleted", "identity", "contentDigest"],
+      "properties": {
+        "recordType": { "type": "string", "minLength": 1 },
+        "key": { "type": "string", "minLength": 1 },
+        "deleted": { "type": "boolean" },
+        "identity": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "contentDigest": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "syncInventoryMergePair": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["current", "incoming"],
+      "properties": {
+        "current": {
+          "oneOf": [
+            { "$ref": "#/$defs/syncInventoryFact" },
+            { "type": "null" }
+          ]
+        },
+        "incoming": { "$ref": "#/$defs/syncInventoryFact" }
+      }
+    },
+    "syncInventoryMergePairs": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": { "$ref": "#/$defs/syncInventoryMergePair" }
+    },
+    "syncRangeBatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "envelope", "batchId", "baseCheckpoint", "baseDigest",
+        "throughCheckpoint", "resultDigest", "encodedBytes",
+        "digestVerified", "records"
+      ],
+      "properties": {
+        "envelope": { "$ref": "#/$defs/syncEnvelope" },
+        "batchId": { "type": "string" },
+        "baseCheckpoint": { "$ref": "#/$defs/syncU64" },
+        "baseDigest": { "type": "string" },
+        "throughCheckpoint": { "$ref": "#/$defs/syncU64" },
+        "resultDigest": { "type": "string" },
+        "encodedBytes": {
+          "type": "integer", "minimum": 0, "maximum": 4294967295
+        },
+        "digestVerified": { "type": "boolean" },
+        "records": { "$ref": "#/$defs/syncRecords" }
+      }
+    },
+    "syncCancelFrame": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["envelope", "reason"],
+      "properties": {
+        "envelope": { "$ref": "#/$defs/syncEnvelope" },
+        "reason": { "type": "string" }
+      }
+    },
+    "syncEffect": {
+      "enum": [
+        "reject", "noop", "request_range", "request_snapshot", "apply_batch",
+        "acknowledge_duplicate", "complete", "cancel"
+      ]
+    },
+    "syncError": {
+      "enum": [
+        "none", "invalid_state", "protocol_mismatch", "scope_mismatch",
+        "digest_invalid", "digest_mismatch", "remote_behind", "phase_invalid",
+        "backpressure", "batch_bounds", "sequence_gap", "peer_timeout",
+        "cancelled", "store_failure", "store_checkpoint_mismatch",
+        "stale_settlement", "reason_required", "tick_overflow", "revision_overflow"
+      ]
+    },
+    "syncRangeBatchPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "effect", "error", "beforeState", "inflightState", "nextState",
+        "expectedCheckpoint", "throughCheckpoint", "records"
+      ],
+      "properties": {
+        "effect": { "$ref": "#/$defs/syncEffect" },
+        "error": { "$ref": "#/$defs/syncError" },
+        "beforeState": { "$ref": "#/$defs/syncState" },
+        "inflightState": { "$ref": "#/$defs/syncState" },
+        "nextState": { "$ref": "#/$defs/syncState" },
+        "expectedCheckpoint": { "$ref": "#/$defs/syncU64" },
+        "throughCheckpoint": { "$ref": "#/$defs/syncU64" },
+        "records": { "$ref": "#/$defs/syncRecords" }
+      }
+    },
+    "syncPolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "frame", "nowTick"],
+          "properties": {
+            "decision": { "const": "accept_digest" },
+            "state": { "$ref": "#/$defs/syncState" },
+            "frame": { "$ref": "#/$defs/syncDigestFrame" },
+            "nowTick": { "$ref": "#/$defs/syncU64" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state"],
+          "properties": {
+            "decision": { "const": "next_range" },
+            "state": { "$ref": "#/$defs/syncState" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": [
+            "decision", "frame", "sessionId", "communityId", "sourceNodeId",
+            "targetNodeId", "sourceCheckpoint"
+          ],
+          "properties": {
+            "decision": { "const": "plan_range_read" },
+            "frame": { "$ref": "#/$defs/syncRangeRequest" },
+            "sessionId": { "type": "string" },
+            "communityId": { "type": "string" },
+            "sourceNodeId": { "type": "string" },
+            "targetNodeId": { "type": "string" },
+            "sourceCheckpoint": { "$ref": "#/$defs/syncU64" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "frame", "nowTick"],
+          "properties": {
+            "decision": { "const": "plan_batch" },
+            "state": { "$ref": "#/$defs/syncState" },
+            "frame": { "$ref": "#/$defs/syncRangeBatch" },
+            "nowTick": { "$ref": "#/$defs/syncU64" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": [
+            "decision", "plan", "currentState", "storeSucceeded",
+            "committedCheckpoint"
+          ],
+          "properties": {
+            "decision": { "const": "settle_batch" },
+            "plan": { "$ref": "#/$defs/syncRangeBatchPlan" },
+            "currentState": { "$ref": "#/$defs/syncState" },
+            "storeSucceeded": { "type": "boolean" },
+            "committedCheckpoint": { "$ref": "#/$defs/syncU64" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "reason"],
+          "properties": {
+            "decision": { "const": "stop" },
+            "state": { "$ref": "#/$defs/syncState" },
+            "reason": { "type": "string" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "frame"],
+          "properties": {
+            "decision": { "const": "cancel" },
+            "state": { "$ref": "#/$defs/syncState" },
+            "frame": { "$ref": "#/$defs/syncCancelFrame" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "state", "nowTick"],
+          "properties": {
+            "decision": { "const": "check_deadline" },
+            "state": { "$ref": "#/$defs/syncState" },
+            "nowTick": { "$ref": "#/$defs/syncU64" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "communityId", "records"],
+          "properties": {
+            "decision": { "const": "merge_inventory" },
+            "communityId": { "type": "string", "minLength": 1 },
+            "records": { "$ref": "#/$defs/syncInventoryMergePairs" }
+          }
+        }
+      ]
+    },
+    "workflowPolicyPayload": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "definition"],
+          "properties": {
+            "decision": { "const": "definition" },
+            "definition": { "$ref": "#/$defs/workflowDefinition" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "expression", "values"],
+          "properties": {
+            "decision": { "const": "condition" },
+            "expression": { "type": "string", "maxLength": 4096 },
+            "values": { "$ref": "#/$defs/workflowValueMap" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "plan" },
+            "request": { "$ref": "#/$defs/workflowPlanRequest" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "request"],
+          "properties": {
+            "decision": { "const": "transition" },
+            "request": { "$ref": "#/$defs/workflowTransitionRequest" }
+          }
+        }
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "system.hello" },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "schemaHash",
+            "workerRole",
+            "maxFrameBytes",
+            "maxInflight"
+          ],
+          "properties": {
+            "schemaHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+            "workerRole": { "const": "nimino-core" },
+            "maxFrameBytes": { "const": 1048576 },
+            "maxInflight": { "const": 1 }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "boundary.echo" },
+        "payload": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["data"],
+          "properties": { "data": {} }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.event.policy" },
+        "payload": { "$ref": "#/$defs/eventPolicyPayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.community.policy" },
+        "payload": { "$ref": "#/$defs/communityPolicyPayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.membership.policy" },
+        "payload": { "$ref": "#/$defs/membershipPolicyPayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.dm.policy" },
+        "payload": { "$ref": "#/$defs/dmPolicyPayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.moderation.policy" },
+        "payload": { "$ref": "#/$defs/moderationPolicyPayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.workflow.policy" },
+        "payload": { "$ref": "#/$defs/workflowPolicyPayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.cli.policy" },
+        "payload": { "$ref": "#/$defs/cliPolicyPayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.agent.policy" },
+        "payload": { "$ref": "#/$defs/agentPolicyPayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.cluster.lifecycle" },
+        "payload": { "$ref": "#/$defs/clusterLifecyclePayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.admission.policy" },
+        "payload": { "$ref": "#/$defs/admissionPolicyPayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.ephemeral.policy" },
+        "payload": { "$ref": "#/$defs/ephemeralPolicyPayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.control.policy" },
+        "payload": { "$ref": "#/$defs/controlPolicyPayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.lease.policy" },
+        "payload": { "$ref": "#/$defs/leasePolicyPayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.effect.policy" },
+        "payload": { "$ref": "#/$defs/effectPolicyPayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.object.policy" },
+        "payload": { "$ref": "#/$defs/objectPolicyPayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.projection.policy" },
+        "payload": { "$ref": "#/$defs/projectionPolicyPayload" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["protocol", "version", "requestId", "operation", "payload"],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.sync.policy" },
+        "payload": { "$ref": "#/$defs/syncPolicyPayload" }
+      }
+    }
+  ]
+}

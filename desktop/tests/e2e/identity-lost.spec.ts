@@ -40,9 +40,9 @@ test("normal first launch uses the already-persisted identity", async ({
     () =>
       (
         window as Window & {
-          __BUZZ_E2E_COMMAND_PAYLOADS__?: Array<{ command: string }>;
+          __NIMINO_E2E_COMMAND_PAYLOADS__?: Array<{ command: string }>;
         }
-      ).__BUZZ_E2E_COMMAND_PAYLOADS__ ?? [],
+      ).__NIMINO_E2E_COMMAND_PAYLOADS__ ?? [],
   );
   expect(commands.some((entry) => entry.command === "get_identity")).toBe(true);
   expect(
@@ -80,7 +80,7 @@ test("lost boot keeps the pairing-code action stable while generating", async ({
   );
   await page.goto("/");
 
-  await page.getByTestId("nostr-import-phone-link").click();
+  await page.getByTestId("nostr-import-recovery-link").click();
   const copyButton = page.getByTestId("copy-identity-recovery-code");
   await expect(copyButton).toBeVisible();
   await expect(copyButton).toBeDisabled();
@@ -97,7 +97,7 @@ test("lost boot keeps the pairing-code action stable while generating", async ({
   ).toBe(true);
 });
 
-test("lost boot offers phone recovery with a single-use QR", async ({
+test("lost boot offers Desktop recovery with a single-use QR", async ({
   page,
 }, testInfo) => {
   await installMockBridge(
@@ -107,18 +107,22 @@ test("lost boot offers phone recovery with a single-use QR", async ({
   );
   await page.goto("/");
 
-  await page.getByTestId("nostr-import-phone-link").click();
+  await page.getByTestId("nostr-import-recovery-link").click();
   await expect(page.getByTestId("identity-recovery-pairing")).toBeVisible();
   await expect(page.getByTestId("identity-recovery-qr")).toBeVisible();
   await expect(
-    page.getByText("Scan this code with a signed-in Buzz phone."),
+    page.getByText(
+      "Copy this code into Identity transfer on a signed-in Desktop you control.",
+    ),
   ).toBeVisible();
   await expect(
-    page.getByText("On your phone, open Settings → Send identity to desktop."),
+    page.getByText(
+      "On a signed-in Desktop you control, open Settings → Identity transfer and paste this code.",
+    ),
   ).toBeVisible();
   await page.waitForTimeout(1_000); // Let the onboarding entrance motion settle.
   await page.screenshot({
-    path: testInfo.outputPath("desktop-phone-recovery-qr.png"),
+    path: testInfo.outputPath("desktop-identity-recovery-qr.png"),
     fullPage: true,
   });
 
@@ -131,12 +135,12 @@ test("lost boot offers phone recovery with a single-use QR", async ({
   const copiedPayload = await page.evaluate(() => {
     const log = (
       window as Window & {
-        __BUZZ_E2E_COMMAND_LOG__?: Array<{
+        __NIMINO_E2E_COMMAND_LOG__?: Array<{
           command: string;
           payload: Record<string, unknown> | null;
         }>;
       }
-    ).__BUZZ_E2E_COMMAND_LOG__;
+    ).__NIMINO_E2E_COMMAND_LOG__;
     return log?.findLast(({ command }) => command === "copy_text_to_clipboard")
       ?.payload;
   });
@@ -146,9 +150,9 @@ test("lost boot offers phone recovery with a single-use QR", async ({
     () =>
       (
         window as Window & {
-          __BUZZ_E2E_COMMAND_PAYLOADS__?: Array<{ command: string }>;
+          __NIMINO_E2E_COMMAND_PAYLOADS__?: Array<{ command: string }>;
         }
-      ).__BUZZ_E2E_COMMAND_PAYLOADS__ ?? [],
+      ).__NIMINO_E2E_COMMAND_PAYLOADS__ ?? [],
   );
   expect(
     commands.some(
@@ -157,7 +161,7 @@ test("lost boot offers phone recovery with a single-use QR", async ({
   ).toBe(true);
 });
 
-test("phone recovery uses the desktop pairing card semantics", async ({
+test("Desktop recovery uses the shared pairing card semantics", async ({
   page,
 }) => {
   await installMockBridge(
@@ -167,7 +171,7 @@ test("phone recovery uses the desktop pairing card semantics", async ({
   );
   await page.goto("/");
 
-  await page.getByTestId("nostr-import-phone-link").click();
+  await page.getByTestId("nostr-import-recovery-link").click();
   const card = page.getByTestId("identity-recovery-pairing");
   const qrContainer = card.getByTestId("identity-recovery-qr-container");
   const qrCode = card.getByTestId("identity-recovery-qr");
@@ -175,9 +179,9 @@ test("phone recovery uses the desktop pairing card semantics", async ({
   await expect(qrCode).toBeVisible();
   await expect(qrCode).toHaveAttribute("data-qr-matrix-size", "57");
   await expect(qrCode.locator("[data-qr-finder-pattern]")).toHaveCount(3);
-  await expect(qrCode.locator(".buzz-qr-cell-reveal").first()).toHaveCSS(
+  await expect(qrCode.locator(".nimino-qr-cell-reveal").first()).toHaveCSS(
     "animation-name",
-    "buzz-qr-cell-reveal",
+    "nimino-qr-cell-reveal",
   );
   const qrBox = await qrContainer.boundingBox();
   const copyBox = await copyButton.boundingBox();
@@ -194,18 +198,18 @@ test("phone recovery uses the desktop pairing card semantics", async ({
   });
 
   await expect(
-    card.getByText("Does this code match your phone?"),
+    card.getByText("Does this code match the sending Desktop?"),
   ).toBeVisible();
   await expect(
     page.getByText("Confirm the code before sharing your identity."),
   ).toBeVisible();
   await expect(
     card.getByText(
-      "This gives this desktop permanent access to your Buzz identity. Only continue if you trust it.",
+      "This gives this desktop permanent access to your Nimino identity. Only continue if you trust it.",
     ),
   ).toBeVisible();
   await expect(
-    card.getByText(/On your phone, open Settings/),
+    card.getByText(/On a signed-in Desktop you control, open Settings/),
   ).not.toBeVisible();
   await expect(card.getByTestId("identity-recovery-sas")).toHaveText("123 456");
   await expect(card.getByTestId("confirm-identity-recovery-sas")).toHaveText(
@@ -236,7 +240,7 @@ test("canceling recovery uses the standard pairing cancellation state", async ({
     { skipOnboardingSeed: true },
   );
   await page.goto("/");
-  await page.getByTestId("nostr-import-phone-link").click();
+  await page.getByTestId("nostr-import-recovery-link").click();
   await expect(page.getByTestId("identity-recovery-qr")).toBeVisible();
 
   await page.evaluate(async () => {
@@ -255,7 +259,7 @@ test("canceling recovery uses the standard pairing cancellation state", async ({
     .poll(() =>
       page.evaluate(
         () =>
-          (window.__BUZZ_E2E_COMMAND_LOG__ ?? []).filter(
+          (window.__NIMINO_E2E_COMMAND_LOG__ ?? []).filter(
             ({ command }) => command === "cancel_pairing",
           ).length,
       ),
@@ -263,7 +267,7 @@ test("canceling recovery uses the standard pairing cancellation state", async ({
     .toBeGreaterThan(0);
 });
 
-test("phone recovery continues to harness setup without creating or restarting", async ({
+test("Desktop recovery continues to harness setup without creating or restarting", async ({
   page,
 }) => {
   await installMockBridge(
@@ -272,7 +276,7 @@ test("phone recovery continues to harness setup without creating or restarting",
     { skipOnboardingSeed: true },
   );
   await page.goto("/");
-  await page.getByTestId("nostr-import-phone-link").click();
+  await page.getByTestId("nostr-import-recovery-link").click();
   await expect(page.getByTestId("identity-recovery-qr")).toBeVisible();
 
   await page.evaluate(async () => {
@@ -299,7 +303,7 @@ test("recovery turns relay failures into actionable copy", async ({ page }) => {
     { skipOnboardingSeed: true },
   );
   await page.goto("/");
-  await page.getByTestId("nostr-import-phone-link").click();
+  await page.getByTestId("nostr-import-recovery-link").click();
   await expect(page.getByTestId("identity-recovery-qr")).toBeVisible();
 
   await page.evaluate(async () => {
@@ -327,13 +331,13 @@ test("desktop refreshes recovery codes before the relay expires them", async ({
     { skipOnboardingSeed: true },
   );
   await page.goto("/");
-  await page.getByTestId("nostr-import-phone-link").click();
+  await page.getByTestId("nostr-import-recovery-link").click();
   await expect(page.getByTestId("identity-recovery-qr")).toBeVisible();
 
   const recoveryStarts = () =>
     page.evaluate(
       () =>
-        (window.__BUZZ_E2E_COMMAND_LOG__ ?? []).filter(
+        (window.__NIMINO_E2E_COMMAND_LOG__ ?? []).filter(
           ({ command }) => command === "start_identity_recovery_pairing",
         ).length,
     );
@@ -388,9 +392,9 @@ test("start-new-identity from lost mode persists the ephemeral key after confirm
         () =>
           (
             window as Window & {
-              __BUZZ_E2E_COMMAND_PAYLOADS__?: Array<{ command: string }>;
+              __NIMINO_E2E_COMMAND_PAYLOADS__?: Array<{ command: string }>;
             }
-          ).__BUZZ_E2E_COMMAND_PAYLOADS__?.some(
+          ).__NIMINO_E2E_COMMAND_PAYLOADS__?.some(
             (e) => e.command === "persist_current_identity",
           ) ?? false,
       ),
@@ -482,9 +486,9 @@ test("locked screen relaunch button records the process-restart invoke", async (
         () =>
           (
             window as Window & {
-              __BUZZ_E2E_COMMAND_PAYLOADS__?: Array<{ command: string }>;
+              __NIMINO_E2E_COMMAND_PAYLOADS__?: Array<{ command: string }>;
             }
-          ).__BUZZ_E2E_COMMAND_PAYLOADS__?.some(
+          ).__NIMINO_E2E_COMMAND_PAYLOADS__?.some(
             (e) => e.command === "plugin:process|restart",
           ) ?? false,
       ),

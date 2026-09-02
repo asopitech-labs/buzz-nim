@@ -10,7 +10,6 @@ export type RelaySpec = {
   name: string;
   ports: RelayPorts;
   databaseUrl: string;
-  redisUrl: string;
 };
 
 type OwnedProcess = { name: string; child: ChildProcess; logPath: string };
@@ -33,14 +32,14 @@ export class TwoRelayHarness {
 
   static async create(relays: readonly RelaySpec[]) {
     return new TwoRelayHarness(
-      await mkdtemp(join(tmpdir(), "buzz-ae-e2e-")),
+      await mkdtemp(join(tmpdir(), "nimino-ae-e2e-")),
       relays,
     );
   }
 
-  async startRelays(binary = process.env.BUZZ_E2E_RELAY_BIN) {
+  async startRelays(binary = process.env.NIMINO_E2E_RELAY_BIN) {
     if (!binary)
-      throw new Error("BUZZ_E2E_RELAY_BIN is required for the live gate");
+      throw new Error("NIMINO_E2E_RELAY_BIN is required for the live gate");
     await Promise.all(
       this.relays.map((relay) => this.startRelay(binary, relay)),
     );
@@ -77,9 +76,9 @@ export class TwoRelayHarness {
   }
 
   /** Start a fresh process for a relay spec on its original ports. */
-  async restartRelay(name: string, binary = process.env.BUZZ_E2E_RELAY_BIN) {
+  async restartRelay(name: string, binary = process.env.NIMINO_E2E_RELAY_BIN) {
     if (!binary)
-      throw new Error("BUZZ_E2E_RELAY_BIN is required for the live gate");
+      throw new Error("NIMINO_E2E_RELAY_BIN is required for the live gate");
     const relay = this.relays.find((candidate) => candidate.name === name);
     if (!relay) throw new Error(`no relay spec named ${name}`);
     await this.startRelay(binary, relay);
@@ -91,17 +90,17 @@ export class TwoRelayHarness {
     privateKey: string,
     extraEnv: NodeJS.ProcessEnv = {},
   ) {
-    const binary = process.env.BUZZ_E2E_ACP_BIN;
+    const binary = process.env.NIMINO_E2E_ACP_BIN;
     if (!binary)
-      throw new Error("BUZZ_E2E_ACP_BIN is required for the live gate");
+      throw new Error("NIMINO_E2E_ACP_BIN is required for the live gate");
     return this.spawnOwned(name, binary, [], {
-      BUZZ_RELAY_URL: relayWsUrl,
-      BUZZ_PRIVATE_KEY: privateKey,
-      BUZZ_AUTH_TAG: "",
-      BUZZ_ACP_LAZY_POOL: "true",
-      BUZZ_ACP_AGENT_COMMAND: process.execPath,
-      BUZZ_ACP_AGENT_ARGS: resolve("tests/e2e/fixtures/fake-acp-agent.mjs"),
-      BUZZ_E2E_CLI_BIN: process.env.BUZZ_E2E_CLI_BIN,
+      NIMINO_RELAY_URL: relayWsUrl,
+      NIMINO_PRIVATE_KEY: privateKey,
+      NIMINO_AUTH_TAG: "",
+      NIMINO_ACP_LAZY_POOL: "true",
+      NIMINO_ACP_AGENT_COMMAND: process.execPath,
+      NIMINO_ACP_AGENT_ARGS: resolve("tests/e2e/fixtures/fake-acp-agent.mjs"),
+      NIMINO_E2E_CLI_BIN: process.env.NIMINO_E2E_CLI_BIN,
       ...extraEnv,
     });
   }
@@ -155,14 +154,13 @@ export class TwoRelayHarness {
   private async startRelay(binary: string, relay: RelaySpec) {
     const child = this.spawnOwned(relay.name, binary, [], {
       DATABASE_URL: relay.databaseUrl,
-      REDIS_URL: relay.redisUrl,
       RELAY_URL: `ws://127.0.0.1:${relay.ports.main}`,
-      BUZZ_BIND_ADDR: `127.0.0.1:${relay.ports.main}`,
-      BUZZ_HEALTH_PORT: String(relay.ports.health),
-      BUZZ_METRICS_PORT: String(relay.ports.metrics),
-      BUZZ_REQUIRE_AUTH_TOKEN: "false",
-      BUZZ_RECONCILE_CHANNELS: "true",
-      BUZZ_AUTO_MIGRATE: "true",
+      NIMINO_BIND_ADDR: `127.0.0.1:${relay.ports.main}`,
+      NIMINO_HEALTH_PORT: String(relay.ports.health),
+      NIMINO_METRICS_PORT: String(relay.ports.metrics),
+      NIMINO_REQUIRE_AUTH_TOKEN: "false",
+      NIMINO_RECONCILE_CHANNELS: "true",
+      NIMINO_AUTO_MIGRATE: "true",
     });
     await this.waitForHealth(relay, child);
   }

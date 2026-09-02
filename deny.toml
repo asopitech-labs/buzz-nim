@@ -6,6 +6,10 @@ ignore = [
     # paste 1.0.15 — unmaintained. Transitive dep: mesh-llm → iroh → netlink-* → paste.
     # No safe upgrade available; tracked for upstream (iroh/netlink) replacement.
     { id = "RUSTSEC-2024-0436", reason = "transitive dep via mesh-llm → iroh → netlink; no upstream fix available" },
+    # bincode 1.3.3 — unmaintained, but not reported vulnerable. Chirps 0.6.3
+    # uses it for wire encoding and the advisory has no safe upgrade. Remove this
+    # exception when the pinned Chirps release no longer resolves bincode 1.x.
+    { id = "RUSTSEC-2025-0141", reason = "transitive dep via alopex-chirps 0.6.3; unmaintained advisory has no safe upgrade" },
     # quick-xml < 0.41: quadratic runtime on duplicate-attribute check (0194) and
     # unbounded namespace-declaration allocation in NsReader (0195). Both DoS-class,
     # requiring attacker-controlled XML. Our two locked versions only parse trusted
@@ -80,7 +84,7 @@ expression = "MIT OR Apache-2.0"
 license-files = []
 
 [[licenses.clarify]]
-crate = "buzz-desktop"
+crate = "nimino-desktop"
 expression = "Apache-2.0"
 license-files = []
 

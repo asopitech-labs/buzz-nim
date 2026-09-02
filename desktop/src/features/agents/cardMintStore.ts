@@ -64,6 +64,7 @@ let galleryOpen = false;
 const listeners = new Set<() => void>();
 let nextJobId = 1;
 let nextViewerSeq = 1;
+let generation = 0;
 
 function emitChange(): void {
   for (const listener of listeners) listener();
@@ -87,6 +88,7 @@ export async function runCardMintJob(
     memoryLevel?: SnapshotMemoryLevel,
   ) => Promise<MintedAgentCard>,
 ): Promise<void> {
+  const jobGeneration = generation;
   const jobId = `card-mint-${nextJobId++}`;
   jobs = [
     ...jobs,
@@ -108,8 +110,10 @@ export async function runCardMintJob(
       input.lock,
       input.memoryLevel,
     );
+    if (jobGeneration !== generation) return;
     updateJob(jobId, { phase: "done", card });
     toast.success(`${input.agentName}'s card is ready`, {
+      id: jobId,
       action: {
         label: "View card",
         onClick: () => viewMintedCardJob(jobId),
@@ -117,6 +121,7 @@ export async function runCardMintJob(
       duration: 10_000,
     });
   } catch (error) {
+    if (jobGeneration !== generation) return;
     let message = error instanceof Error ? error.message : "Card mint failed.";
     if (message.startsWith(NO_OPENAI_KEY_PREFIX)) {
       // The dialog pre-checks the key, so this only happens when the key was
@@ -136,6 +141,7 @@ export async function runCardMintJob(
     updateJob(jobId, { phase: "error", error: message });
     toast.error(`Minting ${input.agentName}'s card failed`, {
       description: message,
+      id: jobId,
     });
   }
 }
@@ -188,6 +194,8 @@ export function setCardGalleryOpen(open: boolean): void {
 }
 
 export function resetCardMintStore(): void {
+  generation += 1;
+  for (const job of jobs) toast.dismiss(job.jobId);
   jobs = [];
   viewer = null;
   galleryOpen = false;

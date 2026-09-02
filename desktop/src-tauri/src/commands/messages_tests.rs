@@ -93,6 +93,10 @@ fn search_messages_filter_requests_prefix_mode_for_topbar_typeahead() {
     assert_eq!(filter["search_mode"], serde_json::json!("prefix"));
     assert_eq!(filter["limit"], serde_json::json!(12));
     assert_eq!(filter["#h"], serde_json::json!(["channel-1"]));
+    assert_eq!(
+        filter["kinds"],
+        serde_json::json!([1, 9, 40002, 45001, 45003])
+    );
     assert!(filter.get("authors").is_none());
     assert!(filter.get("since").is_none());
     assert!(filter.get("until").is_none());
@@ -163,7 +167,7 @@ fn thread_replies_filter_carries_non_p_gated_kinds_to_clear_the_gate() {
     for kind in kinds {
         let k = kind.as_u64().expect("kind is a number") as u32;
         assert!(
-            !buzz_core_pkg::kind::P_GATED_KINDS.contains(&k),
+            !nimino_core_pkg::kind::P_GATED_KINDS.contains(&k),
             "kind {k} is p-gated; a p-gated kind in the filter re-triggers the \
                  403 that this fix exists to prevent"
         );
@@ -210,7 +214,7 @@ fn legacy_managed_agent_auth_tag_verifies_for_agent_pubkey() {
         .expect("legacy auth tag should compute")
         .expect("legacy auth tag should be present");
 
-    let owner = buzz_sdk_pkg::nip_oa::verify_auth_tag(&tag, &agent_keys.public_key())
+    let owner = nimino_sdk_pkg::nip_oa::verify_auth_tag(&tag, &agent_keys.public_key())
         .expect("legacy auth tag should verify");
     assert_eq!(owner, owner_keys.public_key());
 }

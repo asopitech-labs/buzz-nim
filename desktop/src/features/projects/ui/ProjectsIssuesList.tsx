@@ -20,7 +20,7 @@ import {
   useIncrementalMount,
 } from "@/shared/hooks/useIncrementalMount";
 import { cn } from "@/shared/lib/cn";
-import { BuzzLoadingState } from "@/shared/ui/BuzzLoadingState";
+import { NiminoLoadingState } from "@/shared/ui/NiminoLoadingState";
 import { Card } from "@/shared/ui/card";
 import { DropdownMenuItem } from "@/shared/ui/dropdown-menu";
 import { CopyShareLinkMenuItem } from "./CopyShareLinkMenuItem";
@@ -239,7 +239,7 @@ export function ProjectsIssuesList({
   );
 
   if (isLoading) {
-    return <BuzzLoadingState label="Loading tasks" />;
+    return <NiminoLoadingState label="Loading tasks" />;
   }
 
   const loadNotice = (

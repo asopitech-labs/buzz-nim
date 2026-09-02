@@ -1,0 +1,13 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0086",
+  "operation": "domain.membership.policy",
+  "status": "ok",
+  "result": {
+    "decision": "relay",
+    "action": "insert",
+    "error": "none",
+    "effectiveRole": "admin"
+  }
+}

@@ -1,7 +1,7 @@
 import * as React from "react";
 
-const STORAGE_KEY = "buzz:last-runtime";
-const LEGACY_STORAGE_KEY = "buzz:last-runtime-provider";
+const STORAGE_KEY = "nimino:last-runtime";
+const LEGACY_STORAGE_KEY = "nimino:last-runtime-provider";
 
 export function useLastRuntime(): {
   lastRuntimeId: string | null;

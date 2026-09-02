@@ -1,0 +1,26 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "remote": [
+    { "code": "INVALID_REQUEST", "retry": "never" },
+    { "code": "UNSUPPORTED_VERSION", "retry": "never" },
+    { "code": "CONTRACT_MISMATCH", "retry": "never" },
+    { "code": "HANDSHAKE_REQUIRED", "retry": "after_refresh" },
+    { "code": "UNKNOWN_OPERATION", "retry": "never" },
+    { "code": "FRAME_TOO_LARGE", "retry": "never" },
+    { "code": "INTERNAL_ERROR", "retry": "idempotent_only" }
+  ],
+  "host": [
+    { "code": "INVALID_CONFIGURATION", "recyclesWorker": false },
+    { "code": "SPAWN_FAILED", "recyclesWorker": false },
+    { "code": "STARTUP_TIMEOUT", "recyclesWorker": true },
+    { "code": "CONTRACT_MISMATCH", "recyclesWorker": true },
+    { "code": "PROTOCOL_VIOLATION", "recyclesWorker": true },
+    { "code": "WORKER_EXITED", "recyclesWorker": true },
+    { "code": "DEADLINE_EXCEEDED", "recyclesWorker": true },
+    { "code": "CANCELLED", "recyclesWorker": true },
+    { "code": "BACKPRESSURE", "recyclesWorker": false },
+    { "code": "CLEANUP_FAILED", "recyclesWorker": false },
+    { "code": "SHUTDOWN", "recyclesWorker": false }
+  ]
+}

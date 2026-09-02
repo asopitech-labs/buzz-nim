@@ -789,7 +789,7 @@ export const WorkflowFormBuilder = React.forwardRef<
                       transition={
                         shouldReduceMotion
                           ? { duration: 0 }
-                          : { duration: 0.24, ease: [0.22, 1, 0.36, 1] }
+                          : { duration: 0.18, ease: [0.22, 1, 0.36, 1] }
                       }
                     >
                       <div className="relative flex min-w-0 flex-1 flex-col overflow-hidden rounded-xl bg-muted/40 [@container(max-width:58rem)]:bg-background [@container(max-width:58rem)]:shadow-2xl">

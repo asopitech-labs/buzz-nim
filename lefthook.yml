@@ -5,7 +5,7 @@
 # dorny/paths-filter and `scripts/check-file-sizes-core.mjs` `resolveBaseRef`.
 # Without it lefthook derives files from `git diff HEAD @{push}`, which after a
 # rebase or `git merge origin/main` includes everything main changed since the
-# branch's last push (firing mobile/desktop/rust lanes on unrelated pushes), and
+# branch's last push (firing desktop/rust lanes on unrelated pushes), and
 # on a brand-new branch falls back to a stale remote's tip (a full-suite run).
 # The three-dot diff scopes every lane to what this branch actually changed.
 # Both the three-dot diff and lefthook's stock discovery inspect the checked-out
@@ -13,13 +13,13 @@
 # tree, not the pushed commit — the always-on `push-head-scope` lane warns when
 # they diverge and CI remains the authoritative gate for that ref.
 # Deliberate deviations:
-# - The `.github/workflows/ci.yml` path CI adds to its `rust`/`mobile` filters
+# - The `.github/workflows/ci.yml` path CI adds to its `nim`/`boundary`/`rust` filters
 #   is omitted; a CI-workflow-only edit doesn't need a local test run.
 # - `desktop-check`/`desktop-typecheck`/`desktop-test` don't trigger on `rust`
 #   changes, though CI's Desktop Core job does. Those commands are pure TS
 #   (biome + tsc + node:test) with no Rust dependency, so the extra trigger
 #   would be spurious locally.
-# - The repository-wide `file-size-check` is deliberately unfiltered. Its own
+# - The active-product `file-size-check` is deliberately unfiltered. Its own
 #   merge-base diff is the path filter; duplicating its governed roots here is
 #   the coverage drift this gate is intended to prevent.
 # - Deletion-only surface changes do not trigger local hooks: lefthook 2.1.x
@@ -35,9 +35,7 @@
 # (1) sets `LEFTHOOK_BIN` to the Hermit-pinned `bin/lefthook` (2.1.3) so a push
 # from any worktree runs the pinned binary even when a different lefthook is on
 # PATH, and (2) prepends the repo's Hermit `bin/` to `PATH` so every lane
-# subprocess (`just mobile-check` -> flutter/dart, etc.) resolves the pinned
-# toolchain regardless of the invoking shell — the hook self-pins, so a Homebrew
-# flutter/dart ahead on PATH can no longer cause false lane failures.
+# subprocess resolves the pinned toolchain regardless of the invoking shell.
 rc: bin/.lefthookrc
 
 pre-commit:
@@ -62,10 +60,6 @@ pre-commit:
       glob: ["web/**"]
       run: just web-fix
       stage_fixed: true
-    mobile-fmt:
-      glob: ["mobile/**"]
-      run: just mobile-fmt
-      stage_fixed: true
 
 # Appends the DCO Signed-off-by trailer the required "DCO Check" enforces.
 # `--if-exists doNothing` makes it idempotent and preserves an existing
@@ -88,12 +82,21 @@ pre-push:
       use_stdin: true
       run: ./scripts/check-push-head-scope.sh
     file-size-check:
-      # The ratchet computes its own merge-base diff, so path filtering here
+      # The active-product ratchet computes its own merge-base diff, so path filtering here
       # would only duplicate policy and create another place for coverage drift.
       run: just file-size-check
+    nim-checks:
+      files: git diff --name-only origin/main...HEAD
+      glob: ["nim/**", "hermit-packages/nim.hcl", "bin/hermit.hcl", "bin/.nim-*.pkg", "bin/nim*", "bin/atlas", "bin/testament", "scripts/measure-nim-feedback.sh", "scripts/test-nim-bootstrap-contract.sh", "Justfile"]
+      run: just nim-ci
+    boundary-checks:
+      files: git diff --name-only origin/main...HEAD
+      glob: ["nim/nimino_core/nimino_core.nimble", "nim/nimino_core/nim.cfg", "nim/nimino_core/src/nimino_core.nim", "nim/nimino_core/src/nimino_core_worker.nim", "nim/nimino_core/src/nimino_core/boundary/**", "nim/nimino_core/src/nimino_core/domain/event_policy.nim", "nim/nimino_core/src/nimino_core/domain/community_policy.nim", "nim/nimino_core/src/nimino_core/domain/membership_policy.nim", "nim/nimino_core/src/nimino_core/domain/dm_policy.nim", "nim/nimino_core/src/nimino_core/domain/moderation_policy.nim", "nim/nimino_core/src/nimino_core/domain/workflow_policy.nim", "nim/nimino_core/src/nimino_core/domain/cli_policy.nim", "nim/nimino_core/src/nimino_core/domain/agent_policy.nim", "nim/nimino_core/src/nimino_core/domain/cluster_lifecycle.nim", "nim/nimino_core/src/nimino_core/domain/control_state_machine.nim", "nim/nimino_core/src/nimino_core/domain/admission_policy.nim", "nim/nimino_core/src/nimino_core/domain/ephemeral_policy.nim", "nim/nimino_core/src/nimino_core/domain/lease_fencing.nim", "nim/nimino_core/src/nimino_core/domain/effect_ledger.nim", "nim/nimino_core/src/nimino_core/domain/object_sync_policy.nim", "nim/nimino_core/src/nimino_core/domain/projection_lifecycle.nim", "nim/nimino_core/src/nimino_core/domain/sync_protocol.nim", "nim/nimino_core/tests/test_boundary_protocol.nim", "nim/nimino_core/tests/test_event_policy.nim", "nim/nimino_core/tests/test_community_policy.nim", "nim/nimino_core/tests/test_membership_policy.nim", "nim/nimino_core/tests/test_dm_policy.nim", "nim/nimino_core/tests/test_moderation_policy.nim", "nim/nimino_core/tests/test_workflow_policy.nim", "nim/nimino_core/tests/test_cli_policy.nim", "nim/nimino_core/tests/test_agent_policy.nim", "nim/nimino_core/tests/test_cluster_lifecycle.nim", "nim/nimino_core/tests/test_control_state_machine.nim", "nim/nimino_core/tests/test_admission_policy.nim", "nim/nimino_core/tests/test_ephemeral_policy.nim", "nim/nimino_core/tests/test_lease_fencing.nim", "nim/nimino_core/tests/test_effect_ledger.nim", "nim/nimino_core/tests/test_object_sync_policy.nim", "nim/nimino_core/tests/test_projection_lifecycle.nim", "nim/nimino_core/tests/test_sync_protocol.nim", "hermit-packages/nim.hcl", "bin/hermit.hcl", "bin/.nim-*.pkg", "bin/nim*", "bin/atlas", "bin/testament", "contracts/nim-rust-boundary/**", "contracts/nimino-event/**", "contracts/nimino-community/**", "contracts/nimino-membership/**", "contracts/nimino-dm/**", "contracts/nimino-moderation/**", "contracts/nimino-workflow/**", "contracts/nimino-cli/**", "contracts/nimino-agent/**", "contracts/nimino-cluster/**", "contracts/nimino-cluster-scenarios/**", "contracts/nimino-control-state/**", "contracts/nimino-projection/**", "contracts/nimino-sync-scenarios/**", "contracts/nimino-wsl-chirps/**", "crates/nimino-boundary/**", "crates/nimino-chirps/**", "crates/nimino-sync/**", "crates/nimino-control/**", "crates/nimino-object-store/**", "crates/nimino-data-ops/**", "crates/nimino-workflow/src/effect_ledger.rs", "crates/nimino-workflow/Cargo.toml", "crates/nimino-store/**", "scripts/test-nim-boundary-contract.sh", "scripts/test-nimino-event-contract.mjs", "scripts/test-nimino-community-contract.mjs", "scripts/test-nimino-membership-contract.mjs", "scripts/test-nimino-dm-contract.mjs", "scripts/test-nimino-moderation-contract.mjs", "scripts/test-nimino-workflow-contract.mjs", "scripts/test-nimino-cli-contract.mjs", "scripts/test-nimino-agent-contract.mjs", "scripts/test-nimino-cluster-contract.mjs", "scripts/test-nimino-cluster-scenario-contract.mjs", "scripts/test-nimino-control-state-contract.mjs", "scripts/test-nimino-projection-contract.mjs", "scripts/test-nimino-sync-scenario-contract.mjs", "scripts/test-nimino-wsl-chirps-contract.mjs", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "Justfile"]
+      run: just nim-boundary-ci
     rust-tests:
       files: git diff --name-only origin/main...HEAD
       glob: ["crates/**", "migrations/**", "schema/**", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "deny.toml", "scripts/run-tests.sh", "Justfile"]
+      exclude: ["crates/nimino-boundary/**", "crates/nimino-sync/**", "crates/nimino-control/**", "crates/nimino-object-store/**"]
       run: just test-unit
     desktop-check:
       files: git diff --name-only origin/main...HEAD
@@ -116,10 +119,65 @@ pre-push:
       # serially so parallel pre-push hooks do not contend for Cargo's lock.
       files: git diff --name-only origin/main...HEAD
       glob: ["desktop/src-tauri/**", "crates/**", "migrations/**", "schema/**", "Cargo.toml", "Cargo.lock", "rust-toolchain.toml", "deny.toml", "scripts/run-tests.sh", "Justfile"]
+      exclude: ["crates/nimino-boundary/**"]
       run: just desktop-tauri-clippy && just desktop-tauri-test
-    mobile-checks:
-      # Run analysis and tests serially so parallel pre-push hooks do not
-      # contend for shared Flutter state (.dart_tool, shader bundle).
+    tauri-adapter-contract:
       files: git diff --name-only origin/main...HEAD
-      glob: ["mobile/**"]
-      run: just mobile-check && just mobile-test
+      glob: ["desktop/src-tauri/src/**", "desktop/src-tauri/Cargo.toml", "contracts/nimino-tauri/**", "scripts/test-nimino-tauri-contract.mjs", "Justfile"]
+      run: just nimino-tauri-contract
+    rust-responsibility-contract:
+      files: git diff --name-only origin/main...HEAD
+      glob: ["**/*.rs", "**/Cargo.toml", "Cargo.lock", "contracts/rust-responsibility/**", "contracts/nim-rust-boundary/**", "contracts/nimino-tauri/**", "nim/nimino_core/src/nimino_core/domain/**", "scripts/test-rust-responsibility-contract.mjs", ".github/workflows/ci.yml", "Justfile"]
+      run: just rust-responsibility-contract
+    cutover-rehearsal-contract:
+      files: git diff --name-only origin/main...HEAD
+      glob: ["contracts/nimino-cutover-rehearsal/**", "contracts/nimino-data-ops/**", "contracts/nimino-promotion/**", "crates/nimino-data-ops/**", "scripts/test-nimino-cutover-rehearsal.mjs", "scripts/test-nimino-data-ops-contract.mjs", "scripts/test-nimino-promotion.mjs", "Justfile"]
+      run: just nimino-cutover-rehearsal-contract
+    release-set-contract:
+      files: git diff --name-only origin/main...HEAD
+      glob: ["Cargo.toml", "Cargo.lock", "nim/nimino_core/**", "contracts/chirps-v0.6.3.json", "contracts/nim-rust-boundary/**", "contracts/nimino-release-set/**", "scripts/nimino-release-set.mjs", "scripts/test-nimino-release-set.mjs", "Justfile"]
+      run: just release-set-contract
+    relay-release-contract:
+      files: git diff --name-only origin/main...HEAD
+      glob: ["Dockerfile", "deploy/charts/nimino/**", "deploy/compose/**", "contracts/nimino-naming-v1.json", "contracts/nimino-release-set/**", "contracts/nimino-relay-release/**", "scripts/nimino-release-set.mjs", "scripts/test-nimino-relay-release-contract.mjs", ".github/workflows/nimino-relay-release.yml", ".github/workflows/docker.yml", ".github/workflows/helm-chart.yml", "Justfile"]
+      run: just relay-release-contract
+    platform-release-contract:
+      files: git diff --name-only origin/main...HEAD
+      glob: ["contracts/nimino-platform-release/**", "contracts/nimino-release-set/**", "contracts/nimino-wsl-bundle/**", "scripts/nimino-platform-artifacts.mjs", "scripts/nimino-wsl-bundle.mjs", "scripts/nimino-wsl-service.sh", "scripts/test-nimino-platform-release.mjs", ".github/workflows/nimino-platform-release.yml", ".github/workflows/nimino-relay-release.yml", "desktop/scripts/build-release-config.mjs", "Justfile"]
+      run: just platform-release-contract
+    promotion-contract:
+      files: git diff --name-only origin/main...HEAD
+      glob: ["contracts/nimino-promotion/**", "contracts/nimino-release-set/**", "contracts/nimino-platform-release/**", "scripts/nimino-release-supply-chain.mjs", "scripts/nimino-promote-release.mjs", "scripts/test-nimino-release-supply-chain.mjs", "scripts/test-nimino-promotion.mjs", ".github/workflows/nimino-platform-release.yml", ".github/workflows/nimino-promote.yml", "Justfile"]
+      run: just promotion-contract
+    legacy-release-deletion-contract:
+      files: git diff --name-only origin/main...HEAD
+      glob: [".github/workflows/**", "contracts/nimino-legacy-release/**", "scripts/**", "deploy/**", "AGENTS.md", "CONTRIBUTING.md", "README.md", "RELEASING.md", "SECURITY.md", "Justfile"]
+      run: just legacy-release-deletion-contract
+    cutover-readiness-contract:
+      files: git diff --name-only origin/main...HEAD
+      glob: ["contracts/**", "nim/**", "crates/**", ".github/workflows/**", "scripts/**", "Justfile"]
+      run: just cutover-readiness-contract
+    cutover-certification-contract:
+      files: git diff --name-only origin/main...HEAD
+      glob: ["contracts/nimino-cutover-certification/**", "contracts/nimino-protocol-v1.json", "contracts/nimino-mobile-removal-v1.json", "contracts/nimino-legacy-release/**", ".github/workflows/ci.yml", ".github/workflows/nimino-relay-release.yml", ".github/workflows/nimino-platform-release.yml", ".github/workflows/nimino-promote.yml", "scripts/test-nimino-cutover-certification.mjs", "Justfile"]
+      run: just cutover-certification-contract
+    agent-bundle-contract:
+      files: git diff --name-only origin/main...HEAD
+      glob: ["contracts/nimino-release-set/**", "contracts/nimino-agent-bundle/**", "scripts/nimino-release-set.mjs", "scripts/nimino-agent-bundle.mjs", "scripts/test-nimino-agent-bundle.mjs", "Justfile"]
+      run: just agent-bundle-contract
+    wsl-service-contract:
+      files: git diff --name-only origin/main...HEAD
+      glob: ["contracts/wsl-support-v1.json", "contracts/nimino-wsl-service/**", "scripts/nimino-wsl-service.sh", "scripts/test-nimino-wsl-service.mjs", "Justfile"]
+      run: just wsl-service-contract
+    wsl-launcher-contract:
+      files: git diff --name-only origin/main...HEAD
+      glob: ["contracts/wsl-support-v1.json", "contracts/nimino-wsl-launcher/**", "crates/nimino-wsl-launcher/**", "desktop/src-tauri/src/app_state*", "desktop/src-tauri/src/commands/identity.rs", "desktop/src-tauri/src/commands/pairing.rs", "desktop/src-tauri/src/identity_storage.rs", "desktop/src-tauri/src/secret_store.rs", "scripts/test-nimino-wsl-launcher-contract.mjs", "Justfile"]
+      run: just wsl-launcher-contract
+    wsl-chirps-contract:
+      files: git diff --name-only origin/main...HEAD
+      glob: ["contracts/wsl-support-v1.json", "contracts/nimino-wsl-chirps/**", "contracts/chirps-v0.6.3.json", "crates/nimino-chirps/**", "scripts/test-nimino-wsl-chirps-contract.mjs", "Justfile"]
+      run: just wsl-chirps-contract
+    wsl-bundle-contract:
+      files: git diff --name-only origin/main...HEAD
+      glob: ["contracts/wsl-support-v1.json", "contracts/nimino-release-set/**", "contracts/nimino-agent-bundle/**", "contracts/nimino-wsl-service/**", "contracts/nimino-wsl-bundle/**", "scripts/nimino-release-set.mjs", "scripts/nimino-agent-bundle.mjs", "scripts/nimino-wsl-service.sh", "scripts/nimino-wsl-bundle.mjs", "scripts/test-nimino-wsl-service.mjs", "scripts/test-nimino-wsl-bundle-contract.mjs", "Justfile"]
+      run: just wsl-bundle-contract

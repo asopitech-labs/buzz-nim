@@ -1,0 +1,16 @@
+# HA shape: three stateful relay nodes with per-ordinal sync storage.
+relayUrl: wss://nimino.example.com
+ownerPubkey: "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"
+replicaCount: 3
+secrets:
+  existingSecret: nimino-secrets
+externalPostgresql:
+  url: "postgres://nimino:pw@postgres.example.com:5432/nimino"
+s3:
+  bucket: "nimino-media"
+persistence:
+  git:
+    size: 50Gi
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2

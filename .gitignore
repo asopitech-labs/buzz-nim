@@ -30,6 +30,7 @@ Thumbs.db
 
 # Scratch / working files (AI reviews, notes, drafts)
 .scratch/
+/.spec-workflow/
 
 # Playwright artifacts
 playwright-report/
@@ -47,9 +48,9 @@ node_modules/
 .sqlx/
 
 # SQLite database (created by relay in CWD)
-buzz.db
-buzz.db-wal
-buzz.db-shm
+nimino.db
+nimino.db-wal
+nimino.db-shm
 
 # Docker volumes (if mounted locally)
 mysql-data/

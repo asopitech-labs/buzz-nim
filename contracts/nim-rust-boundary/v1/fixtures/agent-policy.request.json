@@ -1,0 +1,17 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "agent-policy-fixture",
+  "operation": "domain.agent.policy",
+  "payload": {
+    "decision": "lifecycle",
+    "request": {
+      "state": {"phase": "running", "attempt": 0, "retryAtMs": 0, "turnId": "turn-1"},
+      "command": "cancel",
+      "commandAttempt": 0,
+      "commandTurnId": "turn-1",
+      "pendingWork": true,
+      "nowMs": 100
+    }
+  }
+}

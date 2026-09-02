@@ -3,12 +3,12 @@
 # With a bare `[workspace]` and no `members`, `cargo test/check --workspace`
 # expands to a set that excludes this crate, and its gates pass green-and-empty
 # over a real defect. Verified: Sami Arm A/D, Dawn `.scratch/armA`.
-members = ["crates/buzz-terminal"]
+members = ["crates/nimino-terminal"]
 
 [package]
-name = "buzz-desktop"
+name = "nimino-desktop"
 version = "0.5.18"
-description = "Buzz desktop app"
+description = "Nimino desktop app"
 authors = ["you"]
 edition = "2021"
 
@@ -18,14 +18,14 @@ edition = "2021"
 # The `_lib` suffix may seem redundant but it is necessary
 # to make the lib name unique and wouldn't conflict with the bin name.
 # This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
-name = "buzz_lib"
+name = "nimino_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [features]
 default = ["system-keyring"]
 mesh-llm = ["dep:iroh", "dep:mesh-llm-sdk", "dep:mesh-llm-host-runtime", "dep:mesh-llm-client", "dep:mesh-llm-node", "dep:mesh-llm-system", "dep:mesh-llm-events"]
-# OS keyring backing for desktop secret storage (nsec private keys). When
-# disabled, secrets fall back to 0o600 files. On by default for real builds.
+# OS keyring backing for desktop secret storage (nsec private keys). Identity
+# persistence fails closed when this feature is disabled.
 system-keyring = ["dep:keyring"]
 
 [build-dependencies]
@@ -102,13 +102,13 @@ percent-encoding = "2"
 reqwest = { version = "0.13", features = ["json", "query", "stream", "blocking"] }
 rustls = { version = "0.23", default-features = false, features = ["aws_lc_rs", "std"] }
 url = "2"
-buzz_core_pkg = { package = "buzz-core", path = "../../crates/buzz-core" }
-buzz_persona_pkg = { package = "buzz-persona", path = "../../crates/buzz-persona" }
-buzz_sdk_pkg = { package = "buzz-sdk", path = "../../crates/buzz-sdk" }
-buzz_agent_pkg = { package = "buzz-agent", path = "../../crates/buzz-agent" }
-buzz_voice_pkg = { package = "buzz-voice", path = "../../crates/buzz-voice" }
-buzz_terminal = { package = "buzz-terminal", path = "crates/buzz-terminal" }
-buzz_ws_client_pkg = { package = "buzz-ws-client", path = "../../crates/buzz-ws-client" }
+nimino_core_pkg = { package = "nimino-core", path = "../../crates/nimino-core" }
+nimino_persona_pkg = { package = "nimino-persona", path = "../../crates/nimino-persona" }
+nimino_sdk_pkg = { package = "nimino-sdk", path = "../../crates/nimino-sdk" }
+nimino_agent_pkg = { package = "nimino-agent", path = "../../crates/nimino-agent" }
+nimino_voice_pkg = { package = "nimino-voice", path = "../../crates/nimino-voice" }
+nimino_terminal = { package = "nimino-terminal", path = "crates/nimino-terminal" }
+nimino_ws_client_pkg = { package = "nimino-ws-client", path = "../../crates/nimino-ws-client" }
 portable-pty = "0.9"
 iroh = { version = "1.0.2", optional = true }
 mesh-llm-sdk = { git = "https://github.com/Mesh-LLM/mesh-llm.git", tag = "v0.75.1", package = "mesh-llm-sdk", default-features = false, features = ["client", "serving"], optional = true }
@@ -155,4 +155,4 @@ tauri-utils = "2"
 tokio = { version = "1", features = ["test-util"] }
 # The relay's media validation, so the snapshot-sharing tests can prove the
 # full export → sanitize → relay-accept → import contract end to end.
-buzz_media_pkg = { package = "buzz-media", path = "../../crates/buzz-media" }
+nimino_media_pkg = { package = "nimino-media", path = "../../crates/nimino-media" }

@@ -21,12 +21,12 @@ use std::path::{Path, PathBuf};
 
 /// Sentinel path: `<app_data_dir.parent>/.<bundle_id>.reset-pending`
 /// where `bundle_id` is the file-name component of `app_data_dir`
-/// (e.g. `xyz.block.buzz.app` or `xyz.block.buzz.app.dev`).
+/// (e.g. `com.asopitech.nimino` or `com.asopitech.nimino.dev`).
 pub(crate) fn sentinel_path(app_data_dir: &Path) -> PathBuf {
     let bundle_id = app_data_dir
         .file_name()
         .and_then(|n| n.to_str())
-        .unwrap_or("buzz");
+        .unwrap_or("nimino");
     let name = format!(".{bundle_id}.reset-pending");
     match app_data_dir.parent() {
         Some(parent) => parent.join(name),
@@ -94,11 +94,7 @@ pub(crate) struct ResetOutcome {
 /// Wipe parameters assembled by `lib.rs` and passed into `run_boot_reset_with_keychain`.
 pub(crate) struct ResetContext<'a> {
     pub app_data_dir: &'a Path,
-    /// Legacy App Support dir for this build (Sprout import source). When
-    /// present and non-empty, wiped alongside `app_data_dir` to prevent
-    /// `migrate_legacy_app_data_dir` from restoring the old identity.
-    pub legacy_app_data_dir: Option<PathBuf>,
-    /// Nest dir (`~/.buzz` or `~/.buzz-dev`) scoped to this build's variant,
+    /// Nest dir (`~/.nimino` or `~/.nimino-dev`) scoped to this build's variant,
     /// injected so unit tests can override without touching the global OnceLock.
     pub nest_dir: Option<PathBuf>,
     pub keychain: &'a dyn ResetKeychain,
@@ -123,12 +119,10 @@ pub(crate) fn run_boot_reset(app_data_dir: &Path) -> ResetOutcome {
 
     let store = crate::secret_store::SecretStore::keyring(crate::app_state::keyring_service());
     let home_dir = dirs::home_dir();
-    let legacy_dir = crate::migration::legacy_app_data_dir(app_data_dir);
     let nest_dir = crate::managed_agents::nest_dir();
 
     let ctx = ResetContext {
         app_data_dir,
-        legacy_app_data_dir: legacy_dir,
         nest_dir,
         keychain: &store,
         home_dir,
@@ -146,7 +140,7 @@ fn trash_path(original: &Path) -> PathBuf {
         original
             .file_name()
             .and_then(|n| n.to_str())
-            .unwrap_or("buzz")
+            .unwrap_or("nimino")
     ))
 }
 
@@ -173,22 +167,11 @@ pub(crate) fn run_boot_reset_with_keychain(ctx: ResetContext<'_>) -> ResetOutcom
 
     if app_data_dir.exists() {
         if let Err(e) = rename_to_trash(app_data_dir) {
-            eprintln!("buzz-desktop reset: {e}");
+            eprintln!("nimino-desktop reset: {e}");
             return ResetOutcome {
                 completed: false,
                 failed: true,
             };
-        }
-    }
-
-    // ── Step 1b: rename legacy App Support dir (sprout import source) ────────
-    let trash_legacy: Option<PathBuf> = ctx.legacy_app_data_dir.as_ref().map(|l| trash_path(l));
-    if let Some(ref legacy) = ctx.legacy_app_data_dir {
-        if legacy.exists() {
-            if let Err(e) = rename_to_trash(legacy) {
-                eprintln!("buzz-desktop reset: {e}");
-                // Non-fatal for legacy dir — continue
-            }
         }
     }
 
@@ -197,12 +180,12 @@ pub(crate) fn run_boot_reset_with_keychain(ctx: ResetContext<'_>) -> ResetOutcom
         let bundle_id = app_data_dir
             .file_name()
             .and_then(|n| n.to_str())
-            .unwrap_or("buzz");
+            .unwrap_or("nimino");
         let webkit_dir = home.join("Library").join("WebKit").join(bundle_id);
         let tw = trash_path(&webkit_dir);
         if webkit_dir.exists() {
             if let Err(e) = rename_to_trash(&webkit_dir) {
-                eprintln!("buzz-desktop reset: {e}");
+                eprintln!("nimino-desktop reset: {e}");
                 // Non-fatal — continue
             }
         }
@@ -211,37 +194,29 @@ pub(crate) fn run_boot_reset_with_keychain(ctx: ResetContext<'_>) -> ResetOutcom
         None
     };
 
-    // ── Step 3: remove nest, ~/.sprout, ~/.config/buzz-agent, CLI symlink ────
+    // ── Step 3: remove nest, ~/.config/nimino-agent, and CLI symlink ──────────
     if let Some(ref nest) = ctx.nest_dir {
         let _ = std::fs::remove_dir_all(nest);
     }
     if let Some(ref home) = ctx.home_dir {
-        let _ = std::fs::remove_dir_all(home.join(".sprout"));
-        let _ = std::fs::remove_dir_all(home.join(".config").join("buzz-agent"));
+        let _ = std::fs::remove_dir_all(home.join(".config").join("nimino-agent"));
         let link_name = crate::managed_agents::cli_link_name(ctx.is_dev);
         let _ = std::fs::remove_file(home.join(".local").join("bin").join(link_name));
     }
 
     // ── Step 4: keychain — LAST so we can read keys before deleting ──────────
     if let Err(e) = ctx.keychain.delete_all_with_legacy() {
-        eprintln!("buzz-desktop reset: keychain delete: {e}");
+        eprintln!("nimino-desktop reset: keychain delete: {e}");
         // Keychain failure is fatal: keep sentinel, signal failure.
-        // Restore all three dirs so the app returns to a coherent pre-reset state.
+        // Restore the renamed directories so the app returns to a coherent pre-reset state.
         if trash_app.exists() {
             let _ = std::fs::rename(&trash_app, app_data_dir);
-        }
-        if let Some(ref legacy) = ctx.legacy_app_data_dir {
-            if let Some(ref tl) = trash_legacy {
-                if tl.exists() {
-                    let _ = std::fs::rename(tl, legacy);
-                }
-            }
         }
         if let Some(ref home) = ctx.home_dir {
             let bundle_id = app_data_dir
                 .file_name()
                 .and_then(|n| n.to_str())
-                .unwrap_or("buzz");
+                .unwrap_or("nimino");
             let webkit_dir = home.join("Library").join("WebKit").join(bundle_id);
             if let Some(ref tw) = trash_webkit {
                 if tw.exists() {
@@ -257,9 +232,6 @@ pub(crate) fn run_boot_reset_with_keychain(ctx: ResetContext<'_>) -> ResetOutcom
 
     // ── Step 5: sweep ALL reset trash (including from prior crashed boots) ───
     let _ = std::fs::remove_dir_all(&trash_app);
-    if let Some(ref tl) = trash_legacy {
-        let _ = std::fs::remove_dir_all(tl);
-    }
     if let Some(ref tw) = trash_webkit {
         let _ = std::fs::remove_dir_all(tw);
     }
@@ -267,28 +239,15 @@ pub(crate) fn run_boot_reset_with_keychain(ctx: ResetContext<'_>) -> ResetOutcom
     // ── Step 6: verify ────────────────────────────────────────────────────────
     let keychain_ok = ctx.keychain.verify_fully_wiped();
     let app_data_gone = !app_data_dir.exists();
-    let legacy_gone = ctx
-        .legacy_app_data_dir
-        .as_ref()
-        .map(|p| !p.exists())
-        .unwrap_or(true);
     let nest_gone = ctx.nest_dir.as_ref().map(|n| !n.exists()).unwrap_or(true);
     let trash_app_gone = !trash_app.exists();
-    let trash_legacy_gone = trash_legacy.as_ref().map(|p| !p.exists()).unwrap_or(true);
     let trash_webkit_gone = trash_webkit.as_ref().map(|p| !p.exists()).unwrap_or(true);
 
-    if !keychain_ok
-        || !app_data_gone
-        || !legacy_gone
-        || !nest_gone
-        || !trash_app_gone
-        || !trash_legacy_gone
-        || !trash_webkit_gone
-    {
+    if !keychain_ok || !app_data_gone || !nest_gone || !trash_app_gone || !trash_webkit_gone {
         eprintln!(
-            "buzz-desktop reset: verification failed (keychain_wiped={keychain_ok}, \
-             app_data_gone={app_data_gone}, legacy_gone={legacy_gone}, nest_gone={nest_gone}, \
-             trash_app_gone={trash_app_gone}, trash_legacy_gone={trash_legacy_gone}, \
+            "nimino-desktop reset: verification failed (keychain_wiped={keychain_ok}, \
+             app_data_gone={app_data_gone}, nest_gone={nest_gone}, \
+             trash_app_gone={trash_app_gone}, \
              trash_webkit_gone={trash_webkit_gone})"
         );
         return ResetOutcome {
@@ -299,7 +258,7 @@ pub(crate) fn run_boot_reset_with_keychain(ctx: ResetContext<'_>) -> ResetOutcom
 
     // ── Step 7: delete sentinel → success ────────────────────────────────────
     if let Err(e) = delete_sentinel(app_data_dir) {
-        eprintln!("buzz-desktop reset: delete sentinel: {e}");
+        eprintln!("nimino-desktop reset: delete sentinel: {e}");
         // Sentinel not deleted — keep failed=false so the app boots into
         // onboarding, but on next boot the reset will retry (idempotent).
     }
@@ -391,7 +350,7 @@ mod tests {
         let dir = tmp
             .path()
             .join("Application Support")
-            .join("xyz.block.buzz.app");
+            .join("com.asopitech.nimino");
         std::fs::create_dir_all(&dir).unwrap();
         dir
     }
@@ -403,10 +362,9 @@ mod tests {
     ) -> ResetContext<'a> {
         ResetContext {
             app_data_dir,
-            legacy_app_data_dir: None,
             nest_dir: None,
             keychain,
-            home_dir: None, // skip nest/sprout/CLI ops in unit tests
+            home_dir: None, // skip nest and CLI operations in unit tests
             is_dev,
         }
     }
@@ -433,20 +391,11 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let app_data = make_app_data(&tmp);
 
-        // Also create a legacy App Support dir (sprout import source).
-        let legacy_dir = tmp
-            .path()
-            .join("Application Support")
-            .join("xyz.block.sprout.app");
-        std::fs::create_dir_all(&legacy_dir).unwrap();
-        std::fs::write(legacy_dir.join("identity.key"), b"old-identity").unwrap();
-
         write_sentinel(&app_data).unwrap();
         let kc = FakeKeychain::ok();
 
         let ctx = ResetContext {
             app_data_dir: &app_data,
-            legacy_app_data_dir: Some(legacy_dir.clone()),
             nest_dir: None,
             keychain: &kc,
             home_dir: None,
@@ -458,7 +407,6 @@ mod tests {
         assert!(outcome.completed, "should complete");
         assert!(!outcome.failed, "should not fail");
         assert!(!app_data.exists(), "app-data must be gone");
-        assert!(!legacy_dir.exists(), "legacy app-data must be gone");
         assert!(!sentinel_path(&app_data).exists(), "sentinel must be gone");
         assert_eq!(kc.delete_calls.get(), 1, "keychain deleted once");
     }
@@ -564,22 +512,21 @@ mod tests {
         let tmp = TempDir::new().unwrap();
 
         // Create both nests.
-        let dev_nest = tmp.path().join(".buzz-dev");
-        let prod_nest = tmp.path().join(".buzz");
+        let dev_nest = tmp.path().join(".nimino-dev");
+        let prod_nest = tmp.path().join(".nimino");
         std::fs::create_dir_all(&dev_nest).unwrap();
         std::fs::create_dir_all(&prod_nest).unwrap();
 
         let app_data = tmp
             .path()
             .join("Application Support")
-            .join("xyz.block.buzz.app.dev");
+            .join("com.asopitech.nimino.dev");
         std::fs::create_dir_all(&app_data).unwrap();
         write_sentinel(&app_data).unwrap();
 
         let kc = FakeKeychain::ok();
         let ctx = ResetContext {
             app_data_dir: &app_data,
-            legacy_app_data_dir: None,
             nest_dir: Some(dev_nest.clone()),
             keychain: &kc,
             home_dir: None,
@@ -600,22 +547,21 @@ mod tests {
         let tmp = TempDir::new().unwrap();
 
         // Create both nests.
-        let dev_nest = tmp.path().join(".buzz-dev");
-        let prod_nest = tmp.path().join(".buzz");
+        let dev_nest = tmp.path().join(".nimino-dev");
+        let prod_nest = tmp.path().join(".nimino");
         std::fs::create_dir_all(&dev_nest).unwrap();
         std::fs::create_dir_all(&prod_nest).unwrap();
 
         let app_data = tmp
             .path()
             .join("Application Support")
-            .join("xyz.block.buzz.app");
+            .join("com.asopitech.nimino");
         std::fs::create_dir_all(&app_data).unwrap();
         write_sentinel(&app_data).unwrap();
 
         let kc = FakeKeychain::ok();
         let ctx = ResetContext {
             app_data_dir: &app_data,
-            legacy_app_data_dir: None,
             nest_dir: Some(prod_nest.clone()),
             keychain: &kc,
             home_dir: None,
@@ -627,38 +573,6 @@ mod tests {
         assert!(outcome.completed, "wipe must complete");
         assert!(!prod_nest.exists(), "prod nest must be wiped");
         assert!(dev_nest.exists(), "dev nest must survive");
-    }
-
-    // ── Test 8: legacy app-data removed on reset ──────────────────────────────
-
-    #[test]
-    fn test_legacy_app_data_removed_on_reset() {
-        let tmp = TempDir::new().unwrap();
-        let app_data = make_app_data(&tmp);
-
-        // Seed a legacy sprout dir with data that would be re-imported.
-        let legacy_dir = tmp
-            .path()
-            .join("Application Support")
-            .join("xyz.block.sprout.app");
-        std::fs::create_dir_all(legacy_dir.join("agents")).unwrap();
-        std::fs::write(legacy_dir.join("identity.key"), b"sprout-nsec").unwrap();
-
-        write_sentinel(&app_data).unwrap();
-        let kc = FakeKeychain::ok();
-        let ctx = ResetContext {
-            app_data_dir: &app_data,
-            legacy_app_data_dir: Some(legacy_dir.clone()),
-            nest_dir: None,
-            keychain: &kc,
-            home_dir: None,
-            is_dev: false,
-        };
-
-        let outcome = run_boot_reset_with_keychain(ctx);
-
-        assert!(outcome.completed, "reset must complete");
-        assert!(!legacy_dir.exists(), "legacy app-data dir must be removed");
     }
 
     // ── Test 9: unknown error during delete → failed, sentinel kept ────────
@@ -715,23 +629,22 @@ mod tests {
         let app_data = tmp
             .path()
             .join("Application Support")
-            .join("xyz.block.buzz.app.dev");
+            .join("com.asopitech.nimino.dev");
         std::fs::create_dir_all(&app_data).unwrap();
         write_sentinel(&app_data).unwrap();
 
-        // Seed prod ~/.buzz/.repos-dir so the migration has something to copy.
+        // Seed prod ~/.nimino/.repos-dir so the migration has something to copy.
         let home = tmp.path().join("home");
-        let prod_nest = home.join(".buzz");
+        let prod_nest = home.join(".nimino");
         std::fs::create_dir_all(&prod_nest).unwrap();
         std::fs::write(prod_nest.join(".repos-dir"), "/some/workspace").unwrap();
 
-        let dev_nest = tmp.path().join(".buzz-dev");
+        let dev_nest = tmp.path().join(".nimino-dev");
 
         // Run a real reset and take the REAL outcome.completed.
         let kc = FakeKeychain::ok();
         let ctx = ResetContext {
             app_data_dir: &app_data,
-            legacy_app_data_dir: None,
             nest_dir: Some(dev_nest.clone()),
             keychain: &kc,
             home_dir: None,
@@ -750,7 +663,7 @@ mod tests {
         // Arm 2 (positive control): non-reset dev boot → dev nest IS created
         // with .repos-dir copied. This proves the test would have caught the
         // pass-3 resurrection live.
-        let dev_nest_2 = tmp.path().join(".buzz-dev-control");
+        let dev_nest_2 = tmp.path().join(".nimino-dev-control");
         crate::migration::maybe_migrate_dev_repos_dir(true, false, &home, &dev_nest_2);
         assert!(
             dev_nest_2.join(".repos-dir").exists(),
@@ -763,7 +676,7 @@ mod tests {
         );
 
         // Arm 3: prod build (is_dev=false) → nothing created regardless.
-        let dev_nest_3 = tmp.path().join(".buzz-dev-prod");
+        let dev_nest_3 = tmp.path().join(".nimino-dev-prod");
         crate::migration::maybe_migrate_dev_repos_dir(false, false, &home, &dev_nest_3);
         assert!(
             !dev_nest_3.join(".repos-dir").exists(),
@@ -777,13 +690,13 @@ mod tests {
     fn test_crash_retry_cleans_prior_deterministic_trash() {
         let tmp = TempDir::new().unwrap();
         let app_support = tmp.path().join("Application Support");
-        let app_data = app_support.join("xyz.block.buzz.app");
+        let app_data = app_support.join("com.asopitech.nimino");
         std::fs::create_dir_all(&app_data).unwrap();
         write_sentinel(&app_data).unwrap();
 
         // Simulate a prior crashed boot: originals absent, deterministic trash
         // present from the crash (as if the process renamed then died).
-        let trash_app_dir = app_support.join("xyz.block.buzz.app.reset-trash");
+        let trash_app_dir = app_support.join("com.asopitech.nimino.reset-trash");
         std::fs::create_dir_all(&trash_app_dir).unwrap();
         std::fs::write(trash_app_dir.join("identity.key"), b"old-key").unwrap();
 
@@ -805,19 +718,15 @@ mod tests {
         );
     }
 
-    // ── Test 13: keychain-fail restores all dirs, retry cleans trash ──────
+    // ── Test 13: keychain-fail restores state, retry cleans trash ────────
 
     #[test]
-    fn test_keychain_fail_restores_all_then_retry_cleans() {
+    fn test_keychain_fail_restores_app_then_retry_cleans() {
         let tmp = TempDir::new().unwrap();
         let app_support = tmp.path().join("Application Support");
-        let app_data = app_support.join("xyz.block.buzz.app");
+        let app_data = app_support.join("com.asopitech.nimino");
         std::fs::create_dir_all(&app_data).unwrap();
         std::fs::write(app_data.join("config.json"), b"{}").unwrap();
-
-        let legacy = app_support.join("xyz.block.sprout.app");
-        std::fs::create_dir_all(&legacy).unwrap();
-        std::fs::write(legacy.join("identity.key"), b"sprout-key").unwrap();
 
         write_sentinel(&app_data).unwrap();
 
@@ -825,7 +734,6 @@ mod tests {
         let kc1 = FakeKeychain::fail("keychain locked");
         let ctx1 = ResetContext {
             app_data_dir: &app_data,
-            legacy_app_data_dir: Some(legacy.clone()),
             nest_dir: None,
             keychain: &kc1,
             home_dir: Some(tmp.path().to_path_buf()),
@@ -837,10 +745,6 @@ mod tests {
             app_data.exists(),
             "app-data must be restored after keychain fail"
         );
-        assert!(
-            legacy.exists(),
-            "legacy dir must be restored after keychain fail"
-        );
         assert!(sentinel_path(&app_data).exists(), "sentinel survives");
 
         // Second attempt: keychain succeeds → everything cleaned including
@@ -848,7 +752,6 @@ mod tests {
         let kc2 = FakeKeychain::ok();
         let ctx2 = ResetContext {
             app_data_dir: &app_data,
-            legacy_app_data_dir: Some(legacy.clone()),
             nest_dir: None,
             keychain: &kc2,
             home_dir: Some(tmp.path().to_path_buf()),
@@ -857,11 +760,8 @@ mod tests {
         let second = run_boot_reset_with_keychain(ctx2);
         assert!(second.completed, "second attempt must complete");
         assert!(!app_data.exists(), "app-data must be gone");
-        assert!(!legacy.exists(), "legacy must be gone");
         // No trash directories should remain.
-        let trash_app = app_support.join("xyz.block.buzz.app.reset-trash");
-        let trash_legacy = app_support.join("xyz.block.sprout.app.reset-trash");
+        let trash_app = app_support.join("com.asopitech.nimino.reset-trash");
         assert!(!trash_app.exists(), "app trash must be cleaned");
-        assert!(!trash_legacy.exists(), "legacy trash must be cleaned");
     }
 }

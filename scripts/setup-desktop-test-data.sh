@@ -2,12 +2,12 @@
 
 set -euo pipefail
 
-DB_HOST="${BUZZ_DB_HOST:-127.0.0.1}"
-DB_PORT="${BUZZ_DB_PORT:-5432}"
-DB_USER="${BUZZ_DB_USER:-buzz}"
-DB_PASS="${BUZZ_DB_PASS:-buzz_dev}"
-DB_NAME="${BUZZ_DB_NAME:-buzz}"
-DB_DOCKER_CONTAINER="${BUZZ_DB_DOCKER_CONTAINER:-buzz-postgres}"
+DB_HOST="${NIMINO_DB_HOST:-127.0.0.1}"
+DB_PORT="${NIMINO_DB_PORT:-5432}"
+DB_USER="${NIMINO_DB_USER:-nimino}"
+DB_PASS="${NIMINO_DB_PASS:-nimino_dev}"
+DB_NAME="${NIMINO_DB_NAME:-nimino}"
+DB_DOCKER_CONTAINER="${NIMINO_DB_DOCKER_CONTAINER:-nimino-postgres}"
 
 SYSTEM_PUBKEY="0000000000000000000000000000000000000000000000000000000000000000"
 ALICE_PUBKEY="953d3363262e86b770419834c53d2446409db6d918a57f8f339d495d54ab001f"
@@ -54,7 +54,7 @@ run_sql "SELECT 1" >/dev/null
 # Host must match the relay's normalized bind host verbatim (non-default ports
 # are kept by normalize_host). Overridable so an isolated relay on an alternate
 # port can seed the same channels/members against its own tenant.
-COMMUNITY_HOST="${BUZZ_COMMUNITY_HOST:-localhost:3000}"
+COMMUNITY_HOST="${NIMINO_COMMUNITY_HOST:-localhost:3000}"
 COMMUNITY_HOST_SQL="${COMMUNITY_HOST//\'/\'\'}"
 
 run_sql "
@@ -75,15 +75,15 @@ if [[ ! "${COMMUNITY_ID}" =~ ^[0-9a-fA-F-]{36}$ ]]; then
   exit 1
 fi
 
-UUID_GENERAL=$(uuid5_hex "buzz.channel.general")
-UUID_RANDOM=$(uuid5_hex "buzz.channel.random")
-UUID_ENGINEERING=$(uuid5_hex "buzz.channel.engineering")
-UUID_AGENTS=$(uuid5_hex "buzz.channel.agents")
-UUID_WATERCOOLER=$(uuid5_hex "buzz.channel.watercooler")
-UUID_ANNOUNCEMENTS=$(uuid5_hex "buzz.channel.announcements")
-UUID_DM_ALICE_TYLER=$(uuid5_hex "buzz.channel.dm.alice-tyler")
-UUID_DM_BOB_TYLER=$(uuid5_hex "buzz.channel.dm.bob-tyler")
-UUID_DM_BOB_CHARLIE_TYLER=$(uuid5_hex "buzz.channel.dm.bob-charlie-tyler")
+UUID_GENERAL=$(uuid5_hex "nimino.channel.general")
+UUID_RANDOM=$(uuid5_hex "nimino.channel.random")
+UUID_ENGINEERING=$(uuid5_hex "nimino.channel.engineering")
+UUID_AGENTS=$(uuid5_hex "nimino.channel.agents")
+UUID_WATERCOOLER=$(uuid5_hex "nimino.channel.watercooler")
+UUID_ANNOUNCEMENTS=$(uuid5_hex "nimino.channel.announcements")
+UUID_DM_ALICE_TYLER=$(uuid5_hex "nimino.channel.dm.alice-tyler")
+UUID_DM_BOB_TYLER=$(uuid5_hex "nimino.channel.dm.bob-tyler")
+UUID_DM_BOB_CHARLIE_TYLER=$(uuid5_hex "nimino.channel.dm.bob-charlie-tyler")
 
 run_sql "
 INSERT INTO channels

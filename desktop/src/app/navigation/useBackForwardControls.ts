@@ -17,7 +17,7 @@ type RouterHistoryState = {
   key?: string;
 };
 
-export function useBackForwardControls() {
+export function useBackForwardControls(onLocalBack?: () => void) {
   const router = useRouter();
   const canGoBack = useCanGoBack();
   const locationState = useRouterState({
@@ -52,15 +52,20 @@ export function useBackForwardControls() {
     });
   }, [locationIndex, locationKey]);
 
-  const canGoForward = locationIndex < maxIndex;
+  const canGoForward = !onLocalBack && locationIndex < maxIndex;
 
   const goBack = React.useCallback(() => {
+    if (onLocalBack) {
+      onLocalBack();
+      return;
+    }
+
     if (!canGoBack) {
       return;
     }
 
     router.history.back();
-  }, [canGoBack, router.history]);
+  }, [canGoBack, onLocalBack, router.history]);
 
   const goForward = React.useCallback(() => {
     if (!canGoForward) {
@@ -128,7 +133,7 @@ export function useBackForwardControls() {
   }, []);
 
   return {
-    canGoBack,
+    canGoBack: Boolean(onLocalBack) || canGoBack,
     canGoForward,
     goBack,
     goForward,

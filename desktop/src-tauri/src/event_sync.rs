@@ -84,11 +84,11 @@ pub fn migrate_personas_to_events(app: &tauri::AppHandle, keys: &nostr::Keys, db
         Ok(0) => {}
         Ok(migrated) => {
             eprintln!(
-                "buzz-desktop: persona-event-migration: {migrated} personas migrated to retention"
+                "nimino-desktop: persona-event-migration: {migrated} personas migrated to retention"
             );
         }
         Err(e) => {
-            eprintln!("buzz-desktop: persona-event-migration: {e}");
+            eprintln!("nimino-desktop: persona-event-migration: {e}");
         }
     }
 }
@@ -113,7 +113,7 @@ fn migrate_personas_in_dir_at(
         retention::{get_retained_event, open_retention_db, retain_event, RetainedEvent},
         AgentDefinition,
     };
-    use buzz_core_pkg::kind::KIND_PERSONA;
+    use nimino_core_pkg::kind::KIND_PERSONA;
     use nostr::JsonUtil;
 
     let pubkey = keys.public_key().to_hex();
@@ -177,7 +177,7 @@ fn migrate_personas_in_dir_at(
         scoped_record.shared = existing
             .as_ref()
             .and_then(|row| nostr::Event::from_json(&row.raw_event).ok())
-            .is_some_and(|event| buzz_core_pkg::kind::event_is_shared(&event));
+            .is_some_and(|event| nimino_core_pkg::kind::event_is_shared(&event));
         let event = build_persona_event(&scoped_record)
             .map_err(|e| format!("failed to build event for '{}': {e}", record.display_name))?
             .custom_created_at(monotonic_created_at(
@@ -244,7 +244,9 @@ pub fn migrate_teams_to_events(
     match migrate_teams_in_dir_at(&base_dir, keys, db_path) {
         Ok(0) => Ok(()),
         Ok(migrated) => {
-            eprintln!("buzz-desktop: team-event-migration: {migrated} teams migrated to retention");
+            eprintln!(
+                "nimino-desktop: team-event-migration: {migrated} teams migrated to retention"
+            );
             Ok(())
         }
         Err(e) => Err(format!("team-event-migration: {e}")),
@@ -272,7 +274,7 @@ fn migrate_teams_in_dir_at(
         team_events::build_team_event,
         TeamRecord,
     };
-    use buzz_core_pkg::kind::KIND_TEAM;
+    use nimino_core_pkg::kind::KIND_TEAM;
     use nostr::JsonUtil;
 
     let pubkey = keys.public_key().to_hex();

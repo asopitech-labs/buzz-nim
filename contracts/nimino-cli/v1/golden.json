@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "cases": [
+    {
+      "name": "local-pack-validation",
+      "invariant": "local commands require no relay identity",
+      "input": { "decision": "command", "path": "pack.validate" },
+      "expected": {
+        "decision": "command", "accepted": true, "error": "none",
+        "ioMode": "local", "requiresAuth": false,
+        "outputContract": "nimino.cli-output/v1", "policyOperation": "none"
+      }
+    },
+    {
+      "name": "relay-read",
+      "invariant": "read commands are authenticated but non-mutating",
+      "input": { "decision": "command", "path": "messages.search" },
+      "expected": {
+        "decision": "command", "accepted": true, "error": "none",
+        "ioMode": "relay_read", "requiresAuth": true,
+        "outputContract": "nimino.cli-output/v1",
+        "policyOperation": "domain.event.policy"
+      }
+    },
+    {
+      "name": "workflow-create",
+      "invariant": "workflow creation delegates domain validation to Nim",
+      "input": { "decision": "command", "path": "workflows.create" },
+      "expected": {
+        "decision": "command", "accepted": true, "error": "none",
+        "ioMode": "relay_write", "requiresAuth": true,
+        "outputContract": "nimino.cli-output/v1",
+        "policyOperation": "domain.workflow.policy"
+      }
+    },
+    {
+      "name": "workflow-delete",
+      "invariant": "workflow deletion uses canonical event deletion policy",
+      "input": { "decision": "command", "path": "workflows.delete" },
+      "expected": {
+        "decision": "command", "accepted": true, "error": "none",
+        "ioMode": "relay_write", "requiresAuth": true,
+        "outputContract": "nimino.cli-output/v1",
+        "policyOperation": "domain.event.policy"
+      }
+    },
+    {
+      "name": "dm-open-is-a-write",
+      "invariant": "opening a DM creates canonical state through the DM policy",
+      "input": { "decision": "command", "path": "dms.open" },
+      "expected": {
+        "decision": "command", "accepted": true, "error": "none",
+        "ioMode": "relay_write", "requiresAuth": true,
+        "outputContract": "nimino.cli-output/v1",
+        "policyOperation": "domain.dm.policy"
+      }
+    },
+    {
+      "name": "old-buzz-command-rejected",
+      "invariant": "the independent grammar has no Buzz alias",
+      "input": { "decision": "command", "path": "buzz.channels.list" },
+      "expected": {
+        "decision": "command", "accepted": false,
+        "error": "unknown_command", "ioMode": "local",
+        "requiresAuth": false, "outputContract": "nimino.cli-output/v1",
+        "policyOperation": "none"
+      }
+    },
+    {
+      "name": "usage-exit",
+      "invariant": "usage errors are stable JSON and exit one",
+      "input": {
+        "decision": "failure", "kind": "usage", "status": 0,
+        "transportRetryable": false
+      },
+      "expected": {
+        "decision": "failure", "category": "user_error", "exitCode": 1,
+        "retryable": false
+      }
+    },
+    {
+      "name": "auth-relay-exit",
+      "invariant": "relay authentication failures use the auth exit",
+      "input": {
+        "decision": "failure", "kind": "relay", "status": 403,
+        "transportRetryable": true
+      },
+      "expected": {
+        "decision": "failure", "category": "auth_error", "exitCode": 3,
+        "retryable": false
+      }
+    },
+    {
+      "name": "retryable-relay-exit",
+      "invariant": "only named transient relay statuses are retryable",
+      "input": {
+        "decision": "failure", "kind": "relay", "status": 503,
+        "transportRetryable": false
+      },
+      "expected": {
+        "decision": "failure", "category": "relay_error", "exitCode": 2,
+        "retryable": true
+      }
+    },
+    {
+      "name": "retryable-network-exit",
+      "invariant": "transport retry evidence is preserved for network failures",
+      "input": {
+        "decision": "failure", "kind": "network", "status": 0,
+        "transportRetryable": true
+      },
+      "expected": {
+        "decision": "failure", "category": "network_error", "exitCode": 2,
+        "retryable": true
+      }
+    },
+    {
+      "name": "delivery-unknown-never-retries",
+      "invariant": "non-idempotent ambiguous delivery never auto-retries",
+      "input": {
+        "decision": "failure", "kind": "delivery_unknown", "status": 0,
+        "transportRetryable": true
+      },
+      "expected": {
+        "decision": "failure", "category": "delivery_unknown", "exitCode": 2,
+        "retryable": false
+      }
+    },
+    {
+      "name": "write-conflict-exit",
+      "invariant": "write conflicts retain their distinct automation exit",
+      "input": {
+        "decision": "failure", "kind": "conflict", "status": 0,
+        "transportRetryable": false
+      },
+      "expected": {
+        "decision": "failure", "category": "conflict", "exitCode": 5,
+        "retryable": false
+      }
+    }
+  ]
+}

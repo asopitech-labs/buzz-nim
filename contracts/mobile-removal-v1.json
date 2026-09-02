@@ -1,0 +1,379 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "mobile-removal-v1",
+  "issue": 18,
+  "phase": "removed",
+  "expectedCounts": { "mobileFiles": 0, "externalReferences": 62 },
+  "phaseTransitionOwner": 33,
+  "physicalDeletionOwner": 33,
+  "retiredPushAllowlist": [
+    { "path": "CHANGELOG.md", "occurrences": 1, "reason": "immutable release history" },
+    { "path": "crates/nimino-db/src/migration.rs", "occurrences": 26, "reason": "migration ledger assertions and retirement upgrade test" },
+    { "path": "crates/nimino-relay/CHANGELOG.md", "occurrences": 1, "reason": "immutable relay release history" },
+    { "path": "crates/nimino-relay/src/handlers/ingest.rs", "occurrences": 1, "reason": "negative regression test rejects retired kind 30350" },
+    { "path": "migrations/0012_push_leases.sql", "occurrences": 8, "reason": "immutable SQLx migration history" },
+    { "path": "migrations/0013_push_endpoint_state.sql", "occurrences": 1, "reason": "immutable SQLx migration history" },
+    { "path": "migrations/0014_push_lease_fts.sql", "occurrences": 4, "reason": "immutable SQLx migration history" },
+    { "path": "migrations/0015_push_gateway_authority.sql", "occurrences": 1, "reason": "immutable SQLx migration history" },
+    { "path": "migrations/0018_push_match_queue.sql", "occurrences": 9, "reason": "immutable SQLx migration history" },
+    { "path": "migrations/0023_push_match_gate.sql", "occurrences": 7, "reason": "immutable SQLx migration history" },
+    { "path": "migrations/0024_event_ttl_refresh_shared_lock.sql", "occurrences": 1, "reason": "immutable SQLx migration history" },
+    { "path": "migrations/0029_community_deletion.sql", "occurrences": 3, "reason": "immutable SQLx migration history" },
+    { "path": "migrations/0033_remove_mobile_push.sql", "occurrences": 7, "reason": "additive teardown retained until Issue #12 reset" },
+    { "path": "schema/schema.sql", "occurrences": 2, "reason": "inert FTS exclusion retained until Issue #12 reset" }
+  ],
+  "pairingDecision": {
+    "productUseCase": "desktop-identity-transfer-and-recovery",
+    "source": "an authorized Nimino Desktop sends its identity after SAS confirmation",
+    "target": "a fresh Nimino Desktop receives the identity during onboarding",
+    "protocol": "NIP-AB v1 over an ephemeral pairing relay",
+    "owner": "Desktop identity lifecycle backed by the existing Rust NIP-AB protocol adapter",
+    "ownerIssue": 28,
+    "mobileClient": "delete",
+    "mobileWording": "delete",
+    "unsupported": [
+      "smartphone onboarding",
+      "mobile notifications",
+      "mobile release",
+      "automated or repeated secret transfer",
+      "Chirps cluster negotiation",
+      "database replication",
+      "automatic sync"
+    ]
+  },
+  "mobileTree": [
+    {
+      "id": "mobile.root-metadata",
+      "action": "delete",
+      "owner": "Issue #33",
+      "selectors": [
+        { "type": "exact", "value": "mobile/.env.json.example" },
+        { "type": "exact", "value": "mobile/.gitignore" },
+        { "type": "exact", "value": "mobile/.metadata" },
+        { "type": "exact", "value": "mobile/CHANGELOG.md" },
+        { "type": "exact", "value": "mobile/HUDDLES.md" },
+        { "type": "exact", "value": "mobile/README.md" },
+        { "type": "exact", "value": "mobile/analysis_options.yaml" },
+        { "type": "exact", "value": "mobile/pubspec.lock" },
+        { "type": "exact", "value": "mobile/pubspec.yaml" }
+      ],
+      "deleteWhen": "Issue #33 removes the Mobile tree atomically; no archive or stub remains",
+      "proof": "test ! -d mobile and legacy-reference gate",
+      "evidence": { "path": "mobile/pubspec.yaml", "symbol": "name: nimino", "signal": "Flutter package root" }
+    },
+    {
+      "id": "mobile.dart-product",
+      "action": "delete",
+      "owner": "Issue #33",
+      "selectors": [{ "type": "prefix", "value": "mobile/lib/" }],
+      "deleteWhen": "Issue #33 removes the Flutter product source",
+      "proof": "no tracked mobile/lib path",
+      "evidence": { "path": "mobile/lib/main.dart", "symbol": "void main()", "signal": "Mobile application entry point" }
+    },
+    {
+      "id": "mobile.dart-tests",
+      "action": "delete",
+      "owner": "Issue #33",
+      "selectors": [{ "type": "prefix", "value": "mobile/test/" }],
+      "deleteWhen": "Issue #33 removes tests whose only subject is the deleted Mobile app",
+      "proof": "no tracked mobile/test path",
+      "evidence": { "path": "mobile/test/widget_test.dart", "symbol": "testWidgets", "signal": "Flutter widget-test root" }
+    },
+    {
+      "id": "mobile.assets",
+      "action": "delete",
+      "owner": "Issue #33",
+      "selectors": [{ "type": "prefix", "value": "mobile/assets/" }],
+      "deleteWhen": "Issue #33 removes assets bundled only by the deleted Mobile app",
+      "proof": "no tracked mobile/assets path",
+      "evidence": { "path": "mobile/pubspec.yaml", "symbol": "assets:", "signal": "Flutter-only asset declaration" }
+    },
+    {
+      "id": "mobile.android",
+      "action": "delete",
+      "owner": "Issue #33",
+      "selectors": [{ "type": "prefix", "value": "mobile/android/" }],
+      "deleteWhen": "Issue #33 removes Gradle, Kotlin, manifests, resources, and Android tests",
+      "proof": "no tracked mobile/android path and no Gradle Mobile lane",
+      "evidence": { "path": "mobile/android/app/src/main/AndroidManifest.xml", "symbol": "<manifest", "signal": "Android application manifest" }
+    },
+    {
+      "id": "mobile.ios",
+      "action": "delete",
+      "owner": "Issue #33",
+      "selectors": [{ "type": "prefix", "value": "mobile/ios/" }],
+      "deleteWhen": "Issue #33 removes Xcode, CocoaPods, Swift, resources, and iOS tests",
+      "proof": "no tracked mobile/ios path and no iOS Mobile lane",
+      "evidence": { "path": "mobile/ios/Runner/Info.plist", "symbol": "CFBundleDisplayName", "signal": "iOS application metadata" }
+    },
+    {
+      "id": "mobile.local-tooling",
+      "action": "delete",
+      "owner": "Issue #33",
+      "selectors": [{ "type": "prefix", "value": "mobile/scripts/" }],
+      "deleteWhen": "Issue #33 removes Flutter-only local scripts",
+      "proof": "no tracked mobile/scripts path",
+      "evidence": { "path": "mobile/scripts/check-file-sizes.mjs", "symbol": "const MAX_LINES = 1000", "signal": "Mobile-only repository tooling" }
+    }
+  ],
+  "externalSurfaces": [
+    {
+      "id": "external.mobile-dedicated-release",
+      "action": "delete",
+      "owner": "Issue #33",
+      "selectors": [
+        { "type": "exact", "value": ".github/workflows/mobile-release-candidate.yml" },
+        { "type": "exact", "value": "scripts/mobile-release.sh" },
+        { "type": "exact", "value": "scripts/mobile-worktree-clean.sh" },
+        { "type": "exact", "value": "scripts/mobile-worktree-overrides.sh" },
+        { "type": "exact", "value": "scripts/publish-mobile-release-candidate.sh" },
+        { "type": "exact", "value": "scripts/test-mobile-release-candidate-publisher.sh" },
+        { "type": "exact", "value": "scripts/test-mobile-release-contract.sh" },
+        { "type": "exact", "value": "scripts/test-mobile-worktree-overrides.sh" }
+      ],
+      "deleteWhen": "Issue #33 removes every Mobile-only workflow and script",
+      "proof": "legacy-reference gate and workflow inventory",
+      "evidence": { "path": ".github/workflows/mobile-release-candidate.yml", "symbol": "Publish Mobile Release Candidate", "signal": "Dedicated Mobile release authority" }
+    },
+    {
+      "id": "external.mobile-toolchain-shims",
+      "action": "delete",
+      "owner": "Issue #33",
+      "selectors": [
+        { "type": "exact", "value": "bin/.flutter-3.41.7.pkg" },
+        { "type": "exact", "value": "bin/dart" },
+        { "type": "exact", "value": "bin/flutter" }
+      ],
+      "deleteWhen": "Issue #33 removes the Flutter SDK package and executable shims",
+      "proof": "no tracked Flutter/Dart Hermit shim remains",
+      "evidence": { "path": "mobile/pubspec.yaml", "symbol": "sdk: flutter", "signal": "The pinned Flutter toolchain serves only the deleted Mobile client" }
+    },
+    {
+      "id": "external.shared-doc-build-references",
+      "action": "shrink",
+      "completionIssue": 33,
+      "state": "completed",
+      "owner": "Issue #33",
+      "dependencies": ["Issue #65 release-authority cleanup"],
+      "selectors": [
+        { "type": "exact", "value": ".dockerignore" },
+        { "type": "exact", "value": ".github/workflows/auto-tag-on-release-pr-merge.yml" },
+        { "type": "exact", "value": "AGENTS.md" },
+        { "type": "exact", "value": "ARCHITECTURE.md" },
+        { "type": "exact", "value": "CLAUDE.md" },
+        { "type": "exact", "value": "CHANGELOG.md" },
+        { "type": "exact", "value": "CONTRIBUTING.md" },
+        { "type": "exact", "value": "contracts/nimino-cutover-readiness/v1/manifest.json" },
+        { "type": "exact", "value": "Justfile" },
+        { "type": "exact", "value": "README.md" },
+        { "type": "exact", "value": "RELEASING.md" },
+        { "type": "exact", "value": "VISION.md" },
+        { "type": "exact", "value": "VISION_PROJECTS.md" },
+        { "type": "exact", "value": "bin/.lefthookrc" },
+        { "type": "exact", "value": "scripts/release-rulesets.sh" },
+        { "type": "exact", "value": "scripts/test-ci-lanes.mjs" }
+      ],
+      "deleteWhen": "Issue #33 removes active Mobile instructions/hooks/recipes and #65 removes obsolete release authority references",
+      "proof": "repo-wide Mobile reference search permits no active Mobile product instruction",
+      "evidence": { "path": "RELEASING.md", "symbol": "### Mobile", "signal": "Current Mobile release runbook section" },
+      "postRemovalEvidence": { "path": "Justfile", "symbol": "removed-client-contract", "signal": "Permanent zero-state gate remains after shared references shrink" }
+    },
+    {
+      "id": "external.mobile-push-dedicated",
+      "action": "delete",
+      "owner": "Issue #33",
+      "selectors": [
+        { "type": "prefix", "value": "crates/nimino-push-gateway/" },
+        { "type": "prefix", "value": "deploy/charts/nimino-push-gateway/" },
+        { "type": "prefix", "value": "docs/formal/nip-pl/" },
+        { "type": "exact", "value": ".github/workflows/push-gateway-helm-chart.yml" },
+        { "type": "exact", "value": "Dockerfile.push-gateway" },
+        { "type": "exact", "value": "crates/nimino-db/src/push.rs" },
+        { "type": "exact", "value": "crates/nimino-relay/src/handlers/push_lease.rs" },
+        { "type": "exact", "value": "crates/nimino-relay/src/push_runtime.rs" },
+        { "type": "exact", "value": "docs/formal/STATEFUL_GATEWAY.md" },
+        { "type": "exact", "value": "docs/nips/NIP-PL.md" },
+        { "type": "exact", "value": "docs/push-gateway-deployment.md" }
+      ],
+      "deleteWhen": "Issue #33 removes the APNs-only runtime, image, chart, and formal/deployment documents",
+      "proof": "no APNs credential, NIP-PL runtime, gateway image, or chart remains",
+      "evidence": { "path": "crates/nimino-push-gateway/Cargo.toml", "symbol": "for the Nimino mobile app", "signal": "Gateway declares the deleted Mobile app as its only product" }
+    },
+    {
+      "id": "external.mobile-push-migration-ledger",
+      "action": "keep",
+      "owner": "Issue #33 additive teardown; Issue #12 reset baseline",
+      "dependencies": ["SQLx immutable migration checksums"],
+      "selectors": [
+        { "type": "exact", "value": "migrations/0012_push_leases.sql" },
+        { "type": "exact", "value": "migrations/0013_push_endpoint_state.sql" },
+        { "type": "exact", "value": "migrations/0014_push_lease_fts.sql" },
+        { "type": "exact", "value": "migrations/0015_push_gateway_authority.sql" },
+        { "type": "exact", "value": "migrations/0018_push_match_queue.sql" },
+        { "type": "exact", "value": "migrations/0023_push_match_gate.sql" },
+        { "type": "exact", "value": "migrations/0024_event_ttl_refresh_shared_lock.sql" },
+        { "type": "exact", "value": "migrations/0029_community_deletion.sql" },
+        { "type": "exact", "value": "migrations/0033_remove_mobile_push.sql" }
+      ],
+      "deleteWhen": "Issue #12 may replace the complete migration ledger only when the incompatible reset baseline lands",
+      "proof": "historical checksums stay unchanged and migration 0033 drops every Mobile push table/function on upgrade",
+      "evidence": { "path": "migrations/0033_remove_mobile_push.sql", "symbol": "DROP TABLE IF EXISTS push_leases", "signal": "Additive teardown preserves existing database startup" }
+    },
+    {
+      "id": "external.mobile-push-shared-integration",
+      "action": "shrink",
+      "completionIssue": 33,
+      "state": "completed",
+      "owner": "Issue #33",
+      "selectors": [
+        { "type": "exact", "value": ".github/workflows/docker.yml" },
+        { "type": "exact", "value": ".github/workflows/helm-chart.yml" },
+        { "type": "exact", "value": "Cargo.lock" },
+        { "type": "exact", "value": "Cargo.toml" },
+        { "type": "exact", "value": "contracts/nimino-naming-v1.json" },
+        { "type": "exact", "value": "crates/nimino-acp/src/base_prompt.md" },
+        { "type": "exact", "value": "crates/nimino-db/src/migration.rs" },
+        { "type": "exact", "value": "crates/nimino-relay/CHANGELOG.md" },
+        { "type": "exact", "value": "crates/nimino-relay/src/config.rs" },
+        { "type": "exact", "value": "crates/nimino-relay/src/handlers/ingest.rs" },
+        { "type": "exact", "value": "crates/nimino-relay/src/lib.rs" },
+        { "type": "exact", "value": "crates/nimino-relay/src/main.rs" },
+        { "type": "exact", "value": "crates/nimino-relay/src/nip11.rs" },
+        { "type": "exact", "value": "schema/schema.sql" },
+        { "type": "exact", "value": "scripts/check-chirps-api-contract.mjs" },
+        { "type": "exact", "value": "scripts/check-nimino-naming-contract.mjs" },
+        { "type": "exact", "value": "scripts/run-tests.sh" }
+      ],
+      "deleteWhen": "Issue #33 removes only Mobile push imports/config/jobs from shared owners",
+      "proof": "non-Mobile workspace and Relay tests pass without push gateway dependencies",
+      "evidence": { "path": "Cargo.toml", "symbol": "crates/nimino-push-gateway", "signal": "Shared workspace still registers the Mobile-only gateway" },
+      "postRemovalEvidence": { "path": "Cargo.toml", "symbol": "[workspace]", "signal": "Non-Mobile Rust workspace remains after the push member is removed" }
+    },
+    {
+      "id": "external.desktop-identity-pairing",
+      "action": "shrink",
+      "completionIssue": 28,
+      "state": "completed",
+      "owner": "Issue #28",
+      "selectors": [
+        { "type": "exact", "value": "desktop/playwright.config.ts" },
+        { "type": "exact", "value": "desktop/src-tauri/src/commands/pairing.rs" },
+        { "type": "exact", "value": "desktop/src-tauri/src/commands/pairing_generation_tests.rs" },
+        { "type": "exact", "value": "desktop/src-tauri/src/commands/pairing_relay_tests.rs" },
+        { "type": "exact", "value": "desktop/src-tauri/src/egress_guard.rs" },
+        { "type": "exact", "value": "desktop/src-tauri/src/egress_guard_tests.rs" },
+        { "type": "exact", "value": "desktop/src-tauri/src/lib.rs" },
+        { "type": "exact", "value": "desktop/src/features/onboarding/ui/IdentityRecoveryPairing.tsx" },
+        { "type": "exact", "value": "desktop/src/features/onboarding/ui/MachineOnboardingFlow.tsx" },
+        { "type": "exact", "value": "desktop/src/features/settings/ui/IdentityTransferCard.tsx" },
+        { "type": "exact", "value": "desktop/src/features/settings/ui/SettingsPanels.tsx" },
+        { "type": "exact", "value": "desktop/src/shared/api/tauri.ts" },
+        { "type": "exact", "value": "desktop/src/shared/api/tauriPairing.ts" },
+        { "type": "exact", "value": "desktop/src/shared/ui/styled-qr-code.test.mjs" },
+        { "type": "exact", "value": "desktop/src/testing/e2eBridge.ts" },
+        { "type": "exact", "value": "desktop/tests/e2e/identity-lost.spec.ts" },
+        { "type": "exact", "value": "desktop/tests/e2e/identity-transfer.spec.ts" },
+        { "type": "exact", "value": "desktop/tests/helpers/bridge.ts" }
+      ],
+      "deleteWhen": "Issue #28 removes Mobile names/routes and leaves one tested Desktop-to-Desktop identity transfer/recovery flow",
+      "proof": "Desktop smoke/E2E covers both authorized sender and fresh receiver with no Mobile wording or dead route",
+      "evidence": { "path": "desktop/src/features/settings/ui/MobilePairingCard.tsx", "symbol": "MobilePairingCard", "signal": "Legacy Desktop sender surface carried Mobile product wording" },
+      "postRemovalEvidence": { "path": "desktop/src/features/settings/ui/IdentityTransferCard.tsx", "symbol": "IdentityTransferCard", "signal": "Explicit authorized-Desktop sender surface remains after Mobile wording and routes are removed" }
+    },
+    {
+      "id": "external.nip-ab-interop",
+      "action": "keep",
+      "owner": "crates/nimino-core Rust NIP-AB protocol adapter",
+      "dependencies": ["Issue #28 Desktop product surface", "nimino-pair-relay", "nimino-pairing-cli"],
+      "selectors": [
+        { "type": "prefix", "value": "crates/nimino-core/src/pairing/" },
+        { "type": "prefix", "value": "crates/nimino-pair-relay/" },
+        { "type": "prefix", "value": "crates/nimino-pairing-cli/" },
+        { "type": "exact", "value": "crates/nimino-core/src/kind.rs" },
+        { "type": "exact", "value": "crates/nimino-core/src/lib.rs" }
+      ],
+      "deleteWhen": "Only an explicit replacement of the Desktop identity recovery protocol is accepted; Mobile deletion alone does not delete NIP-AB",
+      "proof": "NIP-AB vectors, state-machine tests, CLI interop, and pairing relay limits",
+      "evidence": { "path": "crates/nimino-core/src/pairing/NIP-AB.md", "symbol": "one-time transfer", "signal": "Protocol is device-generic and not a Mobile application contract" }
+    },
+    {
+      "id": "external.pairing-relay-runtime",
+      "action": "keep",
+      "owner": "Issue #61 Nimino Relay packaging",
+      "dependencies": ["Issue #28 Desktop identity use case"],
+      "selectors": [
+        { "type": "exact", "value": "crates/nimino-relay/src/handlers/event.rs" },
+        { "type": "exact", "value": "deploy/charts/nimino/README.md" },
+        { "type": "exact", "value": "deploy/charts/nimino/templates/_helpers.tpl" },
+        { "type": "exact", "value": "deploy/charts/nimino/templates/_validate.tpl" },
+        { "type": "exact", "value": "deploy/charts/nimino/templates/deployment.yaml" },
+        { "type": "exact", "value": "deploy/charts/nimino/templates/pairing-relay.yaml" },
+        { "type": "exact", "value": "deploy/charts/nimino/tests/pairing_relay_test.yaml" },
+        { "type": "exact", "value": "deploy/charts/nimino/values.schema.json" },
+        { "type": "exact", "value": "deploy/charts/nimino/values.yaml" }
+      ],
+      "deleteWhen": "Delete only if Issue #28 removes identity recovery or Issue #61 replaces the relay packaging",
+      "proof": "pairing relay smoke plus Desktop identity recovery E2E",
+      "evidence": { "path": "deploy/charts/nimino/templates/pairing-relay.yaml", "symbol": "pairingRelay.enabled", "signal": "Dedicated ephemeral relay is separately deployable" }
+    },
+    {
+      "id": "external.platform-media-interop",
+      "action": "keep",
+      "owner": "crates/nimino-media",
+      "dependencies": ["Desktop media adapter"],
+      "selectors": [
+        { "type": "prefix", "value": "crates/nimino-media/tests/fixtures/android/" },
+        { "type": "prefix", "value": "crates/nimino-media/tests/fixtures/ios/" },
+        { "type": "exact", "value": "crates/nimino-media/src/validation.rs" },
+        { "type": "exact", "value": "desktop/src-tauri/src/commands/media_transcode.rs" }
+      ],
+      "deleteWhen": "Only when the media sanitizer no longer accepts files produced by those platforms",
+      "proof": "media sanitizer fixture tests",
+      "evidence": { "path": "crates/nimino-media/tests/fixtures/ios/README.md", "symbol": "fixtures", "signal": "Origin-format interoperability evidence, not Mobile product code" }
+    },
+    {
+      "id": "external.protocol-mobile-examples",
+      "action": "shrink",
+      "completionIssue": 20,
+      "state": "completed",
+      "owner": "Issue #20",
+      "selectors": [
+        { "type": "exact", "value": "docs/nips/NIP-MP.md" },
+        { "type": "exact", "value": "docs/nips/NIP-RS.md" },
+        { "type": "exact", "value": "docs/spec/MultiTenantAuth.spthy" }
+      ],
+      "deleteWhen": "Issue #20 removes Mobile-only examples while preserving protocol semantics that remain supported",
+      "proof": "protocol contract and old-client negative fixtures",
+      "evidence": { "path": "docs/nips/NIP-RS.md", "symbol": "mobile app", "signal": "Protocol document contains a Mobile-specific example" },
+      "postRemovalEvidence": { "path": "docs/nips/NIP-MP.md", "symbol": "NIP-MP", "signal": "Protocol semantics remain after Mobile-only examples are removed" }
+    },
+    {
+      "id": "external.non-product-lexemes",
+      "action": "keep",
+      "owner": "Nimino Desktop",
+      "dependencies": ["responsive UI", "notification audio"],
+      "selectors": [
+        { "type": "exact", "value": "desktop/public/sounds/flutter.mp3" },
+        { "type": "exact", "value": "desktop/public/sounds/flutter.svg" },
+        { "type": "exact", "value": "desktop/src/features/notifications/hooks.ts" },
+        { "type": "exact", "value": "desktop/src/features/notifications/lib/sound.ts" },
+        { "type": "exact", "value": "desktop/src/shared/hooks/use-mobile.tsx" }
+      ],
+      "deleteWhen": "Only their owning Desktop feature removes them; these names mean wing sound or viewport size",
+      "proof": "Desktop notification and responsive-layout tests",
+      "evidence": { "path": "desktop/src/features/notifications/lib/sound.ts", "symbol": "flutter", "signal": "Flutter is a bee-wing notification sound, not the Flutter SDK" }
+    },
+    {
+      "id": "external.tauri-mobile-icons",
+      "action": "delete",
+      "owner": "Issue #33",
+      "selectors": [
+        { "type": "prefix", "value": "desktop/src-tauri/icons/android/" },
+        { "type": "prefix", "value": "desktop/src-tauri/icons/ios/" }
+      ],
+      "deleteWhen": "Issue #33 removes unused Tauri Android/iOS packaging assets",
+      "proof": "Desktop bundle builds without Tauri mobile icon directories",
+      "evidence": { "path": "desktop/src-tauri/icons/android/mipmap-anydpi-v26/ic_launcher.xml", "symbol": "adaptive-icon", "signal": "Unused Android packaging asset outside mobile/" }
+    }
+  ]
+}

@@ -3,7 +3,7 @@ import { Cloud } from "lucide-react";
 import { cn } from "@/shared/lib/cn";
 import { Badge } from "@/shared/ui/badge";
 
-const OTHER_SETUP_LABEL = "From another Buzz setup";
+const OTHER_SETUP_LABEL = "From another Nimino setup";
 
 export function OtherSetupAgentMarker({
   className,

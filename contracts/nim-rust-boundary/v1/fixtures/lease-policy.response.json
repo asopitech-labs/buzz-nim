@@ -1,0 +1,34 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0052",
+  "operation": "domain.lease.policy",
+  "status": "ok",
+  "result": {
+    "decision": "plan_grant",
+    "result": {
+      "effect": "propose",
+      "error": "none",
+      "beforeState": {
+        "valid": true,
+        "resourceId": "workflow-scheduler",
+        "lastFenceToken": 0,
+        "lastControlIndex": 0,
+        "lastCommand": null,
+        "activeLease": null
+      },
+      "command": {
+        "resourceId": "workflow-scheduler",
+        "transitionId": "grant-1",
+        "ownerId": "node-a",
+        "eligibleOwners": ["node-a", "node-b"],
+        "expectedPreviousFence": 0,
+        "fenceToken": 1,
+        "durationTicks": 1000,
+        "leaderId": "node-a",
+        "term": 1,
+        "voterEpoch": 1
+      }
+    }
+  }
+}

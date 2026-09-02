@@ -62,13 +62,13 @@ export function RelayConnectionOverlay({
             "pointer-events-none fixed z-50 w-[284px]",
             hasCommunityRail ? "left-[68px]" : "left-3",
             isHuddleDrawerOpen
-              ? "bottom-[calc(var(--buzz-huddle-drawer-height,0px)+12px)]"
+              ? "bottom-[calc(var(--nimino-huddle-drawer-height,0px)+12px)]"
               : "bottom-3",
           )}
           exit={{ opacity: 0, y: 20 }}
           initial={{ opacity: 0, y: -20 }}
           key="relay-connection-overlay"
-          transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
         >
           <div className="pointer-events-auto rounded-xl bg-background shadow-md">
             <SidebarRelayConnectionCard
@@ -88,13 +88,13 @@ export function RelayConnectionOverlay({
             "pointer-events-none fixed z-50 w-[284px]",
             hasCommunityRail ? "left-[68px]" : "left-3",
             isHuddleDrawerOpen
-              ? "bottom-[calc(var(--buzz-huddle-drawer-height,0px)+12px)]"
+              ? "bottom-[calc(var(--nimino-huddle-drawer-height,0px)+12px)]"
               : "bottom-3",
           )}
           exit={{ opacity: 0, y: 20 }}
           initial={{ opacity: 0, y: -20 }}
           key="relay-error-overlay"
-          transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
         >
           <div
             className="pointer-events-auto flex items-center gap-2 rounded-xl bg-background px-3 py-2.5 text-sm text-destructive shadow-md"

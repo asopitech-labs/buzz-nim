@@ -1,0 +1,19 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0051",
+  "operation": "domain.control.policy",
+  "payload": {
+    "decision": "recover",
+    "input": {
+      "metadataRevision": 0,
+      "term": 0,
+      "votedFor": null,
+      "commitIndex": 0,
+      "appliedIndex": 0,
+      "initialVoters": ["node-a"],
+      "snapshot": null,
+      "entries": []
+    }
+  }
+}

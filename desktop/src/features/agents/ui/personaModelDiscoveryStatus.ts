@@ -34,8 +34,8 @@ function isEmptySharedComputeError(message: string): boolean {
   const normalized = message.toLowerCase();
   return (
     normalized.includes("shared compute status is not published") ||
-    normalized.includes("no buzz shared compute serving members") ||
-    normalized.includes("no live buzz shared compute models") ||
+    normalized.includes("no nimino shared compute serving members") ||
+    normalized.includes("no live nimino shared compute models") ||
     normalized.includes("no live member is serving") ||
     normalized.includes("requires a live serving member")
   );
@@ -52,7 +52,7 @@ export function formatModelDiscoveryErrorStatus(
     if (message.includes("waiting for the current member roster")) {
       return {
         message:
-          "Buzz is waiting for the relay's member roster. Try again shortly; if this persists, check the relay's membership configuration.",
+          "Nimino is waiting for the relay's member roster. Try again shortly; if this persists, check the relay's membership configuration.",
         tone: "warning",
       };
     }
@@ -68,7 +68,7 @@ export function formatModelDiscoveryErrorStatus(
     if (message.includes("shared compute is not available in this build")) {
       return {
         message:
-          "This version of Buzz cannot use shared compute. Update Buzz or choose another provider.",
+          "This version of Nimino cannot use shared compute. Update Nimino or choose another provider.",
         tone: "warning",
       };
     }
@@ -76,20 +76,20 @@ export function formatModelDiscoveryErrorStatus(
     if (message.includes("shared compute status is malformed")) {
       return {
         message:
-          "Buzz received an invalid shared compute status. Check the member machine, then try again.",
+          "Nimino received an invalid shared compute status. Check the member machine, then try again.",
         tone: "warning",
       };
     }
 
     return {
       message:
-        "Buzz couldn't check shared compute through the relay. Check your relay connection and try again.",
+        "Nimino couldn't check shared compute through the relay. Check your relay connection and try again.",
       tone: "warning",
     };
   }
 
   // Spec-reserved auth error text (agent-client-protocol ErrorCode::AuthRequired),
-  // surfaced verbatim through buzz-acp's stderr — generic across conformant
+  // surfaced verbatim through nimino-acp's stderr — generic across conformant
   // harnesses (e.g. cursor-agent when not signed in). Match the message text,
   // NOT code -32000: that code is also the catch-all fallback for unclassified
   // errors, so matching it would swallow unrelated failures into "sign in".
@@ -119,7 +119,7 @@ export function formatModelDiscoveryErrorStatus(
   if (
     message.includes("DATABRICKS_HOST required") ||
     message.includes("DATABRICKS_MODEL required") ||
-    message.includes("BUZZ_AGENT_PROVIDER is required")
+    message.includes("NIMINO_AGENT_PROVIDER is required")
   ) {
     return null;
   }
@@ -155,7 +155,7 @@ function formatDatabricksAuthStatus(
   if (message.includes("Databricks sign-in is required")) {
     return {
       message:
-        "Databricks sign-in is required. Open the model picker to sign in, or run `buzz-agent auth databricks` in a terminal.",
+        "Databricks sign-in is required. Open the model picker to sign in, or run `nimino-agent auth databricks` in a terminal.",
       tone: "muted",
     };
   }
@@ -166,7 +166,7 @@ function formatDatabricksAuthStatus(
   ) {
     return {
       message:
-        "Databricks sign-in didn't complete. Open the model picker to retry, or run `buzz-agent auth databricks` in a terminal.",
+        "Databricks sign-in didn't complete. Open the model picker to retry, or run `nimino-agent auth databricks` in a terminal.",
       tone: "warning",
     };
   }

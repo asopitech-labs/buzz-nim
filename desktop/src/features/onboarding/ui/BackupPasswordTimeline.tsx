@@ -28,10 +28,8 @@ const TIMELINE_DOT_PULSE = {
   scale: [0.85, 1.25, 0.85],
 };
 const TIMELINE_DOT_TRANSITION = {
-  duration: 0.7,
+  duration: 0.18,
   ease: "easeInOut" as const,
-  repeat: Number.POSITIVE_INFINITY,
-  repeatDelay: 1.2,
 };
 const TIMELINE_TOP_DOT_TRANSITIONS = TIMELINE_CONNECTOR_DOTS.map(
   (_, index) => ({

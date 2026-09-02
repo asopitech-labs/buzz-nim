@@ -2,11 +2,11 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 
-use buzz_core_pkg::kind::KIND_PAIRING;
-use buzz_core_pkg::pairing::qr::encode_qr;
-use buzz_core_pkg::pairing::session::PairingSession;
-use buzz_core_pkg::pairing::types::{AbortReason, PayloadType};
 use futures_util::{SinkExt, StreamExt};
+use nimino_core_pkg::kind::KIND_PAIRING;
+use nimino_core_pkg::pairing::qr::{decode_qr, encode_qr, QrPayload};
+use nimino_core_pkg::pairing::session::PairingSession;
+use nimino_core_pkg::pairing::types::{AbortReason, PayloadType};
 use nostr::ToBech32;
 use serde::Serialize;
 use tauri::{AppHandle, Emitter, Manager, State};
@@ -16,7 +16,7 @@ use tokio_util::sync::CancellationToken;
 use zeroize::Zeroizing;
 
 use crate::app_state::AppState;
-use crate::relay::{relay_api_base_url_with_override, relay_ws_url_with_override};
+use crate::relay::relay_ws_url_with_override;
 
 #[derive(Serialize, Clone)]
 struct PairingSasPayload {
@@ -35,8 +35,8 @@ struct PairingErrorPayload {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum PairingMode {
-    SendIdentity,
     RecoverIdentity,
+    SendRecoveryIdentity,
 }
 
 #[derive(Clone)]
@@ -75,7 +75,7 @@ impl PairingHandle {
             cancel: std::sync::Mutex::new(None),
             outbound_tx: std::sync::Mutex::new(None),
             payload: std::sync::Mutex::new(None),
-            mode: Arc::new(std::sync::Mutex::new(PairingMode::SendIdentity)),
+            mode: Arc::new(std::sync::Mutex::new(PairingMode::RecoverIdentity)),
         }
     }
 
@@ -86,32 +86,13 @@ impl PairingHandle {
     }
 }
 
-/// Start a NIP-AB pairing session that sends this desktop identity to mobile.
-#[tauri::command]
-pub async fn start_pairing(
-    app: AppHandle,
-    state: State<'_, AppState>,
-    pairing: State<'_, PairingHandle>,
-) -> Result<String, String> {
-    start_pairing_session(app, state, pairing, PairingMode::SendIdentity).await
-}
-
-/// Start a recovery session. The fresh desktop shows the QR and receives the
-/// full identity from an already-authorized phone after both users approve SAS.
+/// Start a recovery session. The fresh desktop shows a code and receives the
+/// identity from an already-authorized desktop after both users approve SAS.
 #[tauri::command]
 pub async fn start_identity_recovery_pairing(
     app: AppHandle,
     state: State<'_, AppState>,
     pairing: State<'_, PairingHandle>,
-) -> Result<String, String> {
-    start_pairing_session(app, state, pairing, PairingMode::RecoverIdentity).await
-}
-
-async fn start_pairing_session(
-    app: AppHandle,
-    state: State<'_, AppState>,
-    pairing: State<'_, PairingHandle>,
-    mode: PairingMode,
 ) -> Result<String, String> {
     let _start_guard = pairing.start_lock.lock().await;
     let task_generation =
@@ -124,32 +105,14 @@ async fn start_pairing_session(
         let mut session = pairing.session.lock().await;
         *session = None;
     }
-    *pairing.mode.lock().map_err(|e| e.to_string())? = mode;
+    *pairing.mode.lock().map_err(|e| e.to_string())? = PairingMode::RecoverIdentity;
     *pairing.payload.lock().map_err(|e| e.to_string())? = None;
 
     let ws_url = relay_ws_url_with_override(&state);
-    let http_url = relay_api_base_url_with_override(&state);
     let pairing_relay_url = resolve_pairing_relay_url(&ws_url, probe_pairing_relay(&ws_url).await)?;
     let (session, qr_payload) = PairingSession::new_source(pairing_relay_url.clone());
     let mut qr_uri = encode_qr(&qr_payload);
-    if mode == PairingMode::RecoverIdentity {
-        qr_uri.push_str("&mode=recover");
-    }
-
-    if mode == PairingMode::SendIdentity {
-        let keys = state.signing_keys()?;
-        let nsec = keys
-            .secret_key()
-            .to_bech32()
-            .map_err(|e| format!("encode nsec: {e}"))?;
-        let payload_json = serde_json::json!({
-            "relayUrl": http_url,
-            "pubkey": keys.public_key().to_hex(),
-            "nsec": nsec,
-        });
-        *pairing.payload.lock().map_err(|e| e.to_string())? =
-            Some(Zeroizing::new(payload_json.to_string()));
-    }
+    qr_uri.push_str("&mode=recover");
 
     {
         let mut active = pairing.session.lock().await;
@@ -165,7 +128,7 @@ async fn start_pairing_session(
         pairing_relay_url,
         Arc::clone(&pairing.session),
         PairingTaskContext {
-            mode,
+            mode: PairingMode::RecoverIdentity,
             generation: Arc::clone(&pairing.generation),
             generation_fence: Arc::clone(&pairing.generation_fence),
             task_generation,
@@ -178,7 +141,88 @@ async fn start_pairing_session(
     Ok(qr_uri)
 }
 
-/// User confirmed the SAS codes match. Sends sas-confirm + payload.
+/// Join a fresh desktop's recovery session and prepare this desktop's identity
+/// for transfer after the user confirms the SAS code.
+#[tauri::command]
+pub async fn join_identity_recovery_pairing(
+    app: AppHandle,
+    state: State<'_, AppState>,
+    pairing: State<'_, PairingHandle>,
+    pairing_uri: String,
+) -> Result<(), String> {
+    let _start_guard = pairing.start_lock.lock().await;
+    let task_generation =
+        invalidate_pairing_generation(&pairing.generation, &pairing.generation_fence)?;
+    if let Some(token) = pairing.cancel.lock().map_err(|e| e.to_string())?.take() {
+        token.cancel();
+    }
+    pairing.clear();
+    {
+        let mut session = pairing.session.lock().await;
+        *session = None;
+    }
+    *pairing.mode.lock().map_err(|e| e.to_string())? = PairingMode::SendRecoveryIdentity;
+
+    let qr = parse_desktop_recovery_code(&pairing_uri)?;
+    let relay_url = qr
+        .relays
+        .first()
+        .cloned()
+        .ok_or("Pairing code has no relay")?;
+    let (session, offer) = PairingSession::new_target(&qr).map_err(|e| e.to_string())?;
+    let keys = state.signing_keys()?;
+    let nsec = keys
+        .secret_key()
+        .to_bech32()
+        .map_err(|e| format!("encode nsec: {e}"))?;
+    *pairing.payload.lock().map_err(|e| e.to_string())? = Some(Zeroizing::new(nsec));
+    {
+        let mut active = pairing.session.lock().await;
+        *active = Some(session);
+    }
+
+    let (outbound_tx, outbound_rx) = mpsc::channel::<String>(16);
+    outbound_tx
+        .send(event_to_relay_json(&offer))
+        .await
+        .map_err(|_| "failed to queue pairing offer")?;
+    let cancel = CancellationToken::new();
+    *pairing.outbound_tx.lock().map_err(|e| e.to_string())? = Some(outbound_tx);
+    *pairing.cancel.lock().map_err(|e| e.to_string())? = Some(cancel.clone());
+
+    tauri::async_runtime::spawn(pairing_ws_task(
+        relay_url,
+        Arc::clone(&pairing.session),
+        PairingTaskContext {
+            mode: PairingMode::SendRecoveryIdentity,
+            generation: Arc::clone(&pairing.generation),
+            generation_fence: Arc::clone(&pairing.generation_fence),
+            task_generation,
+        },
+        cancel,
+        outbound_rx,
+        app,
+    ));
+
+    Ok(())
+}
+
+fn parse_desktop_recovery_code(pairing_uri: &str) -> Result<QrPayload, String> {
+    let pairing_uri = pairing_uri.trim();
+    let parsed = url::Url::parse(pairing_uri)
+        .map_err(|e| format!("Invalid Desktop identity recovery code: {e}"))?;
+    let modes: Vec<_> = parsed
+        .query_pairs()
+        .filter(|(key, _)| key == "mode")
+        .map(|(_, value)| value)
+        .collect();
+    if modes.len() != 1 || modes[0] != "recover" {
+        return Err("This pairing code is not for Desktop identity recovery".into());
+    }
+    decode_qr(pairing_uri).map_err(|e| format!("Invalid Desktop identity recovery code: {e}"))
+}
+
+/// User confirmed the SAS codes match. Advances the active side of recovery.
 #[tauri::command]
 pub async fn confirm_pairing_sas(pairing: State<'_, PairingHandle>) -> Result<(), String> {
     let tx = pairing
@@ -188,39 +232,34 @@ pub async fn confirm_pairing_sas(pairing: State<'_, PairingHandle>) -> Result<()
         .clone()
         .ok_or("no active pairing session")?;
 
-    let sas_confirm_json = {
-        let mut guard = pairing.session.lock().await;
-        let session = guard.as_mut().ok_or("no active pairing session")?;
-        let event = session.confirm_sas().map_err(|e| e.to_string())?;
-        event_to_relay_json(&event)
-    };
-
-    tx.send(sas_confirm_json)
-        .await
-        .map_err(|_| "Pairing code expired. Create a new code and try again.")?;
-
     let mode = *pairing.mode.lock().map_err(|e| e.to_string())?;
-    if mode == PairingMode::SendIdentity {
-        let payload = pairing
-            .payload
-            .lock()
-            .map_err(|e| e.to_string())?
-            .take()
-            .ok_or("no payload prepared")?;
-
-        let payload_json = {
+    let event_json = match mode {
+        PairingMode::RecoverIdentity => {
             let mut guard = pairing.session.lock().await;
             let session = guard.as_mut().ok_or("no active pairing session")?;
+            let event = session.confirm_sas().map_err(|e| e.to_string())?;
+            event_to_relay_json(&event)
+        }
+        PairingMode::SendRecoveryIdentity => {
+            let payload = pairing
+                .payload
+                .lock()
+                .map_err(|e| e.to_string())?
+                .take()
+                .ok_or("no identity prepared")?;
+            let mut guard = pairing.session.lock().await;
+            let session = guard.as_mut().ok_or("no active pairing session")?;
+            session.confirm_target_sas().map_err(|e| e.to_string())?;
             let event = session
-                .send_payload(PayloadType::Custom, payload)
+                .send_return_payload(PayloadType::Nsec, payload)
                 .map_err(|e| e.to_string())?;
             event_to_relay_json(&event)
-        };
+        }
+    };
 
-        tx.send(payload_json)
-            .await
-            .map_err(|_| "failed to send payload")?;
-    }
+    tx.send(event_json)
+        .await
+        .map_err(|_| "Pairing code expired. Create a new code and try again.")?;
 
     Ok(())
 }
@@ -372,7 +411,14 @@ async fn pairing_ws_task_inner(
                         break;
                     }
 
-                    if let Ok(sas) = s.handle_offer(&event) {
+                    if context.mode == PairingMode::RecoverIdentity {
+                        if let Ok(sas) = s.handle_offer(&event) {
+                            if pairing_task_is_current(&context.generation, context.task_generation) {
+                                let _ = app.emit("pairing-sas-received", PairingSasPayload { sas });
+                            }
+                            continue;
+                        }
+                    } else if let Ok(sas) = s.handle_sas_confirm(&event) {
                         if pairing_task_is_current(&context.generation, context.task_generation) {
                             let _ = app.emit("pairing-sas-received", PairingSasPayload { sas });
                         }
@@ -433,7 +479,7 @@ async fn pairing_ws_task_inner(
                             break;
                         }
                     } else {
-                        match s.handle_complete(&event) {
+                        match s.handle_source_complete(&event) {
                             Ok(()) => {
                                 if pairing_task_is_current(&context.generation, context.task_generation) {
                                     let _ = app.emit("pairing-complete", serde_json::json!({}));
@@ -443,7 +489,7 @@ async fn pairing_ws_task_inner(
                             Err(ref e) if format!("{e}").contains("success=false") => {
                                 if pairing_task_is_current(&context.generation, context.task_generation) {
                                     let _ = app.emit("pairing-error", PairingErrorPayload {
-                                        message: "Mobile device reported failure importing credentials".into(),
+                                        message: "The receiving Desktop could not import the identity".into(),
                                     });
                                 }
                                 break;
@@ -471,7 +517,7 @@ async fn import_recovered_identity(
     let generation_fence = Arc::clone(generation_fence);
     tokio::task::spawn_blocking(move || {
         let keys = nostr::Keys::parse(nsec.trim())
-            .map_err(|e| format!("Phone sent an invalid identity: {e}"))?;
+            .map_err(|e| format!("The sending Desktop sent an invalid identity: {e}"))?;
         let state = app.state::<AppState>();
         let _mutation_guard = state.identity_mutation.lock().map_err(|e| e.to_string())?;
         commit_recovery_if_current(&generation, &generation_fence, task_generation, || {
@@ -480,11 +526,10 @@ async fn import_recovered_identity(
                 .app_data_dir()
                 .map_err(|e| format!("app data dir: {e}"))?;
             std::fs::create_dir_all(&data_dir).map_err(|e| format!("create app data dir: {e}"))?;
-            let key_path = data_dir.join("identity.key");
             crate::commands::identity::commit_imported_identity(&state, &data_dir, keys, |keys| {
                 let store =
                     crate::secret_store::SecretStore::shared(crate::app_state::keyring_service());
-                crate::app_state::persist_imported_identity(store, keys, &key_path, &data_dir)
+                crate::app_state::persist_imported_identity(store, keys, &data_dir)
             })?;
             Ok(())
         })
@@ -560,7 +605,7 @@ fn validate_recovery_payload_type(payload_type: PayloadType) -> Result<(), Strin
     if payload_type == PayloadType::Nsec {
         Ok(())
     } else {
-        Err("Mobile device sent an unsupported recovery payload".into())
+        Err("The sending Desktop sent an unsupported recovery payload".into())
     }
 }
 
@@ -647,7 +692,7 @@ fn event_to_relay_json(event: &nostr::Event) -> String {
     format!("[\"EVENT\",{}]", nostr::JsonUtil::as_json(event))
 }
 
-/// Parse a relay EVENT message into a nostr 0.36 Event (buzz-core compatible).
+/// Parse a relay EVENT message into a nostr 0.36 Event (nimino-core compatible).
 fn parse_relay_event(text: &str, sub_id: &str) -> Option<nostr::Event> {
     let arr: serde_json::Value = serde_json::from_str(text).ok()?;
     let arr = arr.as_array()?;

@@ -62,7 +62,7 @@ import { CommunityApplyErrorScreen } from "@/features/communities/ui/CommunityAp
 import { CommunityChangeOverlay } from "@/features/communities/ui/CommunityChangeOverlay";
 import { setAvatarProfileSyncQueryClient } from "@/features/profile/avatarProfileSync";
 import { EncryptedBackupProvider } from "@/features/settings/EncryptedBackupProvider";
-import { createBuzzQueryClient } from "@/shared/api/queryClient";
+import { createNiminoQueryClient } from "@/shared/api/queryClient";
 import { useIdentityQuery } from "@/shared/api/hooks";
 import { isSharedIdentity as isSharedIdentityCmd } from "@/shared/api/tauri";
 import { getProfile } from "@/shared/api/tauriProfiles";
@@ -71,9 +71,7 @@ import {
   listenForDeepLinks,
 } from "@/shared/deep-link";
 import { cn } from "@/shared/lib/cn";
-import { BuzzMark } from "@/shared/ui/buzz-logo/BuzzMark";
-import { FlappingBee } from "@/shared/ui/buzz-logo/FlappingBee";
-import { FuzzyLogo } from "@/shared/ui/buzz-logo/FuzzyLogo";
+import { NiminoMark } from "@/shared/ui/nimino-logo/NiminoMark";
 import { StartupWindowDragRegion } from "@/shared/ui/StartupWindowDragRegion";
 
 const LOADING_TEXT = "Setting up your community...";
@@ -100,13 +98,13 @@ function useInitialRenderReady() {
 }
 
 // E2E runs skip the hold (it would slow every spec's boot and block pointer
-// actionability); a spec can opt back in via __BUZZ_E2E__.bootSplashHoldMs.
+// actionability); a spec can opt back in via __NIMINO_E2E__.bootSplashHoldMs.
 function bootSplashHoldMs(): number {
   const e2e = (
     window as Window & {
-      __BUZZ_E2E__?: { bootSplashHoldMs?: number };
+      __NIMINO_E2E__?: { bootSplashHoldMs?: number };
     }
-  ).__BUZZ_E2E__;
+  ).__NIMINO_E2E__;
   if (e2e) {
     return e2e.bootSplashHoldMs ?? 0;
   }
@@ -137,11 +135,7 @@ function useBootSplashHold(): BootSplashPhase {
   return phase;
 }
 
-// Animated Buzz mark for the loading gates. The static BuzzMark renders in
-// normal flow and sizes the box — it's plain SVG (no JS/SMIL), so it paints on
-// the very first frame even before scripting starts, avoiding a blank flash on
-// hard reload. The animated FuzzyLogo is layered on top and takes over once it
-// begins playing.
+// Static mark for loading gates; role/status carries the progress semantics.
 function BeeLoader({
   ariaLabel,
   className,
@@ -152,34 +146,28 @@ function BeeLoader({
   tintClassName?: string;
 }) {
   return (
-    <div className={cn("relative", tintClassName, className)}>
-      <BuzzMark className="block h-auto w-full" />
-      <FuzzyLogo
-        ariaLabel={ariaLabel}
-        className="absolute inset-0 h-full! w-full! [&>svg]:h-full [&>svg]:w-full [&>svg]:max-w-full"
-        fuzz
-        loop
-        loopRestSeconds={0}
-      />
+    <div
+      aria-label={ariaLabel}
+      className={cn("relative", tintClassName, className)}
+      role="img"
+    >
+      <NiminoMark className="block h-auto w-full" />
     </div>
   );
 }
 
-// Cold boot gate: the theme-adaptive grainient background with a single
-// centered Buzz bee flying over it — the same static mark as before, now with
-// its wings flapping (ported from the Buzz website's wing-flap). Replaces the
-// old "Setting up your community" text, which stays as an sr-only caption.
+// Cold boot gate with a static mark; setup progress is conveyed by role/status.
 function AppLoadingGate() {
   return (
     <div
-      className="buzz-setup-loading-shell flex min-h-dvh flex-col items-center justify-center overflow-hidden px-6 py-10"
+      className="nimino-setup-loading-shell flex min-h-dvh flex-col items-center justify-center overflow-hidden px-6 py-10"
       data-testid="app-loading-gate"
       role="status"
     >
       <StartupWindowDragRegion />
       <ThemeGrainientBackground />
       <span className="sr-only">{LOADING_TEXT}</span>
-      <FlappingBee className="relative z-10 h-auto w-28" />
+      <NiminoMark className="relative z-10 h-auto w-28" />
     </div>
   );
 }
@@ -214,23 +202,23 @@ function CommunitySwitchGate() {
 }
 
 function CommunityQueryProvider({ children }: { children: ReactNode }) {
-  const [queryClient] = useState(createBuzzQueryClient);
+  const [queryClient] = useState(createNiminoQueryClient);
 
   useEffect(() => setAvatarProfileSyncQueryClient(queryClient), [queryClient]);
 
   useEffect(() => {
     const e2eWindow = window as Window & {
-      __BUZZ_E2E__?: unknown;
-      __BUZZ_E2E_QUERY_CLIENT__?: typeof queryClient;
+      __NIMINO_E2E__?: unknown;
+      __NIMINO_E2E_QUERY_CLIENT__?: typeof queryClient;
     };
-    if (!e2eWindow.__BUZZ_E2E__) {
+    if (!e2eWindow.__NIMINO_E2E__) {
       return;
     }
 
-    e2eWindow.__BUZZ_E2E_QUERY_CLIENT__ = queryClient;
+    e2eWindow.__NIMINO_E2E_QUERY_CLIENT__ = queryClient;
     return () => {
-      if (e2eWindow.__BUZZ_E2E_QUERY_CLIENT__ === queryClient) {
-        delete e2eWindow.__BUZZ_E2E_QUERY_CLIENT__;
+      if (e2eWindow.__NIMINO_E2E_QUERY_CLIENT__ === queryClient) {
+        delete e2eWindow.__NIMINO_E2E_QUERY_CLIENT__;
       }
     };
   }, [queryClient]);
@@ -360,8 +348,8 @@ function CommunityApp({
   const isFindingCommunityAfterLeave =
     activeCommunity === null && loadCommunityDiscoveryAfterLeave();
 
-  // Surface nest-related backend events (repos-dir errors, legacy migration)
-  // as toasts. Mounted before useCommunityInit so the listeners are registered
+  // Surface repository-directory backend errors as toasts. Mounted before
+  // useCommunityInit so the listener is registered
   // ahead of the first apply_workspace call.
   useNestNotifications();
 
@@ -773,7 +761,7 @@ export function App() {
   useCloseWindowShortcut();
   useInitialRenderReady();
   const [sharedIdentity, setSharedIdentity] = useState<boolean | null>(null);
-  const [queryClient] = useState(createBuzzQueryClient);
+  const [queryClient] = useState(createNiminoQueryClient);
 
   useEffect(() => {
     isSharedIdentityCmd()

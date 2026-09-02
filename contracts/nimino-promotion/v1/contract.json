@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.promotion",
+  "issue": 63,
+  "releaseSetAuthority": "nimino.release-set",
+  "compatibilityMode": false,
+  "sourceRepository": "asopitech-labs/nimino",
+  "tagPrefix": "nimino-v",
+  "stableReleaseTag": "nimino-desktop-latest",
+  "approvalEnvironment": "nimino-production",
+  "promotionInput": "releaseSetId",
+  "requiredEnvironment": ["GH_TOKEN"],
+  "sbom": {
+    "format": "SPDX-2.3",
+    "fileName": "nimino-release.spdx.json",
+    "signature": "nimino-release.spdx.sigstore.json",
+    "predicateType": "https://spdx.dev/Document/v2.3"
+  },
+  "checksums": {
+    "algorithm": "sha256",
+    "fileName": "SHA256SUMS",
+    "signature": "SHA256SUMS.sigstore.json"
+  },
+  "requiredCandidateAssets": [
+    "release-set.json",
+    "release-set.sigstore.json",
+    "nimino-release.spdx.json",
+    "nimino-release.spdx.sigstore.json",
+    "latest.json",
+    "latest.sigstore.json",
+    "nimino-{version}-wsl2-x86_64.tar.gz",
+    "nimino-wsl.sigstore.json",
+    "nimino-wsl-bundle-e2e.json",
+    "SHA256SUMS",
+    "SHA256SUMS.sigstore.json"
+  ],
+  "signatureIssuer": "https://token.actions.githubusercontent.com",
+  "signatureWorkflow": ".github/workflows/nimino-platform-release.yml",
+  "provenancePolicy": "github-attestation-required",
+  "retryPolicy": "identical-release-set-and-bytes-only",
+  "downgradePolicy": "reject",
+  "partialFailurePolicy": "restore-last-known-good",
+  "promotionRecord": "promotion.json",
+  "physicalCutoverOwner": 68,
+  "legacyPipelineDeletionOwner": 65
+}

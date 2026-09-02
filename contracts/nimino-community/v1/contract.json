@@ -1,0 +1,40 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.community-policy",
+  "owner": "nim/nimino_core/src/nimino_core/domain/community_policy.nim",
+  "boundaryOperation": "domain.community.policy",
+  "compatibilityMode": false,
+  "cutoverOwner": 12,
+  "decisions": ["community-lifecycle", "tenant-scope"],
+  "rustAdapters": [
+    "crates/nimino-boundary/src/community.rs",
+    "crates/nimino-boundary/src/contract.rs",
+    "crates/nimino-boundary/src/runtime.rs"
+  ],
+  "productionPolicyCallers": [
+    {
+      "path": "crates/nimino-relay/src/handlers/community_provisioning.rs",
+      "markers": ["CommunityPolicyRequest::Lifecycle"]
+    },
+    {
+      "path": "crates/nimino-relay/src/api/operator.rs",
+      "markers": ["CommunityPolicyRequest::Lifecycle"]
+    },
+    {
+      "path": "crates/nimino-relay/src/api/admin/mod.rs",
+      "markers": ["CommunityPolicyRequest::Scope"]
+    }
+  ],
+  "rustPolicySitesToShrink": [],
+  "rustEffectAdaptersToRetain": [
+    "crates/nimino-db/src/lib.rs"
+  ],
+  "cutoverRule": "Issue #12 removes or shrinks these Rust policy branches when routing the existing HTTP/DB adapters through Nimino; no compatibility fallback remains.",
+  "outOfScope": {
+    "ownershipTransfer": 86,
+    "membership": 86,
+    "directMessages": 87,
+    "moderation": 88,
+    "clusterAdmission": 9
+  }
+}

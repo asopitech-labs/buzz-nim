@@ -1,4 +1,3 @@
-import { Search } from "lucide-react";
 import * as React from "react";
 
 import {
@@ -26,19 +25,12 @@ import { NoteCard } from "@/features/pulse/ui/NoteCard";
 import { PulseTabBar } from "@/features/pulse/ui/PulseTabBar";
 import type { UserNote } from "@/shared/api/socialTypes";
 import type { ChannelMember, UserProfileSummary } from "@/shared/api/types";
-import { Input } from "@/shared/ui/input";
 import { Skeleton } from "@/shared/ui/skeleton";
 import { UserAvatar } from "@/shared/ui/UserAvatar";
 import { VirtualizedList } from "@/shared/ui/VirtualizedList";
 import { truncatePubkey } from "@/shared/lib/pubkey";
 
-export type PulseTab =
-  | "search"
-  | "everyone"
-  | "people"
-  | "liked"
-  | "agents"
-  | "mine";
+export type PulseTab = "everyone" | "people" | "liked" | "agents" | "mine";
 
 const pulsePanelId = (tab: PulseTab) => `pulse-panel-${tab}`;
 const pulseTabId = (tab: PulseTab) => `pulse-tab-${tab}`;
@@ -74,7 +66,6 @@ function TimelineSkeleton() {
 
 export function PulseView({ currentPubkey }: PulseViewProps) {
   const [activeTab, setActiveTab] = React.useState<PulseTab>("everyone");
-  const [searchQuery, setSearchQuery] = React.useState("");
   const scrollRef = React.useRef<HTMLDivElement>(null);
   const contactListQuery = useContactListQuery(currentPubkey);
   const contacts = contactListQuery.data?.contacts ?? [];
@@ -255,7 +246,6 @@ export function PulseView({ currentPubkey }: PulseViewProps) {
   const isLoading = activeQuery.isLoading;
 
   const emptyMessages: Record<PulseTab, string> = {
-    search: "Search Pulse notes by author or text.",
     everyone: "No public notes yet.",
     people: "No notes yet. Follow people to see their updates here.",
     liked: "No likes yet — tap the heart on a note to save it here.",
@@ -341,40 +331,12 @@ export function PulseView({ currentPubkey }: PulseViewProps) {
         <div
           aria-labelledby={pulseTabId(activeTab)}
           className={`mx-auto flex w-full max-w-2xl flex-col px-4 pb-10 sm:px-6 ${
-            activeTab !== "search" && activeTab !== "agents" ? "pt-0" : "pt-7"
+            activeTab !== "agents" ? "pt-0" : "pt-7"
           }`}
           id={pulsePanelId(activeTab)}
           role="tabpanel"
         >
-          {activeTab === "search" ? (
-            <div className="flex min-h-[calc(100vh-96px)] items-center justify-center">
-              <div className="relative flex w-full max-w-xl flex-col items-center px-2">
-                <h2 className="mb-5 text-center text-2xl font-semibold tracking-tight text-foreground">
-                  What are you looking for?
-                </h2>
-                <div className="relative w-full max-w-lg">
-                  <div className="relative rounded-full border border-foreground/10 bg-background/80 p-1 shadow-[0_12px_48px_rgba(0,0,0,0.12)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.04] dark:shadow-[0_16px_70px_rgba(0,0,0,0.55)]">
-                    <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground dark:text-white/55" />
-                    <Input
-                      autoFocus
-                      className="h-9 rounded-full border-0 bg-transparent pl-10 pr-12 text-sm shadow-none placeholder:text-muted-foreground/80 focus-visible:ring-0 dark:text-white dark:placeholder:text-white/60"
-                      onChange={(event) => setSearchQuery(event.target.value)}
-                      placeholder="What would you like to know?"
-                      type="search"
-                      value={searchQuery}
-                    />
-                    <button
-                      aria-label="Search Pulse"
-                      className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-foreground/10 text-foreground transition-colors hover:bg-foreground/15 dark:bg-white/85 dark:text-black dark:hover:bg-white"
-                      type="button"
-                    >
-                      <Search className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : activeTab !== "agents" ? (
+          {activeTab !== "agents" ? (
             <div className="sticky top-0 z-10 mb-7 pb-3 pt-7">
               <div
                 aria-hidden="true"
@@ -418,7 +380,7 @@ export function PulseView({ currentPubkey }: PulseViewProps) {
             </div>
           ) : null}
 
-          {activeTab !== "search" ? <div>{renderTimeline()}</div> : null}
+          <div>{renderTimeline()}</div>
         </div>
       </div>
     </div>

@@ -1,0 +1,193 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.protocol",
+  "protocolVersion": 1,
+  "capability": "nimino-v1",
+  "compatibilityMode": false,
+  "publication": "cutover-ready",
+  "cutoverOwner": 12,
+  "namingContract": "nimino.naming",
+  "standardNips": [1, 2, 10, 11, 16, 17, 23, 25, 29, 33, 38, 42, 50, 56],
+  "conditionalNips": [43],
+  "surfaces": [
+    {
+      "id": "kind.current-registry",
+      "type": "kind",
+      "decision": "keep",
+      "values": [
+        0, 1, 3, 5, 7, 9, 41, 1059, 1063, 1617, 1618, 1619, 1621, 1630, 1631,
+        1632, 1633, 1984, 8000, 8001, 8002, 8003, 9000, 9001, 9002, 9005, 9007,
+        9008, 9009, 9021, 9022, 9030, 9031, 9032, 9033, 9035, 9036, 9040, 9041,
+        9042, 9043, 9044, 10000, 10001, 10002, 10003, 10030, 10100, 13534, 13535,
+        20001, 20002, 22242, 24134, 24200, 24242, 24243, 24810, 27235, 28936,
+        30000, 30003, 30023, 30030, 30078, 30174, 30175, 30176, 30177, 30178,
+        30179, 30300, 30315, 30617, 30618, 30620, 30621, 30622, 39000, 39001,
+        39002, 39003, 39005, 39006, 40002, 40003, 40004, 40005, 40006, 40007,
+        40008, 40099, 40100, 40901, 40902, 41001, 41010, 41011, 41012, 42000,
+        43001, 43002, 43003, 43004, 43005, 43006, 44100, 44101, 44200, 45001,
+        45002, 45003, 46001, 46002, 46003, 46004, 46005, 46006, 46007, 46010,
+        46011, 46012, 46020, 46030, 46031, 48001, 48100, 48101, 48102, 48103,
+        48106, 49001
+      ],
+      "reason": "Keep every registered Nostr kind number; product semantics are owned by the listed custom NIP schemas."
+    },
+    {
+      "id": "kind.legacy-stream-v1",
+      "type": "kind",
+      "decision": "delete",
+      "values": [40001],
+      "reason": "The obsolete Buzz stream kind has no Nimino compatibility path."
+    },
+    {
+      "id": "tag.nimino-namespace",
+      "type": "tag",
+      "decision": "redefine",
+      "values": ["protocol.colon-tag-prefix", "protocol.tag-prefix"],
+      "reason": "Use the canonical nimino:/nimino- prefixes from the naming contract and reject Buzz-prefixed tags."
+    },
+    {
+      "id": "route.current",
+      "type": "route",
+      "decision": "keep",
+      "values": [
+        "/",
+        "/_liveness",
+        "/_readiness",
+        "/_status",
+        "/.well-known/nostr.json",
+        "/api/admin/v1",
+        "/api/invites",
+        "/api/invites/accept-policy",
+        "/api/invites/claim",
+        "/api/join-policy",
+        "/api/join-policy/privacy",
+        "/api/join-policy/terms",
+        "/count",
+        "/events",
+        "/feedback",
+        "/feedback/{id}",
+        "/feedback/{id}/attachments/{sha256}",
+        "/git/{owner}/{repo}/git-receive-pack",
+        "/git/{owner}/{repo}/git-upload-pack",
+        "/git/{owner}/{repo}/info/refs",
+        "/health",
+        "/hooks/{id}",
+        "/huddle/{channel_id}/audio",
+        "/info",
+        "/internal/git/policy",
+        "/media/{sha256_ext}",
+        "/moderation/audit",
+        "/moderation/reports",
+        "/moderation/restricted",
+        "/operator/communities",
+        "/operator/communities/archive",
+        "/operator/communities/availability",
+        "/operator/communities/transfer",
+        "/operator/communities/unarchive",
+        "/query",
+        "/reports",
+        "/reports/{id}",
+        "/upload",
+        "/workflows/{workflow_id}/runs",
+        "/workflows/{workflow_id}/runs/{run_id}/approvals"
+      ],
+      "reason": "Keep the current brand-neutral Nostr, operator, workflow, media, Git, and health routes."
+    },
+    {
+      "id": "route.legacy",
+      "type": "route",
+      "decision": "delete",
+      "values": ["/_mesh", "/_mesh/demo/echo", "/media/upload"],
+      "reason": "Remove the old mesh surface and the duplicate media-upload alias at the atomic cutover."
+    },
+    {
+      "id": "schema.custom-nips",
+      "type": "schema",
+      "decision": "keep",
+      "values": [
+        "docs/nips/NIP-AA.md",
+        "docs/nips/NIP-AE.md",
+        "docs/nips/NIP-AM.md",
+        "docs/nips/NIP-AO.md",
+        "docs/nips/NIP-CW.md",
+        "docs/nips/NIP-DV.md",
+        "docs/nips/NIP-ER.md",
+        "docs/nips/NIP-FI-CONF.md",
+        "docs/nips/NIP-FI-DELEG.md",
+        "docs/nips/NIP-FI-EDGE.md",
+        "docs/nips/NIP-FI-LIFECYCLE.md",
+        "docs/nips/NIP-FI-MODEL.md",
+        "docs/nips/NIP-FI.md",
+        "docs/nips/NIP-GS.md",
+        "docs/nips/NIP-IA.md",
+        "docs/nips/NIP-OA.md",
+        "docs/nips/NIP-RS.md",
+        "docs/nips/NIP-WP.md"
+      ],
+      "reason": "Keep brand-neutral custom NIP wire schemas and their existing kind/tag semantics."
+    },
+    {
+      "id": "schema.cutover-rewrite",
+      "type": "schema",
+      "decision": "redefine",
+      "values": ["docs/nips/NIP-AP.md", "docs/nips/NIP-MP.md", "docs/nips/NIP-PMA.md"],
+      "reason": "Remove transitional compatibility language and apply the Nimino protocol namespace at cutover."
+    },
+    {
+      "id": "schema.private-managed-agent-format",
+      "type": "schema",
+      "decision": "redefine",
+      "values": ["nimino-private-managed-agent"],
+      "legacyValues": ["buzz-private-managed-agent"],
+      "reason": "Use one Nimino discriminator; the Buzz discriminator is not an alias."
+    },
+    {
+      "id": "schema.managed-agent-fat-v0",
+      "type": "schema",
+      "decision": "delete",
+      "values": ["managed-agent-fat-v0"],
+      "reason": "The pre-definition managed-agent projection is excluded from the independent v1 contract."
+    },
+    {
+      "id": "query-field.canonical",
+      "type": "query-field",
+      "decision": "keep",
+      "values": [
+        "before_id",
+        "depth_limit",
+        "feed_types",
+        "include_aux",
+        "include_summaries",
+        "page",
+        "search_mode",
+        "search_page",
+        "thread_cursor",
+        "thread_cursor_id",
+        "top_level"
+      ],
+      "reason": "Keep one snake_case spelling for each authenticated HTTP bridge extension."
+    },
+    {
+      "id": "query-field.camel-case-aliases",
+      "type": "query-field",
+      "decision": "delete",
+      "values": ["searchMode", "searchPage", "threadCursor", "threadCursorId"],
+      "reason": "Remove duplicate client aliases instead of carrying an old-client mode."
+    },
+    {
+      "id": "capability.nip-er",
+      "type": "capability",
+      "decision": "keep",
+      "values": ["nip-er"],
+      "reason": "Keep the already advertised draft reminder capability."
+    },
+    {
+      "id": "capability.nimino-v1",
+      "type": "capability",
+      "decision": "redefine",
+      "values": ["nimino-v1"],
+      "legacyValues": ["buzz", "buzz-v1", "implicit-buzz"],
+      "reason": "Advertise one explicit Nimino v1 boundary at public cutover; no Buzz capability is accepted."
+    }
+  ]
+}

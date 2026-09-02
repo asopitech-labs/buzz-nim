@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.relay-release",
+  "issue": 61,
+  "releaseSetAuthority": "nimino.release-set",
+  "compatibilityMode": false,
+  "tagPrefix": "nimino-v",
+  "sourceRepository": "asopitech-labs/nimino",
+  "image": {
+    "repository": "ghcr.io/asopitech-labs/nimino",
+    "platforms": ["linux/amd64", "linux/arm64"],
+    "signing": "sigstore-keyless"
+  },
+  "chart": {
+    "name": "nimino",
+    "path": "deploy/charts/nimino",
+    "repository": "oci://ghcr.io/asopitech-labs/nimino/charts",
+    "signing": "sigstore-keyless"
+  },
+  "compose": {
+    "project": "nimino-prod",
+    "path": "deploy/compose/compose.yml",
+    "imagePolicy": "sha256-digest-required",
+    "signing": "sigstore-keyless-blob"
+  },
+  "candidatePublication": "content-addressed-no-rolling-tag",
+  "requiredProofs": [
+    "release-set-artifact-digests",
+    "native-amd64-arm64-image",
+    "container-readiness",
+    "clean-chart-install",
+    "compose-config",
+    "three-node-chirps-negotiation",
+    "three-node-data-convergence",
+    "content-addressed-object-repair",
+    "keyless-signatures",
+    "provenance-attestation"
+  ],
+  "physicalPromotionOwner": 63,
+  "legacyPipelineDeletionOwner": 65
+}

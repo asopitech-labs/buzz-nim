@@ -221,6 +221,8 @@ CREATE TABLE events (
     -- never matches `@@`.
     -- Keep in sync with migrations (final state: 0001 + 0005 + 0009).
     search_tsv  TSVECTOR GENERATED ALWAYS AS (
+        -- kind:30350 is retired and rejected by ingest. Its inert exclusion
+        -- remains until Issue #12 resets the migration baseline.
         CASE WHEN kind IN (1059, 30300, 30350, 30622, 44100, 44101, 44200) THEN NULL::tsvector
              ELSE to_tsvector('simple', content)
         END
@@ -391,6 +393,9 @@ CREATE TABLE workflow_runs (
     status              run_status NOT NULL DEFAULT 'pending',
     trigger_event_id    BYTEA,
     current_step        INT NOT NULL DEFAULT 0,
+    revision            BIGINT NOT NULL DEFAULT 0 CHECK (revision >= 0),
+    transition_ids      JSONB NOT NULL DEFAULT '[]'::jsonb
+                        CHECK (jsonb_typeof(transition_ids) = 'array'),
     execution_trace     JSONB NOT NULL DEFAULT '[]',
     trigger_context     JSONB,
     started_at          TIMESTAMPTZ,
@@ -837,112 +842,6 @@ CREATE INDEX idx_product_feedback_community_received
     ON product_feedback (community_id, received_at DESC, id);
 INSERT INTO _operator_global_tables (table_name, reason) VALUES
     ('product_feedback', 'deployment product inbox; community_id is provenance only');
--- NIP-PL effective lease state and durable wake outbox. Every key is led by
--- community_id: client-provided origin is confirmation only, never routing.
-CREATE TABLE push_leases (
-    community_id UUID NOT NULL REFERENCES communities(id),
-    author BYTEA NOT NULL CHECK (length(author) = 32),
-    installation_id TEXT NOT NULL CHECK (octet_length(installation_id) BETWEEN 1 AND 64),
-    source_event_id BYTEA NOT NULL CHECK (length(source_event_id) = 32),
-    source_created_at BIGINT NOT NULL,
-    generation BIGINT NOT NULL CHECK (generation > 0),
-    active BOOLEAN NOT NULL,
-    endpoint_enabled BOOLEAN NOT NULL DEFAULT true,
-    app_profile TEXT,
-    endpoint_hash BYTEA CHECK (endpoint_hash IS NULL OR length(endpoint_hash) = 32),
-    endpoint_grant TEXT,
-    max_class TEXT CHECK (max_class IS NULL OR max_class IN ('silent','default','time_sensitive','urgent')),
-    subscriptions JSONB,
-    expires_at BIGINT NOT NULL,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    PRIMARY KEY (community_id, author, installation_id),
-    UNIQUE (community_id, source_event_id),
-    CHECK ((active AND app_profile IS NOT NULL AND endpoint_hash IS NOT NULL AND endpoint_grant IS NOT NULL AND max_class IS NOT NULL AND subscriptions IS NOT NULL)
-        OR (NOT active AND app_profile IS NULL AND endpoint_hash IS NULL AND endpoint_grant IS NULL AND max_class IS NULL AND subscriptions IS NULL))
-);
-CREATE UNIQUE INDEX push_leases_endpoint_unique
-    ON push_leases (community_id, author, app_profile, endpoint_hash)
-    WHERE active;
-CREATE INDEX push_leases_expiry ON push_leases (community_id, expires_at) WHERE active;
-
-CREATE TABLE push_wake_outbox (
-    community_id UUID NOT NULL REFERENCES communities(id),
-    id UUID NOT NULL DEFAULT gen_random_uuid(),
-    author BYTEA NOT NULL CHECK (length(author) = 32),
-    installation_id TEXT NOT NULL,
-    lease_generation BIGINT NOT NULL CHECK (lease_generation > 0),
-    endpoint_hash BYTEA NOT NULL CHECK (length(endpoint_hash) = 32),
-    event_id BYTEA NOT NULL CHECK (length(event_id) = 32),
-    class TEXT NOT NULL CHECK (class IN ('silent','default','time_sensitive','urgent')),
-    expires_at BIGINT NOT NULL,
-    state TEXT NOT NULL DEFAULT 'pending' CHECK (state IN ('pending','sending','delivered','failed')),
-    attempts INTEGER NOT NULL DEFAULT 0 CHECK (attempts >= 0),
-    next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    lease_until TIMESTAMPTZ,
-    claim_id UUID,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    PRIMARY KEY (community_id, id),
-    FOREIGN KEY (community_id, author, installation_id)
-        REFERENCES push_leases (community_id, author, installation_id),
-    UNIQUE (community_id, endpoint_hash, event_id)
-);
-CREATE INDEX push_wake_outbox_due
-    ON push_wake_outbox (community_id, next_attempt_at) WHERE state = 'pending';
-CREATE INDEX push_wake_outbox_recovery
-    ON push_wake_outbox (community_id, lease_until) WHERE state = 'sending';
--- Durable event-to-push matching follower. The trigger runs in the event insert
--- transaction, so every accepted persistent event has a crash-safe match job and
--- rejected/rolled-back events never do. Processing is idempotent through the
--- push_wake_outbox endpoint/event unique key.
-CREATE TABLE push_match_queue (
-    community_id UUID NOT NULL REFERENCES communities(id),
-    event_id BYTEA NOT NULL CHECK (length(event_id) = 32),
-    state TEXT NOT NULL DEFAULT 'pending' CHECK (state IN ('pending','matching')),
-    attempts INTEGER NOT NULL DEFAULT 0 CHECK (attempts >= 0),
-    next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    lease_until TIMESTAMPTZ,
-    claim_id UUID,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    PRIMARY KEY (community_id, event_id)
-);
-CREATE INDEX push_match_queue_due
-    ON push_match_queue (next_attempt_at, created_at) WHERE state = 'pending';
-CREATE INDEX push_match_queue_recovery
-    ON push_match_queue (lease_until) WHERE state = 'matching';
-
--- T1b push gate (keep in sync with migrations/0023). Enqueue only when the
--- community has an active, endpoint-enabled, unexpired lease; the shared
--- advisory lock pairs with the exclusive lock taken by lease activations
--- (crates/buzz-db/src/push.rs) to close the lost-wake race.
-CREATE FUNCTION enqueue_push_match_job() RETURNS trigger
-LANGUAGE plpgsql AS $$
-BEGIN
-    -- Keep this allowlist identical to the relay's validated NIP-PL descriptor.
-    -- Centralizing it on the events table covers every durable producer,
-    -- including internal paths that bypass live dispatch.
-    IF NEW.kind IN (7, 9, 1059, 40007, 46010) THEN
-        PERFORM pg_advisory_xact_lock_shared(
-            hashtextextended('buzz_push_gate:' || NEW.community_id::text, 0));
-        IF EXISTS (
-            SELECT 1 FROM push_leases
-            WHERE community_id = NEW.community_id
-              AND active
-              AND endpoint_enabled
-              AND expires_at > EXTRACT(EPOCH FROM now())::bigint
-        ) THEN
-            INSERT INTO push_match_queue (community_id, event_id)
-            VALUES (NEW.community_id, NEW.id)
-            ON CONFLICT DO NOTHING;
-        END IF;
-    END IF;
-    RETURN NEW;
-END
-$$;
-
-CREATE TRIGGER events_enqueue_push_match
-AFTER INSERT ON events
-FOR EACH ROW EXECUTE FUNCTION enqueue_push_match_job();
-
 -- Channel TTL refresh (keep in sync with migrations/0024). Runs deferred, in
 -- the transaction that makes a channel-scoped event durable, so a TTL
 -- transition committed while ingest was in flight is never missed. The
@@ -959,7 +858,7 @@ BEGIN
     IF NEW.channel_id IS NOT NULL AND NEW.kind <> 9007 THEN
         BEGIN
             PERFORM pg_advisory_xact_lock_shared(hashtextextended(
-                'buzz_channel_ttl:' || NEW.community_id::text || ':' || NEW.channel_id::text, 0));
+                'nimino_channel_ttl:' || NEW.community_id::text || ':' || NEW.channel_id::text, 0));
 
             SELECT ttl_seconds INTO channel_ttl
             FROM channels
@@ -1011,7 +910,7 @@ BEGIN
     END IF;
 
     PERFORM pg_advisory_xact_lock(hashtextextended(
-        'buzz_channel_membership:' || NEW.community_id::text || ':' || NEW.channel_id::text,
+        'nimino_channel_membership:' || NEW.community_id::text || ':' || NEW.channel_id::text,
         0
     ));
 
@@ -1071,7 +970,7 @@ CREATE TRIGGER trg_events_guard_channel_roster_snapshot
 
 -- Replica-fence floor guard (keep in sync with migrations/0021). A deferred
 -- constraint trigger re-checks, inside COMMIT processing, that channel-bearing
--- event rows are no older than `buzz.created_at_floor` seconds before commit
+-- event rows are no older than `nimino.created_at_floor` seconds before commit
 -- time (clock_timestamp(), NOT the transaction-frozen now()). This turns the
 -- relay's ingest-time created_at envelope into a commit-time storage
 -- invariant, which is what lets keyset-cursor pages below the replica fence
@@ -1083,7 +982,7 @@ CREATE TRIGGER trg_events_guard_channel_roster_snapshot
 CREATE FUNCTION events_created_at_floor_guard() RETURNS trigger
 LANGUAGE plpgsql AS $$
 DECLARE
-    floor_secs numeric := nullif(current_setting('buzz.created_at_floor', true), '')::numeric;
+    floor_secs numeric := nullif(current_setting('nimino.created_at_floor', true), '')::numeric;
 BEGIN
     IF floor_secs IS NOT NULL
        AND floor_secs > 0
@@ -1110,81 +1009,6 @@ CREATE CONSTRAINT TRIGGER events_created_at_floor
     DEFERRABLE INITIALLY DEFERRED
     FOR EACH ROW
     EXECUTE FUNCTION events_created_at_floor_guard();
-
--- Durable, deployment-global authority for the public NIP-PL push gateway.
--- This state is intentionally outside relay community tenancy: installations
--- delegate to relay signing keys and may authorize multiple relay deployments.
-CREATE TABLE push_gateway_challenges (
-    id UUID PRIMARY KEY,
-    challenge_hash BYTEA NOT NULL CHECK (length(challenge_hash) = 32),
-    expires_at TIMESTAMPTZ NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-CREATE INDEX push_gateway_challenges_expiry ON push_gateway_challenges (expires_at);
-
-CREATE TABLE push_gateway_installations (
-    id UUID PRIMARY KEY,
-    app_attest_key_id BYTEA NOT NULL UNIQUE CHECK (octet_length(app_attest_key_id) BETWEEN 1 AND 128),
-    app_attest_public_key BYTEA NOT NULL CHECK (octet_length(app_attest_public_key) BETWEEN 33 AND 256),
-    assertion_counter BIGINT NOT NULL CHECK (assertion_counter BETWEEN 0 AND 4294967295),
-    app_profile TEXT NOT NULL CHECK (app_profile IN ('buzz-ios-production','buzz-ios-sandbox')),
-    token_ciphertext BYTEA NOT NULL CHECK (octet_length(token_ciphertext) BETWEEN 1 AND 2048),
-    token_fingerprint BYTEA NOT NULL CHECK (length(token_fingerprint) = 32),
-    endpoint_epoch BIGINT NOT NULL CHECK (endpoint_epoch > 0),
-    expires_at TIMESTAMPTZ NOT NULL,
-    revoked_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    UNIQUE (app_profile, token_fingerprint)
-);
-CREATE INDEX push_gateway_installations_expiry ON push_gateway_installations (expires_at) WHERE revoked_at IS NULL;
-
-CREATE TABLE push_gateway_delegations (
-    id UUID PRIMARY KEY,
-    installation_id UUID NOT NULL REFERENCES push_gateway_installations(id),
-    relay_pubkey BYTEA NOT NULL CHECK (length(relay_pubkey) = 32),
-    endpoint_epoch BIGINT NOT NULL CHECK (endpoint_epoch > 0),
-    generation BIGINT NOT NULL CHECK (generation > 0),
-    not_before TIMESTAMPTZ NOT NULL,
-    expires_at TIMESTAMPTZ NOT NULL,
-    revoked_at TIMESTAMPTZ,
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-    UNIQUE (installation_id, relay_pubkey),
-    CHECK (not_before < expires_at)
-);
-CREATE INDEX push_gateway_delegations_expiry ON push_gateway_delegations (expires_at) WHERE revoked_at IS NULL;
-
-CREATE TABLE push_gateway_endpoint_quotas (
-    token_fingerprint BYTEA PRIMARY KEY CHECK (length(token_fingerprint) = 32),
-    window_started_at TIMESTAMPTZ NOT NULL,
-    admitted BIGINT NOT NULL CHECK (admitted >= 0),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-CREATE INDEX push_gateway_endpoint_quotas_updated ON push_gateway_endpoint_quotas (updated_at);
-
-CREATE TABLE push_gateway_delivery_auth_replays (
-    relay_pubkey BYTEA NOT NULL CHECK (length(relay_pubkey) = 32),
-    auth_event_id BYTEA NOT NULL CHECK (length(auth_event_id) = 32),
-    expires_at TIMESTAMPTZ NOT NULL,
-    PRIMARY KEY (relay_pubkey, auth_event_id)
-);
-CREATE INDEX push_gateway_delivery_auth_replays_expiry ON push_gateway_delivery_auth_replays (expires_at);
-
-CREATE TABLE push_gateway_delivery_request_replays (
-    relay_pubkey BYTEA NOT NULL CHECK (length(relay_pubkey) = 32),
-    request_id UUID NOT NULL,
-    expires_at TIMESTAMPTZ NOT NULL,
-    PRIMARY KEY (relay_pubkey, request_id)
-);
-CREATE INDEX push_gateway_delivery_request_replays_expiry ON push_gateway_delivery_request_replays (expires_at);
-
-INSERT INTO _operator_global_tables (table_name, reason) VALUES
-    ('push_gateway_challenges', 'public gateway one-time challenges span relay communities'),
-    ('push_gateway_installations', 'public gateway installation authority spans relay communities'),
-    ('push_gateway_delegations', 'public gateway relay delegations span relay communities'),
-    ('push_gateway_endpoint_quotas', 'public gateway endpoint abuse ceilings span relay communities'),
-    ('push_gateway_delivery_auth_replays', 'public gateway signed-event replay admission spans relay communities'),
-    ('push_gateway_delivery_request_replays', 'public gateway stable request-id admission spans relay communities');
 
 -- ── Replica heartbeat (read-replica freshness fence) ─────────────────────────
 -- Portable read-side freshness observation for the replica fence (see
@@ -1213,7 +1037,7 @@ CREATE TABLE community_deletion_requests (
     community_host TEXT NOT NULL,
     stage TEXT NOT NULL DEFAULT 'submitted' CHECK (stage IN (
         'submitted', 'inventoried', 'approved', 'fenced', 'drained',
-        'bindings_removed', 'postgres_purged', 'cache_purged',
+        'bindings_removed', 'postgres_purged',
         'logically_verified', 'retention_pending', 'aborted'
     )),
     requested_by TEXT NOT NULL,
@@ -1233,7 +1057,7 @@ CREATE TABLE community_deletion_requests (
     retry_count INTEGER NOT NULL DEFAULT 0 CHECK (retry_count >= 0),
     retry_stage TEXT CHECK (retry_stage IS NULL OR retry_stage IN (
         'approved', 'fenced', 'drained', 'bindings_removed',
-        'postgres_purged', 'cache_purged', 'logically_verified'
+        'postgres_purged', 'logically_verified'
     )),
     next_attempt_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     last_error TEXT,
@@ -1468,7 +1292,7 @@ INSERT INTO _operator_global_tables (table_name, reason) VALUES
 
 CREATE FUNCTION community_deletion_lock_key(target UUID) RETURNS BIGINT
 LANGUAGE SQL IMMUTABLE STRICT PARALLEL SAFE AS $$
-    SELECT hashtextextended('buzz-community-deletion:' || target::text, 0)
+    SELECT hashtextextended('nimino-community-deletion:' || target::text, 0)
 $$;
 -- Keep the deletion control plane writable while its target tenant is fenced.
 -- This predicate is the single SQL source of truth used by attachment and live
@@ -1548,8 +1372,8 @@ BEGIN
     END IF;
 
     -- Authorization is evaluated independently for every community checked.
-    executor_community := current_setting('buzz.deletion_executor_community', true);
-    executor_generation := current_setting('buzz.deletion_fence_generation', true);
+    executor_community := current_setting('nimino.deletion_executor_community', true);
+    executor_generation := current_setting('nimino.deletion_fence_generation', true);
     IF executor_community = target::TEXT
        AND executor_generation ~ '^[0-9]+$'
        AND executor_generation::BIGINT = generation THEN
@@ -1558,11 +1382,11 @@ BEGIN
 
     -- A serving mutation admitted before quiescing may finish only while its
     -- exact durable lease remains current and bound to this fence generation.
-    serving_community := current_setting('buzz.serving_write_community', true);
-    serving_lease_id := current_setting('buzz.serving_write_lease_id', true);
-    serving_owner := current_setting('buzz.serving_write_owner', true);
-    serving_generation := current_setting('buzz.serving_write_generation', true);
-    serving_fence_generation := current_setting('buzz.serving_write_fence_generation', true);
+    serving_community := current_setting('nimino.serving_write_community', true);
+    serving_lease_id := current_setting('nimino.serving_write_lease_id', true);
+    serving_owner := current_setting('nimino.serving_write_owner', true);
+    serving_generation := current_setting('nimino.serving_write_generation', true);
+    serving_fence_generation := current_setting('nimino.serving_write_fence_generation', true);
     IF lifecycle IN ('active', 'quiescing')
        AND serving_community = target::TEXT
        AND serving_lease_id ~ '^[0-9a-fA-F-]{36}$'
@@ -1618,8 +1442,8 @@ $$;
 CREATE FUNCTION enforce_community_tombstone() RETURNS TRIGGER
 LANGUAGE plpgsql AS $$
 DECLARE
-    executor_community TEXT := current_setting('buzz.deletion_executor_community', true);
-    executor_generation TEXT := current_setting('buzz.deletion_fence_generation', true);
+    executor_community TEXT := current_setting('nimino.deletion_executor_community', true);
+    executor_generation TEXT := current_setting('nimino.deletion_fence_generation', true);
     expected_generation BIGINT;
 BEGIN
     IF TG_OP = 'DELETE' THEN
@@ -1734,9 +1558,6 @@ SELECT attach_community_write_fence('moderation_actions');
 SELECT attach_community_write_fence('moderation_reports');
 SELECT attach_community_write_fence('parameterized_event_watermarks');
 SELECT attach_community_write_fence('pubkey_allowlist');
-SELECT attach_community_write_fence('push_leases');
-SELECT attach_community_write_fence('push_match_queue');
-SELECT attach_community_write_fence('push_wake_outbox');
 SELECT attach_community_write_fence('reactions');
 SELECT attach_community_write_fence('relay_invites');
 SELECT attach_community_write_fence('relay_members');

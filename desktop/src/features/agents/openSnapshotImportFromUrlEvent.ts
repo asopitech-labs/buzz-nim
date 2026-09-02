@@ -15,9 +15,14 @@ export type PendingSnapshotImport = {
   snapshotKind: "agent" | "team";
 };
 
-const OPEN_SNAPSHOT_IMPORT_EVENT = "buzz:open-snapshot-import";
+const OPEN_SNAPSHOT_IMPORT_EVENT = "nimino:open-snapshot-import";
 
 let pendingImport: PendingSnapshotImport | null = null;
+
+/** Drop snapshot bytes captured for the community being left. */
+export function resetPendingSnapshotImport(): void {
+  pendingImport = null;
+}
 
 /**
  * Enqueue a snapshot import and dispatch the navigation event.

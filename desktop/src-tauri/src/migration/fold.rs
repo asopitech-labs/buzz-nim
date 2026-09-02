@@ -27,10 +27,10 @@ pub fn fold_personas_into_agent_store(app: &tauri::AppHandle) {
         Ok(None) => {}
         Ok(Some(folded)) => {
             eprintln!(
-                "buzz-desktop: persona-store-fold: {folded} definitions folded into the unified store"
+                "nimino-desktop: persona-store-fold: {folded} definitions folded into the unified store"
             );
         }
-        Err(e) => eprintln!("buzz-desktop: persona-store-fold: {e}"),
+        Err(e) => eprintln!("nimino-desktop: persona-store-fold: {e}"),
     }
 }
 
@@ -155,7 +155,7 @@ mod tests {
             "name": name,
             "pubkey": pubkey,
             "relay_url": "ws://localhost:3000",
-            "acp_command": "buzz-acp",
+            "acp_command": "nimino-acp",
             "agent_command": "goose",
             "agent_args": [],
             "mcp_command": "",

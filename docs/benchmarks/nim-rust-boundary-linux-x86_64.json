@@ -1,0 +1,89 @@
+{
+  "schemaHash": "3b799b4bf7bf4fb3720de2103cf37642c781ea3746de5a98ddd9f04a5293e233",
+  "measuredAtUnixSeconds": 1787638670,
+  "os": "linux",
+  "arch": "x86_64",
+  "coldStart": {
+    "samples": 10,
+    "p50Ms": 0.62192,
+    "p95Ms": 0.959995,
+    "p99Ms": 0.959995,
+    "throughputPerSecond": 1532.217164203117
+  },
+  "coldStartP95BudgetMs": 100.0,
+  "payloads": [
+    {
+      "payloadBytes": 1024,
+      "ipc": {
+        "samples": 200,
+        "p50Ms": 0.086282,
+        "p95Ms": 0.113513,
+        "p99Ms": 0.13874,
+        "throughputPerSecond": 11234.447241884222
+      },
+      "serdeOnly": {
+        "samples": 200,
+        "p50Ms": 0.001092,
+        "p95Ms": 0.001093,
+        "p99Ms": 0.001412,
+        "throughputPerSecond": 910034.0352729192
+      },
+      "p99BudgetMs": 25.0,
+      "passed": true
+    },
+    {
+      "payloadBytes": 16384,
+      "ipc": {
+        "samples": 100,
+        "p50Ms": 0.357319,
+        "p95Ms": 0.387906,
+        "p99Ms": 0.477192,
+        "throughputPerSecond": 2748.121198850285
+      },
+      "serdeOnly": {
+        "samples": 100,
+        "p50Ms": 0.025638,
+        "p95Ms": 0.02663,
+        "p99Ms": 0.047368,
+        "throughputPerSecond": 38524.89709999984
+      },
+      "p99BudgetMs": 75.0,
+      "passed": true
+    },
+    {
+      "payloadBytes": 262144,
+      "ipc": {
+        "samples": 30,
+        "p50Ms": 4.913035,
+        "p95Ms": 5.103168,
+        "p99Ms": 6.492689,
+        "throughputPerSecond": 200.7560701123979
+      },
+      "serdeOnly": {
+        "samples": 30,
+        "p50Ms": 0.301233,
+        "p95Ms": 0.35161699999999996,
+        "p99Ms": 0.515254,
+        "throughputPerSecond": 3156.6792491901538
+      },
+      "p99BudgetMs": 250.0,
+      "passed": true
+    }
+  ],
+  "crashToReady": {
+    "samples": 10,
+    "p50Ms": 0.90981,
+    "p95Ms": 0.945976,
+    "p99Ms": 0.945976,
+    "throughputPerSecond": 1102.0013556820677
+  },
+  "cancelToReady": {
+    "samples": 10,
+    "p50Ms": 12.047626,
+    "p95Ms": 12.183766,
+    "p99Ms": 12.183766,
+    "throughputPerSecond": 82.90214889416617
+  },
+  "recoveryP99BudgetMs": 250.0,
+  "passed": true
+}

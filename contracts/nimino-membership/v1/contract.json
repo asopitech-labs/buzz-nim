@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.membership-policy",
+  "owner": "nim/nimino_core/src/nimino_core/domain/membership_policy.nim",
+  "boundaryOperation": "domain.membership.policy",
+  "compatibilityMode": false,
+  "cutoverOwner": 12,
+  "decisions": ["channel", "relay", "invite", "ownership-transfer"],
+  "rustAdapters": [
+    "crates/nimino-boundary/src/membership.rs",
+    "crates/nimino-boundary/src/contract.rs",
+    "crates/nimino-boundary/src/runtime.rs"
+  ],
+  "productionPolicyCallers": [
+    {
+      "path": "crates/nimino-relay/src/handlers/side_effects.rs",
+      "markers": ["MembershipPolicyRequest::Channel", "decide_channel_membership"]
+    },
+    {
+      "path": "crates/nimino-relay/src/handlers/relay_admin.rs",
+      "markers": ["MembershipPolicyRequest::Relay"]
+    },
+    {
+      "path": "crates/nimino-relay/src/api/invites.rs",
+      "markers": ["command: InviteCommand::Mint", "command: InviteCommand::Claim"]
+    },
+    {
+      "path": "crates/nimino-relay/src/api/operator.rs",
+      "markers": ["MembershipPolicyRequest::OwnershipTransfer"]
+    }
+  ],
+  "rustPolicySitesToShrink": [],
+  "rustEffectAdaptersToRetain": [
+    "crates/nimino-db/src/channel.rs",
+    "crates/nimino-db/src/relay_members.rs",
+    "crates/nimino-db/src/relay_invite.rs"
+  ],
+  "deletedCompatibilityMarkers": [
+    {
+      "path": "crates/nimino-relay/src/api/invites.rs",
+      "marker": "v1 HMAC path (stateless tokens, drain window)"
+    }
+  ],
+  "cutoverRule": "Issue #12 routes the existing adapters through Nimino, shrinks Rust to validation/crypto/I/O/effects, and deletes the v1 invite drain path without fallback.",
+  "outOfScope": {
+    "directMessages": 87,
+    "moderation": 88,
+    "clusterAdmission": 9
+  }
+}

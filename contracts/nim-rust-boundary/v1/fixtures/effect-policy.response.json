@@ -1,0 +1,52 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "fixture-effect-policy",
+  "operation": "domain.effect.policy",
+  "status": "ok",
+  "result": {
+    "decision": "claim",
+    "result": {
+      "effect": "claimed",
+      "error": "none",
+      "leaseError": "none",
+      "portEffect": "commit_canonical",
+      "beforeState": {
+        "valid": true,
+        "communityId": "community-a",
+        "workflowId": "workflow-a",
+        "runId": "run-a",
+        "stepId": "step-a",
+        "idempotencyKey": "effect-a",
+        "effectDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+        "leaseResourceId": "workflow-effect/community-a/workflow-a/run-a/step-a",
+        "revision": 0,
+        "attempt": 0,
+        "status": "pending",
+        "ownerNodeId": "",
+        "fenceToken": 0,
+        "receipt": null,
+        "reconciledBy": "",
+        "reconcileReason": ""
+      },
+      "nextState": {
+        "valid": true,
+        "communityId": "community-a",
+        "workflowId": "workflow-a",
+        "runId": "run-a",
+        "stepId": "step-a",
+        "idempotencyKey": "effect-a",
+        "effectDigest": "0000000000000000000000000000000000000000000000000000000000000000",
+        "leaseResourceId": "workflow-effect/community-a/workflow-a/run-a/step-a",
+        "revision": 1,
+        "attempt": 1,
+        "status": "claimed",
+        "ownerNodeId": "node-a",
+        "fenceToken": 1,
+        "receipt": null,
+        "reconciledBy": "",
+        "reconcileReason": ""
+      }
+    }
+  }
+}

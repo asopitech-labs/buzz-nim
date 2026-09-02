@@ -1,0 +1,12 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "018f5e5a-9b7d-7c01-a7bb-46fbe46d0087",
+  "operation": "domain.dm.policy",
+  "status": "ok",
+  "result": {
+    "decision": "access",
+    "allowed": true,
+    "error": "none"
+  }
+}

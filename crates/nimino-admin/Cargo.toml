@@ -1,0 +1,34 @@
+[package]
+name = "nimino-admin"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Operator CLI for Nimino relay administration"
+
+[[bin]]
+name = "nimino-admin"
+path = "src/main.rs"
+
+[dependencies]
+nimino-db = { workspace = true }
+nimino-deletion = { workspace = true }
+nimino-core = { workspace = true }
+nimino-auth = { workspace = true }
+nimino-search = { workspace = true }
+nimino-audit = { workspace = true }
+nimino-workflow = { workspace = true }
+nimino-media = { workspace = true }
+nostr = { workspace = true }
+tokio = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+hex = { workspace = true }
+# Select one rustls CryptoProvider explicitly before TLS clients start.
+rustls = { version = "0.23", default-features = false, features = ["ring", "std"] }
+tracing = { workspace = true }
+sqlx = { workspace = true }
+url = { workspace = true }
+uuid = { workspace = true }
+clap = { version = "4", features = ["derive"] }

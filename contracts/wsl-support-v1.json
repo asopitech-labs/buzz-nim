@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "wsl-support-v1",
+  "issue": 16,
+  "supportedConfiguration": [
+    { "path": "host.os", "operator": "equals", "value": "Windows 11" },
+    { "path": "host.build", "operator": "at-least", "value": 26200 },
+    { "path": "host.architecture", "operator": "equals", "value": "x86_64" },
+    { "path": "wsl.generation", "operator": "equals", "value": 2 },
+    { "path": "wsl.distribution", "operator": "equals", "value": "Ubuntu-24.04" },
+    { "path": "wsl.distributionRelease", "operator": "equals", "value": "24.04 LTS" },
+    { "path": "wsl.architecture", "operator": "equals", "value": "x86_64" },
+    { "path": "wsl.version", "operator": "semver-at-least", "value": "2.7.3" },
+    { "path": "wsl.updateChannel", "operator": "equals", "value": "stable" },
+    { "path": "wsl.systemd", "operator": "equals", "value": true },
+    { "path": "gui.method", "operator": "equals", "value": "WSLg" },
+    { "path": "gui.windowsNativeShell", "operator": "equals", "value": false },
+    { "path": "filesystem.livePath", "operator": "path-prefix", "value": "/home/" },
+    { "path": "network.mode", "operator": "equals", "value": "mirrored" },
+    { "path": "secrets.backend", "operator": "equals", "value": "Linux Secret Service" },
+    { "path": "secrets.serviceState", "operator": "equals", "value": "available-unlocked" }
+  ],
+  "canonicalCandidate": {
+    "host": { "os": "Windows 11", "build": 26200, "architecture": "x86_64" },
+    "wsl": {
+      "generation": 2,
+      "distribution": "Ubuntu-24.04",
+      "distributionRelease": "24.04 LTS",
+      "architecture": "x86_64",
+      "version": "2.7.3",
+      "updateChannel": "stable",
+      "systemd": true
+    },
+    "gui": { "method": "WSLg", "windowsNativeShell": false },
+    "filesystem": { "livePath": "/home/nimino/.local/share/nimino" },
+    "network": { "mode": "mirrored" },
+    "secrets": { "backend": "Linux Secret Service", "serviceState": "available-unlocked" }
+  },
+  "policies": {
+    "gui": {
+      "method": "WSLg",
+      "linuxDisplayProtocols": ["Wayland", "X11-via-WSLg"],
+      "forbiddenAlternatives": ["Windows-native-shell", "third-party-X-server", "remote-desktop-shell"]
+    },
+    "filesystem": {
+      "liveStorage": "distribution-ext4",
+      "repositoryRoot": "/home/<user>/...",
+      "runtimeDirectories": "XDG data/state/cache directories in the selected distribution",
+      "windowsMountPolicy": "explicit import, export, and backup only",
+      "forbiddenLivePrefixes": ["/mnt/"]
+    },
+    "network": {
+      "mode": "mirrored",
+      "applicationLocalEndpoint": "127.0.0.1",
+      "windowsToWslEndpoint": "localhost",
+      "clusterEndpoint": "explicit Linux interface and configured port",
+      "lanInboundPolicy": "explicit Windows Hyper-V firewall rule",
+      "multicast": "available for Chirps negotiation; domain discovery and sync remain Nimino-owned",
+      "forbiddenDefaults": ["NAT", "implicit 0.0.0.0 application exposure", "automatic firewall widening"]
+    },
+    "secrets": {
+      "backend": "Linux Secret Service",
+      "principal": "unprivileged user in the selected distribution",
+      "unavailableBehavior": "fail-closed",
+      "handoff": "process-scoped and non-persistent",
+      "forbiddenCarriers": ["command-line argument", "Windows environment", "plaintext .env", "/mnt/* file", "Windows Credential Manager"],
+      "legacyPlaintextFallback": {
+        "current": "removed: predecessor plaintext is deleted without read and no write path remains",
+        "target": "Secret Service is authoritative and unavailability fails closed without writing or reading a plaintext identity",
+        "action": "delete",
+        "ownerIssue": 25,
+        "deleteWhen": "Secret Service preflight, locked/unavailable, import, first-run, and restart tests prove no identity.key read/write path remains"
+      }
+    }
+  },
+  "unsupportedMatrix": [
+    { "id": "wrong-host-os", "set": { "path": "host.os", "value": "Windows 10" }, "expect": "reject" },
+    { "id": "old-windows-build", "set": { "path": "host.build", "value": 26100 }, "expect": "reject" },
+    { "id": "windows-arm64", "set": { "path": "host.architecture", "value": "arm64" }, "expect": "reject" },
+    { "id": "wsl1", "set": { "path": "wsl.generation", "value": 1 }, "expect": "reject" },
+    { "id": "unversioned-ubuntu", "set": { "path": "wsl.distribution", "value": "Ubuntu" }, "expect": "reject" },
+    { "id": "ubuntu-26-04", "set": { "path": "wsl.distributionRelease", "value": "26.04 LTS" }, "expect": "reject" },
+    { "id": "wsl-arm64", "set": { "path": "wsl.architecture", "value": "arm64" }, "expect": "reject" },
+    { "id": "old-wsl-package", "set": { "path": "wsl.version", "value": "2.7.2" }, "expect": "reject" },
+    { "id": "preview-wsl-channel", "set": { "path": "wsl.updateChannel", "value": "pre-release" }, "expect": "reject" },
+    { "id": "systemd-disabled", "set": { "path": "wsl.systemd", "value": false }, "expect": "reject" },
+    { "id": "windows-native-shell", "set": { "path": "gui.method", "value": "Windows-native-shell" }, "expect": "reject" },
+    { "id": "windows-shell-enabled", "set": { "path": "gui.windowsNativeShell", "value": true }, "expect": "reject" },
+    { "id": "third-party-x-server", "set": { "path": "gui.method", "value": "third-party-X-server" }, "expect": "reject" },
+    { "id": "windows-mounted-live-data", "set": { "path": "filesystem.livePath", "value": "/mnt/c/Users/example/Nimino" }, "expect": "reject" },
+    { "id": "escaped-windows-mounted-live-data", "set": { "path": "filesystem.livePath", "value": "/home/nimino/../../mnt/c/Nimino" }, "expect": "reject" },
+    { "id": "nat-network", "set": { "path": "network.mode", "value": "NAT" }, "expect": "reject" },
+    { "id": "windows-credential-manager", "set": { "path": "secrets.backend", "value": "Windows Credential Manager" }, "expect": "reject" },
+    { "id": "secret-service-missing", "set": { "path": "secrets.serviceState", "value": "missing" }, "expect": "reject" },
+    { "id": "secret-service-locked", "set": { "path": "secrets.serviceState", "value": "locked" }, "expect": "reject" }
+  ],
+  "implementationOwnership": {
+    "installer": 19,
+    "launcher": 25,
+    "chirpsRuntime": 45,
+    "bundleCertification": 60,
+    "publicCutover": 12
+  },
+  "evidence": [
+    {
+      "path": "docs/development/nim-core.md",
+      "symbol": "The WSL support",
+      "signal": "The Nim lane already delegates WSL qualification to its focused issue."
+    },
+    {
+      "path": "docs/adr/nim-rust-boundary-v1.md",
+      "symbol": "WSL2, Linux ARM64, macOS x64, and macOS ARM64",
+      "signal": "The process boundary explicitly leaves WSL2 certification unverified."
+    },
+    {
+      "path": "desktop/src-tauri/Cargo.toml",
+      "symbol": "sync-secret-service",
+      "signal": "The Linux desktop already compiles the Secret Service backend."
+    },
+    {
+      "path": "desktop/src-tauri/src/app_state.rs",
+      "symbol": "Linux Secret Service support is required",
+      "signal": "The secret boundary now fails closed when Secret Service support is unavailable."
+    },
+    {
+      "path": "RELEASING.md",
+      "symbol": "qualified Ubuntu 24.04 bundle",
+      "signal": "The release pipeline produces a qualified WSL2 bundle rather than requiring a Windows-native shell."
+    }
+  ],
+  "sources": [
+    {
+      "url": "https://learn.microsoft.com/en-us/windows/release-health/windows11-release-information",
+      "fact": "Windows 11 25H2 is build 26200 and is a supported general-availability release."
+    },
+    {
+      "url": "https://github.com/microsoft/WSL/releases/tag/2.7.3",
+      "fact": "WSL 2.7.3 is the stable minimum fixed for this contract."
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/windows/wsl/tutorials/gui-apps",
+      "fact": "WSLg provides Linux GUI application integration only for WSL2."
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/windows/wsl/networking",
+      "fact": "Mirrored mode provides bidirectional localhost, VPN compatibility, IPv6, and multicast on Windows 11."
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/windows/wsl/filesystems",
+      "fact": "Linux tools should keep active files in the WSL filesystem rather than under /mnt."
+    },
+    {
+      "url": "https://learn.microsoft.com/en-us/windows/wsl/systemd",
+      "fact": "WSL2 supports systemd service management."
+    },
+    {
+      "url": "https://documentation.ubuntu.com/wsl/latest/reference/release_notes/",
+      "fact": "Ubuntu 24.04 LTS for WSL enables systemd by default."
+    },
+    {
+      "url": "https://specifications.freedesktop.org/secret-service/latest/",
+      "fact": "Secret Service stores secrets in a user login service and locked items cannot be read or modified."
+    }
+  ]
+}

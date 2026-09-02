@@ -477,7 +477,7 @@ mod tests {
 
     #[test]
     fn retention_scope_is_stable_and_separates_relay_and_owner() {
-        let base = Path::new("/tmp/buzz-retention-test");
+        let base = Path::new("/tmp/nimino-retention-test");
         let owner_a = "a".repeat(64);
         let owner_b = "b".repeat(64);
         let community_a = scoped_retention_db_path(base, "wss://a.example/", &owner_a);
@@ -497,7 +497,7 @@ mod tests {
 
     #[test]
     fn test_arrival_relay_matching_agrees_with_database_identity() {
-        let base = Path::new("/tmp/buzz-retention-test");
+        let base = Path::new("/tmp/nimino-retention-test");
         let keys = nostr::Keys::generate();
         let owner = keys.public_key().to_hex();
         let scope = |relay: &str| RetentionScope {

@@ -1,6 +1,6 @@
 # AGENTS.md — AI Agent Contributor Guide
 
-This guide is for AI agents contributing to the Buzz codebase. It covers
+This guide is for AI agents contributing to the Nimino codebase. It covers
 agent-specific context and conventions. For general contributor info (setup,
 code style, PR process, architecture), see [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -27,27 +27,12 @@ and runtime evidence answer different questions.
 
 ## Ecosystem
 
-Buzz spans five repos. This one (`block/buzz`) is the OSS source for the relay, desktop, mobile, and CLI. The others handle internal builds and deployment:
+`asopitech-labs/nimino` is the independent source and release authority. It owns
+the relay, Desktop/WSL applications, CLI, agent harness, containers, chart and
+promotion workflows. Inherited repositories and signing systems are not part of
+the product.
 
-| Repo | Purpose |
-|------|---------|
-| [block/buzz](https://github.com/block/buzz) | OSS source — relay, desktop app, mobile app, CLI, agent harness |
-| [squareup/buzz-releases](https://github.com/squareup/buzz-releases) | Buildkite pipelines producing Block-signed macOS + iOS builds with `-block` desktop version suffix |
-| [squareup/sprout-oss](https://github.com/squareup/sprout-oss) | CI pipeline building the relay Docker image and pushing to internal ECR |
-| [squareup/block-coder-tf-stacks](https://github.com/squareup/block-coder-tf-stacks) | Terraform + ArgoCD deploying the relay to the staging Kubernetes cluster |
-| [squareup/sprout-backend-blox](https://github.com/squareup/sprout-backend-blox) | Desktop backend provider script connecting Blox workstation agents to the relay |
-
-```
-block/buzz (source)
-  ├─► buzz-releases      (desktop + mobile builds → Artifactory, GitHub, Mobile Releases)
-  ├─► sprout-oss         (relay Docker image → ECR)
-  │     └─► block-coder-tf-stacks  (Helm chart → ArgoCD → staging cluster)
-  └─── sprout-backend-blox         (Blox compute provider for Desktop agent launch)
-```
-
-See [RELEASING.md](RELEASING.md) for the desktop release flow and
-[CONTRIBUTING.md § Ecosystem](CONTRIBUTING.md#ecosystem) for contributor
-access information.
+See [RELEASING.md](RELEASING.md) for the release flow.
 
 ---
 
@@ -56,36 +41,42 @@ access information.
 ```
 crates/
   # Relay + core
-  buzz-relay          # WebSocket relay server — main entry point; also hosts git + huddle audio
-  buzz-core           # Core types, event verification, filter matching, kind registry
-  buzz-db             # Postgres event store and data access layer
-  buzz-auth           # Authentication and authorization
-  buzz-pubsub         # Redis pub/sub fan-out, presence, typing indicators
-  buzz-search         # Postgres FTS full-text search
-  buzz-audit          # Hash-chain audit log
-  buzz-media          # Blossom/S3 media storage
+  nimino-relay          # WebSocket relay server — main entry point; also hosts git + huddle audio
+  nimino-core           # Core types, event verification, filter matching, kind registry
+  nimino-db             # Postgres event store and data access layer
+  nimino-auth           # Authentication and authorization
+  nimino-local-delivery # Process-local presence and bounded security caches
+  nimino-search         # Postgres FTS full-text search
+  nimino-audit          # Hash-chain audit log
+  nimino-media          # Blossom/S3 media storage
   # Agent surface
-  buzz-acp            # ACP harness bridging Buzz events to AI agents
-  buzz-agent          # Minimal ACP-compliant agent (non-streaming, tool-calls-as-output)
-  buzz-dev-mcp        # Developer MCP server — shell + file-edit tools
-  buzz-persona        # Agent persona packs
-  buzz-workflow       # YAML-as-code workflow engine (evalexpr conditions)
+  nimino-acp            # ACP harness bridging Nimino events to AI agents
+  nimino-agent          # Minimal ACP-compliant agent (non-streaming, tool-calls-as-output)
+  nimino-dev-mcp        # Developer MCP server — shell + file-edit tools
+  nimino-persona        # Agent persona packs
+  nimino-workflow       # YAML-as-code workflow engine (evalexpr conditions)
   # Clients + interop
-  buzz-pair-relay     # Ephemeral sidecar relay for NIP-AB device pairing
-  buzz-pairing-cli    # CLI for NIP-AB device pairing interop testing
+  nimino-pair-relay     # Ephemeral sidecar relay for NIP-AB device pairing
+  nimino-pairing-cli    # CLI for NIP-AB device pairing interop testing
   git-sign-nostr      # Sign git objects with a Nostr key
   git-credential-nostr # Git credential helper for Nostr-authed push/fetch
   # Tooling + shared
-  buzz-cli            # Agent-first CLI
-  buzz-sdk            # Typed Nostr event builders
-  buzz-admin          # Operator CLI for relay administration
-  buzz-ws-client      # Shared NIP-42 WebSocket client (connect, auth, publish)
-  buzz-test-client    # Integration test client and E2E test suite
-  sprig               # All-in-one harness bundling ACP, agent, and dev MCP
+  nimino-cli            # Agent-first CLI
+  nimino-sdk            # Typed Nostr event builders
+  nimino-admin          # Operator CLI for relay administration
+  nimino-ws-client      # Shared NIP-42 WebSocket client (connect, auth, publish)
+  nimino-test-client    # Integration test client and E2E test suite
+  nimino-boundary     # Rust supervisor for the versioned Nim core worker IPC
+  nimino-chirps       # Sole direct Alopex Chirps dependency boundary
+  nimino-control      # Chirps scheduler + durable executor for Nim control decisions
 
+nim/
+  nimino_core         # Nimino product/domain core and supervised worker
+contracts/
+  nim-rust-boundary   # Versioned schema/error/lifecycle source of truth
+  chirps-v0.6.3.json  # Exact dependency, feature, and API allowlist snapshot
 desktop/              # Tauri 2 + React 19 desktop app
 web/                  # Browser web client (repo browser, served by the relay)
-mobile/               # Flutter mobile app
 migrations/           # SQL migrations (auto-applied on relay startup)
 scripts/              # Dev tooling
 .env.example          # Config template — copy to .env before running
@@ -96,10 +87,12 @@ scripts/              # Dev tooling
 ## Getting Started
 
 ```bash
-. ./bin/activate-hermit   # activate hermit toolchain (Rust, Node, etc.)
+. ./bin/activate-hermit   # activate hermit toolchain (Rust, Nim, Node, etc.)
 cp .env.example .env      # configure local environment
 just setup                # install deps, run migrations
 just relay                # start relay at ws://localhost:3000
+just nim-ci               # Rust-independent Nim core build/check/test lane
+just nim-boundary-ci      # real Rust↔Nim contract/lifecycle/performance gate
 just ci                   # run before any PR
 ```
 
@@ -110,19 +103,22 @@ See CONTRIBUTING.md for full setup details and dependency requirements.
 ## Quality Gates
 
 Run `just ci` before every PR — it runs repository-wide formatting, lint,
-and static checks; Rust, Tauri, desktop, and mobile tests; and desktop and web
-builds. Clippy passing does not mean fmt passes; run both.
+and static checks; Nim, Rust, Tauri, and desktop tests; and desktop and web
+builds. Clippy passing does not mean fmt passes; run both. For Nim-only
+changes, `just nim-ci` is the fast lane and must not invoke a Rust build; see
+`docs/development/nim-core.md`. Boundary changes run the separate focused
+`just nim-boundary-ci` lane.
 
-Run `just test` for integration tests if you touched `buzz-relay`,
-`buzz-db`, or `buzz-auth` — these require a running Postgres and Redis.
+Run `just test` for integration tests if you touched `nimino-relay`,
+`nimino-db`, or `nimino-auth` — these require a running Postgres.
 
 **Pre-commit hooks** are installed automatically by `just setup` and auto-fix
 formatting via `stage_fixed`. Pre-commit runs fix variants in parallel (Rust
-fmt, Tauri Rust fmt, desktop biome fix, web biome fix, mobile dart format).
+fmt, Tauri Rust fmt, desktop biome fix, web biome fix).
 Auto-fixable issues are fixed and re-staged; unfixable lint issues block the
-commit. **Pre-push hooks** run the repository-wide differential file-size gate,
-clippy (workspace + Tauri), desktop TypeScript typechecking (`tsc --noEmit`),
-and fast unit tests in parallel (Rust, desktop JS, Tauri Rust, mobile Flutter)
+commit. **Pre-push hooks** run the active-product differential file-size gate,
+focused Nim and Nim/Rust boundary gates, desktop TypeScript typechecking
+(`tsc --noEmit`), and fast unit tests in parallel (Rust, desktop JS, Tauri Rust)
 — no overlap with pre-commit. Builds are CI-only. Run `just fix-all` to auto-fix
 all formatting in one shot. Run `just ci` for the full local gate. Run `just
 hooks` to re-install hooks after env changes. Each globbed pre-push lane is
@@ -134,12 +130,11 @@ refspec, `--all`) gets a non-fatal `push-head-scope` warning and relies on CI fo
 its path-scoped checks.
 Before agents run Git or hooks, activate the repo's Hermit environment
 (`. ./bin/activate-hermit`) so `./bin` leads `PATH` and the pinned toolchain
-(flutter, dart, lefthook) wins over any Homebrew version; do not
+wins over any system version; do not
 rewrite hook commands to compensate for an unconfigured shell `PATH`. The
 pre-push hook self-pins regardless: `bin/.lefthookrc` (sourced by the generated
-`.git/hooks/*`) prepends the Hermit `bin/` to `PATH` and pins `LEFTHOOK_BIN`, so
-lane subprocesses resolve the pinned flutter/dart/lefthook even when an
-unactivated shell has Homebrew first. Activating Hermit remains recommended for
+.git/hooks/*`) prepends the Hermit `bin/` to `PATH` and pins `LEFTHOOK_BIN` even
+when an unactivated shell has system tools first. Activating Hermit remains recommended for
 non-hook commands.
 
 **Commit with `git commit -s`.** The required **DCO Check** fails any PR with a commit missing a `Signed-off-by` trailer, and `just hooks` installs a `commit-msg` hook that adds it to commits you create locally (`git rebase` and `git cherry-pick` still need `--signoff`) — if you build commit commands programmatically, include `-s` every time. To repair a branch that already has unsigned commits: `git rebase --signoff main`, then force-push.
@@ -153,18 +148,18 @@ Additional rules:
 
 ## Key Patterns
 
-**Nostr-first HTTP surface**: Buzz's primary API is NIP-29 over WebSocket. The relay also exposes a narrow HTTP surface: NIP-11/NIP-05 metadata, `POST /events`, `POST /query`, `POST /count`, workflow webhooks at `/hooks/{id}`, Blossom media, git smart HTTP, git policy hooks, and health probes. These HTTP paths all preserve the same host-derived community boundary.
+**Nostr-first HTTP surface**: Nimino's primary API is NIP-29 over WebSocket. The relay also exposes a narrow HTTP surface: NIP-11/NIP-05 metadata, `POST /events`, `POST /query`, `POST /count`, workflow webhooks at `/hooks/{id}`, Blossom media, git smart HTTP, git policy hooks, and health probes. These HTTP paths all preserve the same host-derived community boundary.
 
 **Prefer Nostr events over new HTTP endpoints**: For new feature work, model
-the operation as a Nostr event (new kind in `buzz-core/src/kind.rs`, handler
-in `buzz-relay`) rather than adding endpoint-specific JSON APIs. HTTP is
+the operation as a Nostr event (new kind in `nimino-core/src/kind.rs`, handler
+in `nimino-relay`) rather than adding endpoint-specific JSON APIs. HTTP is
 reserved for things that genuinely need an HTTP-only surface: media upload/download
 (Blossom), webhooks, git smart HTTP, NIP-11/NIP-05 metadata, health checks,
 and the generic Nostr bridge endpoints:
 
 - `POST /events` — submit any signed event (same path the WebSocket uses).
 - `POST /query` — Nostr REQ filters over HTTP. NIP-50 `search` filters
-  are routed to `buzz-search` (Postgres FTS) automatically.
+  are routed to `nimino-search` (Postgres FTS) automatically.
 - `POST /count` — Nostr COUNT filters over HTTP.
 
 If you find yourself reaching for a new HTTP endpoint, first check whether
@@ -174,7 +169,7 @@ fan-out, NIP-29 scoping, and the existing auth pipeline for free.
 Reference https://github.com/nostr-protocol/nips
 
 **Event kinds**: All event kind integers are defined in
-`buzz-core/src/kind.rs`. New features get new kind integers — add them here
+`nimino-core/src/kind.rs`. New features get new kind integers — add them here
 first, then implement handling in the relay.
 
 **Channel scoping**: Channels use `h` tags (NIP-29 group tag), not `e` tags.
@@ -184,9 +179,9 @@ channel carry its id in their `d` tag instead: kind:39000 (metadata),
 kind:39001, kind:39002 (membership). `get_channels` resolves a user's channels
 from the `d` tag of their kind:39002 events, not from `h`.
 
-**Agent-facing operations go in `buzz-cli`**: New agent-facing features belong in `buzz-cli` — add a subcommand there first, then wire the REST/WebSocket call in `client.rs`. `buzz-dev-mcp` (shell + file tools for `buzz-agent`) is separate.
+**Agent-facing operations go in `nimino-cli`**: New agent-facing features belong in `nimino-cli` — add a subcommand there first, then wire the REST/WebSocket call in `client.rs`. `nimino-dev-mcp` (shell + file tools for `nimino-agent`) is separate.
 
-**Workflow conditions**: `buzz-workflow` uses
+**Workflow conditions**: `nimino-workflow` uses
 [evalexpr](https://docs.rs/evalexpr) for condition evaluation. Keep expressions
 simple and testable.
 
@@ -196,29 +191,29 @@ check existing reply handlers for the pattern.
 
 ---
 
-## Agent CLI (`buzz-cli`)
+## Agent CLI (`nimino-cli`)
 
-`buzz` is the agent-first CLI. Auth env vars
-(`BUZZ_RELAY_URL`, `BUZZ_PRIVATE_KEY`, `BUZZ_AUTH_TAG`) are auto-injected
+`nimino` is the agent-first CLI. Auth env vars
+(`NIMINO_RELAY_URL`, `NIMINO_PRIVATE_KEY`, `NIMINO_AUTH_TAG`) are auto-injected
 by the ACP harness into managed agent subprocesses. In development, set
-`BUZZ_PRIVATE_KEY` and `BUZZ_RELAY_URL` in your environment manually.
+`NIMINO_PRIVATE_KEY` and `NIMINO_RELAY_URL` in your environment manually.
 
 ### Building the CLI
 
 ```bash
-cargo build --release -p buzz-cli
+cargo build --release -p nimino-cli
 ```
 
-Binary location: `./target/release/buzz`. Add `./target/release` to `PATH`
+Binary location: `./target/release/nimino`. Add `./target/release` to `PATH`
 or invoke with the full path.
 
 ### Deep Links
 
-`buzz://message?channel=<uuid>&id=<hex>` links reference a specific message
+`nimino://message?channel=<uuid>&id=<hex>` links reference a specific message
 thread. Pass the link directly to the CLI:
 
 ```bash
-buzz --format compact messages thread --link '<buzz://message?...>'
+nimino --format compact messages thread --link '<nimino://message?...>'
 ```
 
 The selected message ID is authoritative: `messages thread` verifies its
@@ -231,9 +226,9 @@ All reads return sig-stripped JSON arrays; all writes return
 0=ok, 1=input error, 2=network/relay, 3=auth, 4=other, 5=write conflict (NIP-33 LWW).
 
 `--format compact` is a **global** flag — it goes before the subcommand:
-`buzz --format compact channels list`, NOT `buzz channels list --format compact`.
+`nimino --format compact channels list`, NOT `nimino channels list --format compact`.
 
-See `crates/buzz-cli/TESTING.md` for the full live-testing runbook.
+See `crates/nimino-cli/TESTING.md` for the full live-testing runbook.
 
 ---
 
@@ -241,10 +236,10 @@ See `crates/buzz-cli/TESTING.md` for the full live-testing runbook.
 
 ```bash
 just test-unit    # unit tests, no infrastructure needed
-just test         # full integration suite (requires Postgres + Redis)
+just test         # full integration suite (requires Postgres)
 ```
 
-E2E tests live in `crates/buzz-test-client/tests/`:
+E2E tests live in `crates/nimino-test-client/tests/`:
 - `e2e_relay.rs` — WebSocket relay protocol
 - `e2e_media.rs` — media upload/download (Blossom)
 - `e2e_media_extended.rs` — extended media scenarios
@@ -258,15 +253,11 @@ See [TESTING.md](TESTING.md) for the full multi-agent E2E guide.
 
 ### PR Screenshots
 
-> **Do NOT use `buzz upload`, the relay media endpoint, or any third-party
+> **Do NOT use `nimino upload`, the relay media endpoint, or any third-party
 > image host for PR screenshots.** Relay media URLs fail through GitHub's camo
 > proxy. Always use `scripts/post-screenshots.sh` for PNGs before linking them
 > from a PR body/comment. If you hand-edit PR markdown, run
 > `scripts/check-pr-image-urls.sh <markdown-file>` first to catch relay URLs.
-
-For mobile simulator screenshots, save the PNGs in a local directory and run
-`./scripts/post-screenshots.sh <PR-number> <png-dir>` or use the third argument
-with a markdown template containing `{{filename}}` placeholders.
 
 The desktop app requires the E2E mock bridge to render — it cannot run in a plain
 browser. Use `just desktop-screenshot` to capture screenshots (builds frontend,
@@ -289,7 +280,7 @@ Output is a PNG path on stdout.
 
 Use `--messages` to inject content into a channel before capture. The JSON file
 is an array of objects — `channelName` and `content` are required, all other
-fields are optional and passed through to `__BUZZ_E2E_EMIT_MOCK_MESSAGE__`:
+fields are optional and passed through to `__NIMINO_E2E_EMIT_MOCK_MESSAGE__`:
 
 ```json
 [
@@ -369,9 +360,9 @@ only the current set remains, otherwise reviewers still see the stale images:
 
 ```bash
 # List screenshot comments to find the stale one's id
-gh pr view <pr> --repo block/buzz --json comments \
+gh pr view <pr> --repo asopitech-labs/nimino --json comments \
   --jq '.comments[] | select(.body | test("pr-<pr>--")) | {id, url}'
-gh api -X DELETE repos/block/buzz/issues/comments/<stale-comment-id>
+gh api -X DELETE repos/asopitech-labs/nimino/issues/comments/<stale-comment-id>
 ```
 
 Branch cleanup when fully done: `git push origin --delete agent-screenshots/<username>`.
@@ -403,7 +394,7 @@ must run BEFORE `installMockBridge(page)` — React reads state on mount, the
 bridge triggers mount.
 
 **Live messages:** Call `waitForMockLiveSubscription(page, channelName)` before
-`__BUZZ_E2E_EMIT_MOCK_MESSAGE__` — messages are silently dropped without a
+`__NIMINO_E2E_EMIT_MOCK_MESSAGE__` — messages are silently dropped without a
 subscription. Navigate to the channel first (triggers subscription), then away
 (so unread indicators appear), then inject.
 
@@ -455,13 +446,13 @@ not post. This catches the most common screenshot regression.
 
 **PR comments:** Use a body template (3rd arg to `post-screenshots.sh`) with
 `{{filename}}` placeholders. Each screenshot gets a `###` heading + one-line
-description. See [PR #803](https://github.com/block/buzz/pull/803).
+description. See [PR #803](https://github.com/asopitech-labs/nimino/pull/803).
 
 ---
 
 ## Common Gotchas
 
-1. **Kind `39000` for channel metadata, not `41`** — kind 41 is NIP-01 (unused). All kinds defined in `buzz-core/src/kind.rs`.
+1. **Kind `39000` for channel metadata, not `41`** — kind 41 is NIP-01 (unused). All kinds defined in `nimino-core/src/kind.rs`.
 2. **Relay queries must specify `kinds`** — omitting `kinds` triggers the p-gate (403). Always include explicit kind filters.
 3. **`messages search` chooses its own supported kinds** — do not add a `--kinds` option; the current command does not accept one. This differs from raw relay filters, which still need explicit kinds.
 4. **Worktrees: `cd` in the same command** — shell CWD doesn't persist between tool calls. Use `cd /path && cargo build` as one command.
@@ -532,7 +523,7 @@ community-scoped subtree to unmount and remount with fresh state.
 clears React state (useState, useRef, context). Module-level variables (Maps,
 class instances, cached promises) survive across remounts. Every community-scoped
 singleton needs a reset function wired into `resetCommunityState()` in
-`desktop/src/features/communities/useCommunityInit.ts`.
+`desktop/src/features/communities/communityStateLifecycle.ts`.
 
 `resetCommunityState()` is the canonical inventory of community-scoped
 singletons. **If you add a new module-level cache, Map, or class instance that
@@ -543,96 +534,9 @@ truth.
 
 Key files:
 - `desktop/src/app/App.tsx` — community key, init gate, remount boundary
-- `desktop/src/features/communities/useCommunityInit.ts` — `resetCommunityState()`, applies config to Tauri backend
+- `desktop/src/features/communities/communityStateLifecycle.ts` — canonical module-state reset inventory
+- `desktop/src/features/communities/useCommunityInit.ts` — saves outgoing state, resets lifecycle, and applies config to Tauri backend
 - `desktop/src/main.tsx` — provider hierarchy (`QueryClientProvider` > `App`)
-
----
-
-## Mobile App (Flutter)
-
-The mobile app lives in `mobile/` — a Flutter app using Riverpod + Hooks.
-
-### Architecture
-
-- **State management:** Riverpod + `flutter_hooks` (`HookConsumerWidget`)
-- **Theme:** Catppuccin Latte (light) / Macchiato (dark) — matches desktop
-- **Features:** Isolated under `lib/features/`, shared code in `lib/shared/`
-- **Nostr models:** `lib/shared/relay/nostr_models.dart` — event kinds must
-  stay in sync with `desktop/src/shared/constants/kinds.ts`
-
-### Rules
-
-- **NEVER use `StatefulWidget`** — favor Riverpod for state and always use
-  `HookConsumerWidget` or `ConsumerWidget` with `flutter_hooks` for local state.
-- Agents may build and run the Flutter app when it materially helps implement,
-  debug, or validate mobile changes. Prefer the smallest relevant command and
-  reuse an already-running simulator/emulator and the app's configured staging
-  or production community when that is sufficient. Do not start or rebuild
-  local relay services unless the task specifically requires relay-side or
-  isolated integration behavior.
-- For iOS runtime validation, prefer `just mobile-dev`; it applies the
-  worktree-specific debug identity and runs `flutter run`. Direct `flutter run`
-  or IDE workflows are also allowed. Use `just mobile-build-android` only when
-  an APK build is relevant to the task.
-- Do not rebuild, reinstall, or relaunch merely for ceremony. Preserve Flutter's
-  incremental build cache and use hot reload/restart where appropriate. Use
-  `flutter clean` only when stale build artifacts are a credible cause. Run
-  `flutter upgrade` only when the task explicitly requires a toolchain change.
-- For user-visible or integration changes, exercise the affected workflow in a
-  real app when practical and report the device/simulator, connected community,
-  and workflow actually tested.
-- **Do NOT use `print()`** — use `debugPrint()` or structured logging.
-- Prefer `context.colors` and `context.textTheme` (via theme extensions)
-  over raw `Theme.of(context)` calls.
-- **Keep widgets small and composable.** One public widget per file; push
-  private sub-widgets (`_Foo`) into sibling `part` files under a
-  `<page>/` folder rather than growing the page file. Hard ceiling:
-  **1000 lines/file**, enforced across Desktop, Web, and Mobile by the
-  repository-level `just file-size-check` gate (`just check`, CI, and every
-  pre-push). If the guard trips, **split the file — never bump the limit or add
-  an override to slip under it.**
-- Feature modules must not import from other feature modules — only from
-  `shared/`.
-- Use `Grid` tokens for spacing, `Radii` for border radius.
-
-### Quality Checks
-
-```bash
-cd mobile
-dart format --output=none --set-exit-if-changed .
-flutter analyze
-flutter test
-```
-
-Or from repo root: `just mobile-fmt` (auto-fix), `just mobile-check` (lint + fmt check), `just mobile-test` (tests).
-
-To run the app locally with a worktree-specific debug identity and a
-started or reused iOS Simulator:
-
-```bash
-just mobile-dev
-```
-
-This runs `flutter run` against the app's configured community; it does not
-start Docker or local relay services.
-
-When run from a git worktree, `just mobile-dev` (and `just
-mobile-build-android`) give the debug build a per-worktree app identifier
-(keyed to the worktree directory name) and a branch-labelled app name via
-`scripts/mobile-worktree-overrides.sh`, so builds from multiple worktrees
-install side by side. Release builds are unaffected. `just mobile-clean`
-removes stale worktree-suffixed installs from simulators/emulators. See
-[mobile/README.md](mobile/README.md) for direct Xcode / Android Studio
-usage.
-
-### Testing Conventions
-
-- Prefer **widget tests** over unit tests for UI components — test the
-  whole widget tree, not individual methods.
-- Use `ProviderScope(overrides: [...])` to inject fake notifiers.
-- Fake notifiers should extend the real notifier class and override `build()`.
-- Use the `WidgetHelpers.testable()` wrapper for simple widget tests or
-  build a custom `ProviderScope` + `MaterialApp` when you need specific overrides.
 
 ---
 
@@ -641,5 +545,5 @@ usage.
 - [CONTRIBUTING.md](CONTRIBUTING.md) — setup, code style, PR process, how to add event kinds / CLI subcommands / HTTP endpoints
 - [TESTING.md](TESTING.md) — multi-agent E2E test guide
 - [ARCHITECTURE.md](ARCHITECTURE.md) — system design and component relationships
-- [RELEASING.md](RELEASING.md) — release process: `release-desktop`, `release-relay`, `scripts/mobile-release.sh`, candidate tags, internal builds
+- [RELEASING.md](RELEASING.md) — desktop and relay release process
 - [README.md](README.md) — project overview and quick start

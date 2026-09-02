@@ -1,0 +1,14 @@
+{{- include "nimino.validate" . -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "nimino.fullname" . }}-cluster-identities
+  labels:
+    {{- include "nimino.labels" . | nindent 4 }}
+binaryData:
+  {{- $root := . }}
+  {{- range $ordinal := until (include "nimino.clusterNodeCount" $root | int) }}
+  {{- $seed := printf "%s-%d" (include "nimino.fullname" $root) $ordinal }}
+  {{- $identity := substr 0 16 (sha256sum $seed) }}
+  node-{{ $ordinal }}.identity: {{ $identity | b64enc | quote }}
+  {{- end }}

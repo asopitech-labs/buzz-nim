@@ -18,7 +18,7 @@ BEGIN
     END IF;
 
     PERFORM pg_advisory_xact_lock(hashtextextended(
-        'buzz_channel_membership:' || NEW.community_id::text || ':' || NEW.channel_id::text,
+        'nimino_channel_membership:' || NEW.community_id::text || ':' || NEW.channel_id::text,
         0
     ));
 

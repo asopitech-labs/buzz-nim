@@ -1,0 +1,2172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://asopitech.com/nimino/contracts/nim-rust-boundary/v1/response.schema.json",
+  "title": "NiminoBoundaryResponseV1",
+  "$defs": {
+    "policyError": {
+      "enum": [
+        "none",
+        "unsupported_kind",
+        "auth_not_storable",
+        "d_tag_required",
+        "d_tag_cardinality",
+        "d_tag_too_long",
+        "thread_parent_missing",
+        "thread_parent_mismatch",
+        "thread_channel_mismatch",
+        "thread_root_mismatch",
+        "thread_depth_exceeded",
+        "delete_target_cardinality",
+        "delete_target_missing",
+        "delete_target_mismatch",
+        "delete_author_mismatch",
+        "delete_coordinate_invalid",
+        "reaction_target_missing",
+        "reaction_emoji_invalid"
+      ]
+    },
+    "threadPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "rootId",
+        "parentId",
+        "rootCreatedAt",
+        "parentCreatedAt",
+        "depth",
+        "broadcast",
+        "parentReplyDelta",
+        "rootDescendantDelta"
+      ],
+      "properties": {
+        "rootId": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "parentId": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" },
+        "rootCreatedAt": { "type": "integer" },
+        "parentCreatedAt": { "type": "integer" },
+        "depth": { "type": "integer", "minimum": 1, "maximum": 100 },
+        "broadcast": { "type": "boolean" },
+        "parentReplyDelta": { "const": 1 },
+        "rootDescendantDelta": { "const": 1 }
+      }
+    },
+    "eventPolicyResult": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "disposition", "error"],
+          "properties": {
+            "decision": { "const": "classify" },
+            "disposition": {
+              "enum": [
+                "rejected",
+                "stored",
+                "ephemeral",
+                "replaceable",
+                "parameterized"
+              ]
+            },
+            "error": { "$ref": "#/$defs/policyError" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "action"],
+          "properties": {
+            "decision": { "const": "replacement" },
+            "action": { "enum": ["insert", "replace", "duplicate", "stale"] }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "error", "plan"],
+          "properties": {
+            "decision": { "const": "thread" },
+            "error": { "$ref": "#/$defs/policyError" },
+            "plan": {
+              "oneOf": [{ "$ref": "#/$defs/threadPlan" }, { "type": "null" }]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "decision",
+            "error",
+            "action",
+            "parentReplyDelta",
+            "rootDescendantDelta"
+          ],
+          "properties": {
+            "decision": { "const": "deletion" },
+            "error": { "$ref": "#/$defs/policyError" },
+            "action": {
+              "enum": [
+                "reject",
+                "noop",
+                "delete_event",
+                "delete_coordinate",
+                "keep_newer"
+              ]
+            },
+            "parentReplyDelta": {
+              "type": "integer",
+              "minimum": -1,
+              "maximum": 0
+            },
+            "rootDescendantDelta": {
+              "type": "integer",
+              "minimum": -1,
+              "maximum": 0
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "error", "action", "emoji"],
+          "properties": {
+            "decision": { "const": "reaction" },
+            "error": { "$ref": "#/$defs/policyError" },
+            "action": { "enum": ["reject", "duplicate", "insert"] },
+            "emoji": { "type": "string" }
+          }
+        }
+      ]
+    },
+    "communityPolicyResult": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "action", "error"],
+          "properties": {
+            "decision": { "const": "lifecycle" },
+            "action": {
+              "enum": ["reject", "create", "archive", "unarchive", "noop"]
+            },
+            "error": {
+              "enum": [
+                "none",
+                "not_operator",
+                "not_owner",
+                "owner_required",
+                "owner_limit",
+                "host_reserved",
+                "protected_community",
+                "invalid_state",
+                "resource_missing",
+                "tenant_mismatch"
+              ]
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "allowed", "error"],
+          "properties": {
+            "decision": { "const": "scope" },
+            "allowed": { "type": "boolean" },
+            "error": {
+              "enum": ["none", "resource_missing", "tenant_mismatch"]
+            }
+          }
+        }
+      ]
+    },
+    "membershipPolicyError": {
+      "enum": [
+        "none",
+        "not_operator",
+        "not_authorized",
+        "not_member",
+        "invite_required",
+        "role_invalid",
+        "target_missing",
+        "last_owner",
+        "self_mutation",
+        "owner_protected",
+        "agent_add_denied",
+        "invite_invalid",
+        "invite_expired",
+        "invite_exhausted",
+        "policy_required",
+        "mint_bounds",
+        "owner_missing",
+        "owner_conflict",
+        "owner_limit"
+      ]
+    },
+    "membershipAction": {
+      "enum": [
+        "reject",
+        "insert",
+        "update_role",
+        "remove",
+        "noop",
+        "mint",
+        "join",
+        "transfer"
+      ]
+    },
+    "membershipPolicyResult": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "action", "error", "effectiveRole"],
+          "properties": {
+            "decision": { "const": "channel" },
+            "action": { "$ref": "#/$defs/membershipAction" },
+            "error": { "$ref": "#/$defs/membershipPolicyError" },
+            "effectiveRole": { "$ref": "#/$defs/membershipRole" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "action", "error", "effectiveRole"],
+          "properties": {
+            "decision": { "const": "relay" },
+            "action": { "$ref": "#/$defs/membershipAction" },
+            "error": { "$ref": "#/$defs/membershipPolicyError" },
+            "effectiveRole": { "$ref": "#/$defs/membershipRole" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "action", "error", "effectiveRole"],
+          "properties": {
+            "decision": { "const": "invite" },
+            "action": { "$ref": "#/$defs/membershipAction" },
+            "error": { "$ref": "#/$defs/membershipPolicyError" },
+            "effectiveRole": { "$ref": "#/$defs/membershipRole" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "action", "error", "effectiveRole"],
+          "properties": {
+            "decision": { "const": "ownership_transfer" },
+            "action": { "$ref": "#/$defs/membershipAction" },
+            "error": { "$ref": "#/$defs/membershipPolicyError" },
+            "effectiveRole": { "$ref": "#/$defs/membershipRole" }
+          }
+        }
+      ]
+    },
+    "membershipRole": {
+      "enum": ["none", "owner", "admin", "member", "guest", "bot"]
+    },
+    "dmPolicyError": {
+      "enum": [
+        "none",
+        "resource_missing",
+        "tenant_mismatch",
+        "not_dm",
+        "not_participant",
+        "actor_missing",
+        "participant_count",
+        "no_new_participant",
+        "fact_conflict",
+        "viewer_mismatch"
+      ]
+    },
+    "dmPolicyResult": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "action", "error"],
+          "properties": {
+            "decision": { "const": "mutation" },
+            "action": { "enum": ["reject", "create", "reuse", "unhide", "hide", "noop"] },
+            "error": { "$ref": "#/$defs/dmPolicyError" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "allowed", "error"],
+          "properties": {
+            "decision": { "const": "access" },
+            "allowed": { "type": "boolean" },
+            "error": { "$ref": "#/$defs/dmPolicyError" }
+          }
+        }
+      ]
+    },
+    "moderationPolicyError": {
+      "enum": [
+        "none",
+        "resource_missing",
+        "tenant_mismatch",
+        "fact_conflict",
+        "actor_banned",
+        "not_authorized",
+        "protected_target",
+        "self_target",
+        "stale_command",
+        "expiration_required",
+        "expiration_elapsed",
+        "duplicate",
+        "not_banned",
+        "not_timed_out",
+        "report_closed",
+        "resolution_pair"
+      ]
+    },
+    "moderationEffect": {
+      "enum": [
+        "reject",
+        "queue_report",
+        "apply_ban",
+        "lift_ban",
+        "apply_timeout",
+        "clear_timeout",
+        "resolve_report",
+        "allow",
+        "deny_ban",
+        "deny_timeout"
+      ]
+    },
+    "moderationAuthority": {
+      "enum": ["none", "reporter", "community_owner", "community_admin"]
+    },
+    "moderationAuditAction": {
+      "enum": [
+        "none",
+        "ban",
+        "unban",
+        "timeout",
+        "untimeout",
+        "dismiss_report",
+        "escalate",
+        "resolve_delete",
+        "resolve_kick",
+        "resolve_ban",
+        "resolve_timeout"
+      ]
+    },
+    "moderationPolicyResult": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "effect", "authority", "auditAction", "error"],
+          "properties": {
+            "decision": { "const": "report" },
+            "effect": { "$ref": "#/$defs/moderationEffect" },
+            "authority": { "$ref": "#/$defs/moderationAuthority" },
+            "auditAction": { "$ref": "#/$defs/moderationAuditAction" },
+            "error": { "$ref": "#/$defs/moderationPolicyError" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "effect", "authority", "auditAction", "error"],
+          "properties": {
+            "decision": { "const": "restriction" },
+            "effect": { "$ref": "#/$defs/moderationEffect" },
+            "authority": { "$ref": "#/$defs/moderationAuthority" },
+            "auditAction": { "$ref": "#/$defs/moderationAuditAction" },
+            "error": { "$ref": "#/$defs/moderationPolicyError" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "effect", "authority", "auditAction", "error"],
+          "properties": {
+            "decision": { "const": "resolution" },
+            "effect": { "$ref": "#/$defs/moderationEffect" },
+            "authority": { "$ref": "#/$defs/moderationAuthority" },
+            "auditAction": { "$ref": "#/$defs/moderationAuditAction" },
+            "error": { "$ref": "#/$defs/moderationPolicyError" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["decision", "effect", "authority", "auditAction", "error"],
+          "properties": {
+            "decision": { "const": "enforcement" },
+            "effect": { "$ref": "#/$defs/moderationEffect" },
+            "authority": { "$ref": "#/$defs/moderationAuthority" },
+            "auditAction": { "$ref": "#/$defs/moderationAuditAction" },
+            "error": { "$ref": "#/$defs/moderationPolicyError" }
+          }
+        }
+      ]
+    },
+    "clusterNodeState": {
+      "enum": ["offline", "joining", "syncing", "ready", "draining"]
+    },
+    "clusterLifecycleEffect": {
+      "enum": [
+        "reject", "enter_joining", "enter_syncing", "enter_ready",
+        "enter_draining", "enter_offline", "allow_lane", "deny_lane"
+      ]
+    },
+    "clusterLifecycleError": {
+      "enum": [
+        "none", "unauthenticated", "revoked", "identity_conflict",
+        "capability_mismatch", "control_version_mismatch",
+        "data_version_mismatch", "invalid_transition",
+        "transition_uncommitted", "sync_incomplete", "epoch_mismatch",
+        "drain_incomplete", "lane_not_allowed", "fact_conflict"
+      ]
+    },
+    "clusterLifecycleResult": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "effect", "nextState", "error"],
+          "properties": {
+            "decision": { "const": "transition" },
+            "effect": { "$ref": "#/$defs/clusterLifecycleEffect" },
+            "nextState": { "$ref": "#/$defs/clusterNodeState" },
+            "error": { "$ref": "#/$defs/clusterLifecycleError" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "effect", "nextState", "error"],
+          "properties": {
+            "decision": { "const": "lane" },
+            "effect": { "$ref": "#/$defs/clusterLifecycleEffect" },
+            "nextState": { "$ref": "#/$defs/clusterNodeState" },
+            "error": { "$ref": "#/$defs/clusterLifecycleError" }
+          }
+        }
+      ]
+    },
+    "admissionU64": {
+      "type": "integer", "minimum": 0, "maximum": 9223372036854775807
+    },
+    "admissionPolicyError": {
+      "enum": [
+        "none", "invalid_state", "invalid_scope", "invalid_event_id",
+        "invalid_time", "ttl_out_of_range", "control_replay",
+        "invalid_namespace", "invalid_key", "invalid_window", "policy_conflict",
+        "clock_regression", "counter_overflow", "invalid_batch"
+      ]
+    },
+    "replayClaimState": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scope", "eventId", "expiresAtMs", "lastControlIndex"],
+      "properties": {
+        "scope": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "eventId": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "expiresAtMs": { "$ref": "#/$defs/admissionU64" },
+        "lastControlIndex": { "$ref": "#/$defs/admissionU64" }
+      }
+    },
+    "rateLimitState": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "namespace", "key", "windowStartedAtMs", "windowSecs", "limit",
+        "count", "lastControlIndex"
+      ],
+      "properties": {
+        "namespace": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "key": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "windowStartedAtMs": { "$ref": "#/$defs/admissionU64" },
+        "windowSecs": { "$ref": "#/$defs/admissionU64" },
+        "limit": { "$ref": "#/$defs/admissionU64" },
+        "count": { "$ref": "#/$defs/admissionU64" },
+        "lastControlIndex": { "$ref": "#/$defs/admissionU64" }
+      }
+    },
+    "authorizationInvalidationKind": {
+      "enum": ["ban", "membership", "visibility", "community"]
+    },
+    "authorizationInvalidationError": {
+      "enum": [
+        "none", "invalid_state", "invalid_scope", "invalid_subject",
+        "invalid_channel", "invalid_fact", "invalid_revision"
+      ]
+    },
+    "authorizationInvalidationEffect": {
+      "enum": ["apply", "replay", "stale", "reject"]
+    },
+    "authorizationInvalidationState": {
+      "type": "object", "additionalProperties": false,
+      "required": ["scope", "kind", "subject", "channelId", "factId", "revision"],
+      "properties": {
+        "scope": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "kind": { "$ref": "#/$defs/authorizationInvalidationKind" },
+        "subject": { "type": "string", "maxLength": 64 },
+        "channelId": { "type": "string", "maxLength": 128 },
+        "factId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "revision": { "$ref": "#/$defs/admissionU64" }
+      }
+    },
+    "admissionPolicyResult": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "const": "apply_replay_claim" },
+            "result": {
+              "type": "object", "additionalProperties": false,
+              "required": ["allowed", "error", "state"],
+              "properties": {
+                "allowed": { "type": "boolean" },
+                "error": { "$ref": "#/$defs/admissionPolicyError" },
+                "state": {
+                  "oneOf": [{ "$ref": "#/$defs/replayClaimState" }, { "type": "null" }]
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "const": "apply_rate_limit_batch" },
+            "result": {
+              "type": "object", "additionalProperties": false,
+              "required": ["results", "error"],
+              "properties": {
+                "results": {
+                  "type": "array", "maxItems": 64,
+                  "items": {
+                    "type": "object", "additionalProperties": false,
+                    "required": ["allowed", "current", "limit", "resetInSecs", "error", "state"],
+                    "properties": {
+                      "allowed": { "type": "boolean" },
+                      "current": { "$ref": "#/$defs/admissionU64" },
+                      "limit": { "$ref": "#/$defs/admissionU64" },
+                      "resetInSecs": { "$ref": "#/$defs/admissionU64" },
+                      "error": { "$ref": "#/$defs/admissionPolicyError" },
+                      "state": {
+                        "oneOf": [{ "$ref": "#/$defs/rateLimitState" }, { "type": "null" }]
+                      }
+                    }
+                  }
+                },
+                "error": { "$ref": "#/$defs/admissionPolicyError" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "const": "prune_replay" },
+            "result": {
+              "type": "object", "additionalProperties": false,
+              "required": ["retained", "error"],
+              "properties": {
+                "retained": {
+                  "type": "array", "maxItems": 256,
+                  "items": { "$ref": "#/$defs/replayClaimState" }
+                },
+                "error": { "$ref": "#/$defs/admissionPolicyError" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "const": "apply_rate_limit" },
+            "result": {
+              "type": "object", "additionalProperties": false,
+              "required": ["allowed", "current", "limit", "resetInSecs", "error", "state"],
+              "properties": {
+                "allowed": { "type": "boolean" },
+                "current": { "$ref": "#/$defs/admissionU64" },
+                "limit": { "$ref": "#/$defs/admissionU64" },
+                "resetInSecs": { "$ref": "#/$defs/admissionU64" },
+                "error": { "$ref": "#/$defs/admissionPolicyError" },
+                "state": {
+                  "oneOf": [{ "$ref": "#/$defs/rateLimitState" }, { "type": "null" }]
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "const": "apply_authorization_invalidation" },
+            "result": {
+              "type": "object", "additionalProperties": false,
+              "required": ["effect", "error", "state"],
+              "properties": {
+                "effect": { "$ref": "#/$defs/authorizationInvalidationEffect" },
+                "error": { "$ref": "#/$defs/authorizationInvalidationError" },
+                "state": {
+                  "oneOf": [
+                    { "$ref": "#/$defs/authorizationInvalidationState" },
+                    { "type": "null" }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ephemeralKind": { "enum": ["presence", "typing"] },
+    "ephemeralPolicyError": {
+      "enum": [
+        "none", "invalid_state", "invalid_scope", "invalid_subject",
+        "invalid_context", "invalid_value", "invalid_time", "ttl_out_of_range",
+        "invalid_origin", "invalid_transition"
+      ]
+    },
+    "ephemeralEffect": { "enum": ["apply", "replay", "stale", "expired", "reject"] },
+    "ephemeralState": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "scope", "kind", "subject", "context", "value", "active",
+        "observedAtMs", "expiresAtMs", "originNodeId", "transitionId"
+      ],
+      "properties": {
+        "scope": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "kind": { "$ref": "#/$defs/ephemeralKind" },
+        "subject": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "context": { "type": "string", "maxLength": 128 },
+        "value": { "type": "string", "maxLength": 512 },
+        "active": { "type": "boolean" },
+        "observedAtMs": { "$ref": "#/$defs/admissionU64" },
+        "expiresAtMs": { "$ref": "#/$defs/admissionU64" },
+        "originNodeId": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "transitionId": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "ephemeralPolicyResult": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "const": "apply" },
+            "result": {
+              "type": "object", "additionalProperties": false,
+              "required": ["effect", "error", "state"],
+              "properties": {
+                "effect": { "$ref": "#/$defs/ephemeralEffect" },
+                "error": { "$ref": "#/$defs/ephemeralPolicyError" },
+                "state": {
+                  "oneOf": [{ "$ref": "#/$defs/ephemeralState" }, { "type": "null" }]
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "const": "prune" },
+            "result": {
+              "type": "object", "additionalProperties": false,
+              "required": ["retained", "error"],
+              "properties": {
+                "retained": {
+                  "type": "array", "maxItems": 256,
+                  "items": { "$ref": "#/$defs/ephemeralState" }
+                },
+                "error": { "$ref": "#/$defs/ephemeralPolicyError" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "cliCommandError": { "enum": ["none", "unknown_command"] },
+    "cliIoMode": { "enum": ["local", "relay_read", "relay_write"] },
+    "cliPolicyOperation": {
+      "enum": [
+        "none", "domain.event.policy", "domain.community.policy",
+        "domain.membership.policy", "domain.dm.policy",
+        "domain.workflow.policy", "domain.moderation.policy"
+      ]
+    },
+    "cliFailureCategory": {
+      "enum": [
+        "user_error", "relay_error", "network_error", "auth_error",
+        "key_error", "conflict", "not_found", "delivery_unknown", "error"
+      ]
+    },
+    "cliPolicyResult": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": [
+            "decision", "accepted", "error", "ioMode", "requiresAuth",
+            "outputContract", "policyOperation"
+          ],
+          "properties": {
+            "decision": { "const": "command" },
+            "accepted": { "type": "boolean" },
+            "error": { "$ref": "#/$defs/cliCommandError" },
+            "ioMode": { "$ref": "#/$defs/cliIoMode" },
+            "requiresAuth": { "type": "boolean" },
+            "outputContract": { "const": "nimino.cli-output/v1" },
+            "policyOperation": { "$ref": "#/$defs/cliPolicyOperation" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "category", "exitCode", "retryable"],
+          "properties": {
+            "decision": { "const": "failure" },
+            "category": { "$ref": "#/$defs/cliFailureCategory" },
+            "exitCode": { "type": "integer", "minimum": 1, "maximum": 5 },
+            "retryable": { "type": "boolean" }
+          }
+        }
+      ]
+    },
+    "resolvedPersonaTriggers": {
+      "type": "object", "additionalProperties": false,
+      "required": ["mentions", "keywords", "allMessages"],
+      "properties": {
+        "mentions": {"type": "boolean"},
+        "keywords": {"type": "array", "maxItems": 256, "items": {"type": "string", "maxLength": 4096}},
+        "allMessages": {"type": "boolean"}
+      }
+    },
+    "resolvedPersonaBehavior": {
+      "type": "object", "additionalProperties": false,
+      "required": ["model", "temperature", "maxContextTokens", "subscribe", "triggers", "threadReplies", "broadcastReplies"],
+      "properties": {
+        "model": {"type": ["string", "null"], "maxLength": 4096},
+        "temperature": {"type": ["number", "null"]},
+        "maxContextTokens": {"type": ["integer", "null"], "minimum": 0},
+        "subscribe": {"oneOf": [{"type": "array", "maxItems": 256, "items": {"type": "string", "maxLength": 4096}}, {"type": "null"}]},
+        "triggers": {"oneOf": [{"$ref": "#/$defs/resolvedPersonaTriggers"}, {"type": "null"}]},
+        "threadReplies": {"type": "boolean"},
+        "broadcastReplies": {"type": "boolean"}
+      }
+    },
+    "agentLifecycleState": {
+      "type": "object", "additionalProperties": false,
+      "required": ["phase", "attempt", "retryAtMs", "turnId"],
+      "properties": {
+        "phase": {"enum": ["absent", "starting", "ready", "running", "cancelling", "restart_wait", "stopped"]},
+        "attempt": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807},
+        "retryAtMs": {"type": "integer", "minimum": 0, "maximum": 9223372036854775807},
+        "turnId": {"type": "string", "maxLength": 4096}
+      }
+    },
+    "agentPolicyError": {"enum": ["none", "invalid_rule", "invalid_filter", "invalid_transition", "stale_attempt", "invalid_turn"]},
+    "agentPolicyResult": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "behavior"],
+          "properties": {"decision": {"const": "persona"}, "behavior": {"$ref": "#/$defs/resolvedPersonaBehavior"}}
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "matched", "ruleIndex", "promptTag", "error"],
+          "properties": {
+            "decision": {"const": "trigger"},
+            "matched": {"type": "boolean"},
+            "ruleIndex": {"type": "integer", "minimum": -1, "maximum": 255},
+            "promptTag": {"type": "string", "maxLength": 4096},
+            "error": {"$ref": "#/$defs/agentPolicyError"}
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "allowed", "error", "action", "nextState"],
+          "properties": {
+            "decision": {"const": "lifecycle"},
+            "allowed": {"type": "boolean"},
+            "error": {"$ref": "#/$defs/agentPolicyError"},
+            "action": {"enum": ["reject", "noop", "spawn", "accept_start", "begin_turn", "send_cancel", "return_ready", "reap_and_wait", "stop"]},
+            "nextState": {"$ref": "#/$defs/agentLifecycleState"}
+          }
+        }
+      ]
+    },
+    "workflowPolicyError": {
+      "enum": [
+        "none", "name_required", "steps_required", "invalid_step",
+        "duplicate_step", "schedule_missing", "schedule_conflict",
+        "invalid_schedule", "reply_requires_message", "invalid_trigger",
+        "invalid_action", "definition_disabled", "invalid_condition",
+        "unknown_variable", "type_mismatch", "invalid_template",
+        "run_not_running", "invalid_step_index", "stale_revision",
+        "duplicate_transition", "invalid_transition", "terminal_state",
+        "invalid_transition_id"
+      ]
+    },
+    "workflowAction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind", "text", "channel", "replyInThread", "recipient", "topic",
+        "emoji", "url", "httpMethod", "headers", "body", "approver",
+        "message", "timeout", "duration"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "send_message", "send_dm", "set_channel_topic", "add_reaction",
+            "call_webhook", "request_approval", "delay"
+          ]
+        },
+        "text": { "type": "string" },
+        "channel": { "type": "string" },
+        "replyInThread": { "type": "boolean" },
+        "recipient": { "type": "string" },
+        "topic": { "type": "string" },
+        "emoji": { "type": "string" },
+        "url": { "type": "string" },
+        "httpMethod": { "type": "string" },
+        "headers": { "type": "object", "additionalProperties": { "type": "string" } },
+        "body": { "type": "string" },
+        "approver": { "type": "string" },
+        "message": { "type": "string" },
+        "timeout": { "type": "string" },
+        "duration": { "type": "string" }
+      }
+    },
+    "workflowRunState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "currentStep", "revision"],
+      "properties": {
+        "status": {
+          "enum": [
+            "pending", "running", "waiting_approval", "completed", "failed", "cancelled"
+          ]
+        },
+        "currentStep": { "type": "integer", "minimum": 0 },
+        "revision": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "workflowPolicyResult": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "valid", "error", "requiresElevatedAuthority"],
+          "properties": {
+            "decision": { "const": "definition" },
+            "valid": { "type": "boolean" },
+            "error": { "$ref": "#/$defs/workflowPolicyError" },
+            "requiresElevatedAuthority": { "type": "boolean" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "value", "error"],
+          "properties": {
+            "decision": { "const": "condition" },
+            "value": { "type": "boolean" },
+            "error": { "$ref": "#/$defs/workflowPolicyError" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "directive", "error", "stepId", "effect"],
+          "properties": {
+            "decision": { "const": "plan" },
+            "directive": { "enum": ["reject", "execute_effect", "skip_step", "complete_run"] },
+            "error": { "$ref": "#/$defs/workflowPolicyError" },
+            "stepId": { "type": "string" },
+            "effect": {
+              "oneOf": [{ "$ref": "#/$defs/workflowAction" }, { "type": "null" }]
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "allowed", "error", "nextState", "portEffect"],
+          "properties": {
+            "decision": { "const": "transition" },
+            "allowed": { "type": "boolean" },
+            "error": { "$ref": "#/$defs/workflowPolicyError" },
+            "nextState": { "$ref": "#/$defs/workflowRunState" },
+            "portEffect": { "enum": ["none", "persist_transition"] }
+          }
+        }
+      ]
+    },
+    "controlU64": {
+      "type": "integer", "minimum": 0, "maximum": 9223372036854775807
+    },
+    "controlEntry": {
+      "type": "object", "additionalProperties": false,
+      "required": ["index", "term", "voterEpoch", "kind", "commandId", "payload", "targetVoters"],
+      "properties": {
+        "index": { "$ref": "#/$defs/controlU64" },
+        "term": { "$ref": "#/$defs/controlU64" },
+        "voterEpoch": { "$ref": "#/$defs/controlU64" },
+        "kind": { "enum": ["command", "begin_joint", "finalize"] },
+        "commandId": { "type": "string" },
+        "payload": { "type": "string" },
+        "targetVoters": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "controlSnapshot": {
+      "type": "object", "additionalProperties": false,
+      "required": ["lastIncludedIndex", "lastIncludedTerm", "voterEpoch", "phase", "oldVoters", "newVoters", "statePayload"],
+      "properties": {
+        "lastIncludedIndex": { "$ref": "#/$defs/controlU64" },
+        "lastIncludedTerm": { "$ref": "#/$defs/controlU64" },
+        "voterEpoch": { "$ref": "#/$defs/controlU64" },
+        "phase": { "enum": ["stable_old", "joint", "stable_new"] },
+        "oldVoters": { "type": "array", "items": { "type": "string" } },
+        "newVoters": { "type": "array", "items": { "type": "string" } },
+        "statePayload": { "type": "string" }
+      }
+    },
+    "controlState": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "valid", "metadataRevision", "term", "votedFor", "voterEpoch", "phase",
+        "oldVoters", "newVoters", "leaderId", "leaderTerm", "leaderProof",
+        "lastIndex", "commitIndex", "appliedIndex", "snapshot", "log"
+      ],
+      "properties": {
+        "valid": { "type": "boolean" },
+        "metadataRevision": { "$ref": "#/$defs/controlU64" },
+        "term": { "$ref": "#/$defs/controlU64" },
+        "votedFor": { "oneOf": [{ "type": "string" }, { "type": "null" }] },
+        "voterEpoch": { "$ref": "#/$defs/controlU64" },
+        "phase": { "enum": ["stable_old", "joint", "stable_new"] },
+        "oldVoters": { "type": "array", "items": { "type": "string" } },
+        "newVoters": { "type": "array", "items": { "type": "string" } },
+        "leaderId": { "type": "string" },
+        "leaderTerm": { "$ref": "#/$defs/controlU64" },
+        "leaderProof": { "type": "array", "items": { "type": "string" } },
+        "lastIndex": { "$ref": "#/$defs/controlU64" },
+        "commitIndex": { "$ref": "#/$defs/controlU64" },
+        "appliedIndex": { "$ref": "#/$defs/controlU64" },
+        "snapshot": { "oneOf": [{ "$ref": "#/$defs/controlSnapshot" }, { "type": "null" }] },
+        "log": { "type": "array", "items": { "$ref": "#/$defs/controlEntry" } }
+      }
+    },
+    "controlEffect": {
+      "enum": ["reject", "vote", "elect_leader", "append", "replay", "commit", "apply", "snapshot"]
+    },
+    "controlError": {
+      "enum": [
+        "none", "invalid_voters", "stale_term", "candidate_not_voter",
+        "candidate_log_stale", "quorum_required", "leader_required", "authority_stale",
+        "pending_entry", "entry_kind_invalid", "command_required", "command_conflict", "log_gap",
+        "commit_order", "apply_order", "snapshot_unavailable", "fact_conflict",
+        "store_failure", "corrupt_recovery"
+      ]
+    },
+    "controlStoreAction": {
+      "type": "object", "additionalProperties": false,
+      "required": ["kind", "expectedMetadataRevision", "previousIndex"],
+      "properties": {
+        "kind": { "enum": ["metadata", "log", "snapshot"] },
+        "expectedMetadataRevision": { "$ref": "#/$defs/controlU64" },
+        "previousIndex": { "$ref": "#/$defs/controlU64" }
+      }
+    },
+    "controlPlan": {
+      "type": "object", "additionalProperties": false,
+      "required": ["effect", "error", "beforeState", "nextState", "actions", "appliedEntry"],
+      "properties": {
+        "effect": { "$ref": "#/$defs/controlEffect" },
+        "error": { "$ref": "#/$defs/controlError" },
+        "beforeState": { "$ref": "#/$defs/controlState" },
+        "nextState": { "$ref": "#/$defs/controlState" },
+        "actions": { "type": "array", "items": { "$ref": "#/$defs/controlStoreAction" } },
+        "appliedEntry": { "oneOf": [{ "$ref": "#/$defs/controlEntry" }, { "type": "null" }] }
+      }
+    },
+    "controlDecision": {
+      "type": "object", "additionalProperties": false,
+      "required": ["effect", "error", "state", "appliedEntry"],
+      "properties": {
+        "effect": { "$ref": "#/$defs/controlEffect" },
+        "error": { "$ref": "#/$defs/controlError" },
+        "state": { "$ref": "#/$defs/controlState" },
+        "appliedEntry": { "oneOf": [{ "$ref": "#/$defs/controlEntry" }, { "type": "null" }] }
+      }
+    },
+    "controlPolicyResult": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "plan"],
+          "properties": {
+            "decision": { "const": "plan" },
+            "plan": { "$ref": "#/$defs/controlPlan" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "const": "settle" },
+            "result": { "$ref": "#/$defs/controlDecision" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "const": "recover" },
+            "result": {
+              "type": "object", "additionalProperties": false,
+              "required": ["error", "state"],
+              "properties": {
+                "error": { "$ref": "#/$defs/controlError" },
+                "state": { "$ref": "#/$defs/controlState" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "const": "quorum" },
+            "result": {
+              "type": "object", "additionalProperties": false,
+              "required": ["granted", "error"],
+              "properties": {
+                "granted": { "type": "boolean" },
+                "error": { "$ref": "#/$defs/controlError" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "leaseEffect": {
+      "enum": ["reject", "propose", "activate", "replay", "route", "authorize"]
+    },
+    "leaseError": {
+      "enum": [
+        "none", "invalid_state", "transition_required", "invalid_eligible_owners",
+        "lease_duration_invalid", "quorum_unavailable", "authority_invalid",
+        "control_not_committed", "authority_stale", "control_replay", "stale_fence",
+        "future_fence", "owner_mismatch", "resource_mismatch", "no_active_lease",
+        "clock_epoch_mismatch", "clock_regression", "lease_expired", "replay_conflict",
+        "tick_overflow"
+      ]
+    },
+    "leaseCommand": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "resourceId", "transitionId", "ownerId", "eligibleOwners",
+        "expectedPreviousFence", "fenceToken", "durationTicks", "leaderId",
+        "term", "voterEpoch"
+      ],
+      "properties": {
+        "resourceId": { "type": "string" },
+        "transitionId": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "eligibleOwners": { "type": "array", "items": { "type": "string" } },
+        "expectedPreviousFence": { "$ref": "#/$defs/controlU64" },
+        "fenceToken": { "$ref": "#/$defs/controlU64" },
+        "durationTicks": { "$ref": "#/$defs/controlU64" },
+        "leaderId": { "type": "string" },
+        "term": { "$ref": "#/$defs/controlU64" },
+        "voterEpoch": { "$ref": "#/$defs/controlU64" }
+      }
+    },
+    "activeLease": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "resourceId", "ownerId", "fenceToken", "leaderId", "term",
+        "voterEpoch", "clockEpoch", "activatedAtTick", "expiresAtTick"
+      ],
+      "properties": {
+        "resourceId": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "fenceToken": { "$ref": "#/$defs/controlU64" },
+        "leaderId": { "type": "string" },
+        "term": { "$ref": "#/$defs/controlU64" },
+        "voterEpoch": { "$ref": "#/$defs/controlU64" },
+        "clockEpoch": { "type": "string" },
+        "activatedAtTick": { "$ref": "#/$defs/controlU64" },
+        "expiresAtTick": { "$ref": "#/$defs/controlU64" }
+      }
+    },
+    "leaseState": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "valid", "resourceId", "lastFenceToken", "lastControlIndex",
+        "lastCommand", "activeLease"
+      ],
+      "properties": {
+        "valid": { "type": "boolean" },
+        "resourceId": { "type": "string" },
+        "lastFenceToken": { "$ref": "#/$defs/controlU64" },
+        "lastControlIndex": { "$ref": "#/$defs/controlU64" },
+        "lastCommand": { "oneOf": [{ "$ref": "#/$defs/leaseCommand" }, { "type": "null" }] },
+        "activeLease": { "oneOf": [{ "$ref": "#/$defs/activeLease" }, { "type": "null" }] }
+      }
+    },
+    "leasePolicyResult": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "const": "plan_grant" },
+            "result": {
+              "type": "object", "additionalProperties": false,
+              "required": ["effect", "error", "beforeState", "command"],
+              "properties": {
+                "effect": { "$ref": "#/$defs/leaseEffect" },
+                "error": { "$ref": "#/$defs/leaseError" },
+                "beforeState": { "$ref": "#/$defs/leaseState" },
+                "command": { "oneOf": [{ "$ref": "#/$defs/leaseCommand" }, { "type": "null" }] }
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "const": "apply_committed" },
+            "result": {
+              "type": "object", "additionalProperties": false,
+              "required": ["effect", "error", "state"],
+              "properties": {
+                "effect": { "$ref": "#/$defs/leaseEffect" },
+                "error": { "$ref": "#/$defs/leaseError" },
+                "state": { "$ref": "#/$defs/leaseState" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "const": "route" },
+            "result": {
+              "type": "object", "additionalProperties": false,
+              "required": ["allowed", "error", "ownerId", "fenceToken"],
+              "properties": {
+                "allowed": { "type": "boolean" },
+                "error": { "$ref": "#/$defs/leaseError" },
+                "ownerId": { "type": "string" },
+                "fenceToken": { "$ref": "#/$defs/controlU64" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "const": "authorize" },
+            "result": {
+              "type": "object", "additionalProperties": false,
+              "required": ["allowed", "error"],
+              "properties": {
+                "allowed": { "type": "boolean" },
+                "error": { "$ref": "#/$defs/leaseError" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "effectReceipt": {
+      "type": "object", "additionalProperties": false,
+      "required": ["outcome", "receiptId", "resultDigest"],
+      "properties": {
+        "outcome": { "enum": ["succeeded", "failed"] },
+        "receiptId": { "type": "string" },
+        "resultDigest": { "type": "string" }
+      }
+    },
+    "effectState": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "valid", "communityId", "workflowId", "runId", "stepId",
+        "idempotencyKey", "effectDigest", "leaseResourceId", "revision",
+        "attempt", "status", "ownerNodeId", "fenceToken", "receipt",
+        "reconciledBy", "reconcileReason"
+      ],
+      "properties": {
+        "valid": { "type": "boolean" },
+        "communityId": { "type": "string" },
+        "workflowId": { "type": "string" },
+        "runId": { "type": "string" },
+        "stepId": { "type": "string" },
+        "idempotencyKey": { "type": "string" },
+        "effectDigest": { "type": "string" },
+        "leaseResourceId": { "type": "string" },
+        "revision": { "$ref": "#/$defs/controlU64" },
+        "attempt": { "type": "integer", "minimum": 0, "maximum": 4294967295 },
+        "status": { "enum": ["pending", "claimed", "executing", "succeeded", "failed", "unknown"] },
+        "ownerNodeId": { "type": "string" },
+        "fenceToken": { "$ref": "#/$defs/controlU64" },
+        "receipt": { "oneOf": [{ "$ref": "#/$defs/effectReceipt" }, { "type": "null" }] },
+        "reconciledBy": { "type": "string" },
+        "reconcileReason": { "type": "string" }
+      }
+    },
+    "effectError": {
+      "enum": [
+        "none", "invalid_state", "invalid_identity", "invalid_receipt",
+        "lease_rejected", "owner_mismatch", "fence_mismatch", "claim_conflict",
+        "manual_reconcile_required", "reconcile_unauthorized",
+        "reconcile_reason_required", "terminal_conflict", "persistence_failure",
+        "revision_overflow", "attempt_overflow"
+      ]
+    },
+    "effectKind": {
+      "enum": [
+        "reject", "replay", "claimed", "execute_external", "receipt_recorded",
+        "claim_recovered", "unknown", "manual_retry", "reconciled"
+      ]
+    },
+    "effectPlan": {
+      "type": "object", "additionalProperties": false,
+      "required": ["effect", "error", "leaseError", "portEffect", "beforeState", "nextState"],
+      "properties": {
+        "effect": { "$ref": "#/$defs/effectKind" },
+        "error": { "$ref": "#/$defs/effectError" },
+        "leaseError": { "$ref": "#/$defs/leaseError" },
+        "portEffect": { "enum": ["none", "commit_canonical"] },
+        "beforeState": { "$ref": "#/$defs/effectState" },
+        "nextState": { "$ref": "#/$defs/effectState" }
+      }
+    },
+    "effectPolicyResult": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "enum": ["claim", "execute", "receipt", "recover", "reconcile"] },
+            "result": { "$ref": "#/$defs/effectPlan" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "const": "settle" },
+            "result": {
+              "type": "object", "additionalProperties": false,
+              "required": ["effect", "error", "leaseError", "state"],
+              "properties": {
+                "effect": { "$ref": "#/$defs/effectKind" },
+                "error": { "$ref": "#/$defs/effectError" },
+                "leaseError": { "$ref": "#/$defs/leaseError" },
+                "state": { "$ref": "#/$defs/effectState" }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "objectU64": {
+      "type": "integer", "minimum": 0, "maximum": 9223372036854775807
+    },
+    "objectDigest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "objectEffect": {
+      "enum": ["reject", "complete", "fetch", "pin", "unpin", "noop", "delete"]
+    },
+    "objectError": {
+      "enum": [
+        "none", "invalid_manifest", "manifest_digest_mismatch", "scope_mismatch",
+        "lifecycle_denied", "cancelled", "digest_invalid", "object_unknown",
+        "local_fact_invalid", "local_checksum_mismatch", "missing_origin",
+        "fetch_limit_invalid", "pin_revision_conflict", "pin_revision_overflow",
+        "gc_invalid"
+      ]
+    },
+    "objectFetchAction": {
+      "type": "object", "additionalProperties": false,
+      "required": ["digest", "size", "kind", "sourceNodeId", "resumeOffset"],
+      "properties": {
+        "digest": { "$ref": "#/$defs/objectDigest" },
+        "size": { "$ref": "#/$defs/objectU64" },
+        "kind": { "enum": ["media", "git-pack", "git-manifest"] },
+        "sourceNodeId": { "type": "string" },
+        "resumeOffset": { "$ref": "#/$defs/objectU64" }
+      }
+    },
+    "objectPinState": {
+      "type": "object", "additionalProperties": false,
+      "required": ["valid", "communityId", "revision", "digests"],
+      "properties": {
+        "valid": { "type": "boolean" },
+        "communityId": { "type": "string" },
+        "revision": { "$ref": "#/$defs/objectU64" },
+        "digests": {
+          "type": "array", "items": { "$ref": "#/$defs/objectDigest" }
+        }
+      }
+    },
+    "objectPolicyResult": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "const": "sync" },
+            "result": {
+              "type": "object", "additionalProperties": false,
+              "required": ["effect", "error", "actions"],
+              "properties": {
+                "effect": { "$ref": "#/$defs/objectEffect" },
+                "error": { "$ref": "#/$defs/objectError" },
+                "actions": {
+                  "type": "array", "items": { "$ref": "#/$defs/objectFetchAction" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "const": "pin" },
+            "result": {
+              "type": "object", "additionalProperties": false,
+              "required": ["effect", "error", "state"],
+              "properties": {
+                "effect": { "$ref": "#/$defs/objectEffect" },
+                "error": { "$ref": "#/$defs/objectError" },
+                "state": { "$ref": "#/$defs/objectPinState" }
+              }
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "const": "gc" },
+            "result": {
+              "type": "object", "additionalProperties": false,
+              "required": ["effect", "error", "deleteDigests"],
+              "properties": {
+                "effect": { "$ref": "#/$defs/objectEffect" },
+                "error": { "$ref": "#/$defs/objectError" },
+                "deleteDigests": {
+                  "type": "array", "items": { "$ref": "#/$defs/objectDigest" }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "projectionU64": {
+      "type": "integer", "minimum": 0, "maximum": 9223372036854775807
+    },
+    "projectionKind": { "enum": ["search", "thread", "feed"] },
+    "projectionStatus": {
+      "enum": ["building", "ready", "published", "cancelled"]
+    },
+    "projectionEffect": {
+      "enum": ["reject", "start", "stage", "ready", "publish", "cancel"]
+    },
+    "projectionError": {
+      "enum": [
+        "none", "invalid_state", "scope_mismatch", "owner_mismatch",
+        "epoch_mismatch", "source_changed", "revision_conflict",
+        "cursor_conflict", "batch_invalid", "record_invalid",
+        "current_row_invalid", "stage_failure", "publish_unavailable",
+        "publish_failure", "revision_overflow"
+      ]
+    },
+    "projectionState": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "valid", "projection", "communityId", "sourceCheckpoint", "sourceDigest",
+        "epoch", "ownerNodeId", "revision", "cursor", "status"
+      ],
+      "properties": {
+        "valid": { "type": "boolean" },
+        "projection": { "$ref": "#/$defs/projectionKind" },
+        "communityId": { "type": "string" },
+        "sourceCheckpoint": { "$ref": "#/$defs/projectionU64" },
+        "sourceDigest": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "epoch": { "type": "string" },
+        "ownerNodeId": { "type": "string" },
+        "revision": { "$ref": "#/$defs/projectionU64" },
+        "cursor": { "type": "string" },
+        "status": { "$ref": "#/$defs/projectionStatus" }
+      }
+    },
+    "projectionStageRow": {
+      "type": "object", "additionalProperties": false,
+      "required": ["recordType", "key", "deleted", "value"],
+      "properties": {
+        "recordType": { "type": "string" },
+        "key": { "type": "string" },
+        "deleted": { "type": "boolean" },
+        "value": {}
+      }
+    },
+    "projectionDecision": {
+      "type": "object", "additionalProperties": false,
+      "required": ["effect", "error", "state"],
+      "properties": {
+        "effect": { "$ref": "#/$defs/projectionEffect" },
+        "error": { "$ref": "#/$defs/projectionError" },
+        "state": { "$ref": "#/$defs/projectionState" }
+      }
+    },
+    "projectionBatchPlan": {
+      "type": "object", "additionalProperties": false,
+      "required": ["effect", "error", "beforeState", "nextState", "rows"],
+      "properties": {
+        "effect": { "$ref": "#/$defs/projectionEffect" },
+        "error": { "$ref": "#/$defs/projectionError" },
+        "beforeState": { "$ref": "#/$defs/projectionState" },
+        "nextState": { "$ref": "#/$defs/projectionState" },
+        "rows": {
+          "type": "array", "items": { "$ref": "#/$defs/projectionStageRow" }
+        }
+      }
+    },
+    "projectionPublishPlan": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "effect", "error", "beforeState", "nextState", "intentId", "recordType",
+        "sourceCheckpoint", "sourceDigest"
+      ],
+      "properties": {
+        "effect": { "$ref": "#/$defs/projectionEffect" },
+        "error": { "$ref": "#/$defs/projectionError" },
+        "beforeState": { "$ref": "#/$defs/projectionState" },
+        "nextState": { "$ref": "#/$defs/projectionState" },
+        "intentId": { "type": "string" },
+        "recordType": { "type": "string" },
+        "sourceCheckpoint": { "$ref": "#/$defs/projectionU64" },
+        "sourceDigest": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "projectionPolicyResult": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "enum": ["start", "settle_batch", "settle_publish", "cancel"] },
+            "result": { "$ref": "#/$defs/projectionDecision" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "const": "batch" },
+            "result": { "$ref": "#/$defs/projectionBatchPlan" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "const": "publish" },
+            "result": { "$ref": "#/$defs/projectionPublishPlan" }
+          }
+        }
+      ]
+    },
+    "syncU64": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 9223372036854775807
+    },
+    "syncEnvelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol", "version", "sessionId", "communityId",
+        "senderNodeId", "receiverNodeId"
+      ],
+      "properties": {
+        "protocol": { "type": "string" },
+        "version": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "sessionId": { "type": "string" },
+        "communityId": { "type": "string" },
+        "senderNodeId": { "type": "string" },
+        "receiverNodeId": { "type": "string" }
+      }
+    },
+    "syncState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "valid", "revision", "phase", "sessionId", "communityId",
+        "localNodeId", "remoteNodeId", "checkpoint", "checkpointDigest",
+        "remoteCheckpoint", "remoteDigest", "maxRecords", "maxEncodedBytes",
+        "timeoutTicks", "deadlineTick", "pendingBatchId"
+      ],
+      "properties": {
+        "valid": { "type": "boolean" },
+        "revision": { "$ref": "#/$defs/syncU64" },
+        "phase": {
+          "enum": ["idle", "waiting_batch", "applying", "complete", "cancelled"]
+        },
+        "sessionId": { "type": "string" },
+        "communityId": { "type": "string" },
+        "localNodeId": { "type": "string" },
+        "remoteNodeId": { "type": "string" },
+        "checkpoint": { "$ref": "#/$defs/syncU64" },
+        "checkpointDigest": { "type": "string" },
+        "remoteCheckpoint": { "$ref": "#/$defs/syncU64" },
+        "remoteDigest": { "type": "string" },
+        "maxRecords": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "maxEncodedBytes": {
+          "type": "integer", "minimum": 0, "maximum": 4294967295
+        },
+        "timeoutTicks": { "$ref": "#/$defs/syncU64" },
+        "deadlineTick": { "$ref": "#/$defs/syncU64" },
+        "pendingBatchId": { "type": "string" }
+      }
+    },
+    "syncRangeRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["envelope", "afterCheckpoint", "limitRecords", "maxEncodedBytes"],
+      "properties": {
+        "envelope": { "$ref": "#/$defs/syncEnvelope" },
+        "afterCheckpoint": { "$ref": "#/$defs/syncU64" },
+        "limitRecords": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "maxEncodedBytes": {
+          "type": "integer", "minimum": 0, "maximum": 4294967295
+        }
+      }
+    },
+    "syncRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sequence", "recordType", "key", "deleted", "payload", "contentDigest"
+      ],
+      "properties": {
+        "sequence": { "$ref": "#/$defs/syncU64" },
+        "recordType": { "type": "string" },
+        "key": { "type": "string" },
+        "deleted": { "type": "boolean" },
+        "payload": { "type": "string" },
+        "contentDigest": { "type": "string" }
+      }
+    },
+    "syncRecords": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": { "$ref": "#/$defs/syncRecord" }
+    },
+    "syncEffect": {
+      "enum": [
+        "reject", "noop", "request_range", "request_snapshot", "apply_batch",
+        "acknowledge_duplicate", "complete", "cancel"
+      ]
+    },
+    "syncInventoryMergeDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["effect", "error"],
+      "properties": {
+        "effect": {
+          "enum": ["reject", "insert", "keep", "replace", "duplicate", "quarantine"]
+        },
+        "error": {
+          "enum": [
+            "none", "identity_invalid", "digest_invalid", "version_invalid",
+            "scope_mismatch", "identity_collision", "fact_conflict", "retention_invalid"
+          ]
+        }
+      }
+    },
+    "syncInventoryMergeDecisions": {
+      "type": "array",
+      "maxItems": 1000,
+      "items": { "$ref": "#/$defs/syncInventoryMergeDecision" }
+    },
+    "syncError": {
+      "enum": [
+        "none", "invalid_state", "protocol_mismatch", "scope_mismatch",
+        "digest_invalid", "digest_mismatch", "remote_behind", "phase_invalid",
+        "backpressure", "batch_bounds", "sequence_gap", "peer_timeout",
+        "cancelled", "store_failure", "store_checkpoint_mismatch",
+        "stale_settlement", "reason_required", "tick_overflow", "revision_overflow"
+      ]
+    },
+    "syncDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["effect", "error", "state"],
+      "properties": {
+        "effect": { "$ref": "#/$defs/syncEffect" },
+        "error": { "$ref": "#/$defs/syncError" },
+        "state": { "$ref": "#/$defs/syncState" }
+      }
+    },
+    "syncRangeReadPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allowed", "error", "communityId", "afterCheckpoint",
+        "limitRecords", "maxEncodedBytes"
+      ],
+      "properties": {
+        "allowed": { "type": "boolean" },
+        "error": { "$ref": "#/$defs/syncError" },
+        "communityId": { "type": "string" },
+        "afterCheckpoint": { "$ref": "#/$defs/syncU64" },
+        "limitRecords": { "type": "integer", "minimum": 0, "maximum": 65535 },
+        "maxEncodedBytes": {
+          "type": "integer", "minimum": 0, "maximum": 4294967295
+        }
+      }
+    },
+    "syncRangeBatchPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "effect", "error", "beforeState", "inflightState", "nextState",
+        "expectedCheckpoint", "throughCheckpoint", "records"
+      ],
+      "properties": {
+        "effect": { "$ref": "#/$defs/syncEffect" },
+        "error": { "$ref": "#/$defs/syncError" },
+        "beforeState": { "$ref": "#/$defs/syncState" },
+        "inflightState": { "$ref": "#/$defs/syncState" },
+        "nextState": { "$ref": "#/$defs/syncState" },
+        "expectedCheckpoint": { "$ref": "#/$defs/syncU64" },
+        "throughCheckpoint": { "$ref": "#/$defs/syncU64" },
+        "records": { "$ref": "#/$defs/syncRecords" }
+      }
+    },
+    "syncPolicyResult": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "const": "accept_digest" },
+            "result": { "$ref": "#/$defs/syncDecision" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "frame"],
+          "properties": {
+            "decision": { "const": "next_range" },
+            "frame": {
+              "oneOf": [
+                { "$ref": "#/$defs/syncRangeRequest" },
+                { "type": "null" }
+              ]
+            }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "plan"],
+          "properties": {
+            "decision": { "const": "plan_range_read" },
+            "plan": { "$ref": "#/$defs/syncRangeReadPlan" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "plan"],
+          "properties": {
+            "decision": { "const": "plan_batch" },
+            "plan": { "$ref": "#/$defs/syncRangeBatchPlan" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "result"],
+          "properties": {
+            "decision": { "enum": ["settle_batch", "stop", "cancel", "check_deadline"] },
+            "result": { "$ref": "#/$defs/syncDecision" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["decision", "results"],
+          "properties": {
+            "decision": { "const": "merge_inventory" },
+            "results": { "$ref": "#/$defs/syncInventoryMergeDecisions" }
+          }
+        }
+      ]
+    },
+    "fault": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "message", "retry"],
+      "properties": {
+        "code": {
+          "enum": [
+            "INVALID_REQUEST",
+            "UNSUPPORTED_VERSION",
+            "CONTRACT_MISMATCH",
+            "HANDSHAKE_REQUIRED",
+            "UNKNOWN_OPERATION",
+            "FRAME_TOO_LARGE",
+            "INTERNAL_ERROR"
+          ]
+        },
+        "message": { "type": "string", "maxLength": 1024 },
+        "retry": { "enum": ["never", "idempotent_only", "after_refresh"] }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "code": { "const": "INVALID_REQUEST" },
+            "retry": { "const": "never" }
+          }
+        },
+        {
+          "properties": {
+            "code": { "const": "UNSUPPORTED_VERSION" },
+            "retry": { "const": "never" }
+          }
+        },
+        {
+          "properties": {
+            "code": { "const": "CONTRACT_MISMATCH" },
+            "retry": { "const": "never" }
+          }
+        },
+        {
+          "properties": {
+            "code": { "const": "HANDSHAKE_REQUIRED" },
+            "retry": { "const": "after_refresh" }
+          }
+        },
+        {
+          "properties": {
+            "code": { "const": "UNKNOWN_OPERATION" },
+            "retry": { "const": "never" }
+          }
+        },
+        {
+          "properties": {
+            "code": { "const": "FRAME_TOO_LARGE" },
+            "retry": { "const": "never" }
+          }
+        },
+        {
+          "properties": {
+            "code": { "const": "INTERNAL_ERROR" },
+            "retry": { "const": "idempotent_only" }
+          }
+        }
+      ]
+    }
+  },
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol",
+        "version",
+        "requestId",
+        "operation",
+        "status",
+        "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "system.hello" },
+        "status": { "const": "ok" },
+        "result": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "workerVersion",
+            "protocolVersion",
+            "schemaHash",
+            "workerRole",
+            "maxFrameBytes",
+            "maxInflight",
+            "capabilities"
+          ],
+          "properties": {
+            "workerVersion": { "type": "string", "minLength": 1 },
+            "protocolVersion": { "const": 1 },
+            "schemaHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+            "workerRole": { "const": "nimino-core" },
+            "maxFrameBytes": { "const": 1048576 },
+            "maxInflight": { "const": 1 },
+            "capabilities": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "boundary.echo",
+                  "domain.event.policy",
+                  "domain.community.policy",
+                  "domain.membership.policy",
+                  "domain.dm.policy",
+                  "domain.moderation.policy",
+                  "domain.workflow.policy",
+                  "domain.cli.policy",
+                  "domain.agent.policy",
+                  "domain.cluster.lifecycle",
+                  "domain.control.policy",
+                  "domain.lease.policy",
+                  "domain.effect.policy",
+                  "domain.object.policy",
+                  "domain.projection.policy",
+                  "domain.sync.policy"
+                ]
+              },
+              "contains": { "const": "domain.event.policy" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol",
+        "version",
+        "requestId",
+        "operation",
+        "status",
+        "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "boundary.echo" },
+        "status": { "const": "ok" },
+        "result": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["data"],
+          "properties": { "data": {} }
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol",
+        "version",
+        "requestId",
+        "operation",
+        "status",
+        "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.event.policy" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/eventPolicyResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol",
+        "version",
+        "requestId",
+        "operation",
+        "status",
+        "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.community.policy" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/communityPolicyResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol",
+        "version",
+        "requestId",
+        "operation",
+        "status",
+        "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.membership.policy" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/membershipPolicyResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol",
+        "version",
+        "requestId",
+        "operation",
+        "status",
+        "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.dm.policy" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/dmPolicyResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol",
+        "version",
+        "requestId",
+        "operation",
+        "status",
+        "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.moderation.policy" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/moderationPolicyResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol", "version", "requestId", "operation", "status", "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.workflow.policy" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/workflowPolicyResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol", "version", "requestId", "operation", "status", "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.cli.policy" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/cliPolicyResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol", "version", "requestId", "operation", "status", "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.agent.policy" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/agentPolicyResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol", "version", "requestId", "operation", "status", "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.cluster.lifecycle" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/clusterLifecycleResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol", "version", "requestId", "operation", "status", "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.admission.policy" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/admissionPolicyResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol", "version", "requestId", "operation", "status", "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.ephemeral.policy" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/ephemeralPolicyResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol", "version", "requestId", "operation", "status", "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.control.policy" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/controlPolicyResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol", "version", "requestId", "operation", "status", "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.lease.policy" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/leasePolicyResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol", "version", "requestId", "operation", "status", "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.effect.policy" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/effectPolicyResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol", "version", "requestId", "operation", "status", "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.object.policy" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/objectPolicyResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol", "version", "requestId", "operation", "status", "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.projection.policy" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/projectionPolicyResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol", "version", "requestId", "operation", "status", "result"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "const": "domain.sync.policy" },
+        "status": { "const": "ok" },
+        "result": { "$ref": "#/$defs/syncPolicyResult" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocol",
+        "version",
+        "requestId",
+        "operation",
+        "status",
+        "error"
+      ],
+      "properties": {
+        "protocol": { "const": "nimino.core.boundary" },
+        "version": { "const": 1 },
+        "requestId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "operation": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "status": { "const": "error" },
+        "error": { "$ref": "#/$defs/fault" }
+      }
+    }
+  ]
+}

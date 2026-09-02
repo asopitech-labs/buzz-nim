@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.cluster-scenarios",
+  "version": 1,
+  "compatibilityMode": false,
+  "failureSeed": 202608280056,
+  "transport": "alopex-chirps/0.6.3-udp-quic-mtls",
+  "lifecycleContract": "nimino.cluster-lifecycle/v1",
+  "scenarios": [
+    {"nodeCount": 1},
+    {"nodeCount": 3},
+    {"nodeCount": 5}
+  ],
+  "requiredStages": [
+    "partition",
+    "drain",
+    "kill",
+    "rejoin",
+    "stable-identity",
+    "incremented-incarnation"
+  ],
+  "resourceProofs": [
+    "all-udp-bind-addresses-rebind-after-shutdown",
+    "nim-worker-process-reaped"
+  ],
+  "dataConvergenceOwner": 59,
+  "cutoverOwner": 12
+}

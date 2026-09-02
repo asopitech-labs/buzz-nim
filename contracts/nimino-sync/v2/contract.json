@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.sync",
+  "version": 2,
+  "compatibilityMode": false,
+  "publicationState": "cutover-ready",
+  "owner": "nimino-core",
+  "module": "nim/nimino_core/src/nimino_core/domain/sync_protocol.nim",
+  "dataContract": "nimino.data/v1",
+  "transport": {
+    "adapter": "nimino-chirps",
+    "role": "opaque-bounded-frame-transport",
+    "providesReplicationPolicy": false,
+    "providesConflictPolicy": false
+  },
+  "frames": [
+    "digest", "range-request", "range-batch", "snapshot-request",
+    "snapshot-batch", "cancel"
+  ],
+  "scopeFields": [
+    "protocol",
+    "version",
+    "sessionId",
+    "communityId",
+    "senderNodeId",
+    "receiverNodeId"
+  ],
+  "bounds": {
+    "maxRecords": 1000,
+    "maxEncodedBytes": 64512,
+    "inflightBatches": 1,
+    "sourceReadIsBounded": true,
+    "slowPeerDeadline": "adapter-monotonic-ticks"
+  },
+  "digest": {
+    "algorithm": "sha256",
+    "encoding": "lowercase-hex",
+    "adapter": "nimino-store.sync_digest",
+    "adapterVerifiesCanonicalRange": true,
+    "stateDigest": "sequence-independent-current-canonical-state",
+    "stateMismatch": "request-bounded-logical-inventory"
+  },
+  "resume": {
+    "durableCheckpoint": "NodeStorePort.canonical_checkpoint",
+    "stateDigest": "recomputed-from-NodeStorePort.canonical_page",
+    "commit": "NodeStorePort.commit_canonical-exact-checkpoint",
+    "advanceBeforeCommit": false,
+    "duplicateFinalBatch": "idempotent-ack"
+  },
+  "divergence": {
+    "mergePolicy": "nimino-core.convergence_policy",
+    "sameIdentityDifferentContent": "quarantine",
+    "commit": "NodeStorePort.commit_canonical-exact-checkpoint",
+    "quarantineEvidence": "NodeStorePort.append_log"
+  },
+  "communityIsolationEveryFrame": true,
+  "conflictContract": "nimino.convergence/v1",
+  "repairContract": "nimino.data-ops/v1",
+  "conflictResolutionOwner": 53,
+  "scenarioHarnessOwner": 56,
+  "legacyRemovalOwner": 12
+}

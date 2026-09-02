@@ -1,0 +1,57 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.cluster-lifecycle",
+  "compatibilityMode": false,
+  "publicationState": "cutover-ready",
+  "boundaryOperation": "domain.cluster.lifecycle",
+  "requiredProductCapability": "nimino-v1",
+  "requiredControlProtocolVersion": 1,
+  "requiredDataProtocolVersion": 1,
+  "states": ["offline", "joining", "syncing", "ready", "draining"],
+  "commands": {
+    "join": ["offline", "joining"],
+    "start_sync": ["joining", "syncing"],
+    "mark_ready": ["syncing", "ready"],
+    "begin_drain": ["ready", "draining"],
+    "mark_offline": ["draining", "offline"]
+  },
+  "lanes": {
+    "offline": [],
+    "joining": ["negotiation"],
+    "syncing": ["negotiation", "control", "data_sync"],
+    "ready": [
+      "negotiation",
+      "control",
+      "data_sync",
+      "client_read",
+      "client_write",
+      "lease"
+    ],
+    "draining": ["negotiation", "control", "data_sync"]
+  },
+  "admission": {
+    "requiresAuthenticatedIdentity": true,
+    "rejectsRevokedIdentity": true,
+    "requiresUniqueIdentityBinding": true,
+    "requiresExactVersions": true,
+    "chirpsPeerViewProvidesAuthority": false,
+    "revalidatedThroughReady": true
+  },
+  "readiness": {
+    "requiresCommittedControlDecision": true,
+    "requiresInstalledSnapshot": true,
+    "requiresMatchingCheckpoint": true,
+    "requiresMatchingNonzeroVoterEpoch": true
+  },
+  "drain": {
+    "requiresCommittedControlDecision": true,
+    "requiresZeroActiveWork": true,
+    "requiresMatchingCheckpoint": true
+  },
+  "controlModel": "nimino.control-log/v1",
+  "runtimeStateMachineOwner": 51,
+  "leaseSemanticsOwner": 52,
+  "scenarioContract": "nimino.cluster-scenarios/v1",
+  "scenarioHarnessOwner": 56,
+  "cutoverOwner": 12
+}

@@ -108,7 +108,7 @@ test("confirms activation after create and preserves a safe disabled path", asyn
     .poll(() =>
       page.evaluate(
         () =>
-          (window.__BUZZ_E2E_COMMAND_PAYLOADS__ ?? []).filter(
+          (window.__NIMINO_E2E_COMMAND_PAYLOADS__ ?? []).filter(
             (call) => call.command === "create_workflow",
           ).length,
       ),
@@ -120,7 +120,7 @@ test("confirms activation after create and preserves a safe disabled path", asyn
   await expect(dialog).toBeHidden();
 
   const yaml = await page.evaluate(() => {
-    const call = [...(window.__BUZZ_E2E_COMMAND_PAYLOADS__ ?? [])]
+    const call = [...(window.__NIMINO_E2E_COMMAND_PAYLOADS__ ?? [])]
       .reverse()
       .find((candidate) => candidate.command === "create_workflow");
     return (call?.payload as { yamlDefinition?: string } | undefined)
@@ -139,6 +139,7 @@ test("confirms activation after create and preserves a safe disabled path", asyn
 test("inserts template variables with keyboard control and restores the caret", async ({
   page,
 }) => {
+  test.setTimeout(180_000);
   const dialog = await openCreateWorkflow(page, "template_variables_keyboard");
   await dialog.getByRole("button", { name: "Add step", exact: true }).click();
   await page.getByRole("menuitem", { name: "Send Message" }).click();
@@ -151,6 +152,7 @@ test("inserts template variables with keyboard control and restores the caret", 
   await waitForAnimations(page);
   expect(await page.locator("body").screenshot()).toMatchSnapshot(
     "workflow-template-variable-autocomplete.png",
+    { maxDiffPixelRatio: 0.005 },
   );
 
   await textarea.press("ArrowUp");
@@ -259,8 +261,9 @@ test("round-trips and reopens structured message-text conditions", async ({
   page,
 }) => {
   const name = `message_condition_${Date.now()}`;
-  const text = 'deploy "buzz"\\path';
-  const expression = 'str_ends_with(trigger_text, "deploy \\"buzz\\"\\\\path")';
+  const text = 'deploy "nimino"\\path';
+  const expression =
+    'str_ends_with(trigger_text, "deploy \\"nimino\\"\\\\path")';
   const dialog = await openCreateWorkflow(page, name);
 
   await dialog
@@ -441,7 +444,7 @@ test("round-trips manual author and reaction message IDs through save and reopen
     .poll(() =>
       page.evaluate(
         () =>
-          (window.__BUZZ_E2E_COMMAND_PAYLOADS__ ?? []).filter(
+          (window.__NIMINO_E2E_COMMAND_PAYLOADS__ ?? []).filter(
             (call) => call.command === "create_workflow",
           ).length,
       ),

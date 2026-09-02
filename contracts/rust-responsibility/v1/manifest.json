@@ -1,0 +1,134 @@
+{
+  "schemaVersion": 1,
+  "contract": "nimino.rust-responsibility",
+  "compatibilityMode": false,
+  "classificationUnit": {
+    "dependency": "cargo-package",
+    "source": "nearest-cargo-package",
+    "tauriCommand": "contracts/nimino-tauri/v1/manifest.json"
+  },
+  "inventory": {"packageCount": 38},
+  "target": {
+    "nim": "domain-and-product-policy",
+    "rust": ["typed-boundary", "crypto-codec", "bounded-io", "measured-native-hot-path"],
+    "typescript": "presentation-state"
+  },
+  "actions": {
+    "keep": {
+      "target": "bounded adapter, verification tool, or typed boundary",
+      "packages": [
+        "nimino-backend-kubernetes",
+        "nimino-conformance",
+        "nimino-control",
+        "nimino-datastore-tracing",
+        "nimino-pair-relay",
+        "nimino-terminal",
+        "nimino-voice",
+        "nimino-ws-client",
+        "git-credential-nostr",
+        "git-sign-nostr",
+        "nimino-boundary",
+        "nimino-chirps",
+        "nimino-data-ops",
+        "nimino-object-store",
+        "nimino-store",
+        "nimino-sync",
+        "nimino-wsl-launcher"
+      ]
+    },
+    "shrink": {
+      "target": "retain only composition, transport, storage, crypto, codec, or execution effects",
+      "packages": [
+        "nimino-acp",
+        "nimino-admin",
+        "nimino-agent",
+        "nimino-audit",
+        "nimino-auth",
+        "nimino-cli",
+        "nimino-core",
+        "nimino-db",
+        "nimino-deletion",
+        "nimino-desktop",
+        "nimino-dev-mcp",
+        "nimino-media",
+        "nimino-pairing-cli",
+        "nimino-persona",
+        "nimino-local-delivery",
+        "nimino-relay",
+        "nimino-sdk",
+        "nimino-search",
+        "nimino-test-client",
+        "nimino-workflow",
+        "countdown-bot"
+      ]
+    },
+    "move": {
+      "target": "Nim-owned package replacement",
+      "packages": []
+    },
+    "replace": {
+      "target": "nimino-chirps plus Nim-owned cluster and sync domains",
+      "packages": []
+    },
+    "delete": {
+      "target": "no surviving runtime responsibility",
+      "packages": []
+    }
+  },
+  "standaloneSources": [],
+  "policyOwnership": {
+    "nimDomainRoot": "nim/nimino_core/src/nimino_core/domain",
+    "nimDomainModules": [
+      "admission_policy.nim",
+      "agent_policy.nim",
+      "cli_policy.nim",
+      "cluster_lifecycle.nim",
+      "community_policy.nim",
+      "control_state_machine.nim",
+      "convergence_policy.nim",
+      "data_contract.nim",
+      "dm_policy.nim",
+      "effect_ledger.nim",
+      "ephemeral_policy.nim",
+      "event_policy.nim",
+      "lease_fencing.nim",
+      "membership_policy.nim",
+      "moderation_policy.nim",
+      "object_sync_policy.nim",
+      "projection_lifecycle.nim",
+      "repair_policy.nim",
+      "sync_protocol.nim",
+      "workflow_policy.nim"
+    ],
+    "operations": [
+      "domain.admission.policy",
+      "domain.agent.policy",
+      "domain.cli.policy",
+      "domain.cluster.lifecycle",
+      "domain.community.policy",
+      "domain.control.policy",
+      "domain.lease.policy",
+      "domain.effect.policy",
+      "domain.ephemeral.policy",
+      "domain.object.policy",
+      "domain.projection.policy",
+      "domain.dm.policy",
+      "domain.event.policy",
+      "domain.membership.policy",
+      "domain.moderation.policy",
+      "domain.sync.policy",
+      "domain.workflow.policy"
+    ],
+    "rustOperationLiteralOwner": "nimino-boundary",
+    "targetRustPolicyPackages": []
+  },
+  "cutoverDependencyEdges": [],
+  "developerExperience": {
+    "baselinePolicyLanguages": ["nim", "rust"],
+    "targetPolicyLanguages": ["nim"],
+    "pureNimRustJobs": 0,
+    "boundaryRustPackages": ["nimino-boundary", "nimino-control", "nimino-sync"],
+    "fullRustWorkspaceForPolicyOnlyChange": false
+  },
+  "physicalRemovalOwner": 66
+}

@@ -1,0 +1,14 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "agent-policy-fixture",
+  "operation": "domain.agent.policy",
+  "status": "ok",
+  "result": {
+    "decision": "lifecycle",
+    "allowed": true,
+    "error": "none",
+    "action": "send_cancel",
+    "nextState": {"phase": "cancelling", "attempt": 0, "retryAtMs": 0, "turnId": "turn-1"}
+  }
+}

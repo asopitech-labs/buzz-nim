@@ -1,0 +1,14 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "fixture-workflow-1",
+  "operation": "domain.workflow.policy",
+  "status": "ok",
+  "result": {
+    "decision": "transition",
+    "allowed": true,
+    "error": "none",
+    "nextState": { "status": "running", "currentStep": 1, "revision": 4 },
+    "portEffect": "persist_transition"
+  }
+}

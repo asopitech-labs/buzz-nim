@@ -1,0 +1,16 @@
+{
+  "protocol": "nimino.core.boundary",
+  "version": 1,
+  "requestId": "fixture-cli-1",
+  "operation": "domain.cli.policy",
+  "status": "ok",
+  "result": {
+    "decision": "command",
+    "accepted": true,
+    "error": "none",
+    "ioMode": "relay_write",
+    "requiresAuth": true,
+    "outputContract": "nimino.cli-output/v1",
+    "policyOperation": "domain.workflow.policy"
+  }
+}

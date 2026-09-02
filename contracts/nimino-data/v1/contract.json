@@ -1,0 +1,125 @@
+{
+  "protocol": "nimino.data",
+  "version": 1,
+  "classes": {
+    "canonical": {
+      "meaning": "durable product or lifecycle truth; only domain-approved commits may mutate it",
+      "recordTypes": [
+        "community",
+        "channel",
+        "membership",
+        "profile",
+        "event",
+        "subscription",
+        "workflow",
+        "workflow_run",
+        "workflow_effect",
+        "workflow_approval",
+        "scheduled_workflow_fire",
+        "api_token",
+        "allowlist_entry",
+        "relay_member",
+        "join_policy_acceptance",
+        "relay_invite",
+        "identity_archive",
+        "moderation_case",
+        "restriction",
+        "repository_name",
+        "retention_watermark",
+        "product_feedback",
+        "deletion_job",
+        "deletion_approval",
+        "deletion_checkpoint",
+        "deletion_manifest_key",
+        "object_manifest",
+        "object_pin",
+        "object_gc_watermark"
+      ]
+    },
+    "cache": {
+      "meaning": "derived or coordination state that may be discarded and rebuilt",
+      "recordTypes": [
+        "mention_index",
+        "thread_index",
+        "reaction_index",
+        "search_index",
+        "feed_index",
+        "replica_heartbeat",
+        "serving_write_lease",
+        "executor_heartbeat"
+      ]
+    },
+    "log": {
+      "meaning": "append-only evidence that is never read as current product truth",
+      "recordTypes": [
+        "delivery_attempt",
+        "rate_limit_violation",
+        "audit_entry",
+        "moderation_action",
+        "workflow_execution_entry",
+        "taxonomy_sweep"
+      ]
+    }
+  },
+  "transactionIntents": {
+    "canonical.commit": {
+      "scope": "one community",
+      "precondition": "exact canonical checkpoint",
+      "commit": "all writes atomically or none",
+      "deletion": "tombstone record with a JSON null value"
+    },
+    "cache.replace": {
+      "scope": "one community, one cache record type, and one source checkpoint",
+      "replacementTarget": "recordType is mandatory even when the replacement writes are empty",
+      "precondition": "exact canonical source checkpoint",
+      "commit": "replace the supplied cache set atomically",
+      "deletion": "empty replacement clears the cache"
+    },
+    "log.append": {
+      "scope": "one community",
+      "precondition": "none",
+      "commit": "append all entries atomically or none",
+      "deletion": "forbidden"
+    }
+  },
+  "queryIntents": {
+    "by_key": "one exact typed record in one community",
+    "page": "one typed record class in one community with a bounded cursor page",
+    "changes": "all canonical record types, ordered after a canonical sequence; recordType and key are empty"
+  },
+  "projectionRebuild": {
+    "input": [
+      "projection",
+      "communityId",
+      "throughSequence",
+      "sourceDigest",
+      "orderedCanonicalRecords"
+    ],
+    "output": [
+      "projection",
+      "communityId",
+      "throughSequence",
+      "sourceDigest",
+      "uniqueCacheRows"
+    ],
+    "projections": [
+      { "name": "search", "rowType": "search_index" },
+      { "name": "thread", "rowType": "thread_index" },
+      { "name": "feed", "rowType": "feed_index" }
+    ],
+    "publishRule": "replace only when input identity and output identity match exactly"
+  },
+  "antiEntropyContract": "nimino.sync/v2",
+  "projectionLifecycleContract": "nimino.projection-lifecycle/v1",
+  "effectLedgerContract": "nimino.effect-ledger/v1",
+  "repairContract": "nimino.data-ops/v1",
+  "invariants": [
+    "community scope is mandatory and adapter-derived",
+    "a transaction never mixes canonical, cache, and log records",
+    "a transaction contains each typed key at most once",
+    "cache and log records cannot become canonical truth",
+    "queries are typed intents rather than SQL or arbitrary filter strings",
+    "projection rows are replaceable and reproducible from canonical input",
+    "no compatibility mode, legacy runtime fallback, or Chirps domain ownership"
+  ]
+}

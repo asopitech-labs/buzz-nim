@@ -1,0 +1,74 @@
+# ArgoCD Application — GitOps-safe Nimino install.
+#
+# Prerequisite: a Secret named `nimino-secrets` in namespace `nimino` containing
+# (any subset of) the keys consumed by `secrets.existingSecret`. See
+# `secret-sample.yaml` for the schema.
+#
+# Why `existingSecret` and not chart autogen: ArgoCD renders manifests with
+# `helm template`, in which mode Helm's `lookup` function returns empty and
+# any chart-side `randAlphaNum` call regenerates on every sync. The
+# chart-managed Secret path is for `helm install` / `helm upgrade` only.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: nimino
+  namespace: argocd
+spec:
+  project: default
+  source:
+    # Argo CD >= 3.1 native OCI sources: repoURL must be the FULL chart
+    # artifact path — with the `repoURL: …/charts` + `chart: nimino` split
+    # form, the `chart` field is ignored for oci:// URLs and the fetch
+    # fails with a 403 (`repository:asopitech-labs/nimino/charts:pull` denied). The
+    # spec validator still requires `path`; use "." for OCI sources.
+    repoURL: oci://ghcr.io/asopitech-labs/nimino/charts/nimino
+    path: .
+    targetRevision: 0.1.7
+    helm:
+      releaseName: nimino
+      values: |
+        relayUrl: wss://nimino.example.com
+        ownerPubkey: "0000000000000000000000000000000000000000000000000000000000000000"  # replace
+        replicaCount: 3
+
+        secrets:
+          existingSecret: nimino-secrets
+
+        externalPostgresql:
+          # DATABASE_URL also lives in nimino-secrets; this is here only if you
+          # prefer the URL stored in values vs. the Secret. Pick one.
+          url: ""
+
+        s3:
+          endpoint: "https://s3.us-east-1.amazonaws.com"
+          bucket: "nimino-media"
+          region: "us-east-1"
+          addressingStyle: virtual
+          # accessKey / secretKey live in nimino-secrets
+
+        persistence:
+          git:
+            # Bounded per-pod emptyDir for object-store-backed Git scratch.
+            size: 50Gi
+
+        ingress:
+          enabled: true
+          className: nginx
+          annotations:
+            cert-manager.io/cluster-issuer: letsencrypt-prod
+            # WebSocket: long-lived; raise proxy timeouts.
+            nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+            nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+          tls:
+            - hosts: [nimino.example.com]
+              secretName: nimino-tls
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: nimino
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

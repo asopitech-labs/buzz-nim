@@ -54,12 +54,12 @@ test("ThemeProvider renders defaults when localStorage reads are denied", async 
   render(
     createElement(
       ThemeProvider,
-      { defaultTheme: "buzz" },
-      createElement("p", null, "Buzz is visible"),
+      { defaultTheme: "nimino" },
+      createElement("p", null, "Nimino is visible"),
     ),
   );
 
-  assert.ok(screen.getByText("Buzz is visible"));
+  assert.ok(screen.getByText("Nimino is visible"));
 });
 
 test("root boundary shows recovery UI without exposing error details", async () => {
@@ -77,7 +77,7 @@ test("root boundary shows recovery UI without exposing error details", async () 
     createElement(RootErrorBoundary, null, createElement(ThrowingProvider)),
   );
 
-  assert.ok(screen.getByText("Buzz failed to start"));
+  assert.ok(screen.getByText("Nimino failed to start"));
   assert.ok(screen.getByRole("button", { name: "Reload" }));
   assert.equal(document.body.textContent.includes(diagnostic), false);
   assert.match(document.body.textContent, /contact support/i);

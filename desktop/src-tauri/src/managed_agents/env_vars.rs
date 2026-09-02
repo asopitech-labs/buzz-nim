@@ -5,12 +5,12 @@
 //! Precedence: desktop parent env < persona env < agent env (last wins on
 //! key collision). See `runtime::spawn_agent_child`.
 //!
-//! A small set of *reserved* keys includes Buzz's identity, secrets, security
+//! A small set of *reserved* keys includes Nimino's identity, secrets, security
 //! gates, and control-plane values. Save-time validation rejects those keys.
 //! Runtime filtering strips old persisted overrides. Behavior knobs
-//! (GOOSE_MODE, BUZZ_ACP_MODEL, BUZZ_ACP_SYSTEM_PROMPT, …) remain freely
+//! (GOOSE_MODE, NIMINO_ACP_MODEL, NIMINO_ACP_SYSTEM_PROMPT, …) remain freely
 //! overridable. Power users can still bypass their dedicated UI fields.
-//! `BUZZ_ACP_AGENTS` is reserved because Desktop applies harness-specific caps
+//! `NIMINO_ACP_AGENTS` is reserved because Desktop applies harness-specific caps
 //! before it writes the provider launch policy.
 
 use std::collections::BTreeMap;
@@ -29,8 +29,8 @@ use std::collections::BTreeMap;
 pub(crate) const DERIVED_PROVIDER_MODEL_ENV_KEYS: &[&str] = &[
     "GOOSE_MODEL",
     "GOOSE_PROVIDER",
-    "BUZZ_AGENT_MODEL",
-    "BUZZ_AGENT_PROVIDER",
+    "NIMINO_AGENT_MODEL",
+    "NIMINO_AGENT_PROVIDER",
 ];
 
 /// Returns `true` if `key` is a derived provider/model env key that should be
@@ -50,9 +50,9 @@ include!("reserved_env_keys.rs");
 /// nit: Rust's `Command::env` will happily accept a key containing `=`
 /// or whitespace and pass it straight into the child's environ block,
 /// where `getenv("FOO")` then matches whatever comes after the first
-/// `=`. That means a key like `BUZZ_AUTH_TAG=x` with value `forged`
-/// lands as `BUZZ_AUTH_TAG=x=forged` in the child env and
-/// `getenv("BUZZ_AUTH_TAG")` returns `"x=forged"` — a full reserved-
+/// `=`. That means a key like `NIMINO_AUTH_TAG=x` with value `forged`
+/// lands as `NIMINO_AUTH_TAG=x=forged` in the child env and
+/// `getenv("NIMINO_AUTH_TAG")` returns `"x=forged"` — a full reserved-
 /// key bypass. Rejecting non-POSIX keys closes this hole at the
 /// boundary where the input enters the system.
 pub(crate) fn is_well_formed_env_key(key: &str) -> bool {
@@ -143,7 +143,7 @@ pub fn validate_user_env_keys(env_vars: &BTreeMap<String, String>) -> Result<(),
     reserved.dedup();
     if !reserved.is_empty() {
         return Err(format!(
-            "the following env vars are reserved by Buzz and cannot be overridden: {}",
+            "the following env vars are reserved by Nimino and cannot be overridden: {}",
             reserved.join(", ")
         ));
     }
@@ -177,16 +177,16 @@ pub fn validate_user_env_keys(env_vars: &BTreeMap<String, String>) -> Result<(),
 /// single authority — no second list.
 ///
 /// Allowlist (case-insensitive):
-/// - `BUZZ_AGENT_PROVIDER`, `BUZZ_AGENT_MODEL` — agent runtime selection
-/// - `BUZZ_AGENT_THINKING_EFFORT` — non-secret enum (none/minimal/low/medium/high/xhigh/max)
-/// - `BUZZ_AGENT_THINKING_SUMMARY` — non-secret enum (auto/concise/detailed)
+/// - `NIMINO_AGENT_PROVIDER`, `NIMINO_AGENT_MODEL` — agent runtime selection
+/// - `NIMINO_AGENT_THINKING_EFFORT` — non-secret enum (none/minimal/low/medium/high/xhigh/max)
+/// - `NIMINO_AGENT_THINKING_SUMMARY` — non-secret enum (auto/concise/detailed)
 /// - `DATABRICKS_HOST`, `DATABRICKS_MODEL` — Block non-secret defaults
 pub(crate) fn is_safe_to_reveal(key: &str) -> bool {
     const SAFE_KEYS: &[&str] = &[
-        "BUZZ_AGENT_PROVIDER",
-        "BUZZ_AGENT_MODEL",
-        "BUZZ_AGENT_THINKING_EFFORT",
-        "BUZZ_AGENT_THINKING_SUMMARY",
+        "NIMINO_AGENT_PROVIDER",
+        "NIMINO_AGENT_MODEL",
+        "NIMINO_AGENT_THINKING_EFFORT",
+        "NIMINO_AGENT_THINKING_SUMMARY",
         "DATABRICKS_HOST",
         "DATABRICKS_MODEL",
     ];
@@ -227,7 +227,7 @@ pub(crate) fn merged_user_env(
     merged.retain(|k, v| {
         if is_reserved_env_key(k) {
             eprintln!(
-                "buzz-desktop: ignoring reserved env var `{k}` from persona/agent overrides"
+                "nimino-desktop: ignoring reserved env var `{k}` from persona/agent overrides"
             );
             return false;
         }
@@ -237,7 +237,7 @@ pub(crate) fn merged_user_env(
             // smuggle a reserved key past us via `=`-in-key tricks. See
             // `is_well_formed_env_key` for the exploit.
             eprintln!(
-                "buzz-desktop: ignoring malformed env var key `{}` from persona/agent overrides",
+                "nimino-desktop: ignoring malformed env var key `{}` from persona/agent overrides",
                 display_invalid_key(k)
             );
             return false;
@@ -247,13 +247,13 @@ pub(crate) fn merged_user_env(
             // have escaped the value validator; drop them here rather
             // than crash the spawn. We deliberately do NOT log the value.
             eprintln!(
-                "buzz-desktop: ignoring env var `{k}` with NUL byte in value"
+                "nimino-desktop: ignoring env var `{k}` with NUL byte in value"
             );
             return false;
         }
         if v.len() > MAX_ENV_VALUE_BYTES {
             eprintln!(
-                "buzz-desktop: ignoring env var `{k}` with oversize value ({} bytes > {MAX_ENV_VALUE_BYTES})",
+                "nimino-desktop: ignoring env var `{k}` with oversize value ({} bytes > {MAX_ENV_VALUE_BYTES})",
                 v.len()
             );
             return false;

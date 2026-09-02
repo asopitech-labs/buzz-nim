@@ -12,14 +12,14 @@ const BYSTANDER = "d".repeat(64);
 
 function makeProject(overrides = {}) {
   return {
-    id: "project-buzz",
-    name: "buzz",
+    id: "project-nimino",
+    name: "nimino",
     owner: OWNER,
     projectChannelId: null,
     repositories: [
       {
-        id: "repo-buzz",
-        name: "buzz",
+        id: "repo-nimino",
+        name: "nimino",
         owner: OWNER,
         channelId: CHANNEL_A,
         contributors: [BYSTANDER],
@@ -67,7 +67,7 @@ test("activity pod shows workspace details and a create-project action", () => {
     ],
     pullRequests: [],
     summaries: {
-      "project-buzz": { issueCount: 4, prCount: 2 },
+      "project-nimino": { issueCount: 4, prCount: 2 },
       "project-relay": { issueCount: 1, prCount: 3 },
     },
   });
@@ -194,7 +194,7 @@ function peopleContext(filter, overrides = {}) {
     projects: [makeProject()],
     pullRequests: [makePullRequest("Open")],
     summaries: {
-      "project-buzz": {
+      "project-nimino": {
         latestCommit: { author: REVIEW_AUTHOR },
       },
     },

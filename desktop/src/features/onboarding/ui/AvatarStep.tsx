@@ -50,19 +50,21 @@ function ErrorBanner({ message }: { message: string | null }) {
 }
 
 const NEUTRAL_EMOJI_PICKER_THEME_VARS = {
-  "--buzz-emoji-picker-rgb-background":
-    "var(--buzz-onboarding-emoji-picker-background)",
-  "--buzz-emoji-picker-rgb-color": "var(--buzz-onboarding-emoji-picker-color)",
-  "--buzz-emoji-picker-rgb-input": "var(--buzz-onboarding-emoji-picker-input)",
+  "--nimino-emoji-picker-rgb-background":
+    "var(--nimino-onboarding-emoji-picker-background)",
+  "--nimino-emoji-picker-rgb-color":
+    "var(--nimino-onboarding-emoji-picker-color)",
+  "--nimino-emoji-picker-rgb-input":
+    "var(--nimino-onboarding-emoji-picker-input)",
 } as React.CSSProperties;
 
 const AVATAR_ACTIONS_MOTION_TRANSITION = {
-  duration: 0.25,
+  duration: 0.18,
   ease: "easeOut",
 } as const;
 
 const AVATAR_POSITION_MOTION_TRANSITION = {
-  duration: 0.25,
+  duration: 0.18,
   ease: "easeOut",
 } as const;
 
@@ -90,8 +92,8 @@ function AvatarPreview({
         >
           <span
             className={cn(
-              "buzz-avatar-emoji-glyph flex h-full w-full items-center justify-center text-[6rem] leading-[6.25rem]",
-              avatarSquishKey > 0 && "buzz-avatar-squish",
+              "nimino-avatar-emoji-glyph flex h-full w-full items-center justify-center text-[6rem] leading-[6.25rem]",
+              avatarSquishKey > 0 && "nimino-avatar-squish",
             )}
             data-testid="onboarding-avatar-preview-emoji"
             key={avatarSquishKey}

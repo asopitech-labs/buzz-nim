@@ -3,12 +3,16 @@ import * as React from "react";
 import {
   WELCOME_COMPOSER_BANNER_DISMISS_DURATION_SECONDS,
   WELCOME_COMPOSER_BANNER_HIDE_BUFFER_MS,
-  WELCOME_COMPOSER_BANNER_SUCCESS_SETTLE_MS,
-  WELCOME_PERSONA_ROTATION_MS,
+  WELCOME_COMPOSER_BANNER_SUCCESS_DISPLAY_MS,
   type WelcomeComposerBannerState,
 } from "@/features/channels/ui/WelcomeComposerBanner";
 
 const completedWelcomeComposerIdentityPubkeys = new Set<string>();
+
+/** Forget per-identity completion when leaving its community. */
+export function resetWelcomeComposerBannerState(): void {
+  completedWelcomeComposerIdentityPubkeys.clear();
+}
 
 /**
  * Manages the Welcome-channel composer hint banner's state machine.
@@ -84,7 +88,7 @@ export function useWelcomeComposerBanner(
       setBannerState("dismissing");
       dismissTimerRef.current = null;
       scheduleHide();
-    }, WELCOME_PERSONA_ROTATION_MS + WELCOME_COMPOSER_BANNER_SUCCESS_SETTLE_MS);
+    }, WELCOME_COMPOSER_BANNER_SUCCESS_DISPLAY_MS);
   }, [
     activeChannelId,
     clearTimers,
